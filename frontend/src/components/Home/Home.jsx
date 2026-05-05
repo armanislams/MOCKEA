@@ -1,7 +1,43 @@
 import Navbar from './Navbar';
 import { FaRegClock, FaListUl, FaGraduationCap } from 'react-icons/fa';
+import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Link, useNavigate } from 'react-router';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Home = () => {
+  const heroRef = useRef(null);
+  const cardsRef = useRef(null);
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    // Hero animation (staggered fade up)
+    gsap.fromTo(
+      heroRef.current.children,
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 0.8, stagger: 0.2, ease: 'power3.out', delay: 0.2 }
+    );
+
+    // Cards animation (scroll triggered staggered fade up)
+    gsap.fromTo(
+      cardsRef.current.children,
+      { opacity: 0, y: 50 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        stagger: 0.2,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: cardsRef.current,
+          start: 'top 85%',
+        },
+      }
+    );
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       
@@ -10,7 +46,7 @@ const Home = () => {
         {/* Hero Section */}
         <section className="bg-bc-navy text-white py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
+            <div className="max-w-3xl" ref={heroRef}>
               <h1 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight tracking-tight">
                 IELTS Academic Listening Practice Evaluation
               </h1>
@@ -18,12 +54,11 @@ const Home = () => {
                 Experience a realistic IELTS listening environment. Improve your comprehension and typing skills with our interactive module designed to simulate the official test conditions.
               </p>
               <div className="flex flex-wrap gap-4">
-                <button 
-                  onClick={() => document.getElementById('practice-section').scrollIntoView({ behavior: 'smooth' })}
+                <Link to={'/practice'}
                   className="bg-white text-bc-navy hover:bg-gray-100 px-8 py-3 rounded-md font-bold text-lg transition-colors shadow-lg"
                 >
                   Start Practice
-                </button>
+                </Link>
                 <button className="border-2 border-white text-white hover:bg-white hover:text-[#0028a1] px-8 py-3 rounded-md font-bold text-lg transition-colors">
                   View Test Format
                 </button>
@@ -40,7 +75,7 @@ const Home = () => {
               <div className="w-16 h-1 bg-[#0028a1] mx-auto mt-4"></div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8" ref={cardsRef}>
               {/* Info Card 1 */}
               <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="w-12 h-12 bg-blue-50 text-[#0028a1] rounded-lg flex items-center justify-center mb-6">

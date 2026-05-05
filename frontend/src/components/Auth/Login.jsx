@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import useAuth from '../../hooks/useAuth';
 import { useNavigate } from 'react-router';
+import { motion } from 'framer-motion';
 
 const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -30,7 +31,12 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+      <motion.div 
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-gray-200"
+      >
         
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-full bg-bc-navy flex items-center justify-center text-white text-lg font-bold mx-auto mb-4">
@@ -98,7 +104,7 @@ const Login = () => {
           </a>
         </div>
         
-      </div>
+      </motion.div>
     </div>
   );
 };

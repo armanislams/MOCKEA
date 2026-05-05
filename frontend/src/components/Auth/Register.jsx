@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import useAuth from '../../hooks/useAuth';
 import useAxiosSecure from '../../hooks/useAxiosSecure';
 import { toast } from 'react-toastify';
+import { motion } from 'framer-motion';
 
 const Register = () => {
   const {register : registerUser}=useAuth()
@@ -45,7 +46,12 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+      <motion.div 
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-gray-200"
+      >
         
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-lg font-bold mx-auto mb-4">
@@ -137,7 +143,7 @@ const Register = () => {
           </Link>
         </div>
         
-      </div>
+      </motion.div>
     </div>
   );
 };
