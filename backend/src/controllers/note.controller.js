@@ -1,4 +1,4 @@
-import Note from "../model/note";
+import Note from "../model/note.js";
 
 export const postNote =async(req,res)=>{
 const {email,notes}=req.body;
@@ -13,7 +13,16 @@ await newNote.save();
 return res.status(200).json({success:true,message:"Note created successfully"});
 }
 
-export const getNotes = async(req,res)=>{
+export const getNotesByUser = async(req,res)=>{
+    const {email}= req.params;
+    if(!email){
+        return res.status(400).json({success:false,message:"Please provide email"});
+    }
+    const data = await Note.find({email:email});
+    return res.status(200).json({success:true,message:"Note fetched successfully",notes:data});
+}
+
+export const getAllNotes = async(req,res)=>{
     const data = await Note.find();
     return res.status(200).json({success:true,message:"Notes fetched successfully",notes:data});
 }

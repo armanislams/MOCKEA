@@ -1,9 +1,10 @@
 import express from "express";
-import { getNotes, postNote } from "../controllers/note.controller";
+import { getAllNotes, getNotesByUser, postNote } from "../controllers/note.controller.js";
 
 const noteRouter = express.Router();
 
-noteRouter.get("/",getNotes)
+noteRouter.get("/",getAllNotes)
+noteRouter.get("/:email",getNotesByUser)
 noteRouter.post("/post",postNote)
 
 export default noteRouter;
