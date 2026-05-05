@@ -3,6 +3,7 @@ import Home from "../components/Home/Home";
 import Login from "../components/Auth/Login";
 import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
+import Practice from "../components/Practice/Practice";
 
 const router = createBrowserRouter([
     {
@@ -21,6 +22,10 @@ const router = createBrowserRouter([
                 path: "/register",
                 element: <Register/>
             },
+            {
+                path: '/practice',
+                element: <Practice/>
+            }
         ]
     },
     

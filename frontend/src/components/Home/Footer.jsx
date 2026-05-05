@@ -28,7 +28,7 @@ const Footer =()=>{
           </div>
           <div className="text-center text-sm text-blue-300 flex flex-col md:flex-row justify-between items-center">
             <p>© {new Date().getFullYear()} Eco Stream. Not affiliated with any official British Council.</p>
-            <p className="mt-2 md:mt-0">Designed for UI/UX Evaluation</p>
+            <p className="mt-2 md:mt-0">Designed By Arman</p>
           </div>
         </div>
       </footer>
