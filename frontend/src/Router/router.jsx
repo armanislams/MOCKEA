@@ -5,11 +5,13 @@ import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
 import Practice from "../components/Practice/Practice";
 import PrivateRoute from "../context/PrivateRoute";
+import Loader from "../components/Loader/Loader";
 
 const router = createBrowserRouter([
     {
         path: '/',
         element:<HomeLayout/>,
+        hydrateFallbackElement: <Loader/>,
         children:[
             {
                 index: true,
