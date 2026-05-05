@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@import "daisyui/daisyui.css";
+
+@theme {
+  --font-bc: Arial, Helvetica, sans-serif;
+  --color-bc-navy: #0028a1;
+  --color-bc-navy-hover: #001f7a;
+  --color-bc-light: #f3f4f6;
+  --color-bc-gray: #6b7280;
+}
+
+body {
+  font-family: var(--font-bc);
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
