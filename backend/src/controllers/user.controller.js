@@ -1,10 +1,10 @@
 import User from "../model/user.js";
 
 export const postUser = async (req, res) => {
-    const { email } = req.body;
+    const { email,name } = req.body;
     
-    if (!email) {
-        return res.status(400).json({success:false, message: "Please provide email" });
+    if (!email || !name) {
+        return res.status(400).json({success:false, message: "Please provide email and name" });
     }
     
     // Check if the user already exists
@@ -15,7 +15,7 @@ export const postUser = async (req, res) => {
         return res.status(400).json({success:false, message: "Email already exists" });
     }
     
-    const user = new User({email});
+    const user = new User({name,email});
     await user.save();
     
     return res.status(201).json({success:true, message: "User created successfully" });

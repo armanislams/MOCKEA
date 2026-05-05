@@ -1,19 +1,31 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
+import useAuth from '../../hooks/useAuth';
+import { useNavigate } from 'react-router';
 
 const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [isLoading, setIsLoading] = useState(false);
+  const {signIn} = useAuth()
+  const navigate = useNavigate()
 
   const onSubmit = (data) => {
     setIsLoading(true);
-    // TODO: Implement actual login logic with Firebase/Backend here
-    console.log("Login Data:", data);
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success('Login clicked (Logic pending)');
-    }, 1000);
+    signIn(data.email, data.password).then(()=>{
+      toast.success('Logged In Successfully')
+      setTimeout(() => {
+        navigate('/')
+        setIsLoading(false)
+      }, 500)
+    })
+    .catch((err)=>{
+      console.log(err)
+      toast.error(err.message)
+      setTimeout(() => {
+        setIsLoading(false)
+      }, 500)
+    })
   };
 
   return (
@@ -54,9 +66,9 @@ const Login = () => {
               <label className="block text-sm font-bold text-gray-700">
                 Password
               </label>
-              <a href="#" className="text-sm font-semibold text-[#0028a1] hover:underline">
+              {/* <a href="#" className="text-sm font-semibold text-[#0028a1] hover:underline">
                 Forgot password?
-              </a>
+              </a> */}
             </div>
             <input 
               type="password" 

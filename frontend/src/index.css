@@ -7,10 +7,8 @@
   --color-bc-navy-hover: #001f7a;
   --color-bc-light: #f3f4f6;
   --color-bc-gray: #6b7280;
-}
-@apply {
-  --primary: #0028a1;
-  --primary-hover: #001f7a;
+  --color-primary: #0028a1;
+  --color-primary-hover: #001f7a;
 }
 body {
   font-family: var(--font-bc);

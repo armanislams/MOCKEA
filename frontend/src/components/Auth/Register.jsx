@@ -1,20 +1,46 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Link, useNavigate } from 'react-router';
+import useAuth from '../../hooks/useAuth';
+import useAxiosSecure from '../../hooks/useAxiosSecure';
+import { toast } from 'react-toastify';
 
 const Register = () => {
+  const {register : registerUser}=useAuth()
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const [isLoading, setIsLoading] = useState(false);
+  const axiosSecure = useAxiosSecure()
+  const navigate = useNavigate()
 
   const password = watch("password");
 
   const onSubmit = (data) => {
+    
     setIsLoading(true);
-    // TODO: Implement actual registration logic with Firebase/Backend here
-    console.log("Registration Data:", data);
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('Registration clicked (Logic pending)');
-    }, 1000);
+
+    registerUser(data.email,data.password).then(()=>{
+      axiosSecure.post('/user/register',data)
+      .then(()=>{
+        toast.success('User Created Succesfully')
+        setTimeout(() => {
+          navigate('/')
+          setIsLoading(false);
+        }, 1000)
+      })
+      .catch(()=>{
+        toast.error('User Creation Failed')
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1000)
+      })
+    })
+    .catch((err)=>{
+      console.log(err);
+      toast.error(err.message)
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000)
+    })
   };
 
   return (
@@ -106,9 +132,9 @@ const Register = () => {
 
         <div className="mt-8 text-center text-sm text-gray-600 font-medium">
           Already have an account?{' '}
-          <a href="/login" className="text-primary font-bold hover:underline">
+          <Link href="/login" className="text-primary font-bold hover:underline">
             Sign in here
-          </a>
+          </Link>
         </div>
         
       </div>

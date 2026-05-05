@@ -1,4 +1,5 @@
 import { NavLink } from "react-router";
+import AuthBtn from "../AuthBtn/AuthBtn";
 
 const Navbar = () => {
   return (
@@ -27,7 +28,7 @@ const Navbar = () => {
         </ul>
       </div>
       <div className="navbar-end">
-        <NavLink to={'/login'} className="btn bg-primary hover:bg-primary-hover text-white border-none px-6 min-h-0 h-10 rounded-md font-bold">Login</NavLink>
+        <AuthBtn/>
       </div>
     </div>
   );
