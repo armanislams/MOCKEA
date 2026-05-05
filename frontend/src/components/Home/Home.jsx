@@ -1,17 +1,14 @@
-import React from 'react';
-import Navbar from '../components/Layout/Navbar';
-// import AudioPlayer from '../components/ListeningTask/AudioPlayer';
-// import TextInputArea from '../components/ListeningTask/TextInputArea';
+import Navbar from './Navbar';
 import { FaRegClock, FaListUl, FaGraduationCap } from 'react-icons/fa';
 
 const Home = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar />
       
-      <main className="flex-grow">
+      
+      <main className="grow">
         {/* Hero Section */}
-        <section className="bg-[#0028a1] text-white py-16 md:py-24">
+        <section className="bg-bc-navy text-white py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
               <h1 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight tracking-tight">
@@ -23,7 +20,7 @@ const Home = () => {
               <div className="flex flex-wrap gap-4">
                 <button 
                   onClick={() => document.getElementById('practice-section').scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-white text-[#0028a1] hover:bg-gray-100 px-8 py-3 rounded-md font-bold text-lg transition-colors shadow-lg"
+                  className="bg-white text-bc-navy hover:bg-gray-100 px-8 py-3 rounded-md font-bold text-lg transition-colors shadow-lg"
                 >
                   Start Practice
                 </button>
@@ -100,38 +97,7 @@ const Home = () => {
       </main>
       
       {/* Footer */}
-      <footer className="bg-[#0028a1] text-white mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 border-b border-blue-800 pb-8">
-            <div>
-              <h4 className="font-bold text-lg mb-4">Listening Module</h4>
-              <p className="text-blue-200 text-sm leading-relaxed">
-                A modern platform to practice and evaluate your listening comprehension skills for academic purposes.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold text-lg mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-blue-200">
-                <li><a href="#" className="hover:text-white transition-colors">Test Format</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Scoring</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Preparation Tips</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-lg mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-blue-200">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="text-center text-sm text-blue-300 flex flex-col md:flex-row justify-between items-center">
-            <p>© {new Date().getFullYear()} Listening Module Task. Not affiliated with the official British Council.</p>
-            <p className="mt-2 md:mt-0">Designed for UI/UX Evaluation</p>
-          </div>
-        </div>
-      </footer>
+      
     </div>
   );
 };
