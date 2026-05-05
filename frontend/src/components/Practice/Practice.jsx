@@ -6,6 +6,7 @@ import useAxiosSecure from '../../hooks/useAxiosSecure';
 
 const Practice = () => {
   const { user } = useAuth();
+  
   const axiosSecure = useAxiosSecure();
 
   // Audio State
@@ -21,6 +22,7 @@ const Practice = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [timeElapsed, setTimeElapsed] = useState(0);
 
   // A placeholder audio file
   const audioUrl = "https://uploads.teachablecdn.com/attachments/onaBYdQGS6WkAARio4XR_Catching+Up+With+Friends+Audio+2.mp3";
@@ -86,6 +88,14 @@ const Practice = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Stopwatch Effect
+  useEffect(() => {
+    const timerInterval = setInterval(() => {
+      setTimeElapsed(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timerInterval);
+  }, []);
+
   // Text Input Effects
   useEffect(() => {
     if (transcription.trim() !== '') {
@@ -112,7 +122,7 @@ const Practice = () => {
       
       toast.success('Practice note saved successfully!');
       setTranscription('');
-      setWordCount(0);
+      // setWordCount(0);
       setLastSaved(null);
       // Optional: stop audio
       audioRef.current.pause();
@@ -130,13 +140,24 @@ const Practice = () => {
     <div className="bg-gray-50 min-h-[calc(100vh-64px)] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         
-        <div className="mb-10 border-l-4 border-primary pl-6">
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
-            Interactive Listening Practice
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Listen to the audio and transcribe the conversation. Your progress is monitored and will be saved to your profile.
-          </p>
+        <div className="mb-10 border-l-4 border-primary pl-6 flex flex-col md:flex-row justify-between items-start gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+              Interactive Listening Practice
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Listen to the audio and transcribe the conversation. Your progress is monitored and will be saved to your profile.
+            </p>
+          </div>
+          <div className="flex flex-col items-end bg-white px-5 py-3 rounded-xl shadow-sm border border-gray-200 min-w-[140px]">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              Time Elapsed
+            </span>
+            <span className="text-2xl font-mono font-extrabold text-primary tracking-tight">
+              {formatTime(timeElapsed)}
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

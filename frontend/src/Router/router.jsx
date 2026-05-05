@@ -4,6 +4,7 @@ import Login from "../components/Auth/Login";
 import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
 import Practice from "../components/Practice/Practice";
+import PrivateRoute from "../context/PrivateRoute";
 
 const router = createBrowserRouter([
     {
@@ -24,7 +25,7 @@ const router = createBrowserRouter([
             },
             {
                 path: '/practice',
-                element: <Practice/>
+                element: <PrivateRoute><Practice/></PrivateRoute>
             }
         ]
     },

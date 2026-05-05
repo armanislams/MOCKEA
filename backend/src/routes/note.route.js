@@ -5,6 +5,7 @@ import verifyUserToken from "../middlewares/verifyUserToken.js";
 const noteRouter = express.Router();
 
 noteRouter.use(verifyUserToken)
+
 noteRouter.get("/",getAllNotes)
 noteRouter.get("/:email",getNotesByUser)
 noteRouter.post("/post",postNote)
