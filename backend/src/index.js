@@ -3,6 +3,7 @@ import "dotenv/config"
 import cors from "cors"
 import userRouter from "./routes/user.route.js";
 import { connectDb } from "./lib/connectDB.js";
+import noteRouter from "./routes/note.route.js";
 const Port = process.env.PORT || 3000;
 
 
@@ -15,6 +16,7 @@ app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/user", userRouter);
+app.use("/api/note", noteRouter);
 
 app.get("/", (req, res) => {
     res.send("Eco Stream Server is running");
