@@ -1,9 +1,10 @@
 import { NavLink } from "react-router"
 import useAuth from "../../hooks/useAuth"
 
-const AuthBtn =()=>{
-    const {user,logOut} = useAuth()
 
+const AuthBtn =()=>{
+    const {user,logOut,loading} = useAuth()
+    if(loading) return <span className="loading loading-spinner text-primary"></span>;
    return(
     user? (
             <label className="flex cursor-pointer gap-2 items-center">

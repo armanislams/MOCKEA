@@ -9,7 +9,6 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { Navigate } from "react-router";
 import { AuthContext } from "./AuthContext";
 import auth from "../../firebase.config";
 
@@ -20,7 +19,7 @@ const googleProvider = new GoogleAuthProvider();
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const register = (email, password) => {
     setLoading(true);
@@ -49,15 +48,13 @@ const AuthProvider = ({ children }) => {
   };
   useEffect(() => {
     const unSubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (!user) {<Navigate to={"/login"} replace/>; }
       setUser(currentUser);
       setLoading(false);
-      // (currentUser);
     });
     return () => {
       unSubscribe();
     };
-  }, [user]);
+  }, []);
   const authInfo = {
     register,
     signIn,
