@@ -44,7 +44,7 @@ const sampleReadingData = {
 
 export const getReading = async (req, res) => {
     try {
-        const { readingId } = req.params;
+        
         //sample data from server
         return res.status(200).json({
             success: true,

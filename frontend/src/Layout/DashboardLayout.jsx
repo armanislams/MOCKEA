@@ -56,7 +56,7 @@ const DashboardLayout = () => {
       <div className="drawer-side z-20">
         <label htmlFor="dashboard-drawer" aria-label="close sidebar" className="drawer-overlay" />
         <aside className="menu min-h-full w-72 bg-base-100 border-r border-base-300 p-4">
-          <h2 className="px-2 pb-4 text-xl font-bold">Dashboard</h2>
+          <h2 className="px-2 pb-4 text-2xl text-center font-bold text-primary">Dashboard</h2>
 
           <ul className="space-y-2 mt-10">
             {navItems.map((item) => (

@@ -4,9 +4,9 @@ import verifyUserToken from "../middlewares/verifyUserToken.js";
 
 const readingRouter = express.Router();
 
-// readingRouter.use(verifyUserToken);
+readingRouter.use(verifyUserToken);
 
-readingRouter.get("/:readingId", getReading);
+readingRouter.get("/    ", getReading);
 readingRouter.post("/submit", submitReadingAnswers);
 readingRouter.get("/history/:email", getUserReadingHistory);
 

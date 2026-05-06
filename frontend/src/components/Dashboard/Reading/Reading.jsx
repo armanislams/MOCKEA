@@ -20,7 +20,7 @@ const Reading = () => {
     const fetchReading = async () => {
       try {
         setLoading(true);
-        const response = await axiosSecure.get('/reading/reading-001');
+        const response = await axiosSecure.get('/reading');
         setReadingData(response.data.data);
         setLoading(false);
       } catch (error) {
@@ -204,7 +204,7 @@ const Reading = () => {
               ) : (
                 /* Results Display */
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center">
+                  <div className="bg-linear-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center">
                     <h3 className="text-lg font-semibold mb-2">Your Score</h3>
                     <p className="text-4xl font-bold mb-2">
                       {result?.score}%
@@ -217,7 +217,7 @@ const Reading = () => {
                   {/* Answer Review */}
                   <div className="space-y-4">
                     <h3 className="font-semibold text-gray-800 mb-4">Answer Review</h3>
-                    {readingData.questions && readingData.questions.map((question, index) => {
+                    {readingData.questions && readingData.questions.map((question) => {
                       const userAnswer = answers[question.id];
                       const evaluation = result?.evaluatedAnswers.find(a => a.questionId === question.id);
                       
