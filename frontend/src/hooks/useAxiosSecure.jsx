@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 import { toast } from 'react-toastify';
 import useAuth from './useAuth';
 const axiosSecure = axios.create({
-  baseURL: import.meta.env.VITE_local_url
-  // baseURL: import.meta.env.VITE_live_url
+  // baseURL: import.meta.env.VITE_local_url
+  baseURL: import.meta.env.VITE_live_url
 });
 
 const useAxiosSecure = () => {

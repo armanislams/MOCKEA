@@ -9,6 +9,7 @@ import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
 import DashboardLayout from "../Layout/DashboardLayout";
 import Practice from "../components/Dashboard/Practice/Practice";
+import Reading from "../components/Dashboard/Reading/Reading";
 
 const router = createBrowserRouter([
     {
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
             {
                 path: 'profile',
                 element: <Profile />
+            },
+            {
+                path: 'reading',
+                element: <Reading/>
             }
         ]
     }
