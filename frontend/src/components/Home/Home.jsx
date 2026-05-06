@@ -1,16 +1,14 @@
-import Navbar from './Navbar';
 import { FaRegClock, FaListUl, FaGraduationCap } from 'react-icons/fa';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Home = () => {
   const heroRef = useRef(null);
   const cardsRef = useRef(null);
-  const navigate = useNavigate()
 
   useEffect(() => {
     // Hero animation (staggered fade up)
@@ -54,7 +52,7 @@ const Home = () => {
                 Experience a realistic IELTS listening environment. Improve your comprehension and typing skills with our interactive module designed to simulate the official test conditions.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link to={'/practice'}
+                <Link to={'/dashboard'}
                   className="bg-white text-bc-navy hover:bg-gray-100 px-8 py-3 rounded-md font-bold text-lg transition-colors shadow-lg"
                 >
                   Start Practice

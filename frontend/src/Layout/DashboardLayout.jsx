@@ -1,8 +1,10 @@
 import { Link, NavLink, Outlet } from 'react-router';
+import AuthBtn from '../components/AuthBtn/AuthBtn';
 
 const navItems = [
   { label: 'Dashboard Home', to: '/dashboard' },
   { label: 'Practice', to: '/dashboard/practice' },
+  { label: 'Reading', to: '/dashboard/reading' },
   { label: 'Profile', to: '/dashboard/profile' },
 ];
 
@@ -42,7 +44,7 @@ const DashboardLayout = () => {
           </div>
 
           <div className="flex-none">
-            <button className="btn btn-primary btn-sm">Logout</button>
+            <AuthBtn/>
           </div>
         </div>
 
@@ -56,13 +58,13 @@ const DashboardLayout = () => {
         <aside className="menu min-h-full w-72 bg-base-100 border-r border-base-300 p-4">
           <h2 className="px-2 pb-4 text-xl font-bold">Dashboard</h2>
 
-          <ul className="space-y-1">
+          <ul className="space-y-2 mt-10">
             {navItems.map((item) => (
               <li key={item.to}>
                 <NavLink
                   to={item.to}
                   end={item.to === '/dashboard'}
-                  className={({ isActive }) => (isActive ? 'active' : '')}
+                  className={'hover:bg-primary text-white bg-secondary'}
                 >
                   {item.label}
                 </NavLink>

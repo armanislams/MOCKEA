@@ -4,6 +4,7 @@ import cors from "cors"
 import userRouter from "./routes/user.route.js";
 import { connectDb } from "./lib/connectDB.js";
 import noteRouter from "./routes/note.route.js";
+import readingRouter from "./routes/reading.route.js";
 const Port = process.env.PORT || 3000;
 
 
@@ -17,6 +18,7 @@ app.use(express.json());
 
 app.use("/api/user", userRouter);
 app.use("/api/note", noteRouter);
+app.use("/api/reading", readingRouter);
 
 app.get("/", (req, res) => {
     res.send("Eco Stream Server is running");

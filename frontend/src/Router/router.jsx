@@ -3,12 +3,12 @@ import Home from "../components/Home/Home";
 import Login from "../components/Auth/Login";
 import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
-import Practice from "../components/Practice/Practice";
-import Dashboard from "../components/Dashboard/Dashboard";
+import Dashboard from "../components/Dashboard/Home/Dashboard";
 import Profile from "../components/Dashboard/Profile";
 import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
 import DashboardLayout from "../Layout/DashboardLayout";
+import Practice from "../components/Dashboard/Practice/Practice";
 
 const router = createBrowserRouter([
     {
