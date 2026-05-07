@@ -10,6 +10,7 @@ import Loader from "../components/Loader/Loader";
 import DashboardLayout from "../Layout/DashboardLayout";
 import Practice from "../components/Dashboard/Practice/Practice";
 import Reading from "../components/Dashboard/Reading/Reading";
+import Listening from "../components/Dashboard/Listening/Listening";
 
 const router = createBrowserRouter([
     {
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
             {
                 path: 'reading',
                 element: <Reading/>
+            },
+            {
+                path: 'listening',
+                element: <Listening />
             }
         ]
     }

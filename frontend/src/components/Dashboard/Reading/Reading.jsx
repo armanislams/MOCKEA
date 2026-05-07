@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import useAxiosSecure from '../../../hooks/useAxiosSecure.jsx';
 import useAuth from '../../../hooks/useAuth.jsx';
 import { toast } from 'react-toastify';
@@ -8,20 +8,40 @@ const Reading = () => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
   
-  const [readingData, setReadingData] = useState(null);
+  const [readingSets, setReadingSets] = useState([]);
+  const [selectedReadingId, setSelectedReadingId] = useState('');
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const getQuestionRange = (title = '') => {
+    const rangeMatch = title.match(/questions?\s*(\d+)\s*-\s*(\d+)/i);
+    if (rangeMatch) {
+      const start = Number(rangeMatch[1]);
+      const end = Number(rangeMatch[2]);
+      return Number.isNaN(start) || Number.isNaN(end) ? null : { start, end };
+    }
+
+    const singleMatch = title.match(/questions?\s*(\d+)/i);
+    if (singleMatch) {
+      const point = Number(singleMatch[1]);
+      return Number.isNaN(point) ? null : { start: point, end: point };
+    }
+
+    return null;
+  };
 
   // Fetch reading data
   useEffect(() => {
     const fetchReading = async () => {
       try {
         setLoading(true);
-        const response = await axiosSecure.get('/reading');
-        setReadingData(response.data.data);
+        const response = await axiosSecure.get('/questions');
+        const fetchedSets = response?.data?.questions || [];
+        const fetchedSet = fetchedSets[0] || null;
+        setReadingSets(fetchedSets);
+        setSelectedReadingId(fetchedSet?.readingId || '');
         setLoading(false);
       } catch (error) {
         toast.error('Failed to load reading');
@@ -34,7 +54,12 @@ const Reading = () => {
     if (user?.email) {
       fetchReading();
     }
-  }, [user]);
+  }, [axiosSecure, user?.email]);
+
+  const readingData = useMemo(
+    () => readingSets.find((set) => set.readingId === selectedReadingId) || null,
+    [readingSets, selectedReadingId]
+  );
 
   // Handle answer change
   const handleAnswerChange = (questionId, value) => {
@@ -93,6 +118,24 @@ const Reading = () => {
     );
   }
 
+  const questions = readingData?.questions || [];
+  const instructions = readingData?.sections || [];
+  const sectionQuestionGroups = instructions.map((section) => {
+    const range = getQuestionRange(section.title);
+    const sectionQuestions = range
+      ? questions.slice(Math.max(range.start - 1, 0), range.end)
+      : [];
+
+    return {
+      ...section,
+      sectionQuestions
+    };
+  });
+  const hasSectionMapping = sectionQuestionGroups.some((group) => group.sectionQuestions.length > 0);
+  const renderedQuestionGroups = hasSectionMapping
+    ? sectionQuestionGroups
+    : [{ title: 'Questions', content: '', sectionQuestions: questions }];
+
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -104,6 +147,29 @@ const Reading = () => {
           <p className="text-gray-600">
             Read the passage carefully and answer all questions
           </p>
+          {readingSets.length > 1 && (
+            <div className="mt-4 max-w-sm">
+              <label className="label px-0">
+                <span className="label-text font-medium text-gray-700">Select Reading Set</span>
+              </label>
+              <select
+                className="select select-bordered w-full"
+                value={selectedReadingId}
+                onChange={(e) => {
+                  setSelectedReadingId(e.target.value);
+                  setAnswers({});
+                  setSubmitted(false);
+                  setResult(null);
+                }}
+              >
+                {readingSets.map((set) => (
+                  <option key={set.readingId} value={set.readingId}>
+                    {set.readingId}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Main Content Grid */}
@@ -112,19 +178,12 @@ const Reading = () => {
           <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
               <div className="prose prose-sm max-w-none">
-                {/* Passage Sections */}
-                <div className="space-y-6">
-                  {readingData.sections && readingData.sections.map((section, index) => (
-                    <div key={index} className="border-l-4 border-blue-500 pl-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                        {section.title}
-                      </h3>
-                      <p className="text-gray-700 leading-relaxed text-justify">
-                        {section.content}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
+                  {readingData?.passageTitle || 'Reading Passage'}
+                </h2>
+                <p className="text-gray-700 leading-relaxed text-justify whitespace-pre-line">
+                  {readingData?.passage || 'No passage text available.'}
+                </p>
               </div>
 
               {/* Scrollable Container Info */}
@@ -141,47 +200,60 @@ const Reading = () => {
 
               {!submitted ? (
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Questions */}
-                  {readingData.questions && readingData.questions.map((question, index) => (
-                    <div key={question.id} className="border-b border-gray-200 pb-6 last:border-b-0">
-                      <div className="mb-3">
-                        <label className="text-sm font-semibold text-blue-600 block mb-2">
-                          Question {index + 1}
-                        </label>
-                        <p className="text-gray-800 font-medium mb-4">
-                          {question.question}
+                  {renderedQuestionGroups.map((group, groupIndex) => (
+                    <div key={group._id || group.title || groupIndex} className="space-y-4">
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-md">
+                        <h3 className="text-base font-semibold text-blue-800 mb-1">
+                          {group.title || `Instructions ${groupIndex + 1}`}
+                        </h3>
+                        <p className="text-sm text-blue-700">
+                          {group.content || 'Answer the following questions.'}
                         </p>
                       </div>
 
-                      {/* MCQ Options */}
-                      {question.type === 'mcq' ? (
-                        <div className="space-y-3">
-                          {question.options && question.options.map((option, optIndex) => (
-                            <label key={optIndex} className="flex items-center cursor-pointer group">
+                      {group.sectionQuestions.map((question) => {
+                        const questionIndex = questions.findIndex((q) => q.id === question.id);
+                        return (
+                          <div key={question.id} className="border-b border-gray-200 pb-6 last:border-b-0">
+                            <div className="mb-3">
+                              <label className="text-sm font-semibold text-blue-600 block mb-2">
+                                Question {questionIndex + 1}
+                              </label>
+                              <p className="text-gray-800 font-medium mb-4">
+                                {question.question}
+                              </p>
+                            </div>
+
+                            {['multiple-choice', 'true-false'].includes(question.type) ? (
+                              <div className="space-y-3">
+                                {question.options && question.options.map((option, optIndex) => (
+                                  <label key={optIndex} className="flex items-center cursor-pointer group">
+                                    <input
+                                      type="radio"
+                                      name={question.id}
+                                      value={option}
+                                      checked={answers[question.id] === option}
+                                      onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                      className="radio radio-sm radio-primary mr-3"
+                                    />
+                                    <span className="text-gray-700 text-sm group-hover:text-blue-600 transition">
+                                      {option}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            ) : (
                               <input
-                                type="radio"
-                                name={question.id}
-                                value={option}
-                                checked={answers[question.id] === option}
+                                type="text"
+                                placeholder="Type your answer..."
+                                value={answers[question.id] || ''}
                                 onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                                className="radio radio-sm radio-primary mr-3"
+                                className="input input-bordered input-sm w-full focus:input-primary"
                               />
-                              <span className="text-gray-700 text-sm group-hover:text-blue-600 transition">
-                                {option}
-                              </span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        /* Short Answer Input */
-                        <input
-                          type="text"
-                          placeholder="Type your answer..."
-                          value={answers[question.id] || ''}
-                          onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                          className="input input-bordered input-sm w-full focus:input-primary"
-                        />
-                      )}
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ))}
 

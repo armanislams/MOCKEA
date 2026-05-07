@@ -5,6 +5,7 @@ const navItems = [
   { label: 'Dashboard Home', to: '/dashboard' },
   { label: 'Practice', to: '/dashboard/practice' },
   { label: 'Reading', to: '/dashboard/reading' },
+  { label: 'Listening', to: '/dashboard/listening' },
   { label: 'Profile', to: '/dashboard/profile' },
 ];
 
