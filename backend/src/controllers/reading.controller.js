@@ -1,4 +1,5 @@
 import Reading from "../model/reading.js";
+import Questions from "../model/questions.js";
 
 // Sample IELTS-like passage and questions
 const sampleReadingData = {
@@ -64,17 +65,39 @@ export const submitReadingAnswers = async (req, res) => {
     try {
         const { email, readingId, answers } = req.body;
         
-        if (!email || !readingId || !answers) {
+        if (!email || !readingId || !Array.isArray(answers)) {
             return res.status(400).json({
                 success: false,
                 message: "Please provide email, readingId, and answers"
             });
         }
 
+        if (req.decoded_email && req.decoded_email !== email) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden: email does not match token"
+            });
+        }
+
+        const readingSet = await Questions.findOne({ readingId });
+        if (!readingSet) {
+            return res.status(404).json({
+                success: false,
+                message: "Reading set not found"
+            });
+        }
+
+        if (answers.length !== readingSet.questions.length) {
+            return res.status(400).json({
+                success: false,
+                message: "Please answer all questions before submitting"
+            });
+        }
+
         let correctCount = 0;
 
         const evaluatedAnswers = answers.map(answer => {
-            const question = sampleReadingData.questions.find(q => q.id === answer.questionId);
+            const question = readingSet.questions.find(q => q.id === answer.questionId);
             
             if (!question) {
                 return { ...answer, isCorrect: false };
@@ -82,7 +105,7 @@ export const submitReadingAnswers = async (req, res) => {
 
             const normalizedAnswer = String(answer.userAnswer || '').trim().toLowerCase();
             const normalizedCorrect = String(question.correctAnswer || '').trim().toLowerCase();
-            const isCorrect = normalizedCorrect && normalizedAnswer.includes(normalizedCorrect.split(' ')[0]);
+            const isCorrect = normalizedAnswer === normalizedCorrect;
 
             if (isCorrect) correctCount += 1;
 
@@ -98,9 +121,9 @@ export const submitReadingAnswers = async (req, res) => {
         const readingRecord = new Reading({
             email,
             readingId,
-            passage: sampleReadingData.passage,
-            sections: sampleReadingData.sections,
-            questions: sampleReadingData.questions,
+            passage: readingSet.passage,
+            sections: readingSet.sections,
+            questions: readingSet.questions,
             answers: evaluatedAnswers,
             totalQuestions: answers.length,
             score,

@@ -21,7 +21,7 @@ const readingSchema = new mongoose.Schema({
         id: String,
         type: {
             type: String,
-            enum: ['short-answer']
+            enum: ['short-answer', 'multiple-choice', 'true-false']
         },
         question: String,
         options: [String],
@@ -30,6 +30,8 @@ const readingSchema = new mongoose.Schema({
     answers: [{
         questionId: String,
         userAnswer: String,
+        isCorrect: Boolean,
+        correctAnswer: String
     }],
     score: Number,
     totalQuestions: Number,

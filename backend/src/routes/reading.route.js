@@ -6,7 +6,7 @@ const readingRouter = express.Router();
 
 readingRouter.use(verifyUserToken);
 
-readingRouter.get("/    ", getReading);
+readingRouter.get("/", getReading);
 readingRouter.post("/submit", submitReadingAnswers);
 readingRouter.get("/history/:email", getUserReadingHistory);
 
