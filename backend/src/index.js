@@ -6,6 +6,7 @@ import { connectDb } from "./lib/connectDB.js";
 import noteRouter from "./routes/note.route.js";
 import readingRouter from "./routes/reading.route.js";
 import qRouter from "./routes/questions.route.js";
+import errorHandler from "./middlewares/errorHandler.js";
 const Port = process.env.PORT || 3000;
 
 
@@ -26,7 +27,8 @@ app.get("/", (req, res) => {
     res.send("Eco Stream Server is running");
 })
 
-
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 const startServer = async ()=>{
     try {
