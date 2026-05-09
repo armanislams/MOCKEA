@@ -2,11 +2,11 @@ import { Link, NavLink, Outlet } from 'react-router';
 import AuthBtn from '../components/AuthBtn/AuthBtn';
 
 const navItems = [
-  { label: 'Dashboard Home', to: '/dashboard' },
-  { label: 'Practice', to: '/dashboard/practice' },
-  { label: 'Reading', to: '/dashboard/reading' },
-  { label: 'Listening', to: '/dashboard/listening' },
-  { label: 'Profile', to: '/dashboard/profile' },
+  { label: 'Dashboard', to: '/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M13 5v6h6' },
+  { label: 'Take a Test', to: '/dashboard/practice', icon: 'M9 12l2 2 4-4' },
+  { label: 'Review', to: '/dashboard/review', icon: 'M4 6h16M4 12h8m-8 6h16' },
+  { label: 'Analytics', to: '/dashboard/analytics', icon: 'M3 3v18h18' },
+  { label: 'Profile', to: '/dashboard/profile', icon: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.31 0-6 2.69-6 6h12c0-3.31-2.69-6-6-6z' },
 ];
 
 const DashboardLayout = () => {
@@ -45,7 +45,7 @@ const DashboardLayout = () => {
           </div>
 
           <div className="flex-none">
-            <AuthBtn/>
+            <AuthBtn />
           </div>
         </div>
 
@@ -56,22 +56,38 @@ const DashboardLayout = () => {
 
       <div className="drawer-side z-20">
         <label htmlFor="dashboard-drawer" aria-label="close sidebar" className="drawer-overlay" />
-        <aside className="menu min-h-full w-72 bg-base-100 border-r border-base-300 p-4">
-          <h2 className="px-2 pb-4 text-2xl text-center font-bold text-primary">Dashboard</h2>
+        <aside className="flex h-full w-72 flex-col bg-base-100 border-r border-base-300 p-4">
+          <div className="rounded-3xl bg-primary/10 p-4 text-center shadow-sm">
+            <div className="text-xl font-bold text-primary">EcoStream</div>
+            <p className="text-sm text-base-content/70">IELTS mock test dashboard</p>
+          </div>
 
-          <ul className="space-y-2 mt-10">
+          <ul className="menu mt-8 space-y-2 flex-1">
             {navItems.map((item) => (
               <li key={item.to}>
                 <NavLink
                   to={item.to}
                   end={item.to === '/dashboard'}
-                  className={'hover:bg-primary text-white bg-secondary'}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
+                      isActive ? 'bg-primary text-white' : 'text-base-content hover:bg-base-200'
+                    }`
+                  }
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5 shrink-0 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={item.icon} />
+                  </svg>
                   {item.label}
                 </NavLink>
               </li>
             ))}
           </ul>
+
+          <div className="mt-auto rounded-3xl border border-base-300 bg-base-200 p-4">
+            <p className="text-sm uppercase tracking-[0.2em] text-base-content/60">Free Plan</p>
+            <p className="mt-2 text-3xl font-semibold">1/1 mock tests used</p>
+            <button className="btn btn-primary btn-block mt-4">Upgrade to Premium</button>
+          </div>
         </aside>
       </div>
     </div>

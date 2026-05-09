@@ -5,12 +5,16 @@ import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
 import Dashboard from "../components/Dashboard/Home/Dashboard";
 import Profile from "../components/Dashboard/Profile";
+import Review from "../components/Dashboard/Review/Review";
+import Analytics from "../components/Dashboard/Analytics/Analytics";
 import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
 import DashboardLayout from "../Layout/DashboardLayout";
 import Practice from "../components/Dashboard/Practice/Practice";
 import Reading from "../components/Dashboard/Reading/Reading";
 import Listening from "../components/Dashboard/Listening/Listening";
+import Writing from "../components/Dashboard/Writing/Writing";
+import Speaking from "../components/Dashboard/Speaking/Speaking";
 
 const router = createBrowserRouter([
     {
@@ -49,16 +53,32 @@ const router = createBrowserRouter([
                 element: <Practice />
             },
             {
+                path: 'review',
+                element: <Review />
+            },
+            {
+                path: 'analytics',
+                element: <Analytics />
+            },
+            {
                 path: 'profile',
                 element: <Profile />
             },
             {
                 path: 'reading',
-                element: <Reading/>
+                element: <Reading />
             },
             {
                 path: 'listening',
                 element: <Listening />
+            },
+            {
+                path: 'writing',
+                element: <Writing />
+            },
+            {
+                path: 'speaking',
+                element: <Speaking />
             }
         ]
     }
