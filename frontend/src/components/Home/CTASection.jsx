@@ -30,7 +30,7 @@ const ctaItems = [
 
 const CTASection = () => {
   return (
-    <section className="py-16 bg-[#f7fbff] border-b border-gray-200">
+    <section className="py-16 bg-bc-light border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-900">
@@ -51,7 +51,7 @@ const CTASection = () => {
               <Link
                 key={item.title}
                 to={item.to}
-                className="group block rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                className="group block rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm transition duration-200 ease-out transform hover:-translate-y-1 hover:shadow-xl"
               >
                 <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-900 text-white transition group-hover:bg-blue-800">
                   <Icon size={28} />

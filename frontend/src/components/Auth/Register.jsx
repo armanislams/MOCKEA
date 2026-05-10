@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import useAuth from '../../hooks/useAuth';
 import useAxiosSecure from '../../hooks/useAxiosSecure';
 import { toast } from 'react-toastify';
@@ -15,6 +15,8 @@ const Register = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
+   const location = useLocation();
+   const from = location.state?.from?.pathname || "/";
 
   const password = watch('password');
 
@@ -33,7 +35,7 @@ const Register = () => {
           .then(() => {
             toast.success('User Created Successfully');
             setTimeout(() => {
-              navigate('/');
+             navigate(from, { replace: true });
               setIsLoading(false);
             }, 1000);
           })
@@ -205,7 +207,7 @@ const Register = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition duration-200 ease-out transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isLoading ? (
             <>

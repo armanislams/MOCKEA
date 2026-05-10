@@ -257,7 +257,7 @@ const Listening = () => {
   );
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40">
+    <div className="min-h-[calc(100vh-64px)] bg-bc-light">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
 
         {/* ── Header ── */}

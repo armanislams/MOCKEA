@@ -4,7 +4,7 @@ const AuthLayout = ({ children, title, subtitle, features }) => {
   return (
     <div className="min-h-screen flex">
       {/* Left side - Hero Section (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 text-white p-12 flex-flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-bc-navy text-white p-12 flex-col justify-between">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

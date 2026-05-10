@@ -54,11 +54,11 @@ const Home = () => {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to={'/dashboard'}
-                  className="bg-white text-bc-navy hover:bg-gray-100 px-8 py-3 rounded-md font-bold text-lg transition-colors shadow-lg"
+                  className="bg-white text-bc-navy hover:bg-gray-100 px-8 py-3 rounded-md font-bold text-lg transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-xl shadow-lg"
                 >
                   Start Practice
                 </Link>
-                <button className="border-2 border-white text-white hover:bg-white hover:text-[#0028a1] px-8 py-3 rounded-md font-bold text-lg transition-colors">
+                <button className="border-2 border-white text-white hover:bg-white hover:text-[#0028a1] px-8 py-3 rounded-md font-bold text-lg transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-lg">
                   View Test Format
                 </button>
               </div>
