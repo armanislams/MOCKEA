@@ -2,7 +2,7 @@
 @import "daisyui/daisyui.css";
 
 @theme {
-  --font-bc: Arial, Helvetica, sans-serif;
+  --font-bc: Verdana, Arial, Helvetica, sans-serif;
   --color-bc-navy: #002147;
   --color-bc-navy-hover: #001f7a;
   --color-bc-light: #f3f4f6;

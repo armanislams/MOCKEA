@@ -18,9 +18,9 @@ const AuthBtn =()=>{
      <div className="flex gap-5">
        <NavLink
          to={"/login"}
-         className="btn bg-primary hover:bg-primary-hover text-white border-none px-6 min-h-0 h-10 rounded-md font-bold transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-md"
+         className="btn hover:bg-primary-hover border-bc-navy border-2 px-6 min-h-0 h-10 rounded-md font-bold transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-md"
        >
-         Login
+         Log in
        </NavLink>
        <NavLink
          to={"/register"}
