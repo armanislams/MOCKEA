@@ -14,7 +14,7 @@ const AuthLayout = ({ children, title, subtitle, features }) => {
             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-xl font-bold">
               ES
             </div>
-            <span className="text-2xl font-bold">EcoStream</span>
+            <span className="text-2xl font-bold">MOCKEA</span>
           </div>
 
           <h1 className="text-5xl font-extrabold mb-6 leading-tight">
@@ -55,7 +55,7 @@ const AuthLayout = ({ children, title, subtitle, features }) => {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-sm text-blue-200"
         >
-          © 2026 EcoStream. All rights reserved.
+          © 2026 MOCKEA. All rights reserved.
         </motion.div>
       </div>
 

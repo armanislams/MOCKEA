@@ -16,7 +16,7 @@ const DashboardLayout = () => {
 
       <div className="drawer-content flex flex-col">
         
-        //navbar
+        {/* navbar */}
         <div className="navbar bg-base-100 border-b border-base-300 px-4 lg:px-6">
           <div className="flex-none lg:hidden">
             <label
@@ -42,7 +42,7 @@ const DashboardLayout = () => {
 
           <div className="flex-1">
             <Link to="/" className="text-lg font-semibold">
-              EcoStream
+              MOCKEA
             </Link>
           </div>
 
@@ -51,19 +51,19 @@ const DashboardLayout = () => {
           </div>
         </div>
 
-        //outlet
+        {/* outlet */}
         <main className="p-4 lg:p-6">
           <Outlet />
         </main>
       </div>
 
-      //sidebar
+      {/* sidebar */}
 
       <div className="drawer-side z-20">
         <label htmlFor="dashboard-drawer" aria-label="close sidebar" className="drawer-overlay" />
         <aside className="flex h-full w-72 flex-col bg-base-100 border-r border-base-300 p-4">
           <div className="rounded-3xl bg-primary/10 p-4 text-center shadow-sm">
-            <div className="text-xl font-bold text-primary">EcoStream</div>
+            <div className="text-xl font-bold text-primary">MOCKEA</div>
             <p className="text-sm text-base-content/70">IELTS mock test dashboard</p>
           </div>
 

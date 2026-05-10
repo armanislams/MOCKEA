@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import useAuth from '../../hooks/useAuth';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import AuthLayout from './AuthLayout';
 import SocialLoginButton from './SocialLoginButton';
 
@@ -11,6 +11,8 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/';
 
   const onSubmit = (data) => {
     setIsLoading(true);
@@ -18,7 +20,7 @@ const Login = () => {
       .then(() => {
         toast.success('Logged In Successfully');
         setTimeout(() => {
-          navigate('/');
+          navigate(from, { replace: true });
           setIsLoading(false);
         }, 500);
       })

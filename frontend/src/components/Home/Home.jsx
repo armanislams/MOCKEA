@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Link } from 'react-router';
+import CTASection from './CTASection';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,7 +47,7 @@ const Home = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl" ref={heroRef}>
               <h1 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight tracking-tight">
-                IELTS Academic Listening Practice Evaluation
+              YOUR REAL IELTS EXPERIENCE STARTS HERE
               </h1>
               <p className="text-xl text-blue-100 mb-8 leading-relaxed">
                 Experience a realistic IELTS listening environment. Improve your comprehension and typing skills with our interactive module designed to simulate the official test conditions.
@@ -64,6 +65,8 @@ const Home = () => {
             </div>
           </div>
         </section>
+
+        <CTASection />
 
         {/* Info Section */}
         <section className="py-16 bg-gray-50 border-b border-gray-200">
