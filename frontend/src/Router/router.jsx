@@ -11,6 +11,7 @@ import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
 import DashboardLayout from "../Layout/DashboardLayout";
 import Practice from "../components/Dashboard/Practice/Practice";
+import TakeTest from "../components/Dashboard/TakeTest/TakeTest";
 import Reading from "../components/Dashboard/Reading/Reading";
 import Listening from "../components/Dashboard/Listening/Listening";
 import Writing from "../components/Dashboard/Writing/Writing";
@@ -50,12 +51,13 @@ const router = createBrowserRouter([
             },
             {
                 path: 'practice',
-                element: <Practice />
+                element: <TakeTest />
             },
             {
                 path: 'review',
                 element: <Review />
             },
+
             {
                 path: 'analytics',
                 element: <Analytics />

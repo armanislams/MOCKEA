@@ -15,6 +15,8 @@ const DashboardLayout = () => {
       <input id="dashboard-drawer" type="checkbox" className="drawer-toggle" />
 
       <div className="drawer-content flex flex-col">
+        
+        //navbar
         <div className="navbar bg-base-100 border-b border-base-300 px-4 lg:px-6">
           <div className="flex-none lg:hidden">
             <label
@@ -49,10 +51,13 @@ const DashboardLayout = () => {
           </div>
         </div>
 
+        //outlet
         <main className="p-4 lg:p-6">
           <Outlet />
         </main>
       </div>
+
+      //sidebar
 
       <div className="drawer-side z-20">
         <label htmlFor="dashboard-drawer" aria-label="close sidebar" className="drawer-overlay" />
@@ -83,11 +88,6 @@ const DashboardLayout = () => {
             ))}
           </ul>
 
-          <div className="mt-auto rounded-3xl border border-base-300 bg-base-200 p-4">
-            <p className="text-sm uppercase tracking-[0.2em] text-base-content/60">Free Plan</p>
-            <p className="mt-2 text-3xl font-semibold">1/1 mock tests used</p>
-            <button className="btn btn-primary btn-block mt-4">Upgrade to Premium</button>
-          </div>
         </aside>
       </div>
     </div>
