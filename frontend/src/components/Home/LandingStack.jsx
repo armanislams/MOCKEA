@@ -93,23 +93,26 @@ export const LandingStack = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/login"
-                  className="inline-flex items-center justify-center rounded-full hover:bg-primary-hover border-bc-navy border-2px-8 py-3 shadow-lg transition "
+                  className="inline-flex items-center justify-center rounded-full border-2 font-bold border-bc-navy px-8 py-3 shadow-sm transition hover:bg-[#e2e8f0] "
                 >
                   Log in
                 </Link>
                 <Link
                   to="/register"
-                  className="inline-flex items-center justify-center rounded-full border border-primary bg-white px-8 py-3 text-primary shadow-sm transition hover:bg-[#e2e8f0]"
+                  className="inline-flex items-center justify-center rounded-full border border-primary bg-cta-btn px-8 py-3 text-white font-bold shadow-sm transition hover:bg-[#e2e8f0]"
                 >
                   Register
                 </Link>
               </div>
             </div>
           </div>
-{/* how it works */}
-                <HowItWorks/>
-{/* card section */}
-          <div ref={featureCardsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* how it works */}
+          <HowItWorks />
+          {/* card section */}
+          <div
+            ref={featureCardsRef}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
             <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-200">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[#0028a1] mb-5">
                 <FaChartLine size={24} />
@@ -160,9 +163,9 @@ export const LandingStack = () => {
                 exam skills.
               </p>
             </div>
-                </div>
-                
-{/* testimonials */}
+          </div>
+
+          {/* testimonials */}
           <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-200">
             <div className="text-center mb-10">
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-900">
@@ -172,7 +175,10 @@ export const LandingStack = () => {
                 Success stories from our learners
               </h2>
             </div>
-            <div ref={testimonialsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+              ref={testimonialsRef}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            >
               <div className="rounded-3xl bg-blue-50 p-6">
                 <p className="text-gray-900 font-semibold mb-3">
                   From 5.5 to 7.5 in 2 weeks
@@ -201,9 +207,9 @@ export const LandingStack = () => {
                 </p>
               </div>
             </div>
-                </div>
-                
-{/* free resources */}
+          </div>
+
+          {/* free resources */}
           <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-200">
             <div className="text-center mb-10">
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-900">
@@ -213,7 +219,10 @@ export const LandingStack = () => {
                 Quick resources to boost your practice
               </h2>
             </div>
-            <div ref={resourcesRef} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+              ref={resourcesRef}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            >
               <div className="rounded-3xl border border-gray-200 p-6">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[#0028a1] mb-4">
                   <FaBook size={20} />
@@ -250,9 +259,9 @@ export const LandingStack = () => {
                 </p>
               </div>
             </div>
-                </div>
-                
-{/* pricing */}
+          </div>
+
+          {/* pricing */}
           <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-200">
             <div className="text-center mb-10">
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-900">
