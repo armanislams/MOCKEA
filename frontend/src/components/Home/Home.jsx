@@ -1,39 +1,36 @@
-import { FaRegClock, FaListUl, FaGraduationCap, FaCommentDots, FaChartLine, FaRegLightbulb, FaMedal, FaBook, FaCheckCircle, FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Link } from 'react-router';
 import CTASection from './CTASection';
 import { LandingStack } from './LandingStack';
 import { Hero } from './Hero';
-import { HowItWorks } from './HowItWorks';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Home = () => {
   
-  // const cardsRef = useRef(null);
+  const cardsRef = useRef(null);
 
-  // useEffect(() => {
+  useEffect(() => {
     
 
-  //   // Cards animation (scroll triggered staggered fade up)
-  //   gsap.fromTo(
-  //     cardsRef.current.children,
-  //     { opacity: 0, y: 50 },
-  //     {
-  //       opacity: 1,
-  //       y: 0,
-  //       duration: 0.6,
-  //       stagger: 0.2,
-  //       ease: 'power3.out',
-  //       scrollTrigger: {
-  //         trigger: cardsRef.current,
-  //         start: 'top 85%',
-  //       },
-  //     }
-  //   );
-  // }, []);
+    // Cards animation (scroll triggered staggered fade up)
+    gsap.fromTo(
+      cardsRef.current.children,
+      { opacity: 0, y: 50 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        stagger: 0.2,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: cardsRef.current,
+          start: 'top 85%',
+        },
+      }
+    );
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -41,7 +38,7 @@ const Home = () => {
         {/* Hero Section */}
         <Hero />
 
-        <CTASection />
+        <CTASection ref={cardsRef} />
 
         {/* New Landing Stack */}
         <LandingStack />

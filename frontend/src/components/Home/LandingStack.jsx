@@ -1,8 +1,75 @@
 import { FaBook, FaChartLine, FaCheckCircle, FaCommentDots, FaMedal, FaRegLightbulb } from "react-icons/fa";
 import { Link } from "react-router";
 import { HowItWorks } from "./HowItWorks";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export const LandingStack = () => {
+    const featureCardsRef = useRef(null);
+    const testimonialsRef = useRef(null);
+    const resourcesRef = useRef(null);
+
+    useEffect(() => {
+        // Feature cards animation
+        if (featureCardsRef.current) {
+            gsap.fromTo(
+                featureCardsRef.current.children,
+                { opacity: 0, y: 50 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    stagger: 0.2,
+                    ease: 'power3.out',
+                    scrollTrigger: {
+                        trigger: featureCardsRef.current,
+                        start: 'top 85%',
+                    },
+                }
+            );
+        }
+
+        // Testimonials animation
+        if (testimonialsRef.current) {
+            gsap.fromTo(
+                testimonialsRef.current.children,
+                { opacity: 0, y: 50 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    stagger: 0.2,
+                    ease: 'power3.out',
+                    scrollTrigger: {
+                        trigger: testimonialsRef.current,
+                        start: 'top 85%',
+                    },
+                }
+            );
+        }
+
+        // Resources animation
+        if (resourcesRef.current) {
+            gsap.fromTo(
+                resourcesRef.current.children,
+                { opacity: 0, y: 50 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    stagger: 0.2,
+                    ease: 'power3.out',
+                    scrollTrigger: {
+                        trigger: resourcesRef.current,
+                        start: 'top 85%',
+                    },
+                }
+            );
+        }
+    }, []);
     return (
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
@@ -26,13 +93,13 @@ export const LandingStack = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/login"
-                  className="inline-flex items-center justify-center rounded-full hover:bg-primary-hover border-bc-navy border-2px-8 py-3 shadow-lg transition hover:bg-[#001f7a]"
+                  className="inline-flex items-center justify-center rounded-full hover:bg-primary-hover border-bc-navy border-2px-8 py-3 shadow-lg transition "
                 >
                   Log in
                 </Link>
                 <Link
                   to="/register"
-                  className="inline-flex items-center justify-center rounded-full border border-[#0028a1] bg-white px-8 py-3 text-[#0028a1] shadow-sm transition hover:bg-[#e2e8f0]"
+                  className="inline-flex items-center justify-center rounded-full border border-primary bg-white px-8 py-3 text-primary shadow-sm transition hover:bg-[#e2e8f0]"
                 >
                   Register
                 </Link>
@@ -42,7 +109,7 @@ export const LandingStack = () => {
 {/* how it works */}
                 <HowItWorks/>
 {/* card section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div ref={featureCardsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-200">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[#0028a1] mb-5">
                 <FaChartLine size={24} />
@@ -105,7 +172,7 @@ export const LandingStack = () => {
                 Success stories from our learners
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div ref={testimonialsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="rounded-3xl bg-blue-50 p-6">
                 <p className="text-gray-900 font-semibold mb-3">
                   From 5.5 to 7.5 in 2 weeks
@@ -146,7 +213,7 @@ export const LandingStack = () => {
                 Quick resources to boost your practice
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div ref={resourcesRef} className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="rounded-3xl border border-gray-200 p-6">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[#0028a1] mb-4">
                   <FaBook size={20} />

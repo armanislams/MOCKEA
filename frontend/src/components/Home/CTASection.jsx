@@ -1,5 +1,6 @@
 import { FaBookOpen, FaPencilAlt, FaHeadphones, FaMicrophone } from 'react-icons/fa';
 import { Link } from 'react-router';
+import { forwardRef } from 'react';
 
 const ctaItems = [
   {
@@ -28,7 +29,7 @@ const ctaItems = [
   },
 ];
 
-const CTASection = () => {
+const CTASection = forwardRef((props, ref)   => {
   return (
     <section className="py-16 bg-bc-light border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,7 +45,7 @@ const CTASection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {ctaItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -65,6 +66,6 @@ const CTASection = () => {
       </div>
     </section>
   );
-};
+});
 
 export default CTASection;

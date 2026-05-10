@@ -13,7 +13,7 @@ export const HowItWorks = () => {
         <div className="flex flex-col gap-6 md:gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1 rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm">
             <div className="flex items-center gap-4 mb-5">
-              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#0028a1] text-white text-lg font-bold">
+              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary text-white text-lg font-bold">
                 1
               </div>
               <div>
@@ -42,7 +42,7 @@ export const HowItWorks = () => {
 
           <div className="flex-1 rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm">
             <div className="flex items-center gap-4 mb-5">
-              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#0028a1] text-white text-lg font-bold">
+              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary text-white text-lg font-bold">
                 2
               </div>
               <div>
@@ -51,10 +51,10 @@ export const HowItWorks = () => {
               </div>
             </div>
             <div className="grid gap-3 rounded-3xl bg-white p-4 text-center text-sm text-gray-500 border border-dashed border-gray-200">
-              <div className="rounded-2xl bg-slate-100 p-3">Reading</div>
-              <div className="rounded-2xl bg-slate-100 p-3">Listening</div>
-              <div className="rounded-2xl bg-slate-100 p-3">Writing</div>
-              <div className="rounded-2xl bg-slate-100 p-3">Speaking</div>
+              <div className="rounded-2xl bg-bc-navy text-white p-3">Reading</div>
+              <div className="rounded-2xl bg-bc-navy text-white p-3">Listening</div>
+              <div className="rounded-2xl bg-bc-navy text-white p-3">Writing</div>
+              <div className="rounded-2xl bg-bc-navy text-white p-3">Speaking</div>
             </div>
           </div>
 
@@ -67,7 +67,7 @@ export const HowItWorks = () => {
 
           <div className="flex-1 rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm">
             <div className="flex items-center gap-4 mb-5">
-              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#0028a1] text-white text-lg font-bold">
+              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary text-white text-lg font-bold">
                 3
               </div>
               <div>
@@ -80,7 +80,7 @@ export const HowItWorks = () => {
                 <span>Score</span>
                 <span className="text-blue-900 font-semibold">8.0</span>
               </div>
-              <div className="h-24 rounded-2xl bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-300" />
+              <div className="h-24 rounded-2xl bg-linear-to-r from-blue-500 via-sky-400 to-cyan-300" />
             </div>
           </div>
         </div>

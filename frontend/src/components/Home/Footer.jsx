@@ -48,7 +48,7 @@ const Footer =()=>{
                   placeholder="Email address"
                   className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-gray-200 outline-none focus:border-white focus:ring-2 focus:ring-white/25"
                 />
-                <button className="rounded-full bg-[#E30613] px-6 py-3 font-semibold text-white transition hover:bg-red-600">
+                <button className="rounded-full bg-cta-btn px-6 py-3 font-semibold text-white transition hover:bg-red-600">
                   Subscribe
                 </button>
               </div>
