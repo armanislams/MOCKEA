@@ -1,4 +1,4 @@
-import { NavLink } from "react-router";
+import { Link, NavLink } from "react-router";
 import AuthBtn from "../AuthBtn/AuthBtn";
 
 const Navbar = () => {
@@ -52,12 +52,12 @@ const Navbar = () => {
             {links}
           </ul>
         </div>
-        <a className="text-xl font-extrabold text-primary tracking-tight flex items-center gap-2 cursor-pointer">
+        <Link to={'/'} className="text-xl font-extrabold text-cta-btn tracking-tight flex items-center gap-2 cursor-pointer">
           <div className="w-10 h-10 rounded-full  flex items-center justify-center">
             <img src="/mockea-logo.png" alt="mockea logo" />
           </div>
           <span className="hidden sm:inline">MOCKEA</span>
-        </a>
+        </Link>
       </div>
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1 font-bold text-gray-700">
