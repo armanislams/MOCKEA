@@ -4,32 +4,34 @@ import { forwardRef } from 'react';
 
 const ctaItems = [
   {
-    title: 'Reading',
-    description: 'Practice reading with timed exam passages.',
-    icon: FaBookOpen,
-    to: '/dashboard/reading',
-  },
-  {
-    title: 'Writing',
-    description: 'Complete writing tasks with instant feedback.',
-    icon: FaPencilAlt,
-    to: '/dashboard/writing',
-  },
-  {
-    title: 'Listening',
-    description: 'Train your listening with real IELTS audio.',
+    title: "Listening",
     icon: FaHeadphones,
-    to: '/dashboard/listening',
+    to: "/dashboard/listening",
+    tooltip:
+      "Click to begin Listening practice with authentic IELTS-style audio.",
   },
   {
-    title: 'Speaking',
-    description: 'Prepare speaking answers and improve fluency.',
+    title: "Reading",
+    icon: FaBookOpen,
+    to: "/dashboard/reading",
+    tooltip: "Click to begin Reading practice with timed exam passages.",
+  },
+  {
+    title: "Writing",
+    icon: FaPencilAlt,
+    to: "/dashboard/writing",
+    tooltip: "Click to begin Writing practice with instant feedback.",
+  },
+
+  {
+    title: "Speaking",
     icon: FaMicrophone,
-    to: '/dashboard/speaking',
+    to: "/dashboard/speaking",
+    tooltip: "Click to begin Speaking evaluation (requires login)",
   },
 ];
 
-const CTASection = forwardRef((props, ref)   => {
+const CTASection = forwardRef((props, ref) => {
   return (
     <section className="py-16 bg-bc-light border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,20 +47,33 @@ const CTASection = forwardRef((props, ref)   => {
           </p>
         </div>
 
-        <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div
+          ref={ref}
+          className="mx-auto grid max-w-lg grid-cols-2 gap-4 sm:max-w-xl sm:gap-5"
+        >
           {ctaItems.map((item) => {
             const Icon = item.icon;
+            const tooltipId = `cta-tooltip-${item.title.toLowerCase()}`;
             return (
               <Link
                 key={item.title}
                 to={item.to}
-                className="group block rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm transition duration-200 ease-out transform hover:-translate-y-1 hover:shadow-xl"
+                aria-describedby={tooltipId}
+                className="group relative flex min-h-[140px] flex-col items-center justify-center rounded-xl border-4 border-transparent bg-bc-navy px-3 py-6 text-center transition-[border-color,background-color] hover:border-cta-btn hover:bg-bc-navy-hover focus-visible:outline-none focus-visible:border-cta-btn"
               >
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-900 text-white transition group-hover:bg-blue-800">
-                  <Icon size={28} />
+                <div className="relative mb-4 flex shrink-0 flex-col items-center">
+                  <span
+                    id={tooltipId}
+                    role="tooltip"
+                    className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-[min(17rem,calc(100vw-2rem))] -translate-x-1/2 rounded-md border border-white/10 bg-bc-navy px-3 py-2 text-center text-xs font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+                  >
+                    {item.tooltip}
+                  </span>
+                  <Icon className="text-white" size={40} aria-hidden />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
+                <span className="text-sm font-bold uppercase tracking-wide text-white sm:text-base">
+                  {item.title}
+                </span>
               </Link>
             );
           })}
@@ -67,5 +82,7 @@ const CTASection = forwardRef((props, ref)   => {
     </section>
   );
 });
+
+CTASection.displayName = 'CTASection';
 
 export default CTASection;
