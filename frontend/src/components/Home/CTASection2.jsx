@@ -17,18 +17,18 @@ export const CTASection2 = () => {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex sm:flex-row gap-4">
             <Link
               to="/login"
-              className="inline-flex items-center justify-center rounded-full border-2 font-bold border-bc-navy px-8 py-3 shadow-sm transition hover:bg-[#e2e8f0] "
+              className="inline-flex items-center justify-center rounded-full border-2 font-bold border-bc-navy px-8 py-3 shadow-sm btn-animated"
             >
               Log in
             </Link>
             <Link
               to="/register"
-              className="inline-flex items-center justify-center rounded-full border border-primary bg-cta-btn px-8 py-3 text-white font-bold shadow-sm transition hover:bg-[#e2e8f0]"
+              className="inline-flex items-center justify-center rounded-full border  bg-cta-btn px-8 py-3 text-white font-bold shadow-sm btn-animated"
             >
-              Register
+              Try For Free...
             </Link>
           </div>
         </div>

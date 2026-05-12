@@ -8,7 +8,7 @@ const StepCardShell = ({ children, variant }) => {
     <div
       className={
         isNavy
-          ? "flex h-52 w-40 shrink-0 flex-col items-center justify-center rounded-lg bg-[#001529] p-4 shadow-sm"
+          ? "flex h-52 w-40 shrink-0 flex-col items-center justify-center rounded-lg bg-primary p-4 shadow-sm"
           : "flex h-52 w-40 shrink-0 flex-col items-center justify-center gap-4 rounded-lg border border-gray-100 bg-white p-4 shadow-sm"
       }
     >

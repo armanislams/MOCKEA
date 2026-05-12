@@ -9,11 +9,31 @@
   --color-cta-btn: #E30613;
   --color-title-gray: #1A1A1A;
   --color-bc-gray: #6b7280;
-  --color-primary: #0028a1;
+  --color-primary: #1F2937;
   --color-primary-hover: #001f7a;
 }
+
+@layer components {
+  .btn-animated {
+    @apply hover:bg-bc-navy hover:text-white transition-all duration-300 ease-out transform hover:-translate-y-2 hover:shadow-xl;
+  }
+}
+
+
 body {
   font-family: var(--font-bc);
+}
+
+
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body,
+#root {
+  overflow-x: clip;
 }
 
 /* Custom minimal scrollbar */
@@ -33,7 +53,7 @@ body {
 
 /* Swiper: show avatars that sit half above the card; thin coral pagination bar */
 .testimonials-swiper-wrap {
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 .testimonials-swiper.swiper {

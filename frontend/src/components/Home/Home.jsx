@@ -6,7 +6,7 @@ const LandingStack = lazy(() => import('./LandingStack').then(module => ({ defau
 
 const Home = () => {
 return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div id='home' className="flex flex-col bg-white">
       <main className="grow">
 
         {/* Hero Section */}

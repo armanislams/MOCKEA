@@ -33,7 +33,7 @@ const pricingPlans = [
 
 export const Pricing = () => {
   return (
-    <section className="bg-white px-4 py-14 md:px-8">
+    <section id="pricing" className="bg-white px-4 py-14 md:px-8">
       <div className="mx-auto max-w-5xl">
         <h2 className="mb-10 text-center text-4xl font-extrabold text-[#000f38]">
           Pricing & Plans
@@ -47,7 +47,7 @@ export const Pricing = () => {
                 plan.isPopular ? "border-cta-btn" : "border-[#d6dde9]"
               }`}
             >
-              <div className="relative bg-[#000f38] px-6 pb-6 pt-8 text-center text-white">
+              <div className="bg-primary px-6 pb-6 pt-8 text-center text-white">
                 {plan.isPopular && (
                   <span className="absolute right-0 top-0 rounded-bl-md bg-cta-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
                     Most Popular

@@ -2,21 +2,14 @@ import { motion } from 'framer-motion';
 
 const AuthLayout = ({ children, title, subtitle, features }) => {
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex py-5">
       {/* Left side - Hero Section (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-bc-navy text-white p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-bc-navy text-white p-12 flex-col justify-between rounded-2xl ml-5">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-xl font-bold">
-              ES
-            </div>
-            <span className="text-2xl font-bold">MOCKEA</span>
-          </div>
-
           <h1 className="text-5xl font-extrabold mb-6 leading-tight">
             Join 50,000+ students achieving their IELTS goals
           </h1>

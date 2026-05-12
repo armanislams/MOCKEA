@@ -1,18 +1,29 @@
-import { Link, NavLink } from "react-router";
+import { NavLink } from "react-router";
 import AuthBtn from "../AuthBtn/AuthBtn";
+import { Logo } from "./Logo";
 
 const Navbar = () => {
   const links = (
     <>
       <li>
-        <NavLink className="hover:text-primary" to={"/"}>
+        <a  className="hover:text-primary" href="/#home">
           Home
-        </NavLink>
+        </a>
       </li>
       <li>
         <NavLink className="hover:text-primary" to={"/about"}>
           About Us
         </NavLink>
+      </li>
+      <li>
+        <a className="hover:text-primary" href="/#pricing">
+          Pricing
+        </a>
+      </li>
+      <li>
+        <a  className="hover:text-primary" href="/#freeResources">
+          Free Resources
+        </a>
       </li>
       <li>
         <NavLink className="hover:text-primary" to={"/dashboard"}>
@@ -22,7 +33,7 @@ const Navbar = () => {
     </>
   );
   return (
-    <div className="navbar bg-base-100 shadow-sm sticky top-0 z-50 md:px-6 lg:px-8 border-b border-gray-200">
+    <div className="navbar backdrop-blur-md bg-white/70 shadow-sm sticky top-0 z-50 md:px-6 lg:px-8 ">
       <div className="navbar-start">
         <div className="dropdown">
           <div
@@ -52,14 +63,11 @@ const Navbar = () => {
             {links}
           </ul>
         </div>
-        <Link to={'/'} className="text-xl font-extrabold text-cta-btn tracking-tight flex items-center gap-2 cursor-pointer">
-          <div className="w-10 h-10 rounded-full  flex items-center justify-center">
-            <img src="/mockea-logo.png" alt="mockea logo" />
-          </div>
-          <span className="hidden sm:inline">MOCKEA</span>
-        </Link>
+        <Logo/>
       </div>
-      <div className="navbar-center hidden lg:flex">
+
+      {/* Desktop menu */}
+      <div className="navbar-center bg-gray-100 rounded-full hidden lg:flex">
         <ul className="menu menu-horizontal px-1 font-bold text-gray-700">
           {links}
         </ul>

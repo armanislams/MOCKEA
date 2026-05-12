@@ -33,7 +33,7 @@ const ctaItems = [
 
 const CTASection = forwardRef((props, ref) => {
   return (
-    <section className="py-16 bg-bc-light border-b border-gray-200">
+    <section id='testFormats' className="py-16 bg-bc-light border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-900">
@@ -65,7 +65,7 @@ const CTASection = forwardRef((props, ref) => {
                   <span
                     id={tooltipId}
                     role="tooltip"
-                    className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-[min(17rem,calc(100vw-2rem))] -translate-x-1/2 rounded-md border border-white/10 bg-bc-navy px-3 py-2 text-center text-xs font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+                    className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-64 -translate-x-1/2 rounded-md border border-white/10 bg-bc-navy px-3 py-2 text-center text-xs font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 md:block group-hover:opacity-100 group-focus-within:opacity-100"
                   >
                     {item.tooltip}
                   </span>

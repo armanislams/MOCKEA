@@ -5,7 +5,7 @@ export const TaskCards = forwardRef((props, ref) => {
   return (
     <div
       ref={ref}
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
     >
       <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-200">
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-primary mb-5">
