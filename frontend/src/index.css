@@ -30,3 +30,34 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Swiper: show avatars that sit half above the card; thin coral pagination bar */
+.testimonials-swiper-wrap {
+  overflow-x: clip;
+}
+
+.testimonials-swiper.swiper {
+  overflow: visible !important;
+  padding-bottom: 0.5rem;
+}
+
+.testimonials-swiper .swiper-wrapper {
+  align-items: stretch;
+}
+
+.testimonials-swiper .swiper-pagination {
+  bottom: 0 !important;
+}
+
+.testimonials-swiper .swiper-pagination-bullet {
+  width: 1.75rem;
+  height: 3px;
+  margin: 0 4px !important;
+  border-radius: 2px;
+  background: #cbd5e1;
+  opacity: 1;
+}
+
+.testimonials-swiper .swiper-pagination-bullet-active {
+  background: #ff8a80;
+}

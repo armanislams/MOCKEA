@@ -1,57 +1,81 @@
 import { forwardRef } from "react";
-import { FaBook, FaCheckCircle, FaRegLightbulb } from "react-icons/fa";
+
+const RESOURCES = [
+  {
+    title: "Free Vocabulary E-book",
+    cta: "Free E-book",
+    href: "#",
+    image:
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80",
+    alt: "Open book and tablet on a desk",
+  },
+  {
+    title: "10 Tips for Writing Task 2",
+    cta: "Free Tip Guide",
+    href: "#",
+    image:
+      "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=800&q=80",
+    alt: "Hand holding a fountain pen over paper",
+  },
+  {
+    title: "Blog: Article Book Ebook",
+    cta: "Free Blog Article",
+    href: "#",
+    image:
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80",
+    alt: "Laptop on a desk with notebook and coffee",
+  },
+];
 
 export const FreeResources = forwardRef((props, ref) => {
-    return (
-      <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-200">
-        <div className="text-center mb-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-900">
+  return (
+    <section className="w-full rounded-3xl bg-[#F8F9FA] px-4 py-12 sm:px-6 md:py-16 lg:px-10">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-10 text-center md:mb-12">
+          <h2 className="text-title-gray text-3xl font-bold tracking-tight md:text-4xl">
             Free Resources
-          </p>
-          <h2 className="mt-4 text-3xl font-extrabold text-gray-900">
-            Quick resources to boost your practice
           </h2>
-        </div>
+          <p className="mx-auto mt-3 max-w-2xl text-base text-[#6C757D]">
+            Quick links for IELTS prep assets and helpful blog resources.
+          </p>
+        </header>
+
         <div
           ref={ref}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-8"
         >
-          <div className="rounded-3xl border border-gray-200 p-6">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[#0028a1] mb-4">
-              <FaBook size={20} />
-            </div>
-            <p className="font-semibold text-gray-900 mb-2">
-              Free Vocabulary Ebook
-            </p>
-            <p className="text-gray-600">
-              Download a complete ebook to improve your word choice and
-              accuracy.
-            </p>
-          </div>
-          <div className="rounded-3xl border border-gray-200 p-6">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[#0028a1] mb-4">
-              <FaRegLightbulb size={20} />
-            </div>
-            <p className="font-semibold text-gray-900 mb-2">
-              Tips for Writing Task 2
-            </p>
-            <p className="text-gray-600">
-              Learn the essential structure and scoring tips for essays.
-            </p>
-          </div>
-          <div className="rounded-3xl border border-gray-200 p-6">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[#0028a1] mb-4">
-              <FaCheckCircle size={20} />
-            </div>
-            <p className="font-semibold text-gray-900 mb-2">
-              IELTS Blog Article
-            </p>
-            <p className="text-gray-600">
-              Read expert advice on exam strategy, time management, and test
-              confidence.
-            </p>
-          </div>
+          {RESOURCES.map((item) => (
+            <article
+              key={item.title}
+              className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5"
+            >
+              <div className="aspect-4/3 w-full overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.alt}
+                  className="h-full w-full object-cover grayscale"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div className="space-y-3 p-5 text-left">
+                <h3 className="text-title-gray text-lg font-semibold">
+                  {item.title}
+                </h3>
+                <a
+                  href={item.href}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-[#D93025] underline-offset-4 transition hover:underline"
+                >
+                  {item.cta}
+                  <span aria-hidden>→</span>
+                </a>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
-    );
-})
+    </section>
+  );
+});
+
+FreeResources.displayName = "FreeResources";
