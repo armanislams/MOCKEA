@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import useAuth from '../../../hooks/useAuth';
-import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import useAxiosSecure from '../../hooks/useAxiosSecure';
+import useAuth from '../../hooks/useAuth';
 
 const quickActions = [
   {
@@ -39,7 +39,7 @@ const weakAreas = [
   { title: 'Summary Completion', amount: 71 },
 ];
 
-const Dashboard = () => {
+const DashboardHome = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
   const [summary, setSummary] = useState(null);
@@ -195,4 +195,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default DashboardHome;

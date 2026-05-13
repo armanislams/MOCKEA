@@ -3,7 +3,6 @@ import Home from "../components/Home/Home";
 import Login from "../components/Auth/Login";
 import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
-import Dashboard from "../components/Dashboard/Home/Dashboard";
 import Profile from "../components/Dashboard/Profile";
 import Review from "../components/Dashboard/Review/Review";
 import Analytics from "../components/Dashboard/Analytics/Analytics";
@@ -16,6 +15,9 @@ import Reading from "../components/Dashboard/Reading/Reading";
 import Listening from "../components/Dashboard/Listening/Listening";
 import Writing from "../components/Dashboard/Writing/Writing";
 import Speaking from "../components/Dashboard/Speaking/Speaking";
+import DashboardIndex from "../components/Dashboard/DashboardIndex";
+import SystemAnalytics from "../components/Dashboard/Admin Dashboard/SystemAnalytics";
+
 
 const router = createBrowserRouter([
     {
@@ -43,11 +45,13 @@ const router = createBrowserRouter([
     },
     {
         path: '/dashboard',
-        element: <PrivateRoute><DashboardLayout /></PrivateRoute>,
+        element: <PrivateRoute>
+                    <DashboardLayout />
+                </PrivateRoute>,
         children: [
             {
                 index: true,
-                element: <Dashboard />
+                element: <DashboardIndex />
             },
             {
                 path: 'practice',
@@ -81,6 +85,10 @@ const router = createBrowserRouter([
             {
                 path: 'speaking',
                 element: <Speaking />
+            },
+            {
+                path: 'system-analytics',
+                element: <SystemAnalytics />
             }
         ]
     }

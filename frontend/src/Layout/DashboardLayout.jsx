@@ -1,97 +1,129 @@
-import { Link, NavLink, Outlet } from 'react-router';
-import AuthBtn from '../components/AuthBtn/AuthBtn';
-
-const navItems = [
-  { label: 'Dashboard', to: '/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M13 5v6h6' },
-  { label: 'Take a Test', to: '/dashboard/practice', icon: 'M9 12l2 2 4-4' },
-  { label: 'Review', to: '/dashboard/review', icon: 'M4 6h16M4 12h8m-8 6h16' },
-  { label: 'Analytics', to: '/dashboard/analytics', icon: 'M3 3v18h18' },
-  { label: 'Profile', to: '/dashboard/profile', icon: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.31 0-6 2.69-6 6h12c0-3.31-2.69-6-6-6z' },
-];
+import { Outlet, Link, NavLink, useNavigate } from "react-router";
+import { PiHouse, PiSignOut } from "react-icons/pi";
+import useAuth from "../hooks/useAuth";
+import { useRole } from "../hooks/useRole";
+import { AdminDashboard } from "../components/RoleBasedSidebar/AdminDashboard";
+import { InstructorDashboard } from "../components/RoleBasedSidebar/InstructorDashboard";
+import StudentDashboard from "../components/RoleBasedSidebar/StudentDashboard";
+import Loader from "../components/Loader/Loader";
+import { ToastContainer } from "react-toastify";
 
 const DashboardLayout = () => {
-  return (
-    <div className="drawer lg:drawer-open min-h-screen bg-base-200">
-      <input id="dashboard-drawer" type="checkbox" className="drawer-toggle" />
+  const { user, logOut } = useAuth();
+  const { role, roleLoading } = useRole();
+  const navigate = useNavigate();
 
-      <div className="drawer-content flex flex-col">
-        
-        {/* navbar */}
-        <div className="navbar bg-base-100 border-b border-base-300 px-4 lg:px-6">
-          <div className="flex-none lg:hidden">
+  const handleLogOut = () => {
+    logOut()
+      .then(() => {
+        navigate('/');
+      })
+      .catch((err) => console.error(err));
+  };
+
+  if (roleLoading) {
+    return <Loader />;
+  }
+
+  const renderSidebarLinks = () => {
+    switch (role) {
+      case "admin":
+        return <AdminDashboard />;
+      case "instructor":
+        return <InstructorDashboard />;
+      case "student":
+      default:
+        return <StudentDashboard />;
+    }
+  };
+
+  return (
+    <div className="drawer lg:drawer-open">
+      <input id="dashboard-drawer" type="checkbox" className="drawer-toggle" />
+      <div className="drawer-content flex flex-col items-center justify-start bg-base-200">
+        {/* Page content here */}
+        <div className="w-full navbar bg-base-100 lg:hidden shadow-sm">
+          <div className="flex-none">
             <label
               htmlFor="dashboard-drawer"
-              aria-label="open sidebar"
-              className="btn btn-square btn-ghost"
+              className="btn btn-square btn-ghost drawer-button"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
-                className="inline-block h-5 w-5 stroke-current"
+                className="inline-block w-6 h-6 stroke-current"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
                   d="M4 6h16M4 12h16M4 18h16"
-                />
+                ></path>
               </svg>
             </label>
           </div>
-
-          <div className="flex-1">
-            <Link to="/" className="text-xl text-cta-btn font-bold font-semibold">
-              MOCKEA
-            </Link>
-          </div>
-
-          <div className="flex-none">
-            <AuthBtn />
+          <div className="flex-1 px-2 mx-2 font-bold text-xl text-primary">
+            <Link to={"/"}>MOCKEA</Link>
           </div>
         </div>
 
-        {/* outlet */}
-        <main className="p-4 lg:p-6">
+        <div className="w-full flex-1 p-4 md:p-8 overflow-y-auto">
           <Outlet />
-        </main>
+        </div>
       </div>
 
-      {/* sidebar */}
-
-      <div className="drawer-side z-20">
-        <label htmlFor="dashboard-drawer" aria-label="close sidebar" className="drawer-overlay" />
-        <aside className="flex h-full w-72 flex-col bg-base-100 border-r border-base-300 p-4">
-          <div className="rounded-3xl p-4 text-center shadow-sm">
-            <div className="text-xl font-bold text-cta-btn">MOCKEA</div>
-            <p className="text-sm text-base-content/70">IELTS mock test dashboard</p>
+      <div className="drawer-side z-50">
+        <label htmlFor="dashboard-drawer" className="drawer-overlay"></label>
+        <ul className="menu p-4 w-80 min-h-full bg-base-100 text-base-content border-r border-base-200">
+          {/* Sidebar content here */}
+          <div className="mb-8 px-4">
+            <Link to="/" className="text-2xl font-bold text-primary">
+              MOCKEA
+            </Link>
+            <p className="text-xs text-base-content/50 mt-1">IELTS mock test dashboard</p>
           </div>
 
-          <ul className="menu mt-8 space-y-2 flex-1">
-            {navItems.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.to === '/dashboard'}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
-                      isActive ? 'bg-primary text-white' : 'text-base-content hover:bg-base-200'
-                    }`
-                  }
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5 shrink-0 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d={item.icon} />
-                  </svg>
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center gap-3 px-4 mb-6">
+            <div className="avatar placeholder">
+              <div className="bg-neutral text-neutral-content rounded-full w-10">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName} />
+                ) : (
+                  <span className="text-xl">
+                    {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="overflow-hidden">
+              <h3 className="font-bold truncate">{user?.displayName || user?.email?.split('@')[0] || "User"}</h3>
+              <p className="text-xs capitalize text-base-content/60">{role || "student"}</p>
+            </div>
+          </div>
 
-        </aside>
+          {renderSidebarLinks()}
+
+          <div className="divider my-4"></div>
+
+          <li>
+            <NavLink to="/">
+              <PiHouse className="w-5 h-5" />
+              Home
+            </NavLink>
+          </li>
+          <li>
+            <button onClick={handleLogOut}>
+              <PiSignOut className="w-5 h-5" />
+              Logout
+            </button>
+          </li>
+        </ul>
       </div>
+      <ToastContainer />
     </div>
   );
 };
 
 export default DashboardLayout;
+

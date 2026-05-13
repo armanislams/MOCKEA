@@ -2,9 +2,13 @@ import { Outlet, useLocation } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import Navbar from "../components/Home/Navbar";
 import Footer from "../components/Home/Footer";
+import { useRole } from "../hooks/useRole";
 
 export default function HomeLayout() {
     const location = useLocation();
+    const {role} = useRole()
+    console.log(role);
+    
 
     return (
         <div className="flex flex-col min-h-screen">

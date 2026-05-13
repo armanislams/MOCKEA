@@ -2,18 +2,21 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router';
 import useAuth from '../../hooks/useAuth';
-import useAxiosSecure from '../../hooks/useAxiosSecure';
 import { toast } from 'react-toastify';
 import AuthLayout from './AuthLayout';
 import SocialLoginButton from './SocialLoginButton';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
+import { PiEye, PiEyeSlash } from "react-icons/pi";
+import useAxiosSecure from '../../hooks/useAxiosSecure';
 
 const Register = () => {
   const { register: registerUser } = useAuth();
+  const [show, isShow] = useState(false)
+  const [show2, isShow2] = useState(false)
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const [isLoading, setIsLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const axiosSecure = useAxiosSecure();
+  const axiosInstance = useAxiosSecure();
   const navigate = useNavigate();
    const location = useLocation();
    const from = location.state?.from?.pathname || "/";
@@ -30,7 +33,7 @@ const Register = () => {
 
     registerUser(data.email, data.password)
       .then(() => {
-        axiosSecure
+        axiosInstance
           .post('/user/register', data)
           .then(() => {
             toast.success('User Created Successfully');
@@ -141,19 +144,28 @@ const Register = () => {
           <label className="block text-sm font-bold text-gray-700 mb-2">
             Password
           </label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none ${
-              errors.password
-                ? 'border-red-500 focus:border-red-500 focus:bg-red-50'
-                : 'border-gray-200 focus:border-blue-600 focus:bg-blue-50'
-            }`}
-            {...register('password', {
-              required: 'Password is required',
-              minLength: { value: 6, message: 'Password must be at least 6 characters' }
-            })}
-          />
+          <div className="relative">
+            <input
+              type={show ? "text" : "password"}
+              placeholder="••••••••"
+              className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none pr-12 ${
+                errors.password
+                  ? 'border-red-500 focus:border-red-500 focus:bg-red-50'
+                  : 'border-gray-200 focus:border-blue-600 focus:bg-blue-50'
+              }`}
+              {...register('password', {
+                required: 'Password is required',
+                minLength: { value: 6, message: 'Password must be at least 6 characters' }
+              })}
+            />
+            <button
+              type="button"
+              onClick={() => isShow(!show)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
+            >
+              {show ? <PiEyeSlash className="w-5 h-5" /> : <PiEye className="w-5 h-5" />}
+            </button>
+          </div>
           {errors.password && (
             <span className="text-red-500 text-xs mt-2 block font-semibold">{errors.password.message}</span>
           )}
@@ -165,19 +177,28 @@ const Register = () => {
           <label className="block text-sm font-bold text-gray-700 mb-2">
             Confirm Password
           </label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none ${
-              errors.confirmPassword
-                ? 'border-red-500 focus:border-red-500 focus:bg-red-50'
-                : 'border-gray-200 focus:border-blue-600 focus:bg-blue-50'
-            }`}
-            {...register('confirmPassword', {
-              required: 'Please confirm your password',
-              validate: (value) => value === password || 'Passwords do not match'
-            })}
-          />
+          <div className="relative">
+            <input
+              type={show2 ? "text" : "password"}
+              placeholder="••••••••"
+              className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none pr-12 ${
+                errors.confirmPassword
+                  ? 'border-red-500 focus:border-red-500 focus:bg-red-50'
+                  : 'border-gray-200 focus:border-blue-600 focus:bg-blue-50'
+              }`}
+              {...register('confirmPassword', {
+                required: 'Please confirm your password',
+                validate: (value) => value === password || 'Passwords do not match'
+              })}
+            />
+            <button
+              type="button"
+              onClick={() => isShow2(!show2)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
+            >
+              {show2 ? <PiEyeSlash className="w-5 h-5" /> : <PiEye className="w-5 h-5" />}
+            </button>
+          </div>
           {errors.confirmPassword && (
             <span className="text-red-500 text-xs mt-2 block font-semibold">{errors.confirmPassword.message}</span>
           )}

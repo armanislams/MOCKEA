@@ -1,15 +1,18 @@
 import express from "express"
-import { getAllUser, postUser } from "../controllers/user.controller.js";
+import { getAllUser, getUserRole, postUser } from "../controllers/user.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
 const userRouter = express.Router();
 
-// All routes require authentication
+// Public routes (No authentication required)
+userRouter.post("/register", postUser)
+
+// All routes below this line require authentication
 userRouter.use(verifyUserToken)
 
-// Public user routes (authenticated users)
-userRouter.post("/register", postUser)
+// Authenticated user routes
 userRouter.get('/all', getAllUser)
+userRouter.get('/:email/role', getUserRole)
 
 
 // Admin-only routes - get all users
