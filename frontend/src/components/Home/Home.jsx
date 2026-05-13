@@ -1,6 +1,7 @@
 
 import { Hero } from './Hero';
 import { lazy } from 'react';
+import Hero2 from './Hero2';
 
 const LandingStack = lazy(() => import('./LandingStack').then(module => ({ default: module.LandingStack })))
 
@@ -10,7 +11,8 @@ return (
       <main className="grow">
 
         {/* Hero Section */}
-        <Hero />
+        {/* <Hero /> */}
+        <Hero2/>
 
         {/* New Landing Stack */}
         <LandingStack />
