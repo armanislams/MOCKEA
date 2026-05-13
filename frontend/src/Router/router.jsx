@@ -16,8 +16,6 @@ import Listening from "../components/Dashboard/Listening/Listening";
 import Writing from "../components/Dashboard/Writing/Writing";
 import Speaking from "../components/Dashboard/Speaking/Speaking";
 import DashboardIndex from "../components/Dashboard/DashboardIndex";
-import SystemAnalytics from "../components/Dashboard/Admin Dashboard/SystemAnalytics";
-
 
 const router = createBrowserRouter([
     {
@@ -85,10 +83,6 @@ const router = createBrowserRouter([
             {
                 path: 'speaking',
                 element: <Speaking />
-            },
-            {
-                path: 'system-analytics',
-                element: <SystemAnalytics />
             }
         ]
     }
