@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import useAuth from '../../hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation, Link } from 'react-router';
 import AuthLayout from './AuthLayout';
 import SocialLoginButton from './SocialLoginButton';
+import { PiEye, PiEyeSlash } from 'react-icons/pi';
 
 const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [show, isShow] = useState(false)
+  const { signIn,setLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
@@ -25,8 +27,13 @@ const Login = () => {
         }, 500);
       })
       .catch((err) => {
-        console.log(err);
-        toast.error(err.message);
+        console.log(err.message);
+        setLoading(false)
+        toast.error(err.message == 'Firebase: Error (auth/invalid-credential).'?
+          'Invalid Email or Password. Please Try Again' 
+          :
+          'Something Went Wrong. Please Try Again'
+        );
         setTimeout(() => {
           setIsLoading(false);
         }, 500);
@@ -98,12 +105,13 @@ const Login = () => {
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-bold text-gray-700">Password</label>
-            <a href="#" className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+            <Link to={'#'} onClick={()=> toast.info('Coming Soon...')} className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline">
               Forgot password?
-            </a>
+            </Link>
           </div>
-          <input
-            type="password"
+          <div className="relative">
+            <input
+            type={show ? "text" : "password"}
             placeholder="••••••••"
             className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none ${
               errors.password
@@ -115,6 +123,14 @@ const Login = () => {
               minLength: { value: 6, message: 'Password must be at least 6 characters' }
             })}
           />
+           <button
+              type="button"
+              onClick={() => isShow(!show)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
+            >
+              {show ? <PiEyeSlash className="w-5 h-5" /> : <PiEye className="w-5 h-5" />}
+            </button>
+          </div>
           {errors.password && (
             <span className="text-red-500 text-xs mt-2 block font-semibold">{errors.password.message}</span>
           )}

@@ -10,7 +10,7 @@ import { PiEye, PiEyeSlash } from "react-icons/pi";
 import useAxiosSecure from '../../hooks/useAxiosSecure';
 
 const Register = () => {
-  const { register: registerUser } = useAuth();
+  const { register: registerUser , setLoading} = useAuth();
   const [show, isShow] = useState(false)
   const [show2, isShow2] = useState(false)
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
@@ -43,6 +43,7 @@ const Register = () => {
             }, 1000);
           })
           .catch(() => {
+            setLoading(false);
             toast.error('User Creation Failed');
             setTimeout(() => {
               setIsLoading(false);
@@ -50,8 +51,13 @@ const Register = () => {
           });
       })
       .catch((err) => {
-        console.log(err);
-        toast.error(err.message);
+        console.log(err.message);
+        setLoading(false);
+         toast.error(err.message == 'Firebase: Error (auth/email-already-in-use).'?
+          'Email Already in Use. Please Login' 
+          :
+          'Something Went Wrong. Please Try Again'
+        );
         setTimeout(() => {
           setIsLoading(false);
         }, 1000);

@@ -5,25 +5,25 @@ export const AdminDashboard = () => {
     return (
         <>
             <li>
-                <NavLink to="/dashboard" end>
+                <NavLink to="/admin" end>
                     <PiChartBar className="w-5 h-5" />
-                    Dashboard
+                    Dashboard Home
                 </NavLink>
             </li>
             <li>
-                <NavLink to="/dashboard/manage-users">
+                <NavLink to="/dashboard/admin/manage-users">
                     <PiUsersThree className="w-5 h-5" />
                     Manage Users
                 </NavLink>
             </li>
             <li>
-                <NavLink to="/dashboard/add-tests">
+                <NavLink to="/dashboard/admin/add-tests">
                     <PiFiles className="w-5 h-5" />
                    Add Tests
                 </NavLink>
             </li>
             <li>
-                <NavLink to="/dashboard/settings">
+                <NavLink to="/dashboard/admin/settings">
                     <PiGear className="w-5 h-5" />
                     Settings
                 </NavLink>

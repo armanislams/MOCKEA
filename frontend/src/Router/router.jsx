@@ -86,7 +86,7 @@ const router = createBrowserRouter([
                 element: <Speaking />
             },
             {
-                path: 'manage-users',
+                path: 'admin/manage-users',
                 element: <ManageUsers />
             }
         ]

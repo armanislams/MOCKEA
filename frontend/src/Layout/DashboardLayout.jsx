@@ -6,7 +6,6 @@ import { AdminDashboard } from "../components/RoleBasedSidebar/AdminDashboard";
 import { InstructorDashboard } from "../components/RoleBasedSidebar/InstructorDashboard";
 import StudentDashboard from "../components/RoleBasedSidebar/StudentDashboard";
 import Loader from "../components/Loader/Loader";
-import { ToastContainer } from "react-toastify";
 
 const DashboardLayout = () => {
   const { user, logOut } = useAuth();
@@ -120,7 +119,6 @@ const DashboardLayout = () => {
           </li>
         </ul>
       </div>
-      <ToastContainer />
     </div>
   );
 };
