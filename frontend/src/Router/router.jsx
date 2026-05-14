@@ -17,6 +17,8 @@ import Writing from "../components/Dashboard/Writing/Writing";
 import Speaking from "../components/Dashboard/Speaking/Speaking";
 import DashboardIndex from "../components/Dashboard/DashboardIndex";
 import ManageUsers from "../components/Dashboard/Admin Dashboard/ManageUsers";
+import AdminSettings from "../components/Dashboard/Admin Dashboard/AdminSettings";
+
 
 const router = createBrowserRouter([
     {
@@ -88,8 +90,13 @@ const router = createBrowserRouter([
             {
                 path: 'admin/manage-users',
                 element: <ManageUsers />
+            },
+            {
+                path: 'admin/settings',
+                element: <AdminSettings />
             }
         ]
+
     }
     
 ])

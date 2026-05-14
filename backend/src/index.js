@@ -7,6 +7,7 @@ import noteRouter from "./routes/note.route.js";
 import readingRouter from "./routes/reading.route.js";
 import qRouter from "./routes/questions.route.js";
 import analyticsRouter from "./routes/analytics.route.js";
+import errorLogRouter from "./routes/errorLog.route.js";
 import errorHandler from "./middlewares/errorHandler.js";
 const Port = process.env.PORT || 3000;
 
@@ -24,6 +25,8 @@ app.use("/api/note", noteRouter);
 app.use("/api/reading", readingRouter);
 app.use("/api/questions", qRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/settings/logs", errorLogRouter);
+
 
 app.get("/", (req, res) => {
     res.send("Eco Stream Server is running");

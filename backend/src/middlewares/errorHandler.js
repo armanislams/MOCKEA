@@ -1,7 +1,9 @@
+import ErrorLog from "../model/errorLog.js";
+
 // Error Handling Middleware
 // Catches all errors from routes and sends appropriate responses
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = async (err, req, res, next) => {
   // Log the error for debugging
   console.error("Error:", err);
 
@@ -39,6 +41,20 @@ const errorHandler = (err, req, res, next) => {
   if (err.code?.startsWith("auth/")) {
     status = 401;
     message = "Authentication error: " + err.message;
+  }
+
+  // Save error to database
+  try {
+    await ErrorLog.create({
+      message: message,
+      stack: err.stack,
+      method: req.method,
+      path: req.originalUrl,
+      status: status,
+      userEmail: req.decoded_email || null,
+    });
+  } catch (logErr) {
+    console.error("Failed to save error log:", logErr);
   }
 
   // Send error response
