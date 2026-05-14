@@ -4,6 +4,7 @@ import {
     getUserRole,
     postUser,
     updateUserRole,
+    updateUserPlan,
     deleteUser,
     toggleBanUser,
 } from "../controllers/user.controller.js";
@@ -22,6 +23,7 @@ userRouter.get("/:email/role", getUserRole);
 
 // Admin-only routes
 userRouter.patch("/:id/role", verifyUserRole(["admin"]), updateUserRole);
+userRouter.patch("/:id/plan", verifyUserRole(["admin"]), updateUserPlan);
 userRouter.delete("/:id", verifyUserRole(["admin"]), deleteUser);
 userRouter.patch("/:id/ban", verifyUserRole(["admin"]), toggleBanUser);
 

@@ -70,6 +70,28 @@ export const updateUserRole = async (req, res) => {
     res.status(200).json({ success: true, message: `User role updated to ${role}`, user });
 };
 
+export const updateUserPlan = async (req, res) => {
+    const { id } = req.params;
+    const { plan } = req.body;
+
+    const allowedPlans = ["free", "standard", "premium"];
+    if (!allowedPlans.includes(plan)) {
+        return res.status(400).json({ success: false, message: "Invalid plan specified" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+        id,
+        { plan },
+        { new: true }
+    );
+
+    if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, message: `User plan updated to ${plan}`, user });
+};
+
 export const deleteUser = async (req, res) => {
     const { id } = req.params;
 
