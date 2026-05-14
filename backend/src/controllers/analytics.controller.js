@@ -1,5 +1,6 @@
 import Reading from "../model/reading.js";
 import Note from "../model/note.js";
+import User from "../model/user.js";
 
 const estimateBand = (score) => {
   if (score >= 90) return 8.0;
@@ -85,6 +86,90 @@ export const getAnalyticsSummary = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error fetching analytics summary",
+      error: error.message,
+    });
+  }
+};
+
+export const getAdminAnalytics = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalTests = await Reading.countDocuments();
+
+    // Calculate today's stats
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const usersToday = await User.countDocuments({
+      createdAt: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    const testsToday = await Reading.countDocuments({
+      completedAt: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    // Recent registered users (last 5)
+    const recentUsers = await User.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select("name email createdAt role plan");
+
+    // Per student statistics
+    const studentStats = await Reading.aggregate([
+      {
+        $group: {
+          _id: "$email",
+          testCount: { $sum: 1 },
+          averageScore: { $avg: "$score" },
+          lastTest: { $max: "$completedAt" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "email",
+          as: "userDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$userDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          email: "$_id",
+          name: "$userDetails.name",
+          testCount: 1,
+          averageScore: { $round: ["$averageScore", 1] },
+          lastTest: 1,
+        },
+      },
+      { $sort: { testCount: -1 } },
+      { $limit: 10 },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        overview: {
+          totalUsers,
+          totalTests,
+          usersToday,
+          testsToday,
+        },
+        recentUsers,
+        studentStats,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching admin analytics",
       error: error.message,
     });
   }

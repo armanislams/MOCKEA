@@ -5,7 +5,7 @@ export const AdminDashboard = () => {
     return (
         <>
             <li>
-                <NavLink to="/admin" end>
+                <NavLink to="/dashboard">
                     <PiChartBar className="w-5 h-5" />
                     Dashboard Home
                 </NavLink>

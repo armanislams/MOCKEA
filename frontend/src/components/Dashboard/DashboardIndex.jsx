@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRole } from '../../hooks/useRole';
 import DashboardHome from './DashboardHome';
+import AdminDashboardHome from './Admin Dashboard/AdminDashboardHome';
 import Loader from '../Loader/Loader';
 
 const DashboardIndex = () => {
@@ -11,12 +12,7 @@ const DashboardIndex = () => {
     }
 
     if (role === 'admin') {
-        return (
-            <div className="flex flex-col items-center justify-center h-full min-h-[60vh]">
-                <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
-                <p className="text-base-content/70">Welcome to the admin control panel. System overview and metrics will appear here.</p>
-            </div>
-        );
+        return <AdminDashboardHome />;
     }
 
     if (role === 'instructor') {
