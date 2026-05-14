@@ -16,6 +16,7 @@ import Listening from "../components/Dashboard/Listening/Listening";
 import Writing from "../components/Dashboard/Writing/Writing";
 import Speaking from "../components/Dashboard/Speaking/Speaking";
 import DashboardIndex from "../components/Dashboard/DashboardIndex";
+import ManageUsers from "../components/Dashboard/Admin Dashboard/ManageUsers";
 
 const router = createBrowserRouter([
     {
@@ -83,6 +84,10 @@ const router = createBrowserRouter([
             {
                 path: 'speaking',
                 element: <Speaking />
+            },
+            {
+                path: 'manage-users',
+                element: <ManageUsers />
             }
         ]
     }

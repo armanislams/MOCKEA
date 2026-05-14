@@ -17,9 +17,9 @@ export const AdminDashboard = () => {
                 </NavLink>
             </li>
             <li>
-                <NavLink to="/dashboard/system-analytics">
+                <NavLink to="/dashboard/add-tests">
                     <PiFiles className="w-5 h-5" />
-                    System Analytics
+                   Add Tests
                 </NavLink>
             </li>
             <li>

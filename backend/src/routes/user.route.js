@@ -1,21 +1,28 @@
-import express from "express"
-import { getAllUser, getUserRole, postUser } from "../controllers/user.controller.js";
+import express from "express";
+import {
+    getAllUser,
+    getUserRole,
+    postUser,
+    updateUserRole,
+    deleteUser,
+    toggleBanUser,
+} from "../controllers/user.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
+
 const userRouter = express.Router();
 
-// Public routes (No authentication required)
-userRouter.post("/register", postUser)
+userRouter.post("/register", postUser);
 
-// All routes below this line require authentication
-userRouter.use(verifyUserToken)
+userRouter.use(verifyUserToken);
 
 // Authenticated user routes
-userRouter.get('/all', getAllUser)
-userRouter.get('/:email/role', getUserRole)
+userRouter.get("/all", getAllUser);
+userRouter.get("/:email/role", getUserRole);
 
-
-// Admin-only routes - get all users
-// userRouter.get("/all", verifyUserRole(["admin"]), getAllUser)
+// Admin-only routes
+userRouter.patch("/:id/role", verifyUserRole(["admin"]), updateUserRole);
+userRouter.delete("/:id", verifyUserRole(["admin"]), deleteUser);
+userRouter.patch("/:id/ban", verifyUserRole(["admin"]), toggleBanUser);
 
 export default userRouter;
