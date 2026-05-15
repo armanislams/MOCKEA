@@ -69,6 +69,10 @@ const Writing = () => {
     }
 
     try {
+      if (!activeSet) {
+        toast.error("Question set not loaded properly. Please refresh.");
+        return;
+      }
       setSubmitting(true);
       const response = await axiosSecure.post("/submissions/submit", {
         questionSetId: activeSet._id,
@@ -151,7 +155,7 @@ const Writing = () => {
                     <PiArrowLeftBold className="w-6 h-6" />
                 </button>
                 <div>
-                    <h1 className="text-xl font-black tracking-tight">{activeSet.title}</h1>
+                    <h1 className="text-xl font-black tracking-tight">{activeSet?.title}</h1>
                     <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Writing Proficiency Lab</p>
                 </div>
             </div>
@@ -189,11 +193,11 @@ const Writing = () => {
                         </div>
                         
                         <div className="prose prose-slate max-w-none">
-                            <h2 className="text-3xl font-black tracking-tighter text-slate-800 leading-tight">
-                                {activeSet.title}
+                            <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-tight">
+                                {activeSet?.title}
                             </h2>
-                            <div className="text-lg leading-relaxed text-slate-600 space-y-6 whitespace-pre-line">
-                                {activeSet.passage || activeSet.content}
+                            <div className="prose prose-slate max-w-none text-slate-500 font-medium leading-relaxed">
+                                {activeSet?.content}
                             </div>
                         </div>
 
@@ -210,7 +214,7 @@ const Writing = () => {
                         <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10 space-y-3">
                             <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Instructor's Guide</h4>
                             <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
-                                "{activeSet.instructions || "Spend approximately 20-40 minutes on this task. Ensure your response is well-structured and uses varied vocabulary."}"
+                                "{activeSet?.instructions || "Spend approximately 20-40 minutes on this task. Ensure your response is well-structured and uses varied vocabulary."}"
                             </p>
                         </div>
                     </div>

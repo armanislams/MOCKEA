@@ -81,12 +81,13 @@ const Reading = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!activeSet || Object.keys(answers).length < activeSet.questions.length) {
-      toast.warning("Please attempt all questions before submitting");
+    if (Object.keys(answers).length === 0) {
+      toast.warning("Please answer at least one question.");
       return;
     }
 
     try {
+      if (!activeSet) return;
       setSubmitting(true);
       const response = await axiosSecure.post("/questions/evaluate", {
         questionSetId: activeSet._id,
@@ -155,13 +156,13 @@ const Reading = () => {
       {/* Premium Header */}
       <div className="bg-white border-b border-base-300 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-                <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle">
-                    <PiArrowLeftBold className="w-6 h-6" />
+            <div className="flex items-center gap-4">
+                <button onClick={() => setSelectedSetId("")} className="btn btn-ghost btn-circle">
+                    <PiArrowLeftBold />
                 </button>
                 <div>
-                    <h1 className="text-xl font-black tracking-tight">{activeSet.title}</h1>
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Reading Skill Lab</p>
+                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">{activeSet?.title}</h1>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Reading Skill Lab</p>
                 </div>
             </div>
 

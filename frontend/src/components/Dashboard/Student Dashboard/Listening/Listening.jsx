@@ -160,16 +160,15 @@ const Listening = () => {
     setAnswers(prev => ({ ...prev, [qId]: val }));
   };
 
-  const handleSubmit = async () => {
-    if (!activeSet || Object.keys(answers).length < activeSet.questions.length) {
-      toast.warning("Please attempt all questions first");
-      return;
+  const handleEvaluate = async () => {
+    if (Object.keys(answers).length === 0) {
+        toast.warning("Please answer at least one question.");
+        return;
     }
 
     try {
+      if (!activeSet) return;
       setSubmitting(true);
-      if (isPlaying) togglePlay();
-      
       const response = await axiosSecure.post("/questions/evaluate", {
         questionSetId: activeSet._id,
         answers,
@@ -245,7 +244,7 @@ const Listening = () => {
                     {isPlaying ? <PiPauseCircleFill /> : <PiPlayCircleFill />}
                 </button>
                 <div className="hidden md:block">
-                    <h1 className="text-sm font-black tracking-tight leading-tight">{activeSet.title}</h1>
+                    <h1 className="text-sm font-black tracking-tight leading-tight">{activeSet?.title}</h1>
                     <div className="flex items-center gap-3 mt-1">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Listening Lab</span>
                         <span className="text-[10px] font-mono text-white/40">{fmt(currentTime)} / {fmt(duration)}</span>
@@ -271,8 +270,8 @@ const Listening = () => {
                     </div>
                 </div>
                 <div className="h-10 w-px bg-white/10" />
-                <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle text-white/40">
-                    <PiArrowLeftBold className="w-5 h-5" />
+                <button onClick={() => setSelectedSetId("")} className="btn btn-ghost btn-circle text-white/40">
+                    <PiArrowLeftBold className="w-6 h-6" />
                 </button>
             </div>
         </div>
@@ -287,7 +286,7 @@ const Listening = () => {
                     <motion.div 
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="card bg-linear-to-br from-indigo-600 to-primary p-10 rounded-[3rem] text-white shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8"
+                        className="card bg-gradient-to-br from-indigo-600 to-primary p-10 rounded-[3rem] text-white shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8"
                     >
                         <div className="flex items-center gap-8">
                             <div className="w-24 h-24 rounded-[2rem] bg-white/10 backdrop-blur-xl flex flex-col items-center justify-center border border-white/20">
@@ -297,7 +296,7 @@ const Listening = () => {
                             <div>
                                 <h2 className="text-3xl font-black tracking-tight">Performance Verified</h2>
                                 <p className="text-white/60 font-bold uppercase tracking-widest text-xs mt-1">
-                                    {result.correctAnswers} Correct Modules of {result.totalQuestions} Questions
+                                    {result.correctAnswers} Correct of {result.totalQuestions} Questions
                                 </p>
                             </div>
                         </div>
@@ -347,7 +346,7 @@ const Listening = () => {
 
                                         <p className="text-lg font-black text-slate-700 leading-tight">{q.question}</p>
 
-                                        {q.options && q.options.length > 0 ? (
+                                        {q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
                                             <div className="grid md:grid-cols-2 gap-4">
                                                 {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
                                                     <label 
@@ -397,7 +396,7 @@ const Listening = () => {
 
                         {!submitted && (
                             <button 
-                                onClick={handleSubmit}
+                                onClick={handleEvaluate}
                                 disabled={submitting}
                                 className="btn btn-primary btn-block rounded-[2rem] h-20 text-sm font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 mt-12 transition-all hover:scale-[1.02]"
                             >

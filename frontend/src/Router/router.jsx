@@ -165,7 +165,7 @@ const router = createBrowserRouter([
         //     <GradeSubmissions />
         //   </AdminRoutes>
         // ),
-        element: <GradeSubmissions/>
+        element: <GradeSubmissions />,
       },
       {
         path: "admin/settings",
