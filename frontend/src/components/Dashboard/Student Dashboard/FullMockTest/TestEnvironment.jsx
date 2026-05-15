@@ -13,6 +13,8 @@ import {
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import useAuth from "../../../hooks/useAuth";
 import ReadingSection from "./ReadingSection";
+import ListeningSection from "./ListeningSection";
+import WritingSection from "./WritingSection";
 
 const TestEnvironment = () => {
     const { id } = useParams();
@@ -25,6 +27,7 @@ const TestEnvironment = () => {
     const [tabSwitches, setTabSwitches] = useState(0);
     const [resultId, setResultId] = useState(null);
     const [answers, setAnswers] = useState({});
+    const [timeLeft, setTimeLeft] = useState(0); // in seconds
     const [showWarning, setShowWarning] = useState(false);
     const [warningType, setWarningType] = useState(""); // "fullscreen" or "tab"
 
@@ -37,14 +40,65 @@ const TestEnvironment = () => {
         }
     });
 
-    // 2. Start Test Session on Backend
+    // 2. Start Test Session and Initialize Timer
     useEffect(() => {
         if (test && !resultId) {
             axiosSecure.post("/mock-tests/start", { testId: id, userId: user._id })
-                .then(res => setResultId(res.data.resultId))
+                .then(res => {
+                    setResultId(res.data.resultId);
+                    setTimeLeft((test.totalDuration || 165) * 60);
+                })
                 .catch(err => toast.error("Failed to initialize test session"));
         }
     }, [test, id, user._id, axiosSecure, resultId]);
+
+    // 3. Timer Countdown Logic
+    useEffect(() => {
+        if (!isFullscreen || timeLeft <= 0) return;
+        const interval = setInterval(() => {
+            setTimeLeft(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [timeLeft, isFullscreen]);
+
+    // 4. Cache & Sync Logic
+    // Save to localStorage whenever answers change
+    useEffect(() => {
+        if (resultId && Object.keys(answers).length > 0) {
+            localStorage.setItem(`test_cache_${id}`, JSON.stringify({
+                answers,
+                currentModuleIdx,
+                timeLeft
+            }));
+        }
+    }, [answers, currentModuleIdx, timeLeft, id, resultId]);
+
+    // Load from localStorage on mount (Crash Recovery)
+    useEffect(() => {
+        const cached = localStorage.getItem(`test_cache_${id}`);
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            setAnswers(parsed.answers || {});
+            setCurrentModuleIdx(parsed.currentModuleIdx || 0);
+            if (parsed.timeLeft) setTimeLeft(parsed.timeLeft);
+            toast.info("Your previous progress has been restored.");
+        }
+    }, [id]);
+
+    const handleSaveProgress = async () => {
+        try {
+            await axiosSecure.post("/mock-tests/submit-section", {
+                resultId,
+                sectionType: ['reading', 'listening', 'writing'][currentModuleIdx],
+                answers,
+                timeTaken: (test.totalDuration * 60) - timeLeft
+            });
+            console.log("Section synced to backend");
+        } catch (err) {
+            console.error("Failed to sync progress:", err);
+            toast.warning("Network issue: Progress saved locally but not synced to server.");
+        }
+    };
 
     // 3. Fullscreen Management
     const enterFullscreen = () => {
@@ -94,6 +148,35 @@ const TestEnvironment = () => {
 
     const handleAnswerChange = (qId, val) => {
         setAnswers(prev => ({ ...prev, [qId]: val }));
+    };
+
+    const formatTime = (seconds) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    const handleNextModule = async () => {
+        await handleSaveProgress();
+        if (currentModuleIdx < 2) {
+            setCurrentModuleIdx(prev => prev + 1);
+            toast.success(`Moving to ${['Listening', 'Writing'][currentModuleIdx]} section`);
+        } else {
+            handleFinalSubmit();
+        }
+    };
+
+    const handleFinalSubmit = async () => {
+        try {
+            await axiosSecure.post("/mock-tests/finalize", { resultId });
+            localStorage.removeItem(`test_cache_${id}`); // Clear cache on success
+            toast.success("Test submitted successfully!");
+            document.exitFullscreen();
+            navigate("/dashboard/full-mock-test");
+        } catch (err) {
+            toast.error("Submission failed");
+        }
     };
 
     if (isLoading) return <div className="flex items-center justify-center h-screen"><span className="loading loading-spinner loading-lg" /></div>;
@@ -174,12 +257,17 @@ const TestEnvironment = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 px-6 py-2 rounded-2xl bg-black text-white font-mono text-xl shadow-lg">
-                            <PiClock className="animate-pulse" />
-                            <span>59:53</span>
+                        <div className={`flex items-center gap-2 px-6 py-2 rounded-2xl font-mono text-xl shadow-lg transition-colors ${
+                            timeLeft < 300 ? "bg-error text-white animate-pulse" : "bg-black text-white"
+                        }`}>
+                            <PiClock className={timeLeft < 300 ? "animate-spin" : "animate-pulse"} />
+                            <span>{formatTime(timeLeft)}</span>
                         </div>
-                        <button className="btn btn-error rounded-2xl px-6 h-12 text-sm font-bold shadow-lg shadow-error/20">
-                            Submit
+                        <button 
+                            onClick={handleNextModule}
+                            className="btn btn-error rounded-2xl px-6 h-12 text-sm font-bold shadow-lg shadow-error/20"
+                        >
+                            {currentModuleIdx === 2 ? "Final Submit" : "Next Section"}
                         </button>
                     </div>
                 </div>
@@ -190,6 +278,20 @@ const TestEnvironment = () => {
                 {currentModuleIdx === 0 && (
                     <ReadingSection 
                         data={test.sections.reading[0]} 
+                        answers={answers} 
+                        onAnswerChange={handleAnswerChange} 
+                    />
+                )}
+                {currentModuleIdx === 1 && (
+                    <ListeningSection 
+                        data={test.sections.listening[0]} 
+                        answers={answers} 
+                        onAnswerChange={handleAnswerChange} 
+                    />
+                )}
+                {currentModuleIdx === 2 && (
+                    <WritingSection 
+                        data={test.sections.writing[0]} 
                         answers={answers} 
                         onAnswerChange={handleAnswerChange} 
                     />
