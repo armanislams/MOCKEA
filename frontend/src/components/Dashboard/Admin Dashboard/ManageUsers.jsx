@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import {
   PiUsersThree,
   PiMagnifyingGlass,
@@ -11,7 +12,6 @@ import {
   PiArrowClockwise,
   PiCaretDown,
   PiWarning,
-  PiX,
 } from "react-icons/pi";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
@@ -34,40 +34,6 @@ const roleIcon = (role) => {
   if (role === "admin") return "👑";
   if (role === "instructor") return "🛡️";
   return "🎓";
-};
-
-// ─── Confirm Modal ──────────────────────────────────────────────────────────────
-
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmLabel, danger }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-base-300 bg-base-100 p-6 shadow-2xl animate-fadeIn">
-        <button className="btn btn-ghost btn-sm btn-circle absolute right-3 top-3" onClick={onClose}>
-          <PiX className="w-4 h-4" />
-        </button>
-        <div className="flex items-start gap-4">
-          <div className={`flex-none flex items-center justify-center w-12 h-12 rounded-full ${danger ? "bg-error/10 text-error" : "bg-warning/10 text-warning"}`}>
-            <PiWarning className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold mb-1">{title}</h3>
-            <p className="text-base-content/70 text-sm leading-relaxed">{message}</p>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 mt-6">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-          <button
-            className={`btn btn-sm ${danger ? "btn-error" : "btn-warning"} text-white`}
-            onClick={() => { onConfirm(); onClose(); }}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 // ─── Role Dropdown ──────────────────────────────────────────────────────────────
@@ -263,13 +229,6 @@ const ManageUsers = () => {
   const [planFilter, setPlanFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // ── Confirm modal state ───────────────────────────────────────────────────────
-  const [modal, setModal] = useState({
-    isOpen: false, title: "", message: "", confirmLabel: "", danger: false, onConfirm: () => {},
-  });
-  const openModal = (opts) => setModal({ isOpen: true, ...opts });
-  const closeModal = () => setModal((m) => ({ ...m, isOpen: false }));
-
   // ── useQuery: fetch all users (cached, auto-refetch on mount) ────────────────
   const {
     data: allUsers = [],
@@ -283,100 +242,97 @@ const ManageUsers = () => {
       const res = await axiosSecure.get("/user/all");
       return res.data.users ?? [];
     },
-    staleTime: 1000 * 60 * 2,       // cache fresh for 2 minutes
-    gcTime: 1000 * 60 * 10,          // keep in memory for 10 minutes
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 10,
     retry: 2,
-    onError: () => toast.error("Failed to load users"),
   });
 
   // ── useMutation: change role ──────────────────────────────────────────────────
   const roleMutation = useMutation({
     mutationFn: ({ id, role }) => axiosSecure.patch(`/user/${id}/role`, { role }),
-    onMutate: async ({ id, role }) => {
-      // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ["admin-users"] });
-      const previous = queryClient.getQueryData(["admin-users"]);
-      queryClient.setQueryData(["admin-users"], (old) =>
-        old.map((u) => (u._id === id ? { ...u, role } : u))
-      );
-      return { previous };
+    onSuccess: (_, { role }) => {
+        Swal.fire({
+            title: "Updated!",
+            text: `User role has been changed to ${role}.`,
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            background: "#ffffff",
+            customClass: { popup: "rounded-[2rem]" }
+        });
+        queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+        setLoadingId(null);
     },
-    onSuccess: (_, { role }) => toast.success(`Role updated to ${role}`),
-    onError: (_, __, ctx) => {
-      queryClient.setQueryData(["admin-users"], ctx.previous);
-      toast.error("Failed to update role");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      setLoadingId(null);
-    },
+    onError: () => {
+        toast.error("Failed to update role");
+        setLoadingId(null);
+    }
   });
 
   // ── useMutation: toggle ban ───────────────────────────────────────────────────
   const banMutation = useMutation({
     mutationFn: ({ id }) => axiosSecure.patch(`/user/${id}/ban`),
-    onMutate: async ({ id, isBanned }) => {
-      await queryClient.cancelQueries({ queryKey: ["admin-users"] });
-      const previous = queryClient.getQueryData(["admin-users"]);
-      queryClient.setQueryData(["admin-users"], (old) =>
-        old.map((u) => (u._id === id ? { ...u, isBanned: !isBanned } : u))
-      );
-      return { previous };
+    onSuccess: (_, { isBanned }) => {
+        Swal.fire({
+            title: isBanned ? "Unbanned!" : "Banned!",
+            text: isBanned ? "User has regained access." : "User has been restricted.",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            background: "#ffffff",
+            customClass: { popup: "rounded-[2rem]" }
+        });
+        queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+        setLoadingId(null);
     },
-    onSuccess: (_, { isBanned }) =>
-      toast.success(isBanned ? "User unbanned" : "User banned"),
-    onError: (_, __, ctx) => {
-      queryClient.setQueryData(["admin-users"], ctx.previous);
-      toast.error("Failed to update ban status");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      setLoadingId(null);
-    },
+    onError: () => {
+        toast.error("Failed to update status");
+        setLoadingId(null);
+    }
   });
 
   // ── useMutation: change plan ──────────────────────────────────────────────────
   const planMutation = useMutation({
     mutationFn: ({ id, plan }) => axiosSecure.patch(`/user/${id}/plan`, { plan }),
-    onMutate: async ({ id, plan }) => {
-      await queryClient.cancelQueries({ queryKey: ["admin-users"] });
-      const previous = queryClient.getQueryData(["admin-users"]);
-      queryClient.setQueryData(["admin-users"], (old) =>
-        old.map((u) => (u._id === id ? { ...u, plan } : u))
-      );
-      return { previous };
+    onSuccess: (_, { plan }) => {
+        Swal.fire({
+            title: "Updated!",
+            text: `User plan has been changed to ${plan}.`,
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            background: "#ffffff",
+            customClass: { popup: "rounded-[2rem]" }
+        });
+        queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+        setLoadingId(null);
     },
-    onSuccess: (_, { plan }) => toast.success(`Plan updated to ${plan}`),
-    onError: (_, __, ctx) => {
-      queryClient.setQueryData(["admin-users"], ctx.previous);
-      toast.error("Failed to update plan");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      setLoadingId(null);
-    },
+    onError: () => {
+        toast.error("Failed to update plan");
+        setLoadingId(null);
+    }
   });
 
   // ── useMutation: delete user ──────────────────────────────────────────────────
   const deleteMutation = useMutation({
     mutationFn: ({ id }) => axiosSecure.delete(`/user/${id}`),
-    onMutate: async ({ id }) => {
-      await queryClient.cancelQueries({ queryKey: ["admin-users"] });
-      const previous = queryClient.getQueryData(["admin-users"]);
-      queryClient.setQueryData(["admin-users"], (old) =>
-        old.filter((u) => u._id !== id)
-      );
-      return { previous };
+    onSuccess: () => {
+        Swal.fire({
+            title: "Deleted!",
+            text: "User account has been permanently removed.",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            background: "#ffffff",
+            customClass: { popup: "rounded-[2rem]" }
+        });
+        queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+        setLoadingId(null);
     },
-    onSuccess: () => toast.success("User deleted"),
-    onError: (_, __, ctx) => {
-      queryClient.setQueryData(["admin-users"], ctx.previous);
-      toast.error("Failed to delete user");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      setLoadingId(null);
-    },
+    onError: () => {
+        toast.error("Failed to delete user");
+        setLoadingId(null);
+    }
   });
 
   // ── Client-side filtering (derived via useMemo) ───────────────────────────────
@@ -395,67 +351,104 @@ const ManageUsers = () => {
     return filtered;
   }, [allUsers, search, roleFilter, planFilter, statusFilter]);
 
-  // ── Action handlers (open confirm modal, then fire mutation) ──────────────────
-  const handleChangeRole = (id, newRole) => {
-    openModal({
-      title: "Change User Role",
-      message: `Are you sure you want to set this user's role to "${newRole}"?`,
-      confirmLabel: "Yes, Change Role",
-      danger: false,
-      onConfirm: () => { setLoadingId(id); roleMutation.mutate({ id, role: newRole }); },
+  // ── Action handlers (open SweetAlert, then fire mutation) ──────────────────
+  const handleChangeRole = async (id, newRole) => {
+    const result = await Swal.fire({
+        title: "Change User Role?",
+        text: `Are you sure you want to change this user to ${newRole}?`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#3B82F6",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Yes, Change Role",
+        background: "#ffffff",
+        customClass: {
+            popup: "rounded-[2rem]",
+            confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+            cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+        }
     });
+
+    if (result.isConfirmed) {
+        setLoadingId(id);
+        roleMutation.mutate({ id, role: newRole });
+    }
   };
 
-  const handleChangePlan = (id, newPlan) => {
-    openModal({
-      title: "Change User Plan",
-      message: `Are you sure you want to upgrade/change this user's plan to "${newPlan}"?`,
-      confirmLabel: "Yes, Change Plan",
-      danger: false,
-      onConfirm: () => {
+  const handleChangePlan = async (id, newPlan) => {
+    const result = await Swal.fire({
+        title: "Change User Plan?",
+        text: `Are you sure you want to update this user to the ${newPlan} plan?`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#10B981",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Yes, Update Plan",
+        background: "#ffffff",
+        customClass: {
+            popup: "rounded-[2rem]",
+            confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+            cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+        }
+    });
+
+    if (result.isConfirmed) {
         setLoadingId(id);
         planMutation.mutate({ id, plan: newPlan });
-      },
-    });
+    }
   };
 
-  const handleToggleBan = (user) => {
+  const handleToggleBan = async (user) => {
     const banning = !user.isBanned;
-    openModal({
-      title: banning ? "Ban User" : "Unban User",
-      message: banning
-        ? `You are about to ban "${user.name}". They will lose access to the platform.`
-        : `You are about to unban "${user.name}". They will regain access.`,
-      confirmLabel: banning ? "Yes, Ban" : "Yes, Unban",
-      danger: banning,
-      onConfirm: () => { setLoadingId(user._id); banMutation.mutate({ id: user._id, isBanned: user.isBanned }); },
+    const result = await Swal.fire({
+        title: banning ? "Ban User?" : "Unban User?",
+        text: banning 
+            ? `Are you sure? "${user.name}" will lose all access to the platform.`
+            : `Are you sure? "${user.name}" will regain access to the platform.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: banning ? "#EF4444" : "#10B981",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: banning ? "Yes, Ban User" : "Yes, Unban User",
+        background: "#ffffff",
+        customClass: {
+            popup: "rounded-[2rem]",
+            confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+            cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+        }
     });
+
+    if (result.isConfirmed) {
+        setLoadingId(user._id);
+        banMutation.mutate({ id: user._id, isBanned: user.isBanned });
+    }
   };
 
-  const handleDelete = (user) => {
-    openModal({
-      title: "Delete User",
-      message: `This will permanently delete "${user.name}" (${user.email}). This action cannot be undone.`,
-      confirmLabel: "Delete Permanently",
-      danger: true,
-      onConfirm: () => { setLoadingId(user._id); deleteMutation.mutate({ id: user._id }); },
+  const handleDelete = async (user) => {
+    const result = await Swal.fire({
+        title: "Delete User Permanently?",
+        text: `Are you sure you want to delete "${user.name}"? This action is irreversible.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#EF4444",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Yes, Delete Permanently",
+        background: "#ffffff",
+        customClass: {
+            popup: "rounded-[2rem]",
+            confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+            cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+        }
     });
+
+    if (result.isConfirmed) {
+        setLoadingId(user._id);
+        deleteMutation.mutate({ id: user._id });
+    }
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <>
-      <ConfirmModal
-        isOpen={modal.isOpen}
-        onClose={closeModal}
-        onConfirm={modal.onConfirm}
-        title={modal.title}
-        message={modal.message}
-        confirmLabel={modal.confirmLabel}
-        danger={modal.danger}
-      />
-
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -596,7 +589,6 @@ const ManageUsers = () => {
           )}
         </div>
       </div>
-    </>
   );
 };
 

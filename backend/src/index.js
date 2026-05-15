@@ -6,8 +6,8 @@ import { connectDb } from "./lib/connectDB.js";
 import qRouter from "./routes/questions.route.js";
 import analyticsRouter from "./routes/analytics.route.js";
 import errorLogRouter from "./routes/errorLog.route.js";
-import mockTestRouter from "./routes/mockTest.route.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import mockTestRouter from "./routes/mockTest.route.js";
 const Port = process.env.PORT || 3000;
 
 

@@ -10,10 +10,12 @@ import {
     PiPlus,
     PiCheckCircle
 } from "react-icons/pi";
+import { Link, useNavigate } from "react-router";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const CreateMockTest = () => {
     const axiosSecure = useAxiosSecure();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -39,6 +41,7 @@ const CreateMockTest = () => {
         mutationFn: (data) => axiosSecure.post("/mock-tests/create", data),
         onSuccess: () => {
             toast.success("Mock Test created successfully!");
+            navigate("/dashboard/admin/manage-mock-tests");
         }
     });
 

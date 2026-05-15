@@ -1,5 +1,6 @@
 import MockTest from '../model/mockTest.js';
 import MockTestResult from '../model/mockTestResult.js';
+import User from '../model/user.js';
 
 // Get all mock tests (Library)
 export const getAllMockTests = async (req, res) => {
@@ -41,8 +42,14 @@ export const createMockTest = async (req, res) => {
 // Start a test (Initialize result)
 export const startTest = async (req, res) => {
     try {
-        const { testId, userId } = req.body;
-        const result = new MockTestResult({ userId, testId });
+        const { testId } = req.body;
+        const user = await User.findOne({ email: req.decoded_email });
+        
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const result = new MockTestResult({ userId: user._id, testId });
         await result.save();
         res.status(201).json({ success: true, resultId: result._id });
     } catch (error) {
@@ -96,6 +103,28 @@ export const finalizeTest = async (req, res) => {
         result.status = 'completed';
         await result.save();
         res.status(200).json({ success: true, message: 'Test finalized' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Update Mock Test (Admin)
+export const updateMockTest = async (req, res) => {
+    try {
+        const test = await MockTest.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
+        res.status(200).json({ success: true, test });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Delete Mock Test (Admin)
+export const deleteMockTest = async (req, res) => {
+    try {
+        const test = await MockTest.findByIdAndDelete(req.params.id);
+        if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
+        res.status(200).json({ success: true, message: 'Test deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

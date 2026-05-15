@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import { 
     PiBookOpen, 
     PiEar, 
@@ -27,10 +28,42 @@ const ManageQuestions = () => {
     const deleteMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/questions/${id}`),
         onSuccess: () => {
-            toast.success("Question deleted");
+            Swal.fire({
+                title: "Deleted!",
+                text: "The question has been removed from the bank.",
+                icon: "success",
+                timer: 2000,
+                showConfirmButton: false,
+                background: "#ffffff",
+                customClass: {
+                    popup: "rounded-[2rem]"
+                }
+            });
             queryClient.invalidateQueries(["admin-questions"]);
         }
     });
+
+    const handleDelete = async (id) => {
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "This question will be permanently removed from the question bank.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#EF4444",
+            cancelButtonColor: "#6B7280",
+            confirmButtonText: "Yes, delete it!",
+            background: "#ffffff",
+            customClass: {
+                popup: "rounded-[2rem]",
+                confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+                cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+            }
+        });
+
+        if (result.isConfirmed) {
+            deleteMutation.mutate(id);
+        }
+    };
 
     const getIcon = (type) => {
         switch(type) {
@@ -73,7 +106,7 @@ const ManageQuestions = () => {
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button className="btn btn-ghost btn-xs btn-circle text-primary"><PiPencilSimple /></button>
                                     <button 
-                                        onClick={() => deleteMutation.mutate(q._id)}
+                                        onClick={() => handleDelete(q._id)}
                                         className="btn btn-ghost btn-xs btn-circle text-error"
                                     >
                                         <PiTrash />

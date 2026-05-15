@@ -21,7 +21,7 @@ const InstructionModal = ({ test, onClose }) => {
     ];
 
     const handleStart = () => {
-        navigate(`/dashboard/test/${test._id}`);
+        navigate(`/test/${test._id}`);
     };
 
     return (

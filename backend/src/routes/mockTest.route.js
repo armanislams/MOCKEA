@@ -6,17 +6,24 @@ import {
     startTest, 
     submitSection, 
     updateCheatStats, 
-    finalizeTest 
+    finalizeTest,
+    updateMockTest,
+    deleteMockTest
 } from '../controllers/mockTest.controller.js';
+import verifyUserToken from '../middlewares/verifyUserToken.js';
 
-const router = express.Router();
+const mockTestRouter = express.Router();
 
-router.get('/', getAllMockTests);
-router.get('/:id', getMockTestById);
-router.post('/create', createMockTest);
-router.post('/start', startTest);
-router.post('/submit-section', submitSection);
-router.post('/update-cheat-stats', updateCheatStats);
-router.post('/finalize', finalizeTest);
 
-export default router;
+mockTestRouter.use(verifyUserToken)
+mockTestRouter.get('/', getAllMockTests);
+mockTestRouter.get('/:id', getMockTestById);
+mockTestRouter.post('/create', createMockTest);
+mockTestRouter.post('/start', startTest);
+mockTestRouter.post('/submit-section', submitSection);
+mockTestRouter.post('/update-cheat-stats', updateCheatStats);
+mockTestRouter.post('/finalize', finalizeTest);
+mockTestRouter.put('/:id', updateMockTest);
+mockTestRouter.delete('/:id', deleteMockTest);
+
+export default mockTestRouter;

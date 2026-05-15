@@ -22,6 +22,8 @@ import FullMockTestLibrary from "../components/Dashboard/Student Dashboard/FullM
 import AddQuestionForm from "../components/Dashboard/Admin Dashboard/AddQuestionForm";
 import ManageQuestions from "../components/Dashboard/Admin Dashboard/ManageQuestions";
 import CreateMockTest from "../components/Dashboard/Admin Dashboard/CreateMockTest";
+import ManageMockTests from "../components/Dashboard/Admin Dashboard/ManageMockTests";
+import TestEnvironment from "../components/Dashboard/Student Dashboard/FullMockTest/TestEnvironment";
 import Error from "../components/Common/Error";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 
@@ -55,6 +57,14 @@ const router = createBrowserRouter([
     ],
   },
   {
+    path: "/test/:id",
+    element: (
+      <PrivateRoute>
+        <TestEnvironment />
+      </PrivateRoute>
+    ),
+  },
+  {
     path: "/dashboard",
     element: (
       <PrivateRoute>
@@ -78,7 +88,6 @@ const router = createBrowserRouter([
         path: "review",
         element: <Review />,
       },
-
       {
         path: "analytics",
         element: <Analytics />,
@@ -121,6 +130,14 @@ const router = createBrowserRouter([
       },
       {
         path: "admin/manage-mock-tests",
+        element: (
+          <AdminRoutes>
+            <ManageMockTests />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/create-mock-test",
         element: (
           <AdminRoutes>
             <CreateMockTest />
