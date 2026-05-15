@@ -23,6 +23,10 @@ const mockTestResultSchema = new mongoose.Schema({
             correctAnswer: String
         }],
         score: Number,
+        isGraded: {
+            type: Boolean,
+            default: false
+        },
         timeTaken: Number, // in seconds
         completedAt: {
             type: Date,

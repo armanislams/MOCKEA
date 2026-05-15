@@ -8,7 +8,10 @@ import {
     updateCheatStats, 
     finalizeTest,
     updateMockTest,
-    deleteMockTest
+    deleteMockTest,
+    gradeSection,
+    getUserResults,
+    getAllResults
 } from '../controllers/mockTest.controller.js';
 import verifyUserToken from '../middlewares/verifyUserToken.js';
 import verifyUserRole from '../middlewares/verifyUserRole.js';
@@ -22,11 +25,16 @@ mockTestRouter.use(verifyUserRole());
 
 // Student/General Authenticated Routes
 mockTestRouter.get('/', getAllMockTests);
+mockTestRouter.get('/results/user', getUserResults);
 mockTestRouter.get('/:id', getMockTestById);
 mockTestRouter.post('/start', startTest);
 mockTestRouter.post('/submit-section', submitSection);
 mockTestRouter.post('/update-cheat-stats', updateCheatStats);
 mockTestRouter.post('/finalize', finalizeTest);
+
+// Instructor/Admin Routes for Manual Grading
+mockTestRouter.get('/results/all', verifyUserRole(['admin', 'instructor']), getAllResults);
+mockTestRouter.patch('/grade-section', verifyUserRole(['admin', 'instructor']), gradeSection);
 
 // Admin-Only Management Routes (Double-check role)
 mockTestRouter.post('/create', verifyUserRole(['admin']), createMockTest);

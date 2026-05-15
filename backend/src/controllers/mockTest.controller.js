@@ -27,22 +27,10 @@ export const getMockTestById = async (req, res) => {
     }
 };
 
-// Create a new Mock Test (Admin)
-export const createMockTest = async (req, res) => {
-    try {
-        const newTest = new MockTest(req.body);
-        await newTest.save();
-        res.status(201).json({ success: true, test: newTest });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
-
-// Start a test (Initialize result)
+// Start a test
 export const startTest = async (req, res) => {
     try {
         const { testId } = req.body;
-        // req.user is populated by verifyUserRole middleware
         const userId = req.user._id;
 
         const result = new MockTestResult({ userId, testId });
@@ -56,19 +44,28 @@ export const startTest = async (req, res) => {
 // Submit a section result
 export const submitSection = async (req, res) => {
     try {
-        const { resultId, sectionType, answers, score, timeTaken } = req.body;
+        const { resultId, sectionType, answers, timeTaken } = req.body;
         const result = await MockTestResult.findById(resultId);
         
         if (!result) return res.status(404).json({ success: false, message: 'Result session not found' });
 
-        // SECURITY: Verify Ownership
         if (result.userId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ success: false, message: 'Unauthorized: This test session does not belong to you' });
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
-        result.sectionResults.push({ sectionType, answers, score, timeTaken });
-        await result.save();
+        const formattedAnswers = Object.entries(answers).map(([qId, val]) => ({
+            questionId: qId,
+            userAnswer: val
+        }));
 
+        result.sectionResults.push({ 
+            sectionType, 
+            answers: formattedAnswers, 
+            timeTaken,
+            isGraded: false
+        });
+        
+        await result.save();
         res.status(200).json({ success: true, message: 'Section submitted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -83,15 +80,13 @@ export const updateCheatStats = async (req, res) => {
 
         if (!result) return res.status(404).json({ success: false, message: 'Result session not found' });
 
-        // SECURITY: Verify Ownership
         if (result.userId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ success: false, message: 'Unauthorized: This test session does not belong to you' });
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
         if (tabSwitches) result.tabSwitchCount += tabSwitches;
         if (fullscreenExits) result.fullscreenExits += fullscreenExits;
 
-        // Auto-submit if tab switches >= 3
         if (result.tabSwitchCount >= 3) {
             result.status = 'auto-submitted';
         }
@@ -103,17 +98,38 @@ export const updateCheatStats = async (req, res) => {
     }
 };
 
-// Finalize test
+// Finalize test & Auto-grade Reading/Listening
 export const finalizeTest = async (req, res) => {
     try {
         const { resultId } = req.body;
-        const result = await MockTestResult.findById(resultId);
+        const result = await MockTestResult.findById(resultId).populate({
+            path: 'testId',
+            populate: { path: 'sections.reading sections.listening' }
+        });
 
         if (!result) return res.status(404).json({ success: false, message: 'Result session not found' });
 
-        // SECURITY: Verify Ownership
-        if (result.userId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        for (let section of result.sectionResults) {
+            if (['reading', 'listening'].includes(section.sectionType)) {
+                const questionSet = result.testId.sections[section.sectionType][0];
+                if (!questionSet) continue;
+
+                let correctCount = 0;
+                section.answers = section.answers.map(ans => {
+                    const originalQ = questionSet.questions.find(q => q.id === ans.questionId);
+                    const isCorrect = originalQ && originalQ.correctAnswer.toLowerCase().trim() === ans.userAnswer.toLowerCase().trim();
+                    if (isCorrect) correctCount++;
+                    
+                    return {
+                        ...ans,
+                        isCorrect,
+                        correctAnswer: originalQ?.correctAnswer
+                    };
+                });
+
+                section.score = correctCount;
+                section.isGraded = true;
+            }
         }
 
         result.status = 'completed';
@@ -124,23 +140,77 @@ export const finalizeTest = async (req, res) => {
     }
 };
 
-// Update Mock Test (Admin)
+// --- NEW RETRIEVAL CONTROLLERS ---
+
+// Get results for current user
+export const getUserResults = async (req, res) => {
+    try {
+        const results = await MockTestResult.find({ userId: req.user._id })
+            .populate('testId', 'title')
+            .sort({ createdAt: -1 });
+        res.status(200).json({ success: true, results });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Get all results (For Instructors)
+export const getAllResults = async (req, res) => {
+    try {
+        const results = await MockTestResult.find()
+            .populate('userId', 'name email')
+            .populate('testId', 'title')
+            .sort({ createdAt: -1 });
+        res.status(200).json({ success: true, results });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const gradeSection = async (req, res) => {
+    try {
+        const { resultId, sectionType, score } = req.body;
+        const result = await MockTestResult.findById(resultId);
+
+        if (!result) return res.status(404).json({ success: false, message: 'Result not found' });
+
+        const section = result.sectionResults.find(s => s.sectionType === sectionType);
+        if (!section) return res.status(404).json({ success: false, message: 'Section not found' });
+
+        section.score = score;
+        section.isGraded = true;
+
+        await result.save();
+        res.status(200).json({ success: true, message: 'Graded successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Admin Mock Test CRUD (Simplified)
+export const createMockTest = async (req, res) => {
+    try {
+        const newTest = new MockTest(req.body);
+        await newTest.save();
+        res.status(201).json({ success: true, test: newTest });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export const updateMockTest = async (req, res) => {
     try {
         const test = await MockTest.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
         res.status(200).json({ success: true, test });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-// Delete Mock Test (Admin)
 export const deleteMockTest = async (req, res) => {
     try {
-        const test = await MockTest.findByIdAndDelete(req.params.id);
-        if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
-        res.status(200).json({ success: true, message: 'Test deleted successfully' });
+        await MockTest.findByIdAndDelete(req.params.id);
+        res.status(200).json({ success: true, message: 'Deleted' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
