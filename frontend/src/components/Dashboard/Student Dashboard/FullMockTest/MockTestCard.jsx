@@ -1,12 +1,15 @@
 import { 
-    PiBookOpen, 
-    PiEar, 
-    PiPencilLine, 
-    PiMicrophoneStage,
-    PiPlayCircle,
-    PiUsers,
-    PiLockKey
+    PiBookOpenFill, 
+    PiEarFill, 
+    PiPencilLineFill, 
+    PiMicrophoneStageFill,
+    PiPlayCircleFill,
+    PiUsersBold,
+    PiLockKeyFill,
+    PiClockFill,
+    PiArrowRightBold
 } from "react-icons/pi";
+import { motion } from "framer-motion";
 import useAuth from "../../../../hooks/useAuth";
 import { toast } from "react-toastify";
 
@@ -24,64 +27,94 @@ const MockTestCard = ({ test, index, onStart }) => {
         }
         onStart();
     };
+
+    const sectionIcons = [
+        { type: 'listening', icon: <PiEarFill />, color: 'text-emerald-500' },
+        { type: 'reading', icon: <PiBookOpenFill />, color: 'text-blue-500' },
+        { type: 'writing', icon: <PiPencilLineFill />, color: 'text-purple-500' },
+        { type: 'speaking', icon: <PiMicrophoneStageFill />, color: 'text-orange-500' },
+    ];
+
     return (
-        <div className="card bg-white border border-base-300 shadow-sm p-8 rounded-[2rem] hover:shadow-xl transition-all group border-b-4 border-b-transparent hover:border-b-primary relative overflow-hidden">
-            {test.planType !== 'free' && (
-                <div className={`absolute top-6 right-6 px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border flex items-center gap-1 ${
-                    test.planType === 'premium' ? "bg-accent/10 text-accent border-accent/20" : "bg-success/10 text-success border-success/20"
-                }`}>
-                    {isLocked && <PiLockKey className="w-3 h-3" />}
-                    {test.planType}
-                </div>
-            )}
+        <motion.div 
+            whileHover={{ y: -8 }}
+            className="group relative flex flex-col rounded-[3rem] bg-white border border-base-300 p-10 shadow-sm transition-all hover:shadow-2xl hover:border-primary/30"
+        >
+            {/* Status Badge */}
+            <div className="absolute top-8 right-8 flex items-center gap-2">
+                {test.planType !== 'free' && (
+                    <div className={`px-4 py-2 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border flex items-center gap-1.5 shadow-sm ${
+                        test.planType === 'premium' ? "bg-amber-500/10 text-amber-600 border-amber-500/20" : "bg-primary/10 text-primary border-primary/20"
+                    }`}>
+                        {isLocked ? <PiLockKeyFill className="w-3 h-3" /> : <PiPlayCircleFill className="w-3 h-3" />}
+                        {test.planType}
+                    </div>
+                )}
+            </div>
 
-            <div className="flex flex-col h-full space-y-8">
-                <div className="flex items-start gap-4">
-                    <div className="text-6xl font-black text-base-content/10 select-none">{index}</div>
-                    <div className="pt-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-base-content/40">Test {index}</p>
-                        <h3 className="text-2xl font-bold mt-1 group-hover:text-primary transition-colors">{test.title || `Test ${index}`}</h3>
-                        <p className="text-sm text-base-content/50 mt-1 flex items-center gap-2">
-                            <PiClock className="w-4 h-4" /> ~{test.totalDuration || 165} min
-                        </p>
+            <div className="flex flex-col h-full space-y-10">
+                {/* Main Info */}
+                <div className="flex items-start gap-6">
+                    <div className="text-8xl font-black text-primary/5 select-none leading-none -mt-4 -ml-4 absolute group-hover:text-primary/10 transition-colors">
+                        {index < 10 ? `0${index}` : index}
+                    </div>
+                    <div className="relative z-10 pt-2 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <span className="h-1.5 w-8 rounded-full bg-primary/20" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-base-content/30">Official Mock Module</p>
+                        </div>
+                        <h3 className="text-3xl font-black tracking-tighter group-hover:text-primary transition-colors">
+                            {test.title || `Mock Assessment ${index}`}
+                        </h3>
+                        <div className="flex items-center gap-4 text-[10px] font-bold text-base-content/40 uppercase tracking-widest">
+                            <span className="flex items-center gap-1.5"><PiClockFill className="text-primary/50" /> {test.totalDuration || 165} Minutes</span>
+                            <span className="flex items-center gap-1.5"><PiUsersBold className="text-primary/50" /> Live Environment</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex gap-4 text-2xl text-base-content/30">
-                    <PiEar className={test.sections?.listening?.length ? "text-primary/40" : ""} />
-                    <PiBookOpen className={test.sections?.reading?.length ? "text-primary/40" : ""} />
-                    <PiPencilLine className={test.sections?.writing?.length ? "text-primary/40" : ""} />
-                    <PiMicrophoneStage className={test.sections?.speaking?.length ? "text-primary/40" : ""} />
-                </div>
-
-                <div className="flex items-center justify-between pt-4">
-                    <div className="flex items-center gap-2 text-xs text-base-content/40 font-medium">
-                        <PiUsers className="w-4 h-4" />
-                        <span>Be the first</span>
-                        <span className="mx-2">·</span>
-                        <span>4 sections · ~{test.totalDuration || 165} min</span>
+                {/* Section Visualization */}
+                <div className="flex items-center gap-6 p-6 rounded-[2rem] bg-base-100/50 border border-base-200">
+                    <div className="flex -space-x-3">
+                        {sectionIcons.map((s, i) => (
+                            <div 
+                                key={i}
+                                className={`w-12 h-12 rounded-2xl bg-white border border-base-200 flex items-center justify-center text-xl shadow-sm transition-transform hover:z-20 hover:scale-110 ${s.color}`}
+                            >
+                                {s.icon}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-base-content/30 leading-none mb-1">Coverage</span>
+                        <span className="text-xs font-bold text-base-content/60">Reading, Listening, Writing, Speaking</span>
                     </div>
                 </div>
 
+                {/* Footer Action */}
                 <button 
                     onClick={handleStartClick}
-                    className={`btn w-full rounded-2xl h-14 text-lg gap-3 border-none shadow-lg transition-all ${
+                    className={`btn w-full rounded-[1.8rem] h-16 text-sm font-black uppercase tracking-[0.2em] gap-4 border-none shadow-xl transition-all ${
                         isLocked 
-                        ? "btn-ghost bg-base-200 text-base-content/20 cursor-not-allowed" 
-                        : "btn-neutral bg-black hover:bg-primary text-white shadow-black/10"
+                        ? "bg-base-200 text-base-content/30 cursor-not-allowed" 
+                        : "bg-slate-900 text-white hover:bg-primary shadow-slate-900/10 hover:shadow-primary/30"
                     }`}
                 >
-                    {isLocked ? <PiLockKey className="w-6 h-6" /> : <PiPlayCircle className="w-6 h-6" />}
-                    {isLocked ? "Locked Content" : "Start Full Test"}
+                    {isLocked ? (
+                        <>
+                            <PiLockKeyFill className="w-5 h-5 opacity-40" />
+                            Locked Module
+                        </>
+                    ) : (
+                        <>
+                            Enter Assessment Lab
+                            <PiArrowRightBold className="w-4 h-4" />
+                        </>
+                    )}
                 </button>
             </div>
-        </div>
+        </motion.div>
     );
 };
-
-// Add missing icon
-const PiClock = ({ className }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-);
 
 export default MockTestCard;
