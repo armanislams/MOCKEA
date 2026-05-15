@@ -7,7 +7,6 @@ import {
     PiMicrophoneStage, 
     PiTrash, 
     PiPencilSimple,
-    PiMagnifyingGlass,
     PiPlus
 } from "react-icons/pi";
 import { Link } from "react-router";

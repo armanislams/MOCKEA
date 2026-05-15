@@ -4,15 +4,34 @@ import {
     PiPencilLine, 
     PiMicrophoneStage,
     PiPlayCircle,
-    PiUsers
+    PiUsers,
+    PiLockKey
 } from "react-icons/pi";
+import useAuth from "../../../../hooks/useAuth";
+import { toast } from "react-toastify";
 
 const MockTestCard = ({ test, index, onStart }) => {
+    const { user } = useAuth();
+    const userPlan = user?.plan || "free";
+
+    const planHierarchy = { free: 0, standard: 1, premium: 2 };
+    const isLocked = planHierarchy[userPlan] < planHierarchy[test.planType || "free"];
+
+    const handleStartClick = () => {
+        if (isLocked) {
+            toast.error(`This is a ${test.planType} test. Please upgrade your plan to access it!`);
+            return;
+        }
+        onStart();
+    };
     return (
         <div className="card bg-white border border-base-300 shadow-sm p-8 rounded-[2rem] hover:shadow-xl transition-all group border-b-4 border-b-transparent hover:border-b-primary relative overflow-hidden">
-            {test.planType === 'free' && (
-                <div className="absolute top-6 right-6 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
-                    Free
+            {test.planType !== 'free' && (
+                <div className={`absolute top-6 right-6 px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border flex items-center gap-1 ${
+                    test.planType === 'premium' ? "bg-accent/10 text-accent border-accent/20" : "bg-success/10 text-success border-success/20"
+                }`}>
+                    {isLocked && <PiLockKey className="w-3 h-3" />}
+                    {test.planType}
                 </div>
             )}
 
@@ -45,11 +64,15 @@ const MockTestCard = ({ test, index, onStart }) => {
                 </div>
 
                 <button 
-                    onClick={onStart}
-                    className="btn btn-neutral bg-black hover:bg-primary text-white w-full rounded-2xl h-14 text-lg gap-3 border-none shadow-lg shadow-black/10"
+                    onClick={handleStartClick}
+                    className={`btn w-full rounded-2xl h-14 text-lg gap-3 border-none shadow-lg transition-all ${
+                        isLocked 
+                        ? "btn-ghost bg-base-200 text-base-content/20 cursor-not-allowed" 
+                        : "btn-neutral bg-black hover:bg-primary text-white shadow-black/10"
+                    }`}
                 >
-                    <PiPlayCircle className="w-6 h-6" />
-                    Start Full Test
+                    {isLocked ? <PiLockKey className="w-6 h-6" /> : <PiPlayCircle className="w-6 h-6" />}
+                    {isLocked ? "Locked Content" : "Start Full Test"}
                 </button>
             </div>
         </div>

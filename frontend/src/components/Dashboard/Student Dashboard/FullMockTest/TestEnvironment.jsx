@@ -1,20 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { 
     PiMonitor, 
-    PiWarning, 
-    PiSignOut, 
-    PiArrowsInLineVertical,
-    PiClock,
-    PiCheckCircle
+    PiWarning,
+    PiClock
 } from "react-icons/pi";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import useAuth from "../../../hooks/useAuth";
 import ReadingSection from "./ReadingSection";
 import ListeningSection from "./ListeningSection";
 import WritingSection from "./WritingSection";
+import SpeakingSection from "./SpeakingSection";
 
 const TestEnvironment = () => {
     const { id } = useParams();
@@ -23,11 +21,23 @@ const TestEnvironment = () => {
     const { user } = useAuth();
 
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [currentModuleIdx, setCurrentModuleIdx] = useState(0);
+    
+    // Lazy initializers for crash recovery
+    const [answers, setAnswers] = useState(() => {
+        const cached = localStorage.getItem(`test_cache_${id}`);
+        return cached ? JSON.parse(cached).answers : {};
+    });
+    const [currentModuleIdx, setCurrentModuleIdx] = useState(() => {
+        const cached = localStorage.getItem(`test_cache_${id}`);
+        return cached ? JSON.parse(cached).currentModuleIdx : 0;
+    });
+    const [timeLeft, setTimeLeft] = useState(() => {
+        const cached = localStorage.getItem(`test_cache_${id}`);
+        return cached ? JSON.parse(cached).timeLeft : 0;
+    });
+
     const [tabSwitches, setTabSwitches] = useState(0);
     const [resultId, setResultId] = useState(null);
-    const [answers, setAnswers] = useState({});
-    const [timeLeft, setTimeLeft] = useState(0); // in seconds
     const [showWarning, setShowWarning] = useState(false);
     const [warningType, setWarningType] = useState(""); // "fullscreen" or "tab"
 
@@ -48,7 +58,11 @@ const TestEnvironment = () => {
                     setResultId(res.data.resultId);
                     setTimeLeft((test.totalDuration || 165) * 60);
                 })
-                .catch(err => toast.error("Failed to initialize test session"));
+                .catch(err =>{
+                    console.log(err);
+                     
+                    toast.error("Failed to initialize test session")});
+
         }
     }, [test, id, user._id, axiosSecure, resultId]);
 
@@ -73,14 +87,9 @@ const TestEnvironment = () => {
         }
     }, [answers, currentModuleIdx, timeLeft, id, resultId]);
 
-    // Load from localStorage on mount (Crash Recovery)
+    // Show restore toast if needed
     useEffect(() => {
-        const cached = localStorage.getItem(`test_cache_${id}`);
-        if (cached) {
-            const parsed = JSON.parse(cached);
-            setAnswers(parsed.answers || {});
-            setCurrentModuleIdx(parsed.currentModuleIdx || 0);
-            if (parsed.timeLeft) setTimeLeft(parsed.timeLeft);
+        if (localStorage.getItem(`test_cache_${id}`)) {
             toast.info("Your previous progress has been restored.");
         }
     }, [id]);
@@ -89,7 +98,7 @@ const TestEnvironment = () => {
         try {
             await axiosSecure.post("/mock-tests/submit-section", {
                 resultId,
-                sectionType: ['reading', 'listening', 'writing'][currentModuleIdx],
+                sectionType: ['reading', 'listening', 'writing', 'speaking'][currentModuleIdx],
                 answers,
                 timeTaken: (test.totalDuration * 60) - timeLeft
             });
@@ -150,22 +159,6 @@ const TestEnvironment = () => {
         setAnswers(prev => ({ ...prev, [qId]: val }));
     };
 
-    const formatTime = (seconds) => {
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        const s = seconds % 60;
-        return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    };
-
-    const handleNextModule = async () => {
-        await handleSaveProgress();
-        if (currentModuleIdx < 2) {
-            setCurrentModuleIdx(prev => prev + 1);
-            toast.success(`Moving to ${['Listening', 'Writing'][currentModuleIdx]} section`);
-        } else {
-            handleFinalSubmit();
-        }
-    };
 
     const handleFinalSubmit = async () => {
         try {
@@ -175,52 +168,38 @@ const TestEnvironment = () => {
             document.exitFullscreen();
             navigate("/dashboard/full-mock-test");
         } catch (err) {
+            console.log(err);
+            
             toast.error("Submission failed");
+        }
+    };
+
+    const handleNextModule = async () => {
+        await handleSaveProgress();
+        if (currentModuleIdx < 3) {
+            setCurrentModuleIdx(prev => prev + 1);
+            toast.success(`Moving to ${['Listening', 'Writing', 'Speaking'][currentModuleIdx]} section`);
+        } else {
+            handleFinalSubmit();
         }
     };
 
     if (isLoading) return <div className="flex items-center justify-center h-screen"><span className="loading loading-spinner loading-lg" /></div>;
 
-    // Warning Modal
-    const WarningModal = () => (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-            <div className="card bg-white w-full max-w-md p-8 text-center space-y-6 animate-pulse">
-                <div className="mx-auto w-20 h-20 rounded-full bg-error/10 flex items-center justify-center">
-                    <PiMonitor className="w-12 h-12 text-error" />
-                </div>
-                <div className="space-y-2">
-                    <h2 className="text-2xl font-black uppercase">
-                        {warningType === "fullscreen" ? "Fullscreen Required" : "Tab Switch Detected"}
-                    </h2>
-                    <p className="text-base-content/60">
-                        {warningType === "fullscreen" 
-                            ? "This test must be taken in fullscreen mode to prevent issues." 
-                            : `Warning: You exited the test window. (${tabSwitches}/3 switches). After 3 switches, your test will be auto-submitted.`}
-                    </p>
-                </div>
-                <div className="flex flex-col gap-3 pt-4">
-                    <button 
-                        onClick={() => { setShowWarning(false); enterFullscreen(); }}
-                        className="btn btn-primary btn-lg rounded-2xl h-16 text-lg font-bold"
-                    >
-                        {warningType === "fullscreen" ? "Enter Fullscreen" : "Re-enter Fullscreen"}
-                    </button>
-                    <button 
-                        onClick={() => navigate("/dashboard/full-mock-test")}
-                        className="btn btn-ghost text-error"
-                    >
-                        Exit Test
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
 
     return (
         <div className="min-h-screen bg-base-200 flex flex-col relative select-none" onContextMenu={e => e.preventDefault()}>
-            {!isFullscreen && showWarning && <WarningModal />}
+            {!isFullscreen && showWarning && (
+                <WarningModal 
+                    warningType={warningType}
+                    tabSwitches={tabSwitches}
+                    setShowWarning={setShowWarning}
+                    enterFullscreen={enterFullscreen}
+                    navigate={navigate}
+                />
+            )}
             {isFullscreen && showWarning && warningType === "tab" && (
-                <div className="fixed top-10 right-10 z-[100] animate-bounce">
+                <div className="fixed top-10 right-10 z-100 animate-bounce">
                     <div className="alert alert-error shadow-2xl rounded-3xl border-none p-6">
                         <PiWarning className="w-8 h-8" />
                         <div>
@@ -235,7 +214,7 @@ const TestEnvironment = () => {
             <header className="bg-white border-b border-base-300 h-20 px-8 flex items-center justify-between shadow-sm sticky top-0 z-40">
                 <div className="flex items-center gap-6">
                     <div className="text-xl font-black tracking-tighter text-primary">MOCKEA</div>
-                    <div className="h-8 w-[1px] bg-base-300" />
+                    <div className="h-8 w-px bg-base-300" />
                     <div className="flex flex-col">
                         <span className="text-xs font-black uppercase text-base-content/40 tracking-widest">Ongoing Test</span>
                         <span className="font-bold text-sm">{test.title}</span>
@@ -245,13 +224,13 @@ const TestEnvironment = () => {
                 <div className="flex items-center gap-8">
                     {/* Module Progress */}
                     <div className="hidden md:flex items-center gap-4">
-                        {['Reading', 'Listening', 'Writing'].map((m, i) => (
+                        {['Reading', 'Listening', 'Writing', 'Speaking'].map((m, i) => (
                             <div key={m} className={`flex items-center gap-2 text-xs font-bold ${i === currentModuleIdx ? "text-primary" : "text-base-content/30"}`}>
                                 <span className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${i === currentModuleIdx ? "border-primary bg-primary/5" : "border-base-200"}`}>
                                     {i + 1}
                                 </span>
                                 {m}
-                                {i < 2 && <div className="w-4 h-[1px] bg-base-200 mx-1" />}
+                                {i < 3 && <div className="w-4 h-px bg-base-200 mx-1" />}
                             </div>
                         ))}
                     </div>
@@ -267,7 +246,7 @@ const TestEnvironment = () => {
                             onClick={handleNextModule}
                             className="btn btn-error rounded-2xl px-6 h-12 text-sm font-bold shadow-lg shadow-error/20"
                         >
-                            {currentModuleIdx === 2 ? "Final Submit" : "Next Section"}
+                            {currentModuleIdx === 3 ? "Final Submit" : "Next Section"}
                         </button>
                     </div>
                 </div>
@@ -296,6 +275,11 @@ const TestEnvironment = () => {
                         onAnswerChange={handleAnswerChange} 
                     />
                 )}
+                {currentModuleIdx === 3 && (
+                    <SpeakingSection 
+                        data={test.sections.speaking[0]} 
+                    />
+                )}
             </main>
 
             {/* Test Footer */}
@@ -316,6 +300,49 @@ const TestEnvironment = () => {
             </footer>
         </div>
     );
+};
+
+// --- Sub-components & Helpers ---
+
+const WarningModal = ({ warningType, tabSwitches, setShowWarning, enterFullscreen, navigate }) => (
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+        <div className="card bg-white w-full max-w-md p-8 text-center space-y-6 animate-pulse">
+            <div className="mx-auto w-20 h-20 rounded-full bg-error/10 flex items-center justify-center">
+                <PiMonitor className="w-12 h-12 text-error" />
+            </div>
+            <div className="space-y-2">
+                <h2 className="text-2xl font-black uppercase">
+                    {warningType === "fullscreen" ? "Fullscreen Required" : "Tab Switch Detected"}
+                </h2>
+                <p className="text-base-content/60">
+                    {warningType === "fullscreen" 
+                        ? "This test must be taken in fullscreen mode to prevent issues." 
+                        : `Warning: You exited the test window. (${tabSwitches}/3 switches). After 3 switches, your test will be auto-submitted.`}
+                </p>
+            </div>
+            <div className="flex flex-col gap-3 pt-4">
+                <button 
+                    onClick={() => { setShowWarning(false); enterFullscreen(); }}
+                    className="btn btn-primary btn-lg rounded-2xl h-16 text-lg font-bold"
+                >
+                    {warningType === "fullscreen" ? "Enter Fullscreen" : "Re-enter Fullscreen"}
+                </button>
+                <button 
+                    onClick={() => navigate("/dashboard/full-mock-test")}
+                    className="btn btn-ghost text-error"
+                >
+                    Exit Test
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
+const formatTime = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
 export default TestEnvironment;

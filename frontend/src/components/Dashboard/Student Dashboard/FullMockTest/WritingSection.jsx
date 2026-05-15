@@ -1,15 +1,8 @@
-import { useState, useEffect } from "react";
-import { PiPencilLine, PiTextT, PiImage, PiWarningCircle } from "react-icons/pi";
+import { PiPencilLine, PiTextT, PiWarningCircle, PiCheckCircle } from "react-icons/pi";
 
 const WritingSection = ({ data, answers, onAnswerChange }) => {
-    const [wordCount, setWordCount] = useState(0);
-
     const currentAnswer = answers[data?._id] || "";
-
-    useEffect(() => {
-        const words = currentAnswer.trim().split(/\s+/).filter(w => w.length > 0);
-        setWordCount(words.length);
-    }, [currentAnswer]);
+    const wordCount = currentAnswer.trim().split(/\s+/).filter(w => w.length > 0).length;
 
     return (
         <div className="flex h-full overflow-hidden bg-white">
@@ -68,7 +61,7 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
                     </div>
 
                     <textarea 
-                        className="flex-1 w-full p-8 rounded-[2rem] border-2 border-base-200 focus:border-primary outline-none text-lg leading-relaxed font-serif resize-none shadow-inner bg-base-50/20"
+                        className="flex-1 w-full p-8 rounded-4xl border-2 border-base-200 focus:border-primary outline-none text-lg leading-relaxed font-serif resize-none shadow-inner bg-base-50/20"
                         placeholder="Start writing your essay here..."
                         value={currentAnswer}
                         onChange={(e) => onAnswerChange(data?._id, e.target.value)}

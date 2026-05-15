@@ -29,7 +29,7 @@ const QUESTION_TYPES = [
 const AddQuestionForm = () => {
     const axiosSecure = useAxiosSecure();
     const [testType, setTestType] = useState("reading");
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(() => ({
         title: "",
         instructions: "",
         passage: "",
@@ -39,7 +39,7 @@ const AddQuestionForm = () => {
         questions: [
             { id: Date.now().toString(), type: "short-answer", question: "", correctAnswer: "", options: [""] }
         ]
-    });
+    }));
 
     const mutation = useMutation({
         mutationFn: (data) => axiosSecure.post("/questions/add", data),

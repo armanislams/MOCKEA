@@ -27,7 +27,7 @@ const CreateMockTest = () => {
         }
     });
 
-    const { data: questions = [], isLoading } = useQuery({
+    const { data: questions = [] } = useQuery({
         queryKey: ["admin-questions-for-bundle"],
         queryFn: async () => {
             const res = await axiosSecure.get("/questions");

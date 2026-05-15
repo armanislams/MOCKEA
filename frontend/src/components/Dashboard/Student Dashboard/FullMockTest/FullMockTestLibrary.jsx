@@ -4,9 +4,7 @@ import {
     PiEar, 
     PiPencilLine, 
     PiMicrophoneStage,
-    PiArrowRight,
     PiClock,
-    PiUsers,
     PiCards
 } from "react-icons/pi";
 import { useState } from "react";
@@ -70,7 +68,7 @@ const FullMockTestLibrary = () => {
                 ))}
             </div>
 
-            {/* Test List */}
+            {/* Test List - Free */}
             <section className="space-y-6">
                 <div className="flex items-center justify-between">
                     <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -94,6 +92,29 @@ const FullMockTestLibrary = () => {
                     )}
                 </div>
             </section>
+
+            {/* Test List - Premium */}
+            {tests.some(t => t.planType !== 'free') && (
+                <section className="space-y-6 pt-10">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
+                            <span className="p-2 bg-accent/20 text-accent rounded-xl">👑</span>
+                            Premium Mock Tests
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {tests.filter(t => t.planType !== 'free').map((test, index) => (
+                            <MockTestCard 
+                                key={test._id} 
+                                test={test} 
+                                index={index + 1} 
+                                onStart={() => setSelectedTest(test)} 
+                            />
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {selectedTest && (
                 <InstructionModal 
