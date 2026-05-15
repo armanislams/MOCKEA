@@ -8,7 +8,8 @@ import {
   FiActivity,
   FiCalendar,
   FiArrowRight,
-  FiUser
+  FiUser,
+  FiClock
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 
@@ -31,7 +32,7 @@ const AdminDashboardHome = () => {
     );
   }
 
-  if (isError) {
+  if (isError || !analytics) {
     return (
       <div className="text-center p-10 bg-red-50 rounded-xl border border-red-100">
         <p className="text-red-500 font-medium">Failed to load dashboard data. Please try again later.</p>
@@ -39,7 +40,8 @@ const AdminDashboardHome = () => {
     );
   }
 
-  const { overview, recentUsers, studentStats } = analytics;
+  // Destructure with fallbacks to prevent "undefined" crashes
+  const { overview = {}, studentStats = [], recentActivity = [] } = analytics;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -68,162 +70,165 @@ const AdminDashboardHome = () => {
     >
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Admin Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Welcome back! Here's what's happening today.</p>
+        <h1 className="text-3xl font-black tracking-tight text-gray-800 dark:text-white">System Overview</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium italic">"Real-time platform metrics and student performance tracking."</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
           <div className="flex justify-between items-start">
             <div>
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</div>
-              <div className="text-3xl font-bold text-gray-800 dark:text-white mt-1">{overview.totalUsers}</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Users</div>
+              <div className="text-4xl font-black tracking-tighter text-gray-800 dark:text-white mt-1">{overview.totalUsers ?? 0}</div>
             </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-              <FiUsers className="text-blue-600 dark:text-blue-400 text-xl" />
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
+              <FiUsers className="text-blue-600 dark:text-blue-400 text-2xl" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <span className="text-green-500 flex items-center font-medium">
-              <FiUserPlus className="mr-1" /> {overview.usersToday}
+          <div className="mt-4 flex items-center text-xs font-bold uppercase tracking-widest">
+            <span className="text-green-500 flex items-center">
+              <FiUserPlus className="mr-1" /> {overview.usersToday ?? 0}
             </span>
-            <span className="ml-2 text-gray-400">joined today</span>
+            <span className="ml-2 text-gray-400">New Today</span>
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
           <div className="flex justify-between items-start">
             <div>
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tests Taken</div>
-              <div className="text-3xl font-bold text-gray-800 dark:text-white mt-1">{overview.totalTests}</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Tests Completed</div>
+              <div className="text-4xl font-black tracking-tighter text-gray-800 dark:text-white mt-1">{overview.totalTests ?? 0}</div>
             </div>
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <FiFileText className="text-purple-600 dark:text-purple-400 text-xl" />
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-2xl">
+              <FiFileText className="text-purple-600 dark:text-purple-400 text-2xl" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <span className="text-green-500 flex items-center font-medium">
-              <FiActivity className="mr-1" /> {overview.testsToday}
+          <div className="mt-4 flex items-center text-xs font-bold uppercase tracking-widest">
+            <span className="text-green-500 flex items-center">
+              <FiActivity className="mr-1" /> {overview.testsToday ?? 0}
             </span>
-            <span className="ml-2 text-gray-400">taken today</span>
+            <span className="ml-2 text-gray-400">Today</span>
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
           <div className="flex justify-between items-start">
             <div>
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg. Test per User</div>
-              <div className="text-3xl font-bold text-gray-800 dark:text-white mt-1">
-                {overview.totalUsers > 0 ? (overview.totalTests / overview.totalUsers).toFixed(1) : 0}
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Average/User</div>
+              <div className="text-4xl font-black tracking-tighter text-gray-800 dark:text-white mt-1">
+                {(overview.totalTests / (overview.totalUsers || 1)).toFixed(1)}
               </div>
             </div>
-            <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
-              <FiTrendingUp className="text-orange-600 dark:text-orange-400 text-xl" />
+            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl">
+              <FiTrendingUp className="text-orange-600 dark:text-orange-400 text-2xl" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm text-gray-400">
-            <FiCalendar className="mr-1" /> Lifetime average
+          <div className="mt-4 flex items-center text-xs font-bold uppercase tracking-widest text-gray-400">
+            <FiCalendar className="mr-1" /> Session Density
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
           <div className="flex justify-between items-start">
             <div>
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Tests Today</div>
-              <div className="text-3xl font-bold text-gray-800 dark:text-white mt-1">{overview.testsToday}</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Live Traffic</div>
+              <div className="text-4xl font-black tracking-tighter text-gray-800 dark:text-white mt-1">{overview.testsToday ?? 0}</div>
             </div>
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-              <FiActivity className="text-green-600 dark:text-green-400 text-xl" />
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-2xl">
+              <FiActivity className="text-green-600 dark:text-green-400 text-2xl" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm text-gray-400">
-            <span className="text-green-500 font-medium">Active</span> sessions now
+          <div className="mt-4 flex items-center text-xs font-bold uppercase tracking-widest">
+            <span className="text-green-500 animate-pulse">● Active</span>
+            <span className="ml-2 text-gray-400">Monitoring</span>
           </div>
         </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* New Registered Users */}
-        <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white">New Registered Users</h2>
-            <button className="text-sm text-blue-600 font-medium hover:underline flex items-center">
-              View all <FiArrowRight className="ml-1" />
+        {/* Recent Activity */}
+        <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="p-8 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <h2 className="text-xl font-black tracking-tight text-gray-800 dark:text-white flex items-center gap-2">
+                <FiClock className="text-primary" />
+                Recent Test Attempts
+            </h2>
+            <button className="btn btn-ghost btn-xs font-black uppercase tracking-widest text-primary hover:bg-primary/5">
+              Live Feed
             </button>
           </div>
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {recentUsers.map((user) => (
-              <div key={user._id} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold uppercase">
-                    {user.name.charAt(0)}
+          <div className="divide-y divide-gray-100 dark:divide-gray-700 max-h-[500px] overflow-y-auto">
+            {recentActivity.length > 0 ? recentActivity.map((activity) => (
+              <div key={activity._id} className="p-5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black uppercase text-xl">
+                    {activity.userId?.name?.charAt(0) || "?"}
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-gray-800 dark:text-white">{user.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{user.email}</div>
+                    <div className="text-sm font-black text-gray-800 dark:text-white">{activity.userId?.name || "Unknown Student"}</div>
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status: {activity.status}</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-medium px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-full inline-block">
-                    {user.plan}
+                  <div className={`text-[10px] font-black px-3 py-2 rounded-xl inline-block uppercase tracking-widest ${
+                    activity.tabSwitchCount > 0 ? "bg-error/10 text-error" : "bg-success/10 text-success"
+                  }`}>
+                    {activity.tabSwitchCount} Violations
                   </div>
-                  <div className="text-[10px] text-gray-400 mt-1">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                  <div className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-tighter">
+                    {new Date(activity.createdAt).toLocaleTimeString()}
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+                <div className="p-20 text-center text-gray-400 italic">No recent activity detected.</div>
+            )}
           </div>
         </motion.div>
 
         {/* Student Performance */}
-        <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white">Top Active Students</h2>
+        <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="p-8 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <h2 className="text-xl font-black tracking-tight text-gray-800 dark:text-white flex items-center gap-2">
+                <FiTrendingUp className="text-primary" />
+                Top Performers
+            </h2>
             <FiTrendingUp className="text-gray-400" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-900/50">
-                  <th className="px-6 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student</th>
-                  <th className="px-6 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Tests</th>
-                  <th className="px-6 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Avg. Score</th>
-                  <th className="px-6 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Last Test</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Student</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest text-center">Tests</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest text-right">Last Session</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {studentStats.map((student) => (
-                  <tr key={student.email} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                {studentStats.length > 0 ? studentStats.map((student) => (
+                  <tr key={student._id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-xl">
                           <FiUser className="text-gray-500 dark:text-gray-400" />
                         </div>
                         <div>
-                          <div className="text-sm font-bold text-gray-800 dark:text-white">{student.name || "Unknown"}</div>
-                          <div className="text-[10px] text-gray-400">{student.email}</div>
+                          <div className="text-sm font-black text-gray-800 dark:text-white">{student.name || "Unknown"}</div>
+                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{student.email}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{student.testCount}</span>
+                    <td className="px-8 py-6 text-center">
+                      <span className="text-lg font-black text-blue-600 dark:text-blue-400">{student.testCount}</span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="text-sm font-bold text-gray-800 dark:text-white">{student.averageScore}%</div>
-                      <div className="w-full bg-gray-100 dark:bg-gray-700 h-1 rounded-full mt-1">
-                        <div 
-                          className="bg-blue-500 h-1 rounded-full" 
-                          style={{ width: `${student.averageScore}%` }}
-                        ></div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(student.lastTest).toLocaleDateString()}
+                    <td className="px-8 py-6 text-right text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                      {new Date(student.lastAttempt).toLocaleDateString()}
                     </td>
                   </tr>
-                ))}
+                )) : (
+                    <tr><td colSpan="3" className="p-20 text-center italic text-gray-400">Awaiting student data...</td></tr>
+                )}
               </tbody>
             </table>
           </div>

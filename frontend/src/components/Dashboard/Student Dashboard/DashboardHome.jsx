@@ -33,22 +33,15 @@ const statCards = [
   { label: 'Study Streak', key: 'studyStreak', suffix: ' days' },
 ];
 
-const weakAreas = [
-  { title: 'Matching Headings', amount: 62 },
-  { title: 'True/False/Not Given', amount: 68 },
-  { title: 'Summary Completion', amount: 71 },
-];
-
 const DashboardHome = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
   const name = user?.displayName || user?.email?.split('@')[0] || 'there';
 
   const { data: summary, isLoading: loading } = useQuery({
-    queryKey: ["analytics-summary", user?.email],
-    enabled: !!user?.email,
+    queryKey: ["analytics-summary"],
     queryFn: async () => {
-      const res = await axiosSecure.get(`/analytics/summary/${user.email}`);
+      const res = await axiosSecure.get(`/analytics/summary`);
       return res.data.summary;
     },
   });
@@ -66,10 +59,10 @@ const DashboardHome = () => {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link to="/dashboard/practice" className="btn btn-primary">
-              Take a test
+            <Link to="/dashboard/full-mock-test" className="btn btn-primary rounded-2xl px-8 h-14 font-black shadow-xl shadow-primary/20">
+              Take a full test
             </Link>
-            <Link to="/dashboard/analytics" className="btn btn-outline btn-primary">
+            <Link to="/dashboard/analytics" className="btn btn-outline btn-primary rounded-2xl px-8 h-14 font-black">
               View analytics
             </Link>
           </div>
@@ -80,7 +73,7 @@ const DashboardHome = () => {
             <div key={card.label} className="rounded-3xl border border-base-300 bg-base-200 p-5">
               <p className="text-sm text-base-content/70">{card.label}</p>
               <p className="mt-4 text-3xl font-semibold">
-                {loading ? '—' : summary?.[card.key] ?? '--'}{card.suffix || ''}
+                {loading ? '—' : (summary?.[card.key] ?? '--')}{card.suffix || ''}
               </p>
             </div>
           ))}
@@ -97,9 +90,9 @@ const DashboardHome = () => {
             <input
               type="text"
               placeholder="Search tests, topics..."
-              className="input input-bordered w-full pr-24"
+              className="input input-bordered w-full pr-24 rounded-2xl"
             />
-            <button className="btn btn-primary absolute right-1 top-1/2 -translate-y-1/2">Search</button>
+            <button className="btn btn-primary absolute right-1 top-1/2 -translate-y-1/2 rounded-xl">Search</button>
           </div>
         </div>
 
@@ -124,7 +117,7 @@ const DashboardHome = () => {
               <h2 className="text-2xl font-bold">Recent Attempts</h2>
               <p className="text-base-content/70 mt-1">Your latest sessions are tracked here for quick review.</p>
             </div>
-            <Link to="/dashboard/review" className="btn btn-outline btn-primary">
+            <Link to="/dashboard/review" className="btn btn-outline btn-primary rounded-2xl font-black">
               View all
             </Link>
           </div>
@@ -132,32 +125,32 @@ const DashboardHome = () => {
           <div className="mt-6 overflow-x-auto">
             <table className="table w-full">
               <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Score</th>
-                  <th>Band</th>
-                  <th>Duration</th>
+                <tr className="text-base-content/40">
+                  <th className="font-bold uppercase tracking-widest text-[10px]">Date</th>
+                  <th className="font-bold uppercase tracking-widest text-[10px]">Assessment</th>
+                  <th className="font-bold uppercase tracking-widest text-[10px]">Accuracy</th>
+                  <th className="font-bold uppercase tracking-widest text-[10px]">Band</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-base-100">
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="text-center py-8">Loading recent attempts…</td>
+                    <td colSpan="4" className="text-center py-8">Loading recent attempts…</td>
                   </tr>
                 ) : summary?.recentAttempts?.length ? (
-                  summary.recentAttempts.map((item) => (
-                    <tr key={`${item.date}-${item.type}`}>
-                      <td>{new Date(item.date).toLocaleDateString()}</td>
-                      <td>{item.type}</td>
-                      <td>{item.score}/{item.totalQuestions}</td>
-                      <td>{item.band}</td>
-                      <td>{item.duration}</td>
+                  summary.recentAttempts.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-base-50 transition-colors">
+                      <td className="py-5 font-medium">{new Date(item.date).toLocaleDateString()}</td>
+                      <td className="py-5 font-bold text-primary">{item.testName}</td>
+                      <td className="py-5 font-black">{item.accuracy}%</td>
+                      <td className="py-5">
+                        <span className="badge badge-ghost font-black px-4 py-3 rounded-lg">{item.band}</span>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center py-8">No recent attempts yet.</td>
+                    <td colSpan="4" className="text-center py-8 opacity-40 italic">No recent attempts yet.</td>
                   </tr>
                 )}
               </tbody>
@@ -174,18 +167,23 @@ const DashboardHome = () => {
           </div>
 
           <div className="mt-6 space-y-5">
-            {weakAreas.map((area) => (
+            {(summary?.weakAreas || [
+              { title: 'Time Management', percentage: 65 },
+              { title: 'Vocabulary Range', percentage: 72 }
+            ]).map((area) => (
               <div key={area.title}>
                 <div className="flex items-center justify-between text-sm font-semibold">
-                  <span>{area.title}</span>
-                  <span>{area.amount}%</span>
+                  <span className="text-base-content/50 uppercase tracking-widest text-[10px]">{area.title}</span>
+                  <span className="text-primary font-black">{area.percentage}%</span>
                 </div>
-                <progress className="progress progress-primary w-full" value={area.amount} max="100"></progress>
+                <progress className="progress progress-primary w-full h-2 rounded-full mt-1" value={area.percentage} max="100"></progress>
               </div>
             ))}
           </div>
 
-          <button className="btn btn-primary btn-block mt-6">Practice weak areas</button>
+          <button className="btn btn-primary btn-block mt-8 rounded-[1.5rem] font-black shadow-lg shadow-primary/10">
+            Practice weak areas
+          </button>
         </div>
       </section>
     </div>
