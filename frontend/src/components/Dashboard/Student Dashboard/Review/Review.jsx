@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { 
     PiClipboardText, 
@@ -97,9 +98,12 @@ const Review = () => {
                                     })}
                                 </div>
 
-                                <button className="btn btn-ghost btn-circle self-center hidden lg:flex group-hover:bg-primary group-hover:text-white transition-all">
+                                <Link 
+                                    to={`/dashboard/review/${result._id}`}
+                                    className="btn btn-ghost btn-circle self-center hidden lg:flex group-hover:bg-primary group-hover:text-white transition-all shadow-sm border border-base-200"
+                                >
                                     <PiCaretRightBold />
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     ))
@@ -114,9 +118,9 @@ const Review = () => {
                                 You haven't completed any full mock tests yet. Your detailed performance breakdown will appear here once you finish your first test.
                             </p>
                         </div>
-                        <button className="btn btn-primary rounded-2xl px-10 h-14 font-black shadow-xl shadow-primary/20">
+                        <Link to="/dashboard/full-mock-test" className="btn btn-primary rounded-2xl px-10 h-14 font-black shadow-xl shadow-primary/20">
                             Start Your First Mock Test
-                        </button>
+                        </Link>
                     </div>
                 )}
             </div>

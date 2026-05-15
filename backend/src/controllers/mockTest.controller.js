@@ -104,7 +104,7 @@ export const finalizeTest = async (req, res) => {
         const { resultId } = req.body;
         const result = await MockTestResult.findById(resultId).populate({
             path: 'testId',
-            populate: { path: 'sections.reading sections.listening' }
+            populate: { path: 'sections.reading sections.listening sections.writing sections.speaking' }
         });
 
         if (!result) return res.status(404).json({ success: false, message: 'Result session not found' });
@@ -140,8 +140,6 @@ export const finalizeTest = async (req, res) => {
     }
 };
 
-// --- NEW RETRIEVAL CONTROLLERS ---
-
 // Get results for current user
 export const getUserResults = async (req, res) => {
     try {
@@ -149,6 +147,28 @@ export const getUserResults = async (req, res) => {
             .populate('testId', 'title')
             .sort({ createdAt: -1 });
         res.status(200).json({ success: true, results });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Get single result details for review
+export const getResultDetail = async (req, res) => {
+    try {
+        const result = await MockTestResult.findById(req.params.id)
+            .populate({
+                path: 'testId',
+                populate: { path: 'sections.reading sections.listening sections.writing sections.speaking' }
+            });
+
+        if (!result) return res.status(404).json({ success: false, message: 'Result not found' });
+
+        // Security: Ensure student only sees their own results
+        if (req.user.role !== 'admin' && req.user.role !== 'instructor' && result.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        res.status(200).json({ success: true, result });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -187,7 +207,7 @@ export const gradeSection = async (req, res) => {
     }
 };
 
-// Admin Mock Test CRUD (Simplified)
+// Admin Mock Test CRUD
 export const createMockTest = async (req, res) => {
     try {
         const newTest = new MockTest(req.body);

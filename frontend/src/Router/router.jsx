@@ -5,6 +5,7 @@ import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
 import Profile from "../components/Dashboard/Profile";
 import Review from "../components/Dashboard/Student Dashboard/Review/Review";
+import ReviewDetail from "../components/Dashboard/Student Dashboard/Review/ReviewDetail";
 import Analytics from "../components/Dashboard/Student Dashboard/Analytics/Analytics";
 import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
@@ -88,6 +89,10 @@ const router = createBrowserRouter([
       {
         path: "review",
         element: <Review />,
+      },
+      {
+        path: "review/:id",
+        element: <ReviewDetail />,
       },
       {
         path: "analytics",

@@ -11,7 +11,8 @@ import {
     deleteMockTest,
     gradeSection,
     getUserResults,
-    getAllResults
+    getAllResults,
+    getResultDetail
 } from '../controllers/mockTest.controller.js';
 import verifyUserToken from '../middlewares/verifyUserToken.js';
 import verifyUserRole from '../middlewares/verifyUserRole.js';
@@ -26,6 +27,7 @@ mockTestRouter.use(verifyUserRole());
 // Student/General Authenticated Routes
 mockTestRouter.get('/', getAllMockTests);
 mockTestRouter.get('/results/user', getUserResults);
+mockTestRouter.get('/results/:id', getResultDetail); // New: Result Detail for Review
 mockTestRouter.get('/:id', getMockTestById);
 mockTestRouter.post('/start', startTest);
 mockTestRouter.post('/submit-section', submitSection);

@@ -5,8 +5,15 @@ import { getAnalyticsSummary, getAdminAnalytics } from "../controllers/analytics
 
 const analyticsRouter = express.Router();
 
+// All analytics require authentication
 analyticsRouter.use(verifyUserToken);
-analyticsRouter.get("/summary/:email", getAnalyticsSummary);
+// Populate req.user for all analytics routes
+analyticsRouter.use(verifyUserRole());
+
+// Student can see their own summary
+analyticsRouter.get("/summary", getAnalyticsSummary);
+
+// Admin can see global overview
 analyticsRouter.get("/admin", verifyUserRole(["admin"]), getAdminAnalytics);
 
 export default analyticsRouter;
