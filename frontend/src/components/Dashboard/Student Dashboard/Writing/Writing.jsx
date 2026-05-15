@@ -29,7 +29,7 @@ const Writing = () => {
   
   // Student input
   const [text, setText] = useState("");
-  const [elapsed, setElapsed] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const [timerActive, setTimerActive] = useState(false);
 
   const activeSet = useMemo(
@@ -46,7 +46,7 @@ const Writing = () => {
         const response = await axiosSecure.get("/questions?type=writing");
         const fetched = response?.data?.questions || [];
         setWritingSets(fetched);
-        if (fetched.length > 0) setSelectedSetId(fetched[0]._id);
+        // Auto-selection removed
         setLoading(false);
       } catch (error) {
         toast.error("Failed to load writing prompts");
@@ -57,10 +57,10 @@ const Writing = () => {
   }, [axiosSecure, user?.email]);
 
   useEffect(() => {
-    if (!timerActive || submitted) return;
-    const iv = setInterval(() => setElapsed((p) => p + 1), 1000);
+    if (!timerActive || submitted || timeLeft <= 0) return;
+    const iv = setInterval(() => setTimeLeft((p) => p - 1), 1000);
     return () => clearInterval(iv);
-  }, [timerActive, submitted]);
+  }, [timerActive, submitted, timeLeft]);
 
   const handleSubmit = async () => {
     if (wordCount < 50) {
@@ -70,14 +70,22 @@ const Writing = () => {
 
     try {
       setSubmitting(true);
-      // In a real scenario, this would post to a 'submissions' endpoint
-      // For now, we simulate a successful save to the instructor's queue
-      await new Promise(r => setTimeout(r, 1500));
-      setSubmitted(true);
-      setTimerActive(false);
-      toast.success("Response submitted for instructor evaluation!");
+      const response = await axiosSecure.post("/submissions/submit", {
+        questionSetId: activeSet._id,
+        testType: "writing",
+        title: activeSet.title,
+        content: text,
+        userName: user?.displayName || "Student",
+        userEmail: user?.email
+      });
+
+      if (response.data.success) {
+        setSubmitted(true);
+        setTimerActive(false);
+        toast.success("Response submitted for instructor evaluation!");
+      }
     } catch (error) {
-      toast.error("Failed to submit response");
+      toast.error(error.response?.data?.message || "Failed to submit response");
     } finally {
       setSubmitting(false);
     }
@@ -91,12 +99,44 @@ const Writing = () => {
 
   if (loading) return <Loader />;
 
-  if (!activeSet) {
+  if (!activeSet || !selectedSetId) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-          <PiInfoFill className="text-6xl text-base-content/20" />
-          <h2 className="text-2xl font-black opacity-40 uppercase tracking-tighter">No Writing Prompts Available</h2>
-          <button onClick={() => navigate(-1)} className="btn btn-primary rounded-2xl px-10">Go Back</button>
+        <div className="max-w-7xl mx-auto px-6 py-20">
+            <div className="text-center space-y-4 mb-16">
+                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">
+                    <PiPencilLineFill /> {writingSets.length} Modules Available
+                </div>
+                <h2 className="text-5xl font-black tracking-tighter text-slate-800">Select a <span className="text-primary italic">Writing Lab</span></h2>
+                <p className="text-slate-400 font-medium text-lg">Choose a standardized prompt to master your academic composition.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {writingSets.map((set, idx) => (
+                    <motion.div 
+                        key={set._id}
+                        whileHover={{ y: -10 }}
+                        className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
+                        onClick={() => setSelectedSetId(set._id)}
+                    >
+                        <div className="flex flex-col h-full space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
+                                    <PiPencilLineFill />
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
+                            </div>
+                            <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
+                            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                <span className="flex items-center gap-1.5"><PiClockFill /> 60m</span>
+                                <span className="flex items-center gap-1.5"><PiTextAaFill /> Open Module</span>
+                            </div>
+                            <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
+                                Start Composition
+                            </button>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
         </div>
     );
   }
@@ -118,8 +158,10 @@ const Writing = () => {
 
             <div className="flex items-center gap-6">
                 <div className="flex flex-col items-end">
-                    <div className="text-[9px] font-black uppercase tracking-widest text-base-content/30">Session Time</div>
-                    <div className="text-xl font-mono font-black text-slate-800 leading-none mt-1">{fmt(elapsed)}</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-base-content/30">Remaining Time</div>
+                    <div className={`text-xl font-mono font-black leading-none mt-1 ${timeLeft < 300 ? 'text-red-500' : 'text-slate-800'}`}>
+                        {fmt(timeLeft)}
+                    </div>
                 </div>
                 <div className="h-10 w-px bg-base-300" />
                 {!submitted && (

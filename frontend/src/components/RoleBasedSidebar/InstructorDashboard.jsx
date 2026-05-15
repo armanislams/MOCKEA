@@ -23,9 +23,9 @@ export const InstructorDashboard = () => {
                 </NavLink>
             </li>
             <li>
-                <NavLink to="/dashboard/review-submissions">
+                <NavLink to="/dashboard/admin/grade-submissions">
                     <PiFiles className="w-5 h-5" />
-                    Review Submissions
+                    Review Center
                 </NavLink>
             </li>
         </>

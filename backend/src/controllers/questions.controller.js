@@ -3,7 +3,8 @@ import Questions from "../model/questions.js"
 export const getQuestions = async (req, res) => {
     try {
         const { type } = req.query;
-        const filter = type ? { type: type.toLowerCase() } : {};
+        // Use 'testType' to match the Mongoose model field
+        const filter = type ? { testType: type.toLowerCase() } : {};
         
         const questions = await Questions.find(filter);
         return res.status(200).json({

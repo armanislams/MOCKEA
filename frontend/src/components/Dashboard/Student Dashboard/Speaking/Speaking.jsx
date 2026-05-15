@@ -45,7 +45,7 @@ const Speaking = () => {
         const response = await axiosSecure.get("/questions?type=speaking");
         const fetched = response?.data?.questions || [];
         setSpeakingSets(fetched);
-        if (fetched.length > 0) setSelectedSetId(fetched[0]._id);
+        // Auto-selection removed
         setLoading(false);
       } catch (error) {
         toast.error("Failed to load speaking prompts");
@@ -93,9 +93,26 @@ const Speaking = () => {
     toast.info("Recording saved for evaluation.");
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    toast.success("Speaking session submitted for instructor review!");
+  const handleSubmit = async () => {
+    try {
+      // In a real flow, we would upload the audio blob to S3/Cloudinary first
+      // For this practice lab, we're wiring the submission structure
+      const response = await axiosSecure.post("/submissions/submit", {
+        questionSetId: activeSet._id,
+        testType: "speaking",
+        title: activeSet.title,
+        content: "Audio Recording Session - [Simulated Audio Link]",
+        userName: user?.displayName || "Student",
+        userEmail: user?.email
+      });
+
+      if (response.data.success) {
+        setSubmitted(true);
+        toast.success("Speaking session submitted for instructor review!");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to submit session");
+    }
   };
 
   const fmt = (s) => {
@@ -106,12 +123,44 @@ const Speaking = () => {
 
   if (loading) return <Loader />;
 
-  if (!activeSet) {
+  if (!activeSet || !selectedSetId) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-          <PiInfoFill className="text-6xl text-base-content/20" />
-          <h2 className="text-2xl font-black opacity-40 uppercase tracking-tighter">No Speaking Prompts Available</h2>
-          <button onClick={() => navigate(-1)} className="btn btn-primary rounded-2xl px-10">Go Back</button>
+        <div className="max-w-7xl mx-auto px-6 py-20">
+            <div className="text-center space-y-4 mb-16">
+                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20 backdrop-blur-md">
+                    <PiMicrophoneStageFill /> {speakingSets.length} Sessions Available
+                </div>
+                <h2 className="text-5xl font-black tracking-tighter text-slate-800">Choose a <span className="text-primary italic">Speaking Lab</span></h2>
+                <p className="text-slate-400 font-medium text-lg">Select a standardized prompt to begin your virtual interview.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {speakingSets.map((set, idx) => (
+                    <motion.div 
+                        key={set._id}
+                        whileHover={{ y: -10 }}
+                        className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
+                        onClick={() => setSelectedSetId(set._id)}
+                    >
+                        <div className="flex flex-col h-full space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
+                                    <PiMicrophoneStageFill />
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Session {idx + 1}</span>
+                            </div>
+                            <h3 className="text-xl font-black group-hover:text-primary transition-colors text-slate-800">{set.title}</h3>
+                            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                <span className="flex items-center gap-1.5"><PiClockFill /> 15m</span>
+                                <span className="flex items-center gap-1.5"><PiMicrophoneFill /> Open Lab</span>
+                            </div>
+                            <button className="btn btn-block rounded-2xl h-14 bg-primary text-white border-none transition-all font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:bg-slate-900">
+                                Start Interview
+                            </button>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
         </div>
     );
   }

@@ -29,6 +29,12 @@ export const AdminDashboard = () => {
                 </NavLink>
             </li>
             <li>
+                <NavLink to="/dashboard/admin/grade-submissions">
+                    <PiBookOpen className="w-5 h-5" />
+                    Review Center
+                </NavLink>
+            </li>
+            <li>
                 <NavLink to="/dashboard/admin/settings">
                     <PiGear className="w-5 h-5" />
                     Settings

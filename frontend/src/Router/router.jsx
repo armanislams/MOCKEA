@@ -160,11 +160,12 @@ const router = createBrowserRouter([
       },
       {
         path: "admin/grade-submissions",
-        element: (
-          <AdminRoutes>
-            <GradeSubmissions />
-          </AdminRoutes>
-        ),
+        // element: (
+        //   <AdminRoutes>
+        //     <GradeSubmissions />
+        //   </AdminRoutes>
+        // ),
+        element: <GradeSubmissions/>
       },
       {
         path: "admin/settings",

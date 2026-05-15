@@ -56,6 +56,8 @@ const Listening = () => {
   const [testStarted, setTestStarted] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
+  const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes for listening
+
   const activeSet = useMemo(
     () => listeningSets.find((set) => set._id === selectedSetId) || null,
     [listeningSets, selectedSetId],
@@ -69,7 +71,7 @@ const Listening = () => {
         const response = await axiosSecure.get("/questions?type=listening");
         const fetched = response?.data?.questions || [];
         setListeningSets(fetched);
-        if (fetched.length > 0) setSelectedSetId(fetched[0]._id);
+        // Auto-selection removed
         setLoading(false);
       } catch (error) {
         toast.error("Failed to load listening materials");
@@ -78,6 +80,21 @@ const Listening = () => {
     };
     if (user?.email) fetchListening();
   }, [axiosSecure, user?.email]);
+
+  // Countdown Logic
+  useEffect(() => {
+    if (!selectedSetId || submitted || timeLeft <= 0) return;
+    const timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [selectedSetId, submitted, timeLeft]);
+
+  const fmtCountdown = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
 
   /* --- Audio Logic --- */
   useEffect(() => {
@@ -173,12 +190,44 @@ const Listening = () => {
 
   if (loading) return <Loader />;
 
-  if (!activeSet) {
+  if (!activeSet || !selectedSetId) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-          <PiInfoFill className="text-6xl text-base-content/20" />
-          <h2 className="text-2xl font-black opacity-40 uppercase tracking-tighter">No Listening Content Available</h2>
-          <button onClick={() => navigate(-1)} className="btn btn-primary rounded-2xl px-10">Go Back</button>
+        <div className="max-w-7xl mx-auto px-6 py-20">
+            <div className="text-center space-y-4 mb-16">
+                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">
+                    <PiHeadphonesFill /> {listeningSets.length} Modules Available
+                </div>
+                <h2 className="text-5xl font-black tracking-tighter text-slate-800">Choose a <span className="text-primary italic">Listening Module</span></h2>
+                <p className="text-slate-400 font-medium text-lg">Select a standardized unit to begin your immersive training.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {listeningSets.map((set, idx) => (
+                    <motion.div 
+                        key={set._id}
+                        whileHover={{ y: -10 }}
+                        className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
+                        onClick={() => setSelectedSetId(set._id)}
+                    >
+                        <div className="flex flex-col h-full space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
+                                    <PiHeadphonesFill />
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
+                            </div>
+                            <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
+                            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                <span className="flex items-center gap-1.5"><PiClockFill /> 30m</span>
+                                <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
+                            </div>
+                            <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
+                                Start Lab
+                            </button>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
         </div>
     );
   }
@@ -216,8 +265,10 @@ const Listening = () => {
 
             <div className="flex items-center gap-6">
                 <div className="flex flex-col items-end">
-                    <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Session Time</div>
-                    <div className="text-xl font-mono font-black text-primary leading-none mt-1">{fmt(elapsed)}</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Remaining Time</div>
+                    <div className={`text-xl font-mono font-black leading-none mt-1 ${timeLeft < 300 ? 'text-red-500' : 'text-primary'}`}>
+                        {fmtCountdown(timeLeft)}
+                    </div>
                 </div>
                 <div className="h-10 w-px bg-white/10" />
                 <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle text-white/40">
@@ -298,7 +349,7 @@ const Listening = () => {
 
                                         {q.options && q.options.length > 0 ? (
                                             <div className="grid md:grid-cols-2 gap-4">
-                                                {q.options.map((opt, oIdx) => (
+                                                {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
                                                     <label 
                                                         key={oIdx}
                                                         className={`flex items-center gap-3 p-5 rounded-2xl border transition-all cursor-pointer ${
