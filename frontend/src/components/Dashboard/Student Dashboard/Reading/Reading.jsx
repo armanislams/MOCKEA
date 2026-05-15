@@ -3,50 +3,46 @@ import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import { toast } from "react-toastify";
 import Loader from "../../../Loader/Loader.jsx";
+import { motion } from "framer-motion";
+import { 
+    PiBookOpenFill, 
+    PiCheckCircleFill, 
+    PiXCircleFill, 
+    PiArrowRightBold,
+    PiClockFill,
+    PiInfoFill,
+    PiChartLineUpFill,
+    PiArrowLeftBold
+} from "react-icons/pi";
+import { useNavigate } from "react-router";
 
 const Reading = () => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [readingSets, setReadingSets] = useState([]);
-  const [selectedReadingId, setSelectedReadingId] = useState("");
+  const [selectedSetId, setSelectedSetId] = useState("");
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
-  const getQuestionRange = (title = "") => {
-    const rangeMatch = title.match(/questions?\s*(\d+)\s*-\s*(\d+)/i);
-    if (rangeMatch) {
-      const start = Number(rangeMatch[1]);
-      const end = Number(rangeMatch[2]);
-      return Number.isNaN(start) || Number.isNaN(end) ? null : { start, end };
-    }
-
-    const singleMatch = title.match(/questions?\s*(\d+)/i);
-    if (singleMatch) {
-      const point = Number(singleMatch[1]);
-      return Number.isNaN(point) ? null : { start: point, end: point };
-    }
-
-    return null;
-  };
 
   // Fetch reading data
   useEffect(() => {
     const fetchReading = async () => {
       try {
         setLoading(true);
-        const response = await axiosSecure.get("/questions");
+        const response = await axiosSecure.get("/questions?type=reading");
         const fetchedSets = response?.data?.questions || [];
-        const fetchedSet = fetchedSets[0] || null;
         setReadingSets(fetchedSets);
-        setSelectedReadingId(fetchedSet?.readingId || "");
+        if (fetchedSets.length > 0) {
+            setSelectedSetId(fetchedSets[0]._id);
+        }
         setLoading(false);
       } catch (error) {
-        toast.error("Failed to load reading");
-        console.log(error);
-
+        toast.error("Failed to load reading materials");
         setLoading(false);
       }
     };
@@ -56,13 +52,11 @@ const Reading = () => {
     }
   }, [axiosSecure, user?.email]);
 
-  const readingData = useMemo(
-    () =>
-      readingSets.find((set) => set.readingId === selectedReadingId) || null,
-    [readingSets, selectedReadingId],
+  const activeSet = useMemo(
+    () => readingSets.find((set) => set._id === selectedSetId) || null,
+    [readingSets, selectedSetId],
   );
 
-  // Handle answer change
   const handleAnswerChange = (questionId, value) => {
     setAnswers((prev) => ({
       ...prev,
@@ -70,321 +64,216 @@ const Reading = () => {
     }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate all answers are filled
-    if (
-      !readingData ||
-      Object.keys(answers).length !== readingData.questions.length
-    ) {
-      toast.warning("Please answer all questions");
+    if (!activeSet || Object.keys(answers).length < activeSet.questions.length) {
+      toast.warning("Please attempt all questions before submitting");
       return;
     }
 
     try {
       setSubmitting(true);
-
-      //answers for submission
-      const formattedAnswers = readingData.questions.map((q) => ({
-        questionId: q.id,
-        userAnswer: answers[q.id],
-      }));
-
-      const response = await axiosSecure.post("/reading/submit", {
-        email: user.email,
-        readingId: readingData.readingId,
-        answers: formattedAnswers,
+      const response = await axiosSecure.post("/questions/evaluate", {
+        questionSetId: activeSet._id,
+        answers,
       });
 
       if (response.data.success) {
         setResult(response.data);
         setSubmitted(true);
-        toast.success("Answers submitted successfully!");
+        toast.success("Assessment completed!");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to submit answers");
+      toast.error(error.response?.data?.message || "Failed to evaluate answers");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return <Loader />;
-  }
+  if (loading) return <Loader />;
 
-  if (!readingData) {
+  if (!activeSet) {
     return (
-      <div className="alert alert-error">
-        <span>Failed to load reading content</span>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+        <PiInfoFill className="text-6xl text-base-content/20" />
+        <h2 className="text-2xl font-black opacity-40 uppercase tracking-tighter">No Reading Content Available</h2>
+        <button onClick={() => navigate(-1)} className="btn btn-primary rounded-2xl px-10">Go Back</button>
       </div>
     );
   }
 
-  const questions = readingData?.questions || [];
-  const instructions = readingData?.sections || [];
-  const sectionQuestionGroups = instructions.map((section) => {
-    const range = getQuestionRange(section.title);
-    const sectionQuestions = range
-      ? questions.slice(Math.max(range.start - 1, 0), range.end)
-      : [];
-
-    return {
-      ...section,
-      sectionQuestions,
-    };
-  });
-  const hasSectionMapping = sectionQuestionGroups.some(
-    (group) => group.sectionQuestions.length > 0,
-  );
-  const renderedQuestionGroups = hasSectionMapping
-    ? sectionQuestionGroups
-    : [{ title: "Questions", content: "", sectionQuestions: questions }];
-
   return (
-    <div className="min-h-screen bg-bc-light p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-            IELTS Reading Practice
-          </h1>
-          <p className="text-gray-600">
-            Read the passage carefully and answer all questions
-          </p>
-          {readingSets.length > 1 && (
-            <div className="mt-4 max-w-sm">
-              <label className="label px-0">
-                <span className="label-text font-medium text-gray-700">
-                  Select Reading Set
-                </span>
-              </label>
-              <select
-                className="select select-bordered w-full"
-                value={selectedReadingId}
-                onChange={(e) => {
-                  setSelectedReadingId(e.target.value);
-                  setAnswers({});
-                  setSubmitted(false);
-                  setResult(null);
-                }}
-              >
-                {readingSets.map((set) => (
-                  <option key={set.readingId} value={set.readingId}>
-                    {set.readingId}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Passage Section - 3 columns */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
-              <div className="prose prose-sm max-w-none">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
-                  {readingData?.passageTitle || "Reading Passage"}
-                </h2>
-                <p className="text-gray-700 leading-relaxed text-justify whitespace-pre-line">
-                  {readingData?.passage || "No passage text available."}
-                </p>
-              </div>
-
-              {/* Scrollable Container Info */}
-              <div className="mt-8 text-center text-sm text-gray-500">
-                <p>Scroll down to see questions or use the Questions Panel →</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Question Panel - 2 columns */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-4 max-h-[calc(100vh-40px)] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                Questions
-              </h2>
-
-              {!submitted ? (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {renderedQuestionGroups.map((group, groupIndex) => (
-                    <div
-                      key={group._id || group.title || groupIndex}
-                      className="space-y-4"
-                    >
-                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-md">
-                        <h3 className="text-base font-semibold text-blue-800 mb-1">
-                          {group.title || `Instructions ${groupIndex + 1}`}
-                        </h3>
-                        <p className="text-sm text-blue-700">
-                          {group.content || "Answer the following questions."}
-                        </p>
-                      </div>
-
-                      {group.sectionQuestions.map((question) => {
-                        const questionIndex = questions.findIndex(
-                          (q) => q.id === question.id,
-                        );
-                        return (
-                          <div
-                            key={question.id}
-                            className="border-b border-gray-200 pb-6 last:border-b-0"
-                          >
-                            <div className="mb-3">
-                              <label className="text-sm font-semibold text-blue-600 block mb-2">
-                                Question {questionIndex + 1}
-                              </label>
-                              <p className="text-gray-800 font-medium mb-4">
-                                {question.question}
-                              </p>
-                            </div>
-
-                            {["multiple-choice", "true-false"].includes(
-                              question.type,
-                            ) ? (
-                              <div className="space-y-3">
-                                {question.options &&
-                                  question.options.map((option, optIndex) => (
-                                    <label
-                                      key={optIndex}
-                                      className="flex items-center cursor-pointer group"
-                                    >
-                                      <input
-                                        type="radio"
-                                        name={question.id}
-                                        value={option}
-                                        checked={
-                                          answers[question.id] === option
-                                        }
-                                        onChange={(e) =>
-                                          handleAnswerChange(
-                                            question.id,
-                                            e.target.value,
-                                          )
-                                        }
-                                        className="radio radio-sm radio-primary mr-3"
-                                      />
-                                      <span className="text-gray-700 text-sm group-hover:text-blue-600 transition">
-                                        {option}
-                                      </span>
-                                    </label>
-                                  ))}
-                              </div>
-                            ) : (
-                              <input
-                                type="text"
-                                placeholder="Type your answer..."
-                                value={answers[question.id] || ""}
-                                onChange={(e) =>
-                                  handleAnswerChange(
-                                    question.id,
-                                    e.target.value,
-                                  )
-                                }
-                                className="input input-bordered input-sm w-full focus:input-primary"
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="btn btn-primary w-full mt-6"
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="loading loading-spinner loading-sm"></span>
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit Answers"
-                    )}
-                  </button>
-                </form>
-              ) : (
-                /* Results Display */
-                <div className="space-y-6">
-                  <div className="bg-linear-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center">
-                    <h3 className="text-lg font-semibold mb-2">Your Score</h3>
-                    <p className="text-4xl font-bold mb-2">{result?.score}%</p>
-                    <p className="text-sm text-blue-100">
-                      {result?.correctAnswers} of {result?.totalQuestions}{" "}
-                      correct
-                    </p>
-                  </div>
-
-                  {/* Answer Review */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-800 mb-4">
-                      Answer Review
-                    </h3>
-                    {readingData.questions &&
-                      readingData.questions.map((question) => {
-                        const userAnswer = answers[question.id];
-                        const evaluation = result?.evaluatedAnswers.find(
-                          (a) => a.questionId === question.id,
-                        );
-
-                        return (
-                          <div
-                            key={question.id}
-                            className={`p-3 rounded-lg border-l-4 ${
-                              evaluation?.isCorrect
-                                ? "bg-green-50 border-green-500"
-                                : "bg-red-50 border-red-500"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <span
-                                className={`text-sm font-semibold ${
-                                  evaluation?.isCorrect
-                                    ? "text-green-700"
-                                    : "text-red-700"
-                                }`}
-                              >
-                                {evaluation?.isCorrect
-                                  ? "✓ Correct"
-                                  : "✗ Incorrect"}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-700 mb-1">
-                              <strong>Your answer:</strong> {userAnswer}
-                            </p>
-                            {!evaluation?.isCorrect && (
-                              <p className="text-xs text-gray-700">
-                                <strong>Correct answer:</strong>{" "}
-                                {question.correctAnswer}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                  </div>
-
-                  {/* Reset Button */}
-                  <button
-                    onClick={() => {
-                      setSubmitted(false);
-                      setAnswers({});
-                      setResult(null);
-                      window.scrollTo(0, 0);
-                    }}
-                    className="btn btn-outline w-full"
-                  >
-                    Try Again
-                  </button>
+    <div className="min-h-screen bg-base-200 pb-20">
+      {/* Premium Header */}
+      <div className="bg-white border-b border-base-300 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+                <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle">
+                    <PiArrowLeftBold className="w-6 h-6" />
+                </button>
+                <div>
+                    <h1 className="text-xl font-black tracking-tight">{activeSet.title}</h1>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Reading Skill Lab</p>
                 </div>
-              )}
             </div>
-          </div>
+
+            <div className="flex items-center gap-4">
+                {readingSets.length > 1 && (
+                    <select 
+                        className="select select-sm rounded-xl font-bold bg-base-100 border-base-300"
+                        value={selectedSetId}
+                        onChange={(e) => {
+                            setSelectedSetId(e.target.value);
+                            setAnswers({});
+                            setSubmitted(false);
+                            setResult(null);
+                        }}
+                    >
+                        {readingSets.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+                    </select>
+                )}
+                {!submitted && (
+                    <div className="badge badge-neutral p-4 rounded-xl font-black flex gap-2">
+                        <PiClockFill /> 60:00
+                    </div>
+                )}
+            </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 pt-10">
+        {submitted && result && (
+            <motion.div 
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="card bg-linear-to-r from-primary to-indigo-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-primary/20 mb-10 flex flex-col md:flex-row items-center justify-between gap-6"
+            >
+                <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center text-4xl font-black backdrop-blur-md border border-white/20">
+                        {result.score}%
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black tracking-tight">Practice Performance</h2>
+                        <p className="text-white/70 font-bold uppercase tracking-widest text-xs mt-1">
+                            {result.correctAnswers} Correct of {result.totalQuestions} Questions
+                        </p>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => { setSubmitted(false); setAnswers({}); setResult(null); }}
+                    className="btn bg-white text-primary border-none rounded-2xl px-10 font-black hover:bg-yellow-300 hover:text-black transition-all"
+                >
+                    Retake Practice
+                </button>
+            </motion.div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">
+            {/* Passage Side */}
+            <div className="lg:col-span-3 space-y-6">
+                <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
+                    <div className="prose prose-slate max-w-none">
+                        <h2 className="text-3xl font-black tracking-tight mb-8 text-slate-800">{activeSet.title}</h2>
+                        <div 
+                            dangerouslySetInnerHTML={{ __html: activeSet.passage }} 
+                            className="text-lg leading-relaxed text-slate-600 text-justify"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Questions Side */}
+            <div className="lg:col-span-2 space-y-6">
+                <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-2xl font-black tracking-tight">Question Panel</h2>
+                        <PiBookOpenFill className="text-2xl text-primary/20" />
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-10">
+                        {activeSet.questions.map((q, idx) => {
+                            const isCorrect = submitted && result?.evaluatedAnswers.find(a => a.questionId === q.id)?.isCorrect;
+                            
+                            return (
+                                <div key={q.id} className={`space-y-4 p-6 rounded-3xl transition-all ${
+                                    submitted 
+                                    ? (isCorrect ? "bg-success/5 border border-success/20" : "bg-error/5 border border-error/20")
+                                    : "bg-base-50/50 border border-base-200"
+                                }`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-base-content/30">Question</span>
+                                        </div>
+                                        {submitted && (
+                                            isCorrect ? <PiCheckCircleFill className="text-success text-xl" /> : <PiXCircleFill className="text-error text-xl" />
+                                        )}
+                                    </div>
+
+                                    <p className="font-bold text-slate-700 leading-snug">{q.question}</p>
+
+                                    {q.options && q.options.length > 0 ? (
+                                        <div className="grid gap-3">
+                                            {q.options.map((opt, oIdx) => (
+                                                <label 
+                                                    key={oIdx}
+                                                    className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${
+                                                        answers[q.id] === opt 
+                                                        ? "bg-primary/10 border-primary text-primary font-bold shadow-md shadow-primary/10" 
+                                                        : "bg-white border-base-200 hover:border-primary/30"
+                                                    }`}
+                                                >
+                                                    <input 
+                                                        type="radio" 
+                                                        className="hidden"
+                                                        name={q.id}
+                                                        value={opt}
+                                                        disabled={submitted}
+                                                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                                                    />
+                                                    <span className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center p-1">
+                                                        {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-current" />}
+                                                    </span>
+                                                    <span className="text-sm">{opt}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <input 
+                                                type="text" 
+                                                disabled={submitted}
+                                                className="input input-bordered w-full rounded-2xl font-bold bg-white focus:border-primary"
+                                                placeholder="Type your answer here..."
+                                                value={answers[q.id] || ""}
+                                                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                                            />
+                                            {submitted && !isCorrect && (
+                                                <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
+                                                    <PiCheckCircleFill /> Correct: {q.correctAnswer}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+
+                        {!submitted && (
+                            <button 
+                                type="submit" 
+                                disabled={submitting}
+                                className="btn btn-primary btn-block rounded-3xl h-16 text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20"
+                            >
+                                {submitting ? <span className="loading loading-spinner" /> : "Verify Performance"}
+                                <PiArrowRightBold />
+                            </button>
+                        )}
+                    </form>
+                </div>
+            </div>
         </div>
       </div>
     </div>

@@ -3,7 +3,8 @@ import {
     getQuestions, 
     postQuestion,
     updateQuestion,
-    deleteQuestion 
+    deleteQuestion,
+    evaluateQuestions 
 } from '../controllers/questions.controller.js'
 import verifyUserToken from '../middlewares/verifyUserToken.js';
 import verifyUserRole from '../middlewares/verifyUserRole.js';
@@ -15,6 +16,7 @@ qRouter.use(verifyUserToken);
 
 // Reading questions is allowed for students/authenticated users
 qRouter.get('/', getQuestions);
+qRouter.post('/evaluate', evaluateQuestions);
 
 // Modifying the question bank is restricted to admins
 qRouter.post('/add', verifyUserRole(['admin']), postQuestion);
