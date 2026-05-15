@@ -18,6 +18,8 @@ import Speaking from "../components/Dashboard/Speaking/Speaking";
 import DashboardIndex from "../components/Dashboard/DashboardIndex";
 import ManageUsers from "../components/Dashboard/Admin Dashboard/ManageUsers";
 import AdminSettings from "../components/Dashboard/Admin Dashboard/AdminSettings";
+import Error from "../components/Common/Error";
+import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 
 
 const router = createBrowserRouter([
@@ -25,6 +27,7 @@ const router = createBrowserRouter([
         path: '/',
         element:<HomeLayout/>,
         hydrateFallbackElement: <Loader/>,
+        errorElement: <Error/>,
         children:[
             {
                 index: true,
@@ -89,11 +92,15 @@ const router = createBrowserRouter([
             },
             {
                 path: 'admin/manage-users',
-                element: <ManageUsers />
+                element: <AdminRoutes>
+                    <ManageUsers />
+                </AdminRoutes>
             },
             {
                 path: 'admin/settings',
-                element: <AdminSettings />
+                element: <AdminRoutes>
+                    <AdminSettings />
+                </AdminRoutes>
             }
         ]
 
