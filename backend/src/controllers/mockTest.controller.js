@@ -1,6 +1,5 @@
 import MockTest from '../model/mockTest.js';
 import MockTestResult from '../model/mockTestResult.js';
-import User from '../model/user.js';
 
 // Get all mock tests (Library)
 export const getAllMockTests = async (req, res) => {
@@ -43,13 +42,10 @@ export const createMockTest = async (req, res) => {
 export const startTest = async (req, res) => {
     try {
         const { testId } = req.body;
-        const user = await User.findOne({ email: req.decoded_email });
-        
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
+        // req.user is populated by verifyUserRole middleware
+        const userId = req.user._id;
 
-        const result = new MockTestResult({ userId: user._id, testId });
+        const result = new MockTestResult({ userId, testId });
         await result.save();
         res.status(201).json({ success: true, resultId: result._id });
     } catch (error) {
@@ -65,6 +61,11 @@ export const submitSection = async (req, res) => {
         
         if (!result) return res.status(404).json({ success: false, message: 'Result session not found' });
 
+        // SECURITY: Verify Ownership
+        if (result.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Unauthorized: This test session does not belong to you' });
+        }
+
         result.sectionResults.push({ sectionType, answers, score, timeTaken });
         await result.save();
 
@@ -79,6 +80,13 @@ export const updateCheatStats = async (req, res) => {
     try {
         const { resultId, tabSwitches, fullscreenExits } = req.body;
         const result = await MockTestResult.findById(resultId);
+
+        if (!result) return res.status(404).json({ success: false, message: 'Result session not found' });
+
+        // SECURITY: Verify Ownership
+        if (result.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Unauthorized: This test session does not belong to you' });
+        }
 
         if (tabSwitches) result.tabSwitchCount += tabSwitches;
         if (fullscreenExits) result.fullscreenExits += fullscreenExits;
@@ -100,6 +108,14 @@ export const finalizeTest = async (req, res) => {
     try {
         const { resultId } = req.body;
         const result = await MockTestResult.findById(resultId);
+
+        if (!result) return res.status(404).json({ success: false, message: 'Result session not found' });
+
+        // SECURITY: Verify Ownership
+        if (result.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
         result.status = 'completed';
         await result.save();
         res.status(200).json({ success: true, message: 'Test finalized' });

@@ -10,7 +10,6 @@ import {
     PiCaretRightBold
 } from "react-icons/pi";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
-import useAuth from "../../../../hooks/useAuth";
 import ReadingSection from "./ReadingSection";
 import ListeningSection from "./ListeningSection";
 import WritingSection from "./WritingSection";
@@ -20,7 +19,6 @@ const TestEnvironment = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const axiosSecure = useAxiosSecure();
-    const { user } = useAuth();
 
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isStarted, setIsStarted] = useState(() => !!localStorage.getItem(`test_cache_${id}`));

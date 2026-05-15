@@ -5,13 +5,20 @@ import {
     updateQuestion,
     deleteQuestion 
 } from '../controllers/questions.controller.js'
+import verifyUserToken from '../middlewares/verifyUserToken.js';
+import verifyUserRole from '../middlewares/verifyUserRole.js';
 
+const qRouter = express.Router();
 
-const qRouter = express.Router()
+// All question routes require authentication
+qRouter.use(verifyUserToken);
 
-qRouter.post('/add', postQuestion)
-qRouter.get('/', getQuestions)
-qRouter.put('/:id', updateQuestion)
-qRouter.delete('/:id', deleteQuestion)
+// Reading questions is allowed for students/authenticated users
+qRouter.get('/', getQuestions);
+
+// Modifying the question bank is restricted to admins
+qRouter.post('/add', verifyUserRole(['admin']), postQuestion);
+qRouter.put('/:id', verifyUserRole(['admin']), updateQuestion);
+qRouter.delete('/:id', verifyUserRole(['admin']), deleteQuestion);
 
 export default qRouter;
