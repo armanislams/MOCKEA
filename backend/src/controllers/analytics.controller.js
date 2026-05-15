@@ -1,5 +1,3 @@
-import Reading from "../model/reading.js";
-import Note from "../model/note.js";
 import User from "../model/user.js";
 
 const estimateBand = (score) => {

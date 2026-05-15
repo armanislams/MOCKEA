@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { PiChartBar, PiUsersThree, PiFiles, PiGear } from "react-icons/pi";
+import { PiChartBar, PiUsersThree, PiFiles, PiGear, PiBookOpen } from "react-icons/pi";
 
 export const AdminDashboard = () => {
     return (
@@ -17,9 +17,15 @@ export const AdminDashboard = () => {
                 </NavLink>
             </li>
             <li>
-                <NavLink to="/dashboard/admin/add-tests">
+                <NavLink to="/dashboard/admin/manage-questions">
+                    <PiBookOpen className="w-5 h-5" />
+                   Manage Questions
+                </NavLink>
+            </li>
+            <li>
+                <NavLink to="/dashboard/admin/manage-mock-tests">
                     <PiFiles className="w-5 h-5" />
-                   Add Tests
+                   Manage Mock Tests
                 </NavLink>
             </li>
             <li>

@@ -18,6 +18,10 @@ import Speaking from "../components/Dashboard/Student Dashboard/Speaking/Speakin
 import DashboardIndex from "../components/Dashboard/DashboardIndex";
 import ManageUsers from "../components/Dashboard/Admin Dashboard/ManageUsers";
 import AdminSettings from "../components/Dashboard/Admin Dashboard/AdminSettings";
+import FullMockTestLibrary from "../components/Dashboard/Student Dashboard/FullMockTest/FullMockTestLibrary";
+import AddQuestionForm from "../components/Dashboard/Admin Dashboard/AddQuestionForm";
+import ManageQuestions from "../components/Dashboard/Admin Dashboard/ManageQuestions";
+import CreateMockTest from "../components/Dashboard/Admin Dashboard/CreateMockTest";
 import Error from "../components/Common/Error";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 
@@ -67,6 +71,10 @@ const router = createBrowserRouter([
         element: <TakeTest />,
       },
       {
+        path: "full-mock-test",
+        element: <FullMockTestLibrary />,
+      },
+      {
         path: "review",
         element: <Review />,
       },
@@ -100,6 +108,30 @@ const router = createBrowserRouter([
         element: (
           <AdminRoutes>
             <ManageUsers />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/manage-questions",
+        element: (
+          <AdminRoutes>
+            <ManageQuestions />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/manage-mock-tests",
+        element: (
+          <AdminRoutes>
+            <CreateMockTest />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/add-questions",
+        element: (
+          <AdminRoutes>
+            <AddQuestionForm />
           </AdminRoutes>
         ),
       },

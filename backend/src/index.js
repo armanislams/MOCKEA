@@ -3,11 +3,10 @@ import "dotenv/config"
 import cors from "cors"
 import userRouter from "./routes/user.route.js";
 import { connectDb } from "./lib/connectDB.js";
-import noteRouter from "./routes/note.route.js";
-import readingRouter from "./routes/reading.route.js";
 import qRouter from "./routes/questions.route.js";
 import analyticsRouter from "./routes/analytics.route.js";
 import errorLogRouter from "./routes/errorLog.route.js";
+import mockTestRouter from "./routes/mockTest.route.js";
 import errorHandler from "./middlewares/errorHandler.js";
 const Port = process.env.PORT || 3000;
 
@@ -21,15 +20,14 @@ app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/user", userRouter);
-app.use("/api/note", noteRouter);
-app.use("/api/reading", readingRouter);
 app.use("/api/questions", qRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/settings/logs", errorLogRouter);
+app.use("/api/mock-tests", mockTestRouter);
 
 
 app.get("/", (req, res) => {
-    res.send("Eco Stream Server is running");
+    res.send("MOCKEA Server is running");
 })
 
 // Error handling middleware (must be last)
