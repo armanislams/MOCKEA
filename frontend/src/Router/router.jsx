@@ -25,6 +25,7 @@ import CreateMockTest from "../components/Dashboard/Admin Dashboard/CreateMockTe
 import ManageMockTests from "../components/Dashboard/Admin Dashboard/ManageMockTests";
 import TestEnvironment from "../components/Dashboard/Student Dashboard/FullMockTest/TestEnvironment";
 import Error from "../components/Common/Error";
+import GradeSubmissions from "../components/Dashboard/Admin Dashboard/GradeSubmissions";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 
 const router = createBrowserRouter([
@@ -149,6 +150,14 @@ const router = createBrowserRouter([
         element: (
           <AdminRoutes>
             <AddQuestionForm />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/grade-submissions",
+        element: (
+          <AdminRoutes>
+            <GradeSubmissions />
           </AdminRoutes>
         ),
       },
