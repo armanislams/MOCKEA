@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import useAuth from '../../../hooks/useAuth';
-import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import { useEffect, useState } from "react";
+import useAuth from "../../../../hooks/useAuth";
+import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 
 const Review = () => {
   const { user } = useAuth();
@@ -27,10 +27,13 @@ const Review = () => {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-sm uppercase tracking-[0.3em] text-primary font-semibold">Review</p>
+        <p className="text-sm uppercase tracking-[0.3em] text-primary font-semibold">
+          Review
+        </p>
         <h1 className="text-3xl font-bold">Practice history</h1>
         <p className="text-base-content/70 mt-2 max-w-2xl">
-          Revisit your completed tests and review answer summaries to track improvement across practice sessions.
+          Revisit your completed tests and review answer summaries to track
+          improvement across practice sessions.
         </p>
       </div>
 
@@ -49,7 +52,9 @@ const Review = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-8">Loading attempt history...</td>
+                  <td colSpan="4" className="text-center py-8">
+                    Loading attempt history...
+                  </td>
                 </tr>
               ) : history.length ? (
                 history.map((item) => (
@@ -62,7 +67,9 @@ const Review = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center py-8">No completed reading attempts available yet.</td>
+                  <td colSpan="4" className="text-center py-8">
+                    No completed reading attempts available yet.
+                  </td>
                 </tr>
               )}
             </tbody>

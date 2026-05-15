@@ -1,8 +1,7 @@
-import React from 'react';
 import { useRole } from '../../hooks/useRole';
-import DashboardHome from './DashboardHome';
 import AdminDashboardHome from './Admin Dashboard/AdminDashboardHome';
 import Loader from '../Loader/Loader';
+import DashboardHome from './Student Dashboard/DashboardHome';
 
 const DashboardIndex = () => {
     const { role, roleLoading } = useRole();
@@ -24,8 +23,8 @@ const DashboardIndex = () => {
         );
     }
 
-    // Default fallback to student dashboard home
-    return <DashboardHome />;
+    // Default student dashboard home
+    return <DashboardHome  />;
 };
 
 export default DashboardIndex;

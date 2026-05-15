@@ -1,53 +1,58 @@
-import { useEffect, useState } from 'react';
-import useAuth from '../../../hooks/useAuth';
-import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import { useQuery } from "@tanstack/react-query";
+import useAuth from "../../../../hooks/useAuth";
+import useAxiosSecure from "../../../../hooks/useAxiosSecure";
+import Loader from "../../../Loader/Loader";
 
 const Analytics = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user?.email) return;
-    setLoading(true);
-    axiosSecure
-      .get(`/api/analytics/summary/${user.email}`)
-      .then((res) => {
-        setSummary(res.data.summary);
-      })
-      .catch(() => {
-        setSummary(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [axiosSecure, user]);
+  const { data: summary, isLoading: loading } = useQuery({
+    queryKey: ["analytics-summary", user?.email],
+    enabled: !!user?.email,
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/api/analytics/summary/${user.email}`);
+      return res.data.summary;
+    },
+  });
+
+  if (loading) return <Loader />;
 
   const cards = [
-    { title: 'Average Accuracy', value: `${summary?.averageAccuracy ?? '--'}%` },
-    { title: 'Estimated Band', value: summary?.estimatedBand ?? '--' },
-    { title: 'Tests Completed', value: summary?.testsCompleted ?? '--' },
-    { title: 'Study Streak', value: `${summary?.studyStreak ?? '--'} days` },
+    {
+      title: "Average Accuracy",
+      value: `${summary?.averageAccuracy ?? "--"}%`,
+    },
+    { title: "Estimated Band", value: summary?.estimatedBand ?? "--" },
+    { title: "Tests Completed", value: summary?.testsCompleted ?? "--" },
+    { title: "Study Streak", value: `${summary?.studyStreak ?? "--"} days` },
   ];
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-primary font-semibold">Analytics</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-primary font-semibold">
+            Analytics
+          </p>
           <h1 className="text-3xl font-bold">Performance insights</h1>
           <p className="text-base-content/70 mt-2 max-w-2xl">
-            Review your latest score trends, strengths, and areas to focus on before your next practice run.
+            Review your latest score trends, strengths, and areas to focus on
+            before your next practice run.
           </p>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
-          <div key={card.title} className="card bg-base-100 border border-base-300 shadow-sm p-6">
+          <div
+            key={card.title}
+            className="card bg-base-100 border border-base-300 shadow-sm p-6"
+          >
             <div className="text-sm text-base-content/70">{card.title}</div>
-            <div className="mt-4 text-3xl font-semibold">{loading ? 'Loading...' : card.value}</div>
+            <div className="mt-4 text-3xl font-semibold">
+              {card.value}
+            </div>
           </div>
         ))}
       </div>
@@ -66,22 +71,22 @@ const Analytics = () => {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="4" className="text-center py-8">Loading analytics...</td>
-                  </tr>
-                ) : summary?.recentAttempts?.length ? (
+                {summary?.recentAttempts?.length ? (
                   summary.recentAttempts.map((item) => (
                     <tr key={`${item.date}-${item.type}`}>
                       <td>{new Date(item.date).toLocaleDateString()}</td>
                       <td>{item.type}</td>
-                      <td>{item.score}/{item.totalQuestions}</td>
+                      <td>
+                        {item.score}/{item.totalQuestions}
+                      </td>
                       <td>{item.band}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center py-8">No attempt data available yet.</td>
+                    <td colSpan="4" className="text-center py-8">
+                      No attempt data available yet.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -98,7 +103,11 @@ const Analytics = () => {
                   <span>{area.title}</span>
                   <span>{area.percentage}%</span>
                 </div>
-                <progress className="progress progress-primary w-full" value={area.percentage} max="100"></progress>
+                <progress
+                  className="progress progress-primary w-full"
+                  value={area.percentage}
+                  max="100"
+                ></progress>
               </div>
             ))}
           </div>
@@ -109,3 +118,4 @@ const Analytics = () => {
 };
 
 export default Analytics;
+

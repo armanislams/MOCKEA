@@ -4,108 +4,115 @@ import Login from "../components/Auth/Login";
 import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
 import Profile from "../components/Dashboard/Profile";
-import Review from "../components/Dashboard/Review/Review";
-import Analytics from "../components/Dashboard/Analytics/Analytics";
+import Review from "../components/Dashboard/Student Dashboard/Review/Review";
+import Analytics from "../components/Dashboard/Student Dashboard/Analytics/Analytics";
 import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
 import DashboardLayout from "../Layout/DashboardLayout";
-import Practice from "../components/Dashboard/Practice/Practice";
-import TakeTest from "../components/Dashboard/TakeTest/TakeTest";
-import Reading from "../components/Dashboard/Reading/Reading";
-import Listening from "../components/Dashboard/Listening/Listening";
-import Writing from "../components/Dashboard/Writing/Writing";
-import Speaking from "../components/Dashboard/Speaking/Speaking";
+import Practice from "../components/Dashboard/Student Dashboard/Practice/Practice";
+import TakeTest from "../components/Dashboard/Student Dashboard/TakeTest/TakeTest";
+import Reading from "../components/Dashboard/Student Dashboard/Reading/Reading";
+import Listening from "../components/Dashboard/Student Dashboard/Listening/Listening";
+import Writing from "../components/Dashboard/Student Dashboard/Writing/Writing";
+import Speaking from "../components/Dashboard/Student Dashboard/Speaking/Speaking";
 import DashboardIndex from "../components/Dashboard/DashboardIndex";
 import ManageUsers from "../components/Dashboard/Admin Dashboard/ManageUsers";
 import AdminSettings from "../components/Dashboard/Admin Dashboard/AdminSettings";
 import Error from "../components/Common/Error";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 
-
 const router = createBrowserRouter([
-    {
-        path: '/',
-        element:<HomeLayout/>,
-        hydrateFallbackElement: <Loader/>,
-        errorElement: <Error/>,
-        children:[
-            {
-                index: true,
-                element: <Home/>
-            },
-            {
-                path: "/login",
-                element: <Login/>
-            },
-            {
-                path: "/register",
-                element: <Register/>
-            },
-            {
-                path: '/practice',
-                element: <PrivateRoute><Practice/></PrivateRoute>
-            }
-        ]
-    },
-    {
-        path: '/dashboard',
-        element: <PrivateRoute>
-                    <DashboardLayout />
-                </PrivateRoute>,
-        children: [
-            {
-                index: true,
-                element: <DashboardIndex />
-            },
-            {
-                path: 'practice',
-                element: <TakeTest />
-            },
-            {
-                path: 'review',
-                element: <Review />
-            },
+  {
+    path: "/",
+    element: <HomeLayout />,
+    hydrateFallbackElement: <Loader />,
+    errorElement: <Error />,
+    children: [
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: "/login",
+        element: <Login />,
+      },
+      {
+        path: "/register",
+        element: <Register />,
+      },
+      {
+        path: "/practice",
+        element: (
+          <PrivateRoute>
+            <Practice />
+          </PrivateRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <PrivateRoute>
+        <DashboardLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <DashboardIndex />,
+      },
+      {
+        path: "practice",
+        element: <TakeTest />,
+      },
+      {
+        path: "review",
+        element: <Review />,
+      },
 
-            {
-                path: 'analytics',
-                element: <Analytics />
-            },
-            {
-                path: 'profile',
-                element: <Profile />
-            },
-            {
-                path: 'reading',
-                element: <Reading />
-            },
-            {
-                path: 'listening',
-                element: <Listening />
-            },
-            {
-                path: 'writing',
-                element: <Writing />
-            },
-            {
-                path: 'speaking',
-                element: <Speaking />
-            },
-            {
-                path: 'admin/manage-users',
-                element: <AdminRoutes>
-                    <ManageUsers />
-                </AdminRoutes>
-            },
-            {
-                path: 'admin/settings',
-                element: <AdminRoutes>
-                    <AdminSettings />
-                </AdminRoutes>
-            }
-        ]
+      {
+        path: "analytics",
+        element: <Analytics />,
+      },
+      {
+        path: "profile",
+        element: <Profile />,
+      },
+      {
+        path: "reading",
+        element: <Reading />,
+      },
+      {
+        path: "listening",
+        element: <Listening />,
+      },
+      {
+        path: "writing",
+        element: <Writing />,
+      },
+      {
+        path: "speaking",
+        element: <Speaking />,
+      },
+      {
+        path: "admin/manage-users",
+        element: (
+          <AdminRoutes>
+            <ManageUsers />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/settings",
+        element: (
+          <AdminRoutes>
+            <AdminSettings />
+          </AdminRoutes>
+        ),
+      },
+    ],
+  },
+]);
 
-    }
-    
-])
-
-export default router
+export default router;

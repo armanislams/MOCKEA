@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import useAxiosSecure from '../../hooks/useAxiosSecure';
-import useAuth from '../../hooks/useAuth';
+import useAuth from '../../../hooks/useAuth';
+import useAxiosSecure from '../../../hooks/useAxiosSecure';
 
 const quickActions = [
   {
@@ -42,19 +42,16 @@ const weakAreas = [
 const DashboardHome = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
   const name = user?.displayName || user?.email?.split('@')[0] || 'there';
 
-  useEffect(() => {
-    if (!user?.email) return;
-    setLoading(true);
-    axiosSecure
-      .get(`/api/analytics/summary/${user.email}`)
-      .then((res) => setSummary(res.data.summary))
-      .catch(() => setSummary(null))
-      .finally(() => setLoading(false));
-  }, [axiosSecure, user]);
+  const { data: summary, isLoading: loading } = useQuery({
+    queryKey: ["analytics-summary", user?.email],
+    enabled: !!user?.email,
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/analytics/summary/${user.email}`);
+      return res.data.summary;
+    },
+  });
 
   return (
     <div className="space-y-10">

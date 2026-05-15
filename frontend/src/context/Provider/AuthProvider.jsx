@@ -10,7 +10,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { AuthContext } from "./AuthContext";
-import auth from "../../firebase.config";
+import auth from "../../../firebase.config";
 
 
 const googleProvider = new GoogleAuthProvider();
