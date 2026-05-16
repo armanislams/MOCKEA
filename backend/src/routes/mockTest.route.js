@@ -12,7 +12,8 @@ import {
     gradeSection,
     getUserResults,
     getAllResults,
-    getResultDetail
+    getResultDetail,
+    lockMockResult
 } from '../controllers/mockTest.controller.js';
 import verifyUserToken from '../middlewares/verifyUserToken.js';
 import verifyUserRole from '../middlewares/verifyUserRole.js';
@@ -37,6 +38,7 @@ mockTestRouter.post('/finalize', finalizeTest);
 // Instructor/Admin Routes for Manual Grading
 mockTestRouter.get('/results/all', verifyUserRole(['admin', 'instructor']), getAllResults);
 mockTestRouter.patch('/grade-section', verifyUserRole(['admin', 'instructor']), gradeSection);
+mockTestRouter.patch('/lock/:id', verifyUserRole(['admin', 'instructor']), lockMockResult);
 
 // Admin-Only Management Routes (Double-check role)
 mockTestRouter.post('/create', verifyUserRole(['admin']), createMockTest);

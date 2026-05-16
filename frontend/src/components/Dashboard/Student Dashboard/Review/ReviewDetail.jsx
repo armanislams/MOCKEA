@@ -101,6 +101,11 @@ const ReviewDetail = () => {
                                             ? "Well done! Focus on identifying distractors in multiple-choice questions." 
                                             : "This section is currently under review by our senior instructors."}
                                     </p>
+                                    {currentSectionResult.reviewedByName && (
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-primary/40 mt-2">
+                                            Evaluated by {currentSectionResult.reviewedByName}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>

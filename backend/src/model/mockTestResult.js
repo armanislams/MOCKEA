@@ -31,6 +31,16 @@ const mockTestResultSchema = new mongoose.Schema({
         completedAt: {
             type: Date,
             default: Date.now
+        },
+        reviewedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        reviewedByEmail: {
+            type: String
+        },
+        reviewedByName: {
+            type: String
         }
     }],
     tabSwitchCount: {
@@ -45,6 +55,19 @@ const mockTestResultSchema = new mongoose.Schema({
         type: String,
         enum: ['ongoing', 'completed', 'auto-submitted'],
         default: 'ongoing'
+    },
+    lockedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    lockedByEmail: {
+        type: String
+    },
+    lockedByName: {
+        type: String
+    },
+    lockExpiresAt: {
+        type: Date
     }
 }, { timestamps: true });
 

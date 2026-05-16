@@ -197,11 +197,57 @@ export const gradeSection = async (req, res) => {
         const section = result.sectionResults.find(s => s.sectionType === sectionType);
         if (!section) return res.status(404).json({ success: false, message: 'Section not found' });
 
+        const instructor = await User.findOne({ email: req.decoded_email });
+
         section.score = score;
         section.isGraded = true;
+        section.reviewedBy = instructor._id;
+        section.reviewedByEmail = req.decoded_email;
+        section.reviewedByName = instructor.name || req.decoded_email.split('@')[0];
+
+        // Clear locks if this was the last section to grade (optional logic, but let's clear it anyway if explicitly graded)
+        result.lockedBy = null;
+        result.lockedByEmail = null;
+        result.lockExpiresAt = null;
 
         await result.save();
         res.status(200).json({ success: true, message: 'Graded successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const lockMockResult = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const instructor = await User.findOne({ email: req.decoded_email });
+        
+        const result = await MockTestResult.findById(id);
+        if (!result) {
+            return res.status(404).json({ success: false, message: 'Result session not found' });
+        }
+
+        // Check if already locked by someone else
+        if (result.lockedBy && result.lockedBy.toString() !== instructor._id.toString() && result.lockExpiresAt > new Date()) {
+            return res.status(409).json({ 
+                success: false, 
+                message: `This test is currently being reviewed by ${result.lockedByEmail}`,
+                lockedByEmail: result.lockedByEmail
+            });
+        }
+
+        // Set lock for 1 hour
+        result.lockedBy = instructor._id;
+        result.lockedByEmail = req.decoded_email;
+        result.lockedByName = instructor.name || req.decoded_email.split('@')[0];
+        result.lockExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        await result.save();
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Test locked for review', 
+            lockExpiresAt: result.lockExpiresAt 
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

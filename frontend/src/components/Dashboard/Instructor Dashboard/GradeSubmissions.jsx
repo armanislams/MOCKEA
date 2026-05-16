@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import useAuth from "../../../hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import {  
     PiCalendar,
@@ -16,11 +17,13 @@ import {
     PiXCircleFill,
     PiArrowRightBold,
     PiCheckCircleFill,
-    PiMagnifyingGlassFill
+    PiMagnifyingGlassFill,
+    PiClockFill
 } from "react-icons/pi";
 
 const GradeSubmissions = () => {
     const axiosSecure = useAxiosSecure();
+    const { user } = useAuth();
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState("mock-tests"); // 'mock-tests' or 'skill-labs'
     
@@ -149,9 +152,18 @@ const GradeSubmissions = () => {
                                         </div>
 
                                         <div className="flex flex-wrap items-center gap-4">
+                                            {(result.lockedBy && new Date(result.lockExpiresAt) > new Date() && result.lockedByEmail !== (user?.email || localStorage.getItem('user_email'))) && (
+                                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+                                                    <PiClockFill className="animate-pulse" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Locked by {result.lockedByName || result.lockedByEmail?.split('@')[0]}</span>
+                                                </div>
+                                            )}
                                             {['writing', 'speaking'].map(type => {
                                                 const section = result.sectionResults.find(s => s.sectionType === type);
                                                 if (!section) return null;
+
+                                                const currentUserEmail = user?.email || localStorage.getItem('user_email');
+                                                const isLockedByOther = result.lockedBy && new Date(result.lockExpiresAt) > new Date() && result.lockedByEmail !== currentUserEmail;
 
                                                 return (
                                                     <div key={type} className={`flex items-center gap-5 p-5 rounded-4xl border transition-all ${
@@ -170,7 +182,8 @@ const GradeSubmissions = () => {
                                                                         type="number" 
                                                                         placeholder="Band"
                                                                         step="0.5"
-                                                                        className="input input-sm w-20 rounded-lg font-black bg-white border-base-300"
+                                                                        disabled={isLockedByOther}
+                                                                        className="input input-sm w-20 rounded-lg font-black bg-white border-base-300 disabled:bg-slate-50 disabled:text-slate-400"
                                                                         onChange={(e) => setScores(prev => ({
                                                                             ...prev,
                                                                             [`${result._id}-${type}`]: e.target.value
@@ -178,7 +191,8 @@ const GradeSubmissions = () => {
                                                                     />
                                                                     <button 
                                                                         onClick={() => handleGradeSubmit(result._id, type)}
-                                                                        className="btn btn-primary btn-sm btn-square rounded-lg shadow-lg shadow-primary/20"
+                                                                        disabled={isLockedByOther || gradeMutation.isPending}
+                                                                        className="btn btn-primary btn-sm btn-square rounded-lg shadow-lg shadow-primary/20 disabled:bg-slate-200 disabled:border-slate-200"
                                                                     >
                                                                         <PiCheckBold />
                                                                     </button>
@@ -233,32 +247,48 @@ const GradeSubmissions = () => {
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-                                        {submissions.map((sub) => (
-                                            <div 
-                                                key={sub._id}
-                                                onClick={() => setSelectedSubmission(sub)}
-                                                className={`card p-6 border transition-all cursor-pointer group ${
-                                                    selectedSubmission?._id === sub._id 
-                                                    ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/20 rounded-[2.5rem]' 
-                                                    : 'bg-white border-base-300 hover:border-primary/50 rounded-4xl'
-                                                }`}
-                                            >
-                                                <div className="flex items-center justify-between gap-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${selectedSubmission?._id === sub._id ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
-                                                            {sub.testType === 'writing' ? <PiNotePencilFill /> : <PiMicrophoneStageFill />}
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-black leading-tight text-sm uppercase tracking-tight">{sub.userName}</h4>
-                                                            <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${selectedSubmission?._id === sub._id ? 'text-white/60' : 'text-slate-400'}`}>
-                                                                {sub.title}
-                                                            </p>
+                                            {submissions.map((sub) => {
+                                                const isLocked = sub.lockedBy && new Date(sub.lockExpiresAt) > new Date();
+                                                const currentUserEmail = user?.email || localStorage.getItem('user_email');
+                                                const isLockedByMe = sub.lockedByEmail === currentUserEmail;
+                                                const currentlyLockedByOther = isLocked && !isLockedByMe;
+
+                                                return (
+                                                    <div 
+                                                        key={sub._id}
+                                                        onClick={() => !currentlyLockedByOther && setSelectedSubmission(sub)}
+                                                        className={`card p-6 border transition-all cursor-pointer group relative overflow-hidden ${
+                                                            selectedSubmission?._id === sub._id 
+                                                            ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/20 rounded-[2.5rem]' 
+                                                            : currentlyLockedByOther
+                                                            ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed rounded-4xl'
+                                                            : 'bg-white border-base-300 hover:border-primary/50 rounded-4xl'
+                                                        }`}
+                                                    >
+                                                        {currentlyLockedByOther && (
+                                                            <div className="absolute top-2 right-4 flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                                                <PiClockFill className="animate-pulse" /> Locked by {sub.lockedByName || sub.lockedByEmail?.split('@')[0]}
+                                                            </div>
+                                                        )}
+                                                        <div className="flex items-center justify-between gap-4">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${selectedSubmission?._id === sub._id ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
+                                                                    {sub.testType === 'writing' ? <PiNotePencilFill /> : <PiMicrophoneStageFill />}
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="font-black leading-tight text-sm uppercase tracking-tight">{sub.userName}</h4>
+                                                                    <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${selectedSubmission?._id === sub._id ? 'text-white/60' : 'text-slate-400'}`}>
+                                                                        {sub.title}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            {!currentlyLockedByOther && (
+                                                                <PiArrowRightBold className={`opacity-0 group-hover:opacity-100 transition-all ${selectedSubmission?._id === sub._id ? 'text-white' : 'text-primary'}`} />
+                                                            )}
                                                         </div>
                                                     </div>
-                                                    <PiArrowRightBold className={`opacity-0 group-hover:opacity-100 transition-all ${selectedSubmission?._id === sub._id ? 'text-white' : 'text-primary'}`} />
-                                                </div>
-                                            </div>
-                                        ))}
+                                                );
+                                            })}
                                     </div>
                                 )}
                             </div>

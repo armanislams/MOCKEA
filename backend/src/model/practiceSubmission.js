@@ -51,7 +51,26 @@ const PracticeSubmissionSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
         },
+        reviewedByEmail: {
+            type: String,
+        },
+        reviewedByName: {
+            type: String,
+        },
         reviewedAt: {
+            type: Date,
+        },
+        lockedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        },
+        lockedByEmail: {
+            type: String,
+        },
+        lockedByName: {
+            type: String,
+        },
+        lockExpiresAt: {
             type: Date,
         }
     },

@@ -199,10 +199,15 @@ const Review = () => {
                                                     <span className="text-2xl font-black text-primary">{lab.bandScore}</span>
                                                     <span className="text-[8px] font-black uppercase tracking-widest text-primary/60">Band</span>
                                                 </div>
-                                                <div className="flex-1">
+                                                <div className="flex-1 space-y-2">
                                                     <p className="text-xs font-medium text-slate-500 italic line-clamp-2">
                                                         "{lab.feedback}"
                                                     </p>
+                                                    {lab.reviewedByName && (
+                                                        <p className="text-[9px] font-black uppercase tracking-widest text-primary/40">
+                                                            Evaluated by {lab.reviewedByName}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         ) : (

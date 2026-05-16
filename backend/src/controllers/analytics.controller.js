@@ -1,5 +1,6 @@
 import User from "../model/user.js";
 import MockTestResult from "../model/mockTestResult.js";
+import PracticeSubmission from "../model/practiceSubmission.js";
 
 // Helper: Estimate Band based on percentage
 const estimateBand = (percentage) => {
@@ -161,6 +162,72 @@ export const getAdminAnalytics = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error fetching admin analytics",
+      error: error.message,
+    });
+  }
+};
+
+export const getInstructorAnalytics = async (req, res) => {
+  try {
+    const instructorEmail = req.decoded_email;
+    const instructor = await User.findOne({ email: instructorEmail });
+
+    if (!instructor) {
+        return res.status(404).json({ success: false, message: "Instructor not found" });
+    }
+
+    // 1. Total Reviews Done (Practice Submissions)
+    const totalPracticeReviews = await PracticeSubmission.countDocuments({ 
+        reviewedBy: instructor._id,
+        status: 'reviewed'
+    });
+
+    // 2. Total Reviews Done (Mock Tests - sections)
+    const mockTestsWithInstructorGrades = await MockTestResult.find({
+        'sectionResults.reviewedBy': instructor._id
+    });
+
+    let totalMockSectionsReviews = 0;
+    mockTestsWithInstructorGrades.forEach(test => {
+        test.sectionResults.forEach(section => {
+            if (section.reviewedBy && section.reviewedBy.toString() === instructor._id.toString()) {
+                totalMockSectionsReviews++;
+            }
+        });
+    });
+
+    // 3. Pending Reviews (Global)
+    const pendingPractice = await PracticeSubmission.countDocuments({ status: 'pending' });
+    const pendingMock = await MockTestResult.countDocuments({ 
+        status: 'completed',
+        'sectionResults': { $elemMatch: { isGraded: false } }
+    });
+
+    // 4. Recent Activity
+    const recentPractice = await PracticeSubmission.find({ 
+        reviewedBy: instructor._id,
+        status: 'reviewed'
+    }).sort({ reviewedAt: -1 }).limit(5);
+
+    return res.status(200).json({
+      success: true,
+      analytics: {
+        totalReviews: totalPracticeReviews + totalMockSectionsReviews,
+        practiceReviews: totalPracticeReviews,
+        mockReviews: totalMockSectionsReviews,
+        globalPending: pendingPractice + pendingMock,
+        recentActivity: recentPractice.map(p => ({
+            type: 'practice',
+            studentName: p.userName,
+            testType: p.testType,
+            date: p.reviewedAt
+        }))
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching instructor analytics",
       error: error.message,
     });
   }

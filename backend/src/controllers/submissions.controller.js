@@ -85,6 +85,7 @@ export const reviewSubmission = async (req, res) => {
         
         const instructor = await User.findOne({ email: req.decoded_email });
         const reviewedBy = instructor?._id;
+        const reviewedByEmail = req.decoded_email;
 
         const submission = await PracticeSubmission.findByIdAndUpdate(
             id,
@@ -94,7 +95,13 @@ export const reviewSubmission = async (req, res) => {
                 feedback,
                 status: 'reviewed',
                 reviewedBy,
-                reviewedAt: new Date()
+                reviewedByEmail,
+                reviewedByName: instructor?.name || req.decoded_email.split('@')[0],
+                reviewedAt: new Date(),
+                // Clear locks
+                lockedBy: null,
+                lockedByEmail: null,
+                lockExpiresAt: null
             },
             { new: true }
         );
@@ -107,6 +114,42 @@ export const reviewSubmission = async (req, res) => {
             success: true, 
             message: 'Submission reviewed successfully', 
             submission 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const lockSubmission = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const instructor = await User.findOne({ email: req.decoded_email });
+        
+        const submission = await PracticeSubmission.findById(id);
+        if (!submission) {
+            return res.status(404).json({ success: false, message: 'Submission not found' });
+        }
+
+        // Check if already locked by someone else
+        if (submission.lockedBy && submission.lockedBy.toString() !== instructor._id.toString() && submission.lockExpiresAt > new Date()) {
+            return res.status(409).json({ 
+                success: false, 
+                message: `This submission is currently being reviewed by ${submission.lockedByEmail}`,
+                lockedByEmail: submission.lockedByEmail
+            });
+        }
+
+        // Set lock for 1 hour
+        submission.lockedBy = instructor._id;
+        submission.lockedByEmail = req.decoded_email;
+        submission.lockedByName = instructor.name || req.decoded_email.split('@')[0];
+        submission.lockExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        await submission.save();
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Submission locked for review', 
+            lockExpiresAt: submission.lockExpiresAt 
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
