@@ -13,7 +13,7 @@ export const useRole=()=>{
     queryFn: async () => {
       try {
         const res = await axiosSecure.get(`/user/${user.email}/role`);
-        return res.data.role;
+        return res.data?.role || null;
         
       } catch (error) {
         // If there's no response, it likely means the server is down / network error

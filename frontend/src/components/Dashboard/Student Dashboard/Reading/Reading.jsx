@@ -10,16 +10,13 @@ import {
     PiXCircleFill, 
     PiArrowRightBold,
     PiClockFill,
-    PiInfoFill,
     PiChartLineUpFill,
     PiArrowLeftBold
 } from "react-icons/pi";
-import { useNavigate } from "react-router";
 
 const Reading = () => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const [readingSets, setReadingSets] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");

@@ -159,7 +159,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin/grade-submissions",
+        path: "instructor/grade-submissions",
         // element: (
         //   <AdminRoutes>
         //     <GradeSubmissions />

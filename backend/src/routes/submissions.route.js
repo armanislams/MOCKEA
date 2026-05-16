@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
     submitPractice, 
+    getMySubmissions,
     getSubmissions, 
     reviewSubmission 
 } from '../controllers/submissions.controller.js';
@@ -11,6 +12,7 @@ const sRouter = express.Router();
 
 // Student routes
 sRouter.post('/submit', verifyUserToken, submitPractice);
+sRouter.get('/my-submissions', verifyUserToken, getMySubmissions);
 
 // Admin/Instructor routes
 sRouter.get('/', verifyUserToken, verifyUserRole(['admin', 'instructor']), getSubmissions);

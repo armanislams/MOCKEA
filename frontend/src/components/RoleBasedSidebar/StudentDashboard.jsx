@@ -37,7 +37,7 @@ const StudentDashboard = () => {
             <li>
                 <NavLink to="/dashboard/profile">
                     <PiUser className="w-5 h-5" />
-                    Profile
+                    My Profile
                 </NavLink>
             </li>
         </>

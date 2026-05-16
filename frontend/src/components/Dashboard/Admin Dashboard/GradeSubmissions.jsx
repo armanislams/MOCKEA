@@ -1,18 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
-import Loader from "../../Loader/Loader";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-    PiGraduationCap, 
-    PiUser, 
-    PiCalendar, 
-    PiWarning,
-    PiCheckCircle,
+import {  
+    PiCalendar,
     PiPencilLine,
     PiMicrophoneStage,
-    PiCaretRightBold,
     PiCheckBold,
     PiFilesFill,
     PiSelectionAllFill,
@@ -54,29 +48,23 @@ const GradeSubmissions = () => {
         gradeMutation.mutate({ resultId, sectionType, score: parseFloat(score) });
     };
 
-    /* --- Skill Labs State --- */
-    const [submissions, setSubmissions] = useState([]);
-    const [loadingLabs, setLoadingLabs] = useState(false);
+    /* --- Skill Labs State & Query --- */
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [reviewData, setReviewData] = useState({ score: "", bandScore: "", feedback: "" });
     const [submitting, setSubmitting] = useState(false);
     const [filter, setFilter] = useState({ status: "pending", testType: "" });
 
-    const fetchSubmissions = async () => {
-        try {
-            setLoadingLabs(true);
+    const { 
+        data: submissions = [], 
+        refetch: fetchSubmissions 
+    } = useQuery({
+        queryKey: ["skill-submissions", filter.status, filter.testType],
+        queryFn: async () => {
             const { data } = await axiosSecure.get(`/submissions?status=${filter.status}&testType=${filter.testType}`);
-            setSubmissions(data.submissions);
-            setLoadingLabs(false);
-        } catch (error) {
-            toast.error("Failed to load practice submissions");
-            setLoadingLabs(false);
-        }
-    };
-
-    useEffect(() => {
-        if (activeTab === "skill-labs") fetchSubmissions();
-    }, [activeTab, filter]);
+            return data.submissions ?? [];
+        },
+        enabled: activeTab === "skill-labs"
+    });
 
     const handleReviewSubmit = async (e) => {
         e.preventDefault();
@@ -107,7 +95,7 @@ const GradeSubmissions = () => {
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="bg-white p-2 rounded-[2rem] border border-base-300 shadow-sm flex items-center gap-1">
+                <div className="bg-white p-2 rounded-4xl border border-base-300 shadow-sm flex items-center gap-1">
                     <button 
                         onClick={() => setActiveTab("mock-tests")}
                         className={`flex items-center gap-3 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'mock-tests' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-base-100'}`}
@@ -145,7 +133,7 @@ const GradeSubmissions = () => {
                                     <div className="p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                                         <div className="flex items-center gap-6">
                                             <div className="avatar placeholder">
-                                                <div className="w-16 h-16 rounded-[1.5rem] bg-primary/10 text-primary font-black text-2xl group-hover:bg-primary group-hover:text-white transition-all">
+                                                <div className="w-16 h-16 rounded-3xl bg-primary/10 text-primary font-black text-2xl group-hover:bg-primary group-hover:text-white transition-all">
                                                     {result.userId?.name?.[0]}
                                                 </div>
                                             </div>
@@ -166,7 +154,7 @@ const GradeSubmissions = () => {
                                                 if (!section) return null;
 
                                                 return (
-                                                    <div key={type} className={`flex items-center gap-5 p-5 rounded-[2rem] border transition-all ${
+                                                    <div key={type} className={`flex items-center gap-5 p-5 rounded-4xl border transition-all ${
                                                         section.isGraded ? "bg-emerald-50/50 border-emerald-500/20" : "bg-warning/5 border-warning/20 border-dashed"
                                                     }`}>
                                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${section.isGraded ? 'bg-emerald-500 text-white' : 'bg-warning/10 text-warning'}`}>
@@ -214,7 +202,7 @@ const GradeSubmissions = () => {
                         exit={{ opacity: 0, y: -10 }}
                         className="space-y-10"
                     >
-                        <div className="flex items-center gap-4 bg-white p-4 rounded-[2rem] border border-base-300 shadow-sm w-fit">
+                        <div className="flex items-center gap-4 bg-white p-4 rounded-4xl border border-base-300 shadow-sm w-fit">
                             <select 
                                 className="select select-sm border-none focus:ring-0 font-black text-[10px] uppercase tracking-widest"
                                 value={filter.status}
@@ -252,7 +240,7 @@ const GradeSubmissions = () => {
                                                 className={`card p-6 border transition-all cursor-pointer group ${
                                                     selectedSubmission?._id === sub._id 
                                                     ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/20 rounded-[2.5rem]' 
-                                                    : 'bg-white border-base-300 hover:border-primary/50 rounded-[2rem]'
+                                                    : 'bg-white border-base-300 hover:border-primary/50 rounded-4xl'
                                                 }`}
                                             >
                                                 <div className="flex items-center justify-between gap-4">
@@ -300,7 +288,14 @@ const GradeSubmissions = () => {
                                             <div className="space-y-4">
                                                 <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Attempt Content</h5>
                                                 <div className="p-8 bg-base-50 border border-base-200 rounded-[2.5rem] text-lg leading-relaxed text-slate-700 whitespace-pre-wrap font-medium italic">
-                                                    {selectedSubmission.content}
+                                                    {selectedSubmission.testType === 'speaking' ? (
+                                                        <div className="flex flex-col items-center gap-4 py-4">
+                                                            <audio controls src={selectedSubmission.content} className="w-full" />
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Speaking Session Recording</p>
+                                                        </div>
+                                                    ) : (
+                                                        selectedSubmission.content
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -349,11 +344,11 @@ const GradeSubmissions = () => {
                                             ) : (
                                                 <div className="space-y-8 pt-6 border-t border-base-200">
                                                     <div className="flex items-center gap-8">
-                                                        <div className="flex flex-col items-center p-6 bg-emerald-500/10 rounded-[2rem] border border-emerald-500/20 min-w-[100px]">
+                                                        <div className="flex flex-col items-center p-6 bg-emerald-500/10 rounded-4xl border border-emerald-500/20 min-w-[100px]">
                                                             <span className="text-3xl font-black text-emerald-600">{selectedSubmission.score}%</span>
                                                             <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600/60 text-center">Score</span>
                                                         </div>
-                                                        <div className="flex flex-col items-center p-6 bg-primary/10 rounded-[2rem] border border-primary/20 min-w-[100px]">
+                                                        <div className="flex flex-col items-center p-6 bg-primary/10 rounded-4xl border border-primary/20 min-w-[100px]">
                                                             <span className="text-3xl font-black text-primary">{selectedSubmission.bandScore}</span>
                                                             <span className="text-[8px] font-black uppercase tracking-widest text-primary/60 text-center">IELTS Band</span>
                                                         </div>
