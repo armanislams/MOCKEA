@@ -55,7 +55,7 @@ export const Pricing = () => {
                 )}
 
                 <h3 className="text-3xl font-extrabold">{plan.name}</h3>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#4f7dbf]">
+                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-mist-950">
                   {plan.subtitle}
                 </p>
 
