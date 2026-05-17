@@ -28,6 +28,9 @@ import TestEnvironment from "../components/Dashboard/Student Dashboard/FullMockT
 import Error from "../components/Common/Error";
 import GradeSubmissions from "../components/Dashboard/Instructor Dashboard/GradeSubmissions";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
+import GuestTestLibrary from "../components/Guest/GuestTestLibrary";
+import FreePracticeLayout from "../Layout/FreePracticeLayout";
+import GuestTestEnvironment from "../components/Guest/GuestTestEnvironment";
 
 const router = createBrowserRouter([
   {
@@ -172,6 +175,14 @@ const router = createBrowserRouter([
       },
     ],
   },
+  {
+    path: "free-practice",
+    element: <FreePracticeLayout />, // public area
+    children: [
+      { index: true, element: <GuestTestLibrary /> },
+      { path: "tests/:id", element: <GuestTestEnvironment /> }
+    ]
+  }
 ]);
 
 export default router;

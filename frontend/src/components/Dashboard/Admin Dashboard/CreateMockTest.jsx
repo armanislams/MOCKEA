@@ -10,7 +10,7 @@ import {
     PiPlus,
     PiCheckCircle
 } from "react-icons/pi";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const CreateMockTest = () => {
@@ -20,6 +20,7 @@ const CreateMockTest = () => {
         title: "",
         description: "",
         planType: "free",
+        isPublic: false,
         totalDuration: 165,
         sections: {
             reading: [],
@@ -114,6 +115,22 @@ const CreateMockTest = () => {
                         />
                     </div>
                 </div>
+
+                {/* Public toggle */}
+<div className="form-control mt-4">
+  <label className="label cursor-pointer">
+    <input
+      type="checkbox"
+      className="checkbox checkbox-primary"
+      checked={formData.isPublic}
+      onChange={e => setFormData({ ...formData, isPublic: e.target.checked })}
+    />
+    <span className="label-text ml-2">
+      Make test public for guest practice
+    </span>
+  </label>
+</div>
+
 
                 {/* Section Bundler */}
                 <div className="space-y-6">

@@ -25,7 +25,7 @@ export const CTASection2 = () => {
               Log in
             </Link>
             <Link
-              to="/register"
+                to="/free-practice"
               className="inline-flex items-center justify-center rounded-full border  bg-cta-btn px-8 py-3 text-white font-bold shadow-sm btn-animated"
             >
               Try For Free...

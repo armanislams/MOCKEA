@@ -90,6 +90,16 @@ const QuestionsSchema = new mongoose.Schema(
             type: String,
             default: "free",
         },
+        // Speaking topic / cue card prompt
+        speakingPrompt: {
+            type: String,
+            default: ""
+        },
+        // If true, this question set is visible to unauthenticated (guest) users
+        isPublic: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true },
 );

@@ -8,6 +8,7 @@ import analyticsRouter from "./routes/analytics.route.js";
 import errorLogRouter from "./routes/errorLog.route.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import mockTestRouter from "./routes/mockTest.route.js";
+import publicMockTestRouter from "./routes/publicMockTest.route.js";
 import sRouter from "./routes/submissions.route.js";
 const Port = process.env.PORT || 3000;
 
@@ -22,10 +23,11 @@ app.use(express.json());
 
 app.use("/api/user", userRouter);
 app.use("/api/questions", qRouter);
-app.use('/api/mock-test', mockTestRouter);
+app.use('/api/mock-tests', mockTestRouter);
+app.use('/api/public-mock-tests', publicMockTestRouter);
 app.use('/api/submissions', sRouter);
 app.use('/api/error-logs', errorLogRouter);
-app.use("/api/mock-tests", mockTestRouter);
+
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/settings/logs", errorLogRouter);
 

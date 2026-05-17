@@ -13,6 +13,7 @@ const mockTestSchema = new mongoose.Schema({
         enum: ['free', 'standard', 'premium'],
         default: 'free'
     },
+    isPublic: { type: Boolean, default: false },
     sections: {
         reading: [{
             type: mongoose.Schema.Types.ObjectId,

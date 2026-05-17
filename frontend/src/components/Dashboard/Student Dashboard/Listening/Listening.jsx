@@ -29,7 +29,7 @@ const fmt = (s) => {
   return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 };
 
-const Listening = () => {
+const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ const Listening = () => {
   /* --- Data State --- */
   const [listeningSets, setListeningSets] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preloadedSet); // skip loader if data already provided
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
@@ -59,19 +59,19 @@ const Listening = () => {
   const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes for listening
 
   const activeSet = useMemo(
-    () => listeningSets.find((set) => set._id === selectedSetId) || null,
-    [listeningSets, selectedSetId],
+    () => preloadedSet || listeningSets.find((set) => set._id === selectedSetId) || null,
+    [preloadedSet, listeningSets, selectedSetId],
   );
 
   /* --- Fetch Data --- */
   useEffect(() => {
+    if (preloadedSet) { setLoading(false); return; } // guest: data already provided
     const fetchListening = async () => {
       try {
         setLoading(true);
         const response = await axiosSecure.get("/questions?type=listening");
         const fetched = response?.data?.questions || [];
         setListeningSets(fetched);
-        // Auto-selection removed
         setLoading(false);
       } catch (error) {
         toast.error("Failed to load listening materials");
@@ -79,7 +79,7 @@ const Listening = () => {
       }
     };
     if (user?.email) fetchListening();
-  }, [axiosSecure, user?.email]);
+  }, [axiosSecure, user?.email, preloadedSet]);
 
   // Countdown Logic
   useEffect(() => {
@@ -166,6 +166,12 @@ const Listening = () => {
         return;
     }
 
+    // Guest mode — hand off to parent handler (only if not yet logged in)
+    if (onSubmitGuest && !user?.email) {
+      onSubmitGuest(answers);
+      return;
+    }
+
     try {
       if (!activeSet) return;
       setSubmitting(true);
@@ -189,7 +195,7 @@ const Listening = () => {
 
   if (loading) return <Loader />;
 
-  if (!activeSet || !selectedSetId) {
+  if (!activeSet || (!preloadedSet && !selectedSetId)) {
     return (
         <div className="max-w-7xl mx-auto px-6 py-20">
             <div className="text-center space-y-4 mb-16">
@@ -233,54 +239,131 @@ const Listening = () => {
 
   return (
     <div className="min-h-screen bg-base-200 pb-20">
-      {/* Sticky Premium Player Bar */}
+      {/* Minimal Sticky Nav Bar */}
       <div className="bg-slate-950 text-white sticky top-0 z-50 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between gap-10">
-            <div className="flex items-center gap-6">
-                <button 
-                    onClick={togglePlay}
-                    className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-3xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                >
-                    {isPlaying ? <PiPauseCircleFill /> : <PiPlayCircleFill />}
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+                <button onClick={() => setSelectedSetId("")} className="btn btn-ghost btn-circle btn-sm text-white/40">
+                    <PiArrowLeftBold className="w-5 h-5" />
                 </button>
-                <div className="hidden md:block">
+                <div>
                     <h1 className="text-sm font-black tracking-tight leading-tight">{activeSet?.title}</h1>
-                    <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Listening Lab</span>
-                        <span className="text-[10px] font-mono text-white/40">{fmt(currentTime)} / {fmt(duration)}</span>
-                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Listening Lab</span>
                 </div>
             </div>
-
-            {/* Visual Waveform Mockup */}
-            <div className="flex-1 max-w-xl hidden lg:flex flex-col gap-2">
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden relative">
-                    <motion.div 
-                        className="absolute inset-y-0 left-0 bg-primary shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-                        animate={{ width: `${progress}%` }}
-                    />
+            <div className="flex items-center gap-3">
+                <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Time Left</div>
+                <div className={`text-lg font-mono font-black ${timeLeft < 300 ? 'text-red-500' : 'text-primary'}`}>
+                    {fmtCountdown(timeLeft)}
                 </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-                <div className="flex flex-col items-end">
-                    <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Remaining Time</div>
-                    <div className={`text-xl font-mono font-black leading-none mt-1 ${timeLeft < 300 ? 'text-red-500' : 'text-primary'}`}>
-                        {fmtCountdown(timeLeft)}
-                    </div>
-                </div>
-                <div className="h-10 w-px bg-white/10" />
-                <button onClick={() => setSelectedSetId("")} className="btn btn-ghost btn-circle text-white/40">
-                    <PiArrowLeftBold className="w-6 h-6" />
-                </button>
             </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 pt-12">
+      <div className="max-w-7xl mx-auto px-6 pt-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            {/* Questions Section */}
-            <div className="lg:col-span-8 space-y-10">
+            {/* Left: Audio Player + Questions */}
+            <div className="lg:col-span-8 space-y-8">
+
+                {/* ── Rich Inline Audio Player ─────────────────────────── */}
+                <motion.div
+                    initial={{ y: 16, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="card bg-slate-950 text-white p-8 rounded-[3rem] shadow-2xl overflow-hidden relative"
+                >
+                    {/* background glow */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
+
+                    <div className="relative z-10 space-y-6">
+                        {/* Title row */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary mb-1">Now Playing</p>
+                                <h2 className="text-xl font-black tracking-tight">{activeSet?.title}</h2>
+                            </div>
+                               
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="space-y-2">
+                            <div
+                                className="h-3 w-full bg-white/10 rounded-full overflow-hidden relative cursor-pointer group"
+                                onClick={(e) => {
+                                    if (!howlRef.current || !duration) return;
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    const pct = (e.clientX - rect.left) / rect.width;
+                                    howlRef.current.seek(pct * duration);
+                                }}
+                            >
+                                <motion.div
+                                    className="absolute inset-y-0 left-0 bg-primary rounded-full shadow-[0_0_16px_rgba(99,102,241,0.6)] group-hover:bg-indigo-400 transition-colors"
+                                    animate={{ width: `${progress}%` }}
+                                    transition={{ ease: 'linear', duration: 0.3 }}
+                                />
+                                {/* Thumb dot */}
+                                <motion.div
+                                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-lg"
+                                    animate={{ left: `calc(${progress}% - 8px)` }}
+                                    transition={{ ease: 'linear', duration: 0.3 }}
+                                />
+                            </div>
+                            {/* Time labels */}
+                            <div className="flex justify-between text-[11px] font-mono font-bold text-white/40">
+                                <span>{fmt(currentTime)}</span>
+                                <span>{fmt(duration)}</span>
+                            </div>
+                        </div>
+
+                        {/* Controls row */}
+                        <div className="flex items-center gap-6">
+                            <button
+                                onClick={togglePlay}
+                                disabled={!isLoaded}
+                                className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-3xl shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                {isPlaying ? <PiPauseCircleFill /> : <PiPlayCircleFill />}
+                            </button>
+
+                            {/* Volume */}
+                            <div className="flex items-center gap-3 flex-1">
+                                <button onClick={() => setIsMuted(!isMuted)} className="text-white/40 hover:text-white transition-colors">
+                                    {isMuted || volume === 0 ? <PiSpeakerSlashFill className="text-xl" /> : <PiSpeakerHighFill className="text-xl" />}
+                                </button>
+                                <input
+                                    type="range" min="0" max="1" step="0.05"
+                                    value={isMuted ? 0 : volume}
+                                    onChange={(e) => {
+                                        const v = parseFloat(e.target.value);
+                                        setVolume(v);
+                                        setIsMuted(v === 0);
+                                        if (howlRef.current) howlRef.current.volume(v);
+                                    }}
+                                    className="w-28 accent-primary cursor-pointer"
+                                />
+                            </div>
+
+                            {/* Stats pills */}
+                            <div className="flex items-center gap-3 ml-auto">
+                                <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Elapsed</p>
+                                    <p className="text-sm font-mono font-black">{fmt(elapsed)}</p>
+                                </div>
+                                <div className="px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">Duration</p>
+                                    <p className="text-sm font-mono font-black text-primary">{fmt(duration)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {!isLoaded && (
+                            <p className="text-[11px] text-white/30 font-bold text-center animate-pulse">
+                                Loading audio...
+                            </p>
+                        )}
+                    </div>
+                </motion.div>
+                {/* ─────────────────────────────────────────────────────── */}
+
                 <AnimatePresence>
                 {submitted && result && (
                     <motion.div 

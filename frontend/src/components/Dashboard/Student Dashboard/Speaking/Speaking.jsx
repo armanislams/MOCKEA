@@ -18,14 +18,14 @@ import {
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
 
-const Speaking = () => {
+const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const [speakingSets, setSpeakingSets] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preloadedSet); // skip loader if data already provided
   const [isRecording, setIsRecording] = useState(false);
   const [prepTime, setPrepTime] = useState(60); // 1 min prep
   const [recordingTime, setRecordingTime] = useState(0);
@@ -38,11 +38,12 @@ const Speaking = () => {
   const audioChunksRef = useRef([]);
 
   const activeSet = useMemo(
-    () => speakingSets.find((set) => set._id === selectedSetId) || null,
-    [speakingSets, selectedSetId],
+    () => preloadedSet || speakingSets.find((set) => set._id === selectedSetId) || null,
+    [preloadedSet, speakingSets, selectedSetId],
   );
 
   useEffect(() => {
+    if (preloadedSet) { setLoading(false); return; } // guest: data already provided
     const fetchSpeaking = async () => {
       try {
         setLoading(true);
@@ -56,7 +57,7 @@ const Speaking = () => {
       }
     };
     if (user?.email) fetchSpeaking();
-  }, [axiosSecure, user?.email]);
+  }, [axiosSecure, user?.email, preloadedSet]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -154,6 +155,12 @@ const Speaking = () => {
       return;
     }
 
+    // Guest mode — hand off to parent handler (only if not yet logged in)
+    if (onSubmitGuest && !user?.email) {
+      onSubmitGuest(audioBlob);
+      return;
+    }
+
     try {
       setIsUploading(true);
       toast.info("Uploading your audio...");
@@ -187,7 +194,7 @@ const Speaking = () => {
 
   if (loading) return <Loader />;
 
-  if (!activeSet || !selectedSetId) {
+  if (!activeSet || (!preloadedSet && !selectedSetId)) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center space-y-4 mb-16">

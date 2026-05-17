@@ -23,7 +23,7 @@ const AuthBtn =()=>{
          Log in
        </NavLink>
        <NavLink
-         to={"/register"}
+         to={"/free-practice"}
          className="btn bg-cta-btn hover:bg-primary-hover text-white border-none sm:px-6 min-h-0 sm:h-10 rounded-full font-bold transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-md"
        >
         Try For Free...

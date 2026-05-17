@@ -34,8 +34,10 @@ const AddQuestionForm = () => {
         instructions: "",
         passage: "",
         audioUrl: "",
+        speakingPrompt: "",
         images: [""],
         forPlanType: "free",
+        isPublic: false,
         questions: [
             { id: Date.now().toString(), type: "short-answer", question: "", correctAnswer: "", options: [""] }
         ]
@@ -159,6 +161,18 @@ const AddQuestionForm = () => {
                             </select>
                         </div>
                     </div>
+                    {/* isPublic toggle */}
+                    <div className="form-control mt-2">
+                        <label className="label cursor-pointer gap-3 justify-start">
+                            <input
+                                type="checkbox"
+                                className="toggle toggle-primary"
+                                checked={formData.isPublic}
+                                onChange={e => setFormData({ ...formData, isPublic: e.target.checked })}
+                            />
+                            <span className="label-text font-semibold">Make available for guest (free-practice) users</span>
+                        </label>
+                    </div>
                     <div className="form-control">
                         <label className="label"><span className="label-text font-semibold">Global Instructions</span></label>
                         <textarea 
@@ -216,6 +230,19 @@ const AddQuestionForm = () => {
                                     newImgs[0] = e.target.value;
                                     setFormData({...formData, images: newImgs});
                                 }}
+                            />
+                        </div>
+                    )}
+
+                    {testType === 'speaking' && (
+                        <div className="form-control">
+                            <label className="label"><span className="label-text font-semibold">Speaking Topic / Prompt</span></label>
+                            <textarea
+                                className="textarea textarea-bordered rounded-2xl h-32"
+                                placeholder="e.g. Describe a place you have visited recently. You should say: where it is, when you went there, what you did there, and explain why you liked it."
+                                value={formData.speakingPrompt}
+                                onChange={e => setFormData({ ...formData, speakingPrompt: e.target.value })}
+                                required
                             />
                         </div>
                     )}
