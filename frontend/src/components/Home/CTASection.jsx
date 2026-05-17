@@ -33,7 +33,7 @@ const ctaItems = [
 
 const CTASection = forwardRef((props, ref) => {
   return (
-    <section id='testFormats' className="py-16 bg-bc-light border-b border-gray-200">
+    <section id='testFormats' className="py-16 bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-900">

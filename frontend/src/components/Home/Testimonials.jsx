@@ -52,7 +52,7 @@ export const Testimonials = forwardRef((props, ref) => {
   return (
     <div
       ref={ref}
-      className="rounded-3xl border border-gray-200/80 bg-[#F8F9FA] px-4 py-10 shadow-sm sm:px-8 sm:py-12"
+      className="rounded-3xl border border-gray-200/80 bg-white px-4 py-10 shadow-sm sm:px-8 sm:py-12"
     >
       <div className="mx-auto max-w-7xl">
         <header className="mb-10 text-center sm:mb-12">

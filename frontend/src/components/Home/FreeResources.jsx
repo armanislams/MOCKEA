@@ -29,7 +29,7 @@ const RESOURCES = [
 
 export const FreeResources = forwardRef((props, ref) => {
   return (
-    <section id="freeResources" className="w-full rounded-3xl bg-[#F8F9FA] px-4 py-12 sm:px-6 md:py-16 lg:px-10">
+    <section id="freeResources" className="w-full rounded-3xl bg-white px-4 py-12 sm:px-6 md:py-16 lg:px-10">
       <div className="mx-auto max-w-6xl">
         <header className="mb-10 text-center md:mb-12">
           <h2 className="text-title-gray text-3xl font-bold tracking-tight md:text-4xl">

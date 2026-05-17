@@ -10,7 +10,7 @@ const Home = () => {
   
 
   return (
-    <div id='home' className="flex flex-col bg-white relative">
+    <div id='home' className="flex flex-col bg-[#FAF9F6] relative">
      
       <main className="grow">
 

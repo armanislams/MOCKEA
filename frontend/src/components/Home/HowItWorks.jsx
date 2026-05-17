@@ -26,7 +26,7 @@ const DottedRule = () => (
 
 export const HowItWorks = () => {
   return (
-    <div className="rounded-2xl bg-[#F9FAFB] py-12 px-4 sm:px-8">
+    <div className="rounded-2xl bg-white py-12 px-4 sm:px-8">
       <h2 className="mb-10 text-center text-3xl font-bold tracking-tight text-[#001529] md:mb-14 md:text-4xl">
         How It Works
       </h2>

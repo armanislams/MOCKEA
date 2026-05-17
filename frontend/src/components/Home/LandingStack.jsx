@@ -98,7 +98,7 @@ export const LandingStack = () => {
         }
     }, []);
     return (
-      <section className=" bg-gray-50">
+      <section className="bg-[#FAF9F6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
           {/* cta section 1 */}
           <CTASection ref={cardsRef} />
