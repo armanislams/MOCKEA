@@ -52,7 +52,7 @@ const pricingPlans = [
 
 export const Pricing = () => {
   return (
-    <section id="pricing" className="relative bg-slate-50/50 px-4 py-20 md:py-28 md:px-8 overflow-hidden font-sans">
+    <section id="pricing" className="relative bg-white rounded-4xl px-4 py-10 md:px-8 overflow-hidden font-sans">
       {/* Premium Decorative Background Elements */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100/30 rounded-full filter blur-3xl -z-10" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-100/20 rounded-full filter blur-3xl -z-10" />
