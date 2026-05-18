@@ -7,7 +7,7 @@ import { Link } from 'react-router';
 
 const Hero2 = () => {
   return (
-    <div className="relative min-h-[60vh] lg:h-[90vh] flex items-center bg-white font-sans text-gray-900 py-5 md:py-10 lg:py-0">
+    <div className="relative min-h-[60vh] lg:h-screen flex items-center bg-white font-sans text-gray-900 py-5 md:py-10 lg:py-0">
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
         
@@ -16,19 +16,11 @@ const Hero2 = () => {
         <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              borderRadius: '9999px',
-              backgroundColor: '#f3f4f6',
-              border: '1px solid #e5e7eb',
-            }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
+            className="inline-flex items-center gap-2 md:px-4 md:py-2 px-2 py-1 rounded-full bg-gray-100 border border-gray-200"
           >
-            <span style={{ display: 'flex', width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: '#9ca3af', flexShrink: 0 }}></span>
-            <span style={{ fontSize: '14px', fontWeight: 500, color: '#4b5563', letterSpacing: '0.025em' }}>The Future of Testing is Here</span>
+            <span className="flex w-2 h-2 rounded-full animate-bounce bg-green-500 shrink-0"></span>
+            <span className="text-sm font-medium text-gray-600 tracking-wide">The Future of Testing is Here</span>
           </motion.div>
 
           <motion.h1 
@@ -58,7 +50,7 @@ const Hero2 = () => {
           >
             <Link to={'/dashboard'} className="group relative px-8 py-4 bg-cta-btn text-white font-bold rounded-xl overflow-hidden transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
               <span className="relative z-10">Start Mock Exam</span>
-              <FiArrowRight className="relative z-10 group-hover:translate-x-1 transition-transform" />
+              <FiArrowRight className="relative animate-ping z-10 group-hover:translate-x-1 transition-transform" />
             </Link>
             <button className="px-8 py-4 bg-gray-100 border border-gray-200 text-gray-800 font-bold rounded-xl transition-all hover:bg-gray-200 flex items-center justify-center gap-2">
               <FiPlay /> Watch Demo
