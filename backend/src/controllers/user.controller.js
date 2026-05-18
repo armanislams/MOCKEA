@@ -57,6 +57,15 @@ export const getUserProfile = async (req, res) => {
     res.status(200).json({ success: true, message: "User profile fetched successfully", user });
 };
 
+export const verifyEmail = async (req, res) => {
+    const { email } = req.params;
+    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+    if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.status(200).json({ success: true, message: "Email verified successfully" });
+};
+
 export const updateUserRole = async (req, res) => {
     const { id } = req.params;
     const { role } = req.body;

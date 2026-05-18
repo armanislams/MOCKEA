@@ -7,16 +7,23 @@ import router from './Router/router.jsx'
 import { ToastContainer } from 'react-toastify'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AuthProvider from './context/Provider/AuthProvider.jsx'
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary.jsx'
+import { setupGlobalErrorLogging } from './utils/errorLogger.js'
+
+// Initialize global client error interceptors
+setupGlobalErrorLogging();
 
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router}/>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" />
-    </QueryClientProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router}/>
+          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" />
+        </QueryClientProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

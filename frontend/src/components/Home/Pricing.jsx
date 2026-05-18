@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiCheck, FiArrowRight, FiStar, FiZap } from 'react-icons/fi';
 
@@ -51,6 +52,12 @@ const pricingPlans = [
 ];
 
 export const Pricing = () => {
+  const [triggerCrash, setTriggerCrash] = useState(false);
+
+  if (triggerCrash) {
+    throw new Error("Simulated React Component Crash in Pricing.jsx!");
+  }
+
   return (
     <section id="pricing" className="relative bg-white rounded-4xl px-4 py-10 md:px-8 overflow-hidden font-sans">
       {/* Premium Decorative Background Elements */}
@@ -61,16 +68,36 @@ export const Pricing = () => {
         
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto mb-16 md:mb-20">
-          <motion.span 
-            initial={{ opacity: 0, y: -10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cta-btn bg-red-50 border border-red-100 rounded-full mb-4"
-          >
-            <FiZap className="w-3.5 h-3.5 fill-current animate-pulse text-cta-btn" />
-            Pricing & Plans
-          </motion.span>
+          <div className="flex flex-col items-center gap-2 mb-4">
+            <motion.span 
+              initial={{ opacity: 0, y: -10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cta-btn bg-red-50 border border-red-100 rounded-full"
+            >
+              <FiZap className="w-3.5 h-3.5 fill-current animate-pulse text-cta-btn" />
+              Pricing & Plans
+            </motion.span>
+
+            {/* Simulated Error triggers for Developer verification */}
+            <div className="flex gap-2 justify-center mt-2">
+              <button 
+                onClick={() => setTriggerCrash(true)}
+                className="px-3 py-1 text-[10px] font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/20 rounded-full cursor-pointer transition-all"
+              >
+                Test UI Crash (ErrorBoundary)
+              </button>
+              <button 
+                onClick={() => {
+                  Promise.reject(new Error("Simulated Unhandled Promise Rejection in Pricing page!"));
+                }}
+                className="px-3 py-1 text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 rounded-full cursor-pointer transition-all"
+              >
+                Test Promise Rejection (Global)
+              </button>
+            </div>
+          </div>
           
           <motion.h2 
             initial={{ opacity: 0, y: 10 }}

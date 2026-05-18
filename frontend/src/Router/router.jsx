@@ -31,6 +31,7 @@ import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 import GuestTestLibrary from "../components/Guest/GuestTestLibrary";
 import FreePracticeLayout from "../Layout/FreePracticeLayout";
 import GuestTestEnvironment from "../components/Guest/GuestTestEnvironment";
+import AuthLayout from "../components/Auth/AuthLayout";
 
 const router = createBrowserRouter([
   {
@@ -44,14 +45,6 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: "/login",
-        element: <Login />,
-      },
-      {
-        path: "/register",
-        element: <Register />,
-      },
-      {
         path: "/practice",
         element: (
           <PrivateRoute>
@@ -60,6 +53,20 @@ const router = createBrowserRouter([
         ),
       },
     ],
+  },
+  {
+    path: '/auth',
+    element: <AuthLayout />,
+    children: [
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "register",
+        element: <Register />,
+      },
+    ]
   },
   {
     path: "/test/:id",

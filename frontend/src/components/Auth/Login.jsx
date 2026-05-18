@@ -1,69 +1,87 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
-import useAuth from '../../hooks/useAuth';
-import { useNavigate, useLocation, Link } from 'react-router';
-import AuthLayout from './AuthLayout';
-import SocialLoginButton from './SocialLoginButton';
-import { PiEye, PiEyeSlash } from 'react-icons/pi';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import useAuth from "../../hooks/useAuth";
+import { useNavigate, useLocation, Link } from "react-router";
+import SocialLoginButton from "./SocialLoginButton";
+import { PiEye, PiEyeSlash } from "react-icons/pi";
+import useAxios from "../../hooks/useAxios";
 
 const Login = () => {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
   const [isLoading, setIsLoading] = useState(false);
-  const [show, isShow] = useState(false)
-  const { signIn,setLoading } = useAuth();
+  const [show, isShow] = useState(false);
+  const { signIn, setLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || "/";
+  const axiosIstance = useAxios();
 
   const onSubmit = (data) => {
     setIsLoading(true);
-    signIn(data.email, data.password)
-      .then(() => {
-        toast.success('Logged In Successfully');
-        setTimeout(() => {
-          navigate(from, { replace: true });
-          setIsLoading(false);
-        }, 500);
-      })
-      .catch((err) => {
-        console.log(err.message);
-        setLoading(false)
-        toast.error(err.message == 'Firebase: Error (auth/invalid-credential).'?
-          'Invalid Email or Password. Please Try Again' 
-          :
-          'Something Went Wrong. Please Try Again'
-        );
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 500);
-      });
+    try {
+      axiosIstance
+        .get(`/user/verifyEmail/${data.email}`)
+        .then((res) => {
+          if (res.data.success) {
+            signIn(data.email, data.password)
+              .then(() => {
+                toast.success("Logged In Successfully");
+                setTimeout(() => {
+                  navigate(from, { replace: true });
+                  setIsLoading(false);
+                }, 500);
+              })
+              .catch((err) => {
+                console.log(err.message);
+                setLoading(false);
+                toast.error(
+                  err.message == "Firebase: Error (auth/invalid-credential)."
+                    ? "Invalid Email or Password. Please Try Again"
+                    : "Something Went Wrong. Please Try Again",
+                );
+              });
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          toast.error("User Not Found. Please Register");
+        });
+    } catch (error) {
+      console.log(error);
+      toast.error("Something Went Wrong. Please Try Again");
+    } finally {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+    }
   };
 
   const handleGoogleLogin = () => {
-    toast.info('Google login integration coming soon');
+    toast.info("Google login integration coming soon");
   };
 
-  const features = [
-    {
-      title: 'Full-length mock tests',
-      description: 'Practice with realistic exam conditions'
-    },
-    {
-      title: 'Instant band estimates',
-      description: 'Know your score immediately'
-    },
-    {
-      title: 'Detailed analytics',
-      description: 'Track progress and identify weak areas'
-    }
-  ];
-
   return (
-    <AuthLayout title="Welcome Back" subtitle="Please enter your details to sign in." features={features}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+    <div className="mb-8 space-y-6">
+      <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+        Welcome Back
+      </h2>
+      <p className="text-gray-600">Please enter your details to sign in.</p>
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200"
+      >
         {/* Social Login */}
-        <SocialLoginButton provider="Google" onClick={handleGoogleLogin} isLoading={isLoading} />
+        <SocialLoginButton
+          provider="Google"
+          onClick={handleGoogleLogin}
+          isLoading={isLoading}
+        />
 
         {/* Divider */}
         <div className="relative">
@@ -71,7 +89,9 @@ const Login = () => {
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500 font-medium">Or continue with email</span>
+            <span className="px-2 bg-white text-gray-500 font-medium">
+              Or continue with email
+            </span>
           </div>
         </div>
 
@@ -85,54 +105,71 @@ const Login = () => {
             placeholder="you@example.com"
             className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none ${
               errors.email
-                ? 'border-red-500 focus:border-red-500 focus:bg-red-50'
-                : 'border-gray-200 focus:border-blue-600 focus:bg-blue-50'
+                ? "border-red-500 focus:border-red-500 focus:bg-red-50"
+                : "border-gray-200 focus:border-blue-600 focus:bg-blue-50"
             }`}
-            {...register('email', {
-              required: 'Email is required',
+            {...register("email", {
+              required: "Email is required",
               pattern: {
                 value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                message: 'Invalid email address'
-              }
+                message: "Invalid email address",
+              },
             })}
           />
           {errors.email && (
-            <span className="text-red-500 text-xs mt-2 block font-semibold">{errors.email.message}</span>
+            <span className="text-red-500 text-xs mt-2 block font-semibold">
+              {errors.email.message}
+            </span>
           )}
         </div>
 
         {/* Password */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-bold text-gray-700">Password</label>
-            <Link to={'#'} onClick={()=> toast.info('Coming Soon...')} className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+            <label className="block text-sm font-bold text-gray-700">
+              Password
+            </label>
+            <Link
+              to={"#"}
+              onClick={() => toast.info("Coming Soon...")}
+              className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
           <div className="relative">
             <input
-            type={show ? "text" : "password"}
-            placeholder="••••••••"
-            className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none ${
-              errors.password
-                ? 'border-red-500 focus:border-red-500 focus:bg-red-50'
-                : 'border-gray-200 focus:border-blue-600 focus:bg-blue-50'
-            }`}
-            {...register('password', {
-              required: 'Password is required',
-              minLength: { value: 6, message: 'Password must be at least 6 characters' }
-            })}
-          />
-           <button
+              type={show ? "text" : "password"}
+              placeholder="••••••••"
+              className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none ${
+                errors.password
+                  ? "border-red-500 focus:border-red-500 focus:bg-red-50"
+                  : "border-gray-200 focus:border-blue-600 focus:bg-blue-50"
+              }`}
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters",
+                },
+              })}
+            />
+            <button
               type="button"
               onClick={() => isShow(!show)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
             >
-              {show ? <PiEyeSlash className="w-5 h-5" /> : <PiEye className="w-5 h-5" />}
+              {show ? (
+                <PiEyeSlash className="w-5 h-5" />
+              ) : (
+                <PiEye className="w-5 h-5" />
+              )}
             </button>
           </div>
           {errors.password && (
-            <span className="text-red-500 text-xs mt-2 block font-semibold">{errors.password.message}</span>
+            <span className="text-red-500 text-xs mt-2 block font-semibold">
+              {errors.password.message}
+            </span>
           )}
         </div>
 
@@ -148,16 +185,19 @@ const Login = () => {
               Signing in...
             </>
           ) : (
-            'Sign In'
+            "Sign In"
           )}
         </button>
 
         {/* Sign Up Link */}
         <div className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <a href="/register" className="text-blue-600 font-bold hover:text-blue-700 hover:underline">
+          Don't have an account?{" "}
+          <Link
+            to="/auth/register"
+            className="text-blue-600 font-bold hover:text-blue-700 hover:underline"
+          >
             Sign up here
-          </a>
+          </Link>
         </div>
 
         {/* Footer Links */}
@@ -166,14 +206,14 @@ const Login = () => {
             <a href="#" className="hover:text-gray-700 hover:underline">
               Terms of Service
             </a>
-            {' • '}
+            {" • "}
             <a href="#" className="hover:text-gray-700 hover:underline">
               Privacy Policy
             </a>
           </p>
         </div>
       </form>
-    </AuthLayout>
+    </div>
   );
 };
 

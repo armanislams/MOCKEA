@@ -2,9 +2,10 @@ import axios from 'axios';
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
 import useAuth from './useAuth';
+import { API_BASE_URL } from '../utils/apiConfig';
+
 const axiosSecure = axios.create({
-  baseURL: import.meta.env.VITE_local_url
-  // baseURL: import.meta.env.VITE_live_url
+  baseURL: API_BASE_URL
 });
 
 const useAxiosSecure = () => {

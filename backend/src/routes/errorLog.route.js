@@ -1,11 +1,14 @@
 import express from "express";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
-import { getLogs, clearLogs } from "../controllers/errorLog.controller.js";
+import { getLogs, clearLogs, createClientLog } from "../controllers/errorLog.controller.js";
 
 const errorLogRouter = express.Router();
 
-// Only admin can access these routes
+// Open POST route for client-side logging
+errorLogRouter.post("/client", createClientLog);
+
+// Only admin can access these routes below
 errorLogRouter.use(verifyUserToken);
 errorLogRouter.use(verifyUserRole(["admin"]));
 

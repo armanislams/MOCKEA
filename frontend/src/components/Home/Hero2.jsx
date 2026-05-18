@@ -39,7 +39,7 @@ const Hero2 = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-lg leading-relaxed"
           >
-            Welcome to <span className="text-cta-btn font-bold">MOCKEA</span>. Experience interactive online exams that don't put you to sleep. Track your stats, compete with friends, and dominate your next test.
+            Welcome to <span className="text-cta-btn font-bold text-3xl">MOCKEA</span>. Experience interactive online exams that don't put you to sleep. Track your stats, compete with friends, and dominate your next test.
           </motion.p>
 
           <motion.div 

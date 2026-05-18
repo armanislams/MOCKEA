@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router';
-import { FiLock, FiHome, FiLogIn } from 'react-icons/fi';
+import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router";
+import { FiLock, FiHome, FiLogIn } from "react-icons/fi";
 
 const Unauthorized = () => {
   const navigate = useNavigate();
@@ -20,7 +20,12 @@ const Unauthorized = () => {
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+          transition={{
+            type: "spring",
+            stiffness: 200,
+            damping: 15,
+            delay: 0.2,
+          }}
           className="w-24 h-24 bg-warning/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-warning/30"
         >
           <FiLock className="text-4xl text-warning" />
@@ -34,7 +39,7 @@ const Unauthorized = () => {
         >
           401
         </motion.h1>
-        
+
         <motion.h2
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -50,7 +55,8 @@ const Unauthorized = () => {
           transition={{ delay: 0.6 }}
           className="text-neutral-400 mb-8"
         >
-          Oops! It looks like you're not logged in or your session has expired. Please log in to continue accessing this page.
+          Oops! It looks like you're not logged in or your session has expired.
+          Please log in to continue accessing this page.
         </motion.p>
 
         <motion.div
@@ -60,7 +66,7 @@ const Unauthorized = () => {
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate("/auth/login")}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-warning text-warning-content rounded-xl font-medium hover:bg-warning/90 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg shadow-warning/20"
           >
             <FiLogIn />

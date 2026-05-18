@@ -22,21 +22,25 @@ Guests may begin a public mock test anonymously, but final submission requires l
 ### Backend Components
 
 #### [MODIFY] `backend/src/model/mockTest.js`
+
 - Add `isPublic: { type: Boolean, default: false }` to the `mockTestSchema`.
 
 #### [NEW] `backend/src/controllers/publicMockTest.controller.js`
+
 - Create controllers for public access:
   - `getPublicMockTests`: Returns tests where `isPublic: true`.
   - `getPublicMockTestById`: Returns a single public test with its questions.
 - Do not add a separate guest evaluation endpoint. Guests will authenticate before submission and use the existing authenticated submission endpoints.
 
 #### [NEW] `backend/src/routes/publicMockTest.route.js`
+
 - Define public read-only endpoints:
   - `GET /` → public test list
   - `GET /:id` → public test detail
 - These routes will not use `verifyUserToken`.
 
 #### [MODIFY] `backend/src/index.js`
+
 - Mount the new router at `/api/public-mock-tests`.
 
 ---
@@ -44,11 +48,13 @@ Guests may begin a public mock test anonymously, but final submission requires l
 ### Frontend Admin Components
 
 #### [MODIFY] `frontend/src/components/Dashboard/Admin Dashboard/CreateMockTest.jsx`
+
 - Add `isPublic` to the form state.
 - Add a checkbox/switch for "Make this test public".
 - Include `isPublic` in the creation payload.
 
 #### [MODIFY] `frontend/src/components/Dashboard/Admin Dashboard/ManageMockTests.jsx`
+
 - Display a badge or label when a test is public.
 - Optionally add a toggle to update `isPublic` if the backend supports it.
 
@@ -57,11 +63,13 @@ Guests may begin a public mock test anonymously, but final submission requires l
 ### Frontend Guest Components
 
 #### [NEW] `frontend/src/components/Guest/GuestTestLibrary.jsx`
+
 - Public page listing all `isPublic` mock tests.
 - Accessible without login.
 - Display title, duration, and Reading/Listening availability.
 
 #### [NEW] `frontend/src/components/Guest/GuestTestEnvironment.jsx`
+
 - Guest-facing test page for `/free-practice/:id`.
 - Fetch public test data from `/api/public-mock-tests/:id`.
 - Allow answering Reading and Listening sections in browser state.
@@ -73,7 +81,7 @@ Guests may begin a public mock test anonymously, but final submission requires l
   - `resultId` (if created after login)
   - `pendingSubmit` flag
 - Load persisted state automatically when the user returns or after login.
-- On submit, if the user is not authenticated, show a centered login/register popup/modal that:
+- On submit, if the user is not authenticated, show a centered login/auth/register popup/modal that:
   - explains the user must sign in to save results,
   - offers buttons for `Login` and `Register`,
   - keeps the current test state intact while authentication occurs,
@@ -81,10 +89,12 @@ Guests may begin a public mock test anonymously, but final submission requires l
 - After authentication, refresh frontend auth state, close the modal, restore saved test state, and continue submission using the existing authenticated endpoints (`/api/mock-tests/start`, `/api/mock-tests/submit-section`, `/api/mock-tests/finalize`).
 
 #### [NEW] `frontend/src/components/Guest/GuestResult.jsx`
+
 - Display the confirmed result after login-based submission.
 - Explain that Writing/Speaking grading and analytics require a user account.
 
 #### [MODIFY] `frontend/src/Router/router.jsx`
+
 - Add public routes:
   - `/free-practice` → `GuestTestLibrary`
   - `/free-practice/:id` → `GuestTestEnvironment`
@@ -98,7 +108,7 @@ Guests may begin a public mock test anonymously, but final submission requires l
 2. Guest starts the test and answers Reading and Listening.
 3. Save progress continuously in `localStorage` so keys are available on refresh or after login.
 4. When the guest taps submit:
-   - if unauthenticated, open a login/register modal overlay,
+   - if unauthenticated, open a login/auth/register modal overlay,
    - the modal shows a short message: "Please sign in to save and submit your mock test. Your progress is preserved.",
    - allow the user to login or register without losing test state,
    - keep the browser test page visible behind the modal so the user understands the flow.
@@ -118,6 +128,7 @@ Guests may begin a public mock test anonymously, but final submission requires l
 ## Verification Plan
 
 ### Manual Verification
+
 1. Visit the platform anonymously.
 2. Open `Free Practice` and view public tests.
 3. Start a public test and complete Reading and Listening.

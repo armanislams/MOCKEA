@@ -1,9 +1,22 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import {  useNavigate } from 'react-router';
-import { FiAlertTriangle, FiRefreshCw, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate, useRouteError } from 'react-router';
+import { FiAlertTriangle, FiRefreshCw, FiArrowLeft, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { logErrorToBackend } from '../../utils/errorLogger';
 
 const Error = () => {
   const navigate = useNavigate();
+  const error = useRouteError();
+  const [showDetails, setShowDetails] = useState(false);
+
+  useEffect(() => {
+    // Log the caught route error to backend
+    logErrorToBackend(error || new Error("Unknown React Router rendering error"), {
+      path: window.location.href,
+      method: 'CLIENT_ROUTE_ERROR',
+      status: 500
+    });
+  }, [error]);
 
   return (
     <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4 relative overflow-hidden">
@@ -39,10 +52,39 @@ const Error = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
             Oops! Something went wrong.
           </h1>
-          <p className="text-neutral-400 mb-8 text-sm md:text-base max-w-md mx-auto leading-relaxed">
+          <p className="text-neutral-400 mb-6 text-sm md:text-base max-w-md mx-auto leading-relaxed">
             We're experiencing some technical difficulties on our end. Please try refreshing the page or come back later.
           </p>
         </motion.div>
+
+        {/* Dynamic Accordion Diagnostic Info */}
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="w-full mb-8 border border-neutral-700/50 rounded-2xl bg-neutral-900/60 overflow-hidden text-left"
+          >
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="w-full flex justify-between items-center px-5 py-4 text-xs font-semibold text-neutral-400 hover:text-slate-200 hover:bg-neutral-800/40 transition-colors font-mono cursor-pointer"
+            >
+              <span className="text-rose-400/90 font-bold uppercase tracking-wider">DIAGNOSTIC REPORT</span>
+              {showDetails ? <FiChevronUp className="text-base" /> : <FiChevronDown className="text-base" />}
+            </button>
+
+            {showDetails && (
+              <div className="px-5 pb-5 border-t border-neutral-800/50 pt-4">
+                <div className="text-xs text-rose-300 font-semibold mb-2 font-mono truncate">
+                  Exception: {error.message || String(error)}
+                </div>
+                <pre className="text-[10px] text-neutral-500 font-mono overflow-auto max-h-40 whitespace-pre-wrap break-all leading-relaxed bg-black/40 p-4 rounded-xl border border-neutral-800/40">
+                  {error.stack || 'No extended stack trace available for this error.'}
+                </pre>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0 }}
@@ -52,14 +94,14 @@ const Error = () => {
         >
           <button
             onClick={() => window.location.reload()}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-neutral-900 rounded-xl font-bold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 active:scale-95"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-neutral-900 rounded-xl font-bold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
           >
             <FiRefreshCw className="text-lg" />
             Try Again
           </button>
           <button
             onClick={() => navigate(-1)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-neutral-700/40 text-white rounded-xl font-semibold hover:bg-neutral-600/50 transition-all duration-300 border border-neutral-600 hover:border-neutral-500"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-neutral-700/40 text-white rounded-xl font-semibold hover:bg-neutral-600/50 transition-all duration-300 border border-neutral-600 hover:border-neutral-500 cursor-pointer"
           >
             <FiArrowLeft className="text-lg" />
             Go Back

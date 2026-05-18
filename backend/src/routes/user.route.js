@@ -1,20 +1,22 @@
 import express from "express";
 import {
-    getAllUser,
-    getUserRole,
-    postUser,
-    updateUserRole,
-    updateUserPlan,
-    deleteUser,
-    toggleBanUser,
-    getUserProfile,
+  getAllUser,
+  getUserRole,
+  postUser,
+  updateUserRole,
+  updateUserPlan,
+  deleteUser,
+  toggleBanUser,
+  getUserProfile,
+  verifyEmail,
 } from "../controllers/user.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
 
 const userRouter = express.Router();
 
-userRouter.post("/register", postUser);
+userRouter.get("/verifyEmail/:email", verifyEmail);
+userRouter.post("/auth/register", postUser);
 
 userRouter.use(verifyUserToken);
 

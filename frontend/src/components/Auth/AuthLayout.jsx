@@ -1,8 +1,28 @@
 import { motion } from 'framer-motion';
+import { Outlet } from 'react-router';
+import Navbar from '../Home/Navbar';
+import Footer from '../Home/Footer';
 
-const AuthLayout = ({ children, title, subtitle, features }) => {
+  const features = [
+    {
+      title: 'Full-length mock tests',
+      description: 'Practice with realistic exam conditions'
+    },
+    {
+      title: 'Instant band estimates',
+      description: 'Know your score immediately'
+    },
+    {
+      title: 'Detailed analytics',
+      description: 'Track progress and identify weak areas'
+    }
+  ];
+
+const AuthLayout = () => {
   return (
-    <div className="min-h-screen flex py-5">
+    <>
+    <Navbar/>
+<div className="min-h-screen flex py-5">
       {/* Left side - Hero Section (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-bc-navy text-white p-12 flex-col justify-between rounded-2xl ml-5">
         <motion.div
@@ -34,7 +54,7 @@ const AuthLayout = ({ children, title, subtitle, features }) => {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold mb-1">{feature.title}</h3>
+                  {/* <h3 className="text-lg font-bold mb-1">{feature.title}</h3> */}
                   <p className="text-blue-100">{feature.description}</p>
                 </div>
               </motion.div>
@@ -60,15 +80,12 @@ const AuthLayout = ({ children, title, subtitle, features }) => {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="w-full max-w-md"
         >
-          <div className="mb-8">
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">{title}</h2>
-            <p className="text-gray-600">{subtitle}</p>
-          </div>
-
-          {children}
+          <Outlet/>
         </motion.div>
       </div>
     </div>
+    <Footer/>
+    </>
   );
 };
 

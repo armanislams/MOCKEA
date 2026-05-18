@@ -72,7 +72,7 @@ const AdminSettings = () => {
                 <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
                     <div className="flex items-center space-x-2">
                         <FiAlertCircle className="text-red-500 text-xl" />
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Backend Error Logs</h2>
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white"> Error Logs</h2>
                     </div>
                     <div className="flex items-center space-x-3">
                         <button 
@@ -121,7 +121,11 @@ const AdminSettings = () => {
                                     <tr 
                                         key={log._id} 
                                         onClick={() => setSelectedLog(log)}
-                                        className="border-b border-gray-800/50 hover:bg-gray-800/50 cursor-pointer transition-colors text-gray-300"
+                                        className={`border-b border-gray-800/50 cursor-pointer transition-colors text-gray-300 ${
+                                            log.method?.startsWith('CLIENT') 
+                                                ? 'hover:bg-purple-950/30 bg-purple-950/10' 
+                                                : 'hover:bg-gray-800/50'
+                                        }`}
                                     >
                                         <td className="py-3 px-4 text-xs text-gray-500">
                                             {new Date(log.createdAt).toLocaleString()}
@@ -131,6 +135,10 @@ const AdminSettings = () => {
                                                 log.method === 'GET' ? 'bg-blue-900/50 text-blue-400' :
                                                 log.method === 'POST' ? 'bg-green-900/50 text-green-400' :
                                                 log.method === 'DELETE' ? 'bg-red-900/50 text-red-400' :
+                                                log.method === 'CLIENT' ? 'bg-purple-950/60 text-purple-300 border border-purple-500/20 font-semibold' :
+                                                log.method === 'CLIENT_GLOBAL' ? 'bg-indigo-950/60 text-indigo-300 border border-indigo-500/20 font-semibold' :
+                                                log.method === 'CLIENT_PROMISE' ? 'bg-fuchsia-950/60 text-fuchsia-300 border border-fuchsia-500/20 font-semibold' :
+                                                log.method === 'CLIENT_RENDER' ? 'bg-rose-950/60 text-rose-300 border border-rose-500/20 font-bold animate-pulse' :
                                                 'bg-gray-800 text-gray-400'
                                             }`}>
                                                 {log.method || 'N/A'}
@@ -160,7 +168,7 @@ const AdminSettings = () => {
             {/* Stack Trace Modal */}
             <AnimatePresence>
                 {selectedLog && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -185,10 +193,20 @@ const AdminSettings = () => {
                                         <div className="text-gray-300">{new Date(selectedLog.createdAt).toLocaleString()}</div>
                                     </div>
                                     <div className="bg-gray-950 p-3 rounded-lg border border-gray-800">
-                                        <div className="text-gray-500 text-xs mb-1">Endpoint</div>
-                                        <div className="text-gray-300">
-                                            <span className="text-blue-400 mr-2">{selectedLog.method}</span>
-                                            {selectedLog.path}
+                                        <div className="text-gray-500 text-xs mb-1">Source / Location</div>
+                                        <div className="text-gray-300 flex items-center gap-2">
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                selectedLog.method === 'GET' ? 'bg-blue-900/50 text-blue-400' :
+                                                selectedLog.method === 'POST' ? 'bg-green-900/50 text-green-400' :
+                                                selectedLog.method === 'DELETE' ? 'bg-red-900/50 text-red-400' :
+                                                selectedLog.method?.startsWith('CLIENT') ? 'bg-purple-900/50 text-purple-300 border border-purple-500/20' :
+                                                'bg-gray-800 text-gray-400'
+                                            }`}>
+                                                {selectedLog.method}
+                                            </span>
+                                            <span className="truncate max-w-[280px]" title={selectedLog.path}>
+                                                {selectedLog.path}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="bg-gray-950 p-3 rounded-lg border border-gray-800">

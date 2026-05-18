@@ -1,8 +1,10 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/apiConfig';
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_local_url
-  // baseURL: import.meta.env.VITE_live_url,
+  baseURL: API_BASE_URL,
 });
+
 const useAxios = () => {
     return axiosInstance
 };
