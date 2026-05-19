@@ -24,8 +24,7 @@ const Login = () => {
   const onSubmit = (data) => {
     setIsLoading(true);
     try {
-      axiosIstance
-        .get(`/user/verifyEmail/${data.email}`)
+      axiosIstance.get(`/user/verifyEmail/${data.email}`)
         .then((res) => {
           if (res.data.success) {
             signIn(data.email, data.password)
@@ -37,7 +36,6 @@ const Login = () => {
                 }, 500);
               })
               .catch((err) => {
-                console.log(err.message);
                 setLoading(false);
                 toast.error(
                   err.message == "Firebase: Error (auth/invalid-credential)."
@@ -48,21 +46,15 @@ const Login = () => {
           }
         })
         .catch((err) => {
-          console.log(err);
           toast.error("User Not Found. Please Register");
         });
     } catch (error) {
-      console.log(error);
       toast.error("Something Went Wrong. Please Try Again");
     } finally {
       setTimeout(() => {
         setIsLoading(false);
       }, 500);
     }
-  };
-
-  const handleGoogleLogin = () => {
-    toast.info("Google login integration coming soon");
   };
 
   return (
@@ -77,11 +69,7 @@ const Login = () => {
         className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200"
       >
         {/* Social Login */}
-        <SocialLoginButton
-          provider="Google"
-          onClick={handleGoogleLogin}
-          isLoading={isLoading}
-        />
+        <SocialLoginButton />
 
         {/* Divider */}
         <div className="relative">

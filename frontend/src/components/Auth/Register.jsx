@@ -69,9 +69,7 @@ const Register = () => {
     }
   };
 
-  const handleGoogleSignUp = () => {
-    toast.info("Google signup integration coming soon");
-  };
+
 
   return (
     <div className="mb-8">
@@ -85,11 +83,7 @@ const Register = () => {
         className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200"
       >
         {/* Social Login */}
-        <SocialLoginButton
-          provider="Google"
-          onClick={handleGoogleSignUp}
-          isLoading={isLoading}
-        />
+        <SocialLoginButton/>
 
         {/* Divider */}
         <div className="relative">
