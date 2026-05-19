@@ -8,7 +8,7 @@ import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { PiEye, PiEyeSlash } from "react-icons/pi";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 
-const Register = () => {
+const Register = ({ onSuccess, isModal, onToggleAuth }) => {
   const { register: registerUser, setLoading } = useAuth();
   const [show, isShow] = useState(false);
   const [show2, isShow2] = useState(false);
@@ -46,7 +46,11 @@ const Register = () => {
               .post("/user/auth/register", data)
               .then(() => {
                 toast.success("User Created Successfully");
-                navigate(from, { replace: true });
+                if (onSuccess) {
+                  onSuccess();
+                } else {
+                  navigate(from, { replace: true });
+                }
               })
               .catch(() => {
                 setLoading(false);
@@ -72,18 +76,22 @@ const Register = () => {
 
 
   return (
-    <div className="mb-8">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-        Create an Account
-      </h2>
-      <p className="text-gray-600">Join us to start your listening practice.</p>
+    <div className={isModal ? "" : "mb-8"}>
+      {!isModal && (
+        <>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+            Create an Account
+          </h2>
+          <p className="text-gray-600">Join us to start your listening practice.</p>
+        </>
+      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200"
+        className={isModal ? "space-y-6" : "space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200"}
       >
         {/* Social Login */}
-        <SocialLoginButton/>
+        <SocialLoginButton onSuccess={onSuccess} />
 
         {/* Divider */}
         <div className="relative">
@@ -267,26 +275,38 @@ const Register = () => {
         {/* Sign In Link */}
         <div className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link
-            to="/auth/login"
-            className="text-blue-600 font-bold hover:text-blue-700 hover:underline"
-          >
-            Sign in here
-          </Link>
+          {isModal ? (
+            <button
+              type="button"
+              onClick={onToggleAuth}
+              className="text-blue-600 font-bold hover:text-blue-700 hover:underline"
+            >
+              Sign in here
+            </button>
+          ) : (
+            <Link
+              to="/auth/login"
+              className="text-blue-600 font-bold hover:text-blue-700 hover:underline"
+            >
+              Sign in here
+            </Link>
+          )}
         </div>
 
         {/* Footer Links */}
-        <div className="mt-6 pt-6 border-t border-gray-200 text-center text-xs text-gray-500 space-y-2">
-          <p>
-            <a href="#" className="hover:text-gray-700 hover:underline">
-              Terms of Service
-            </a>
-            {" • "}
-            <a href="#" className="hover:text-gray-700 hover:underline">
-              Privacy Policy
-            </a>
-          </p>
-        </div>
+        {!isModal && (
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center text-xs text-gray-500 space-y-2">
+            <p>
+              <a href="#" className="hover:text-gray-700 hover:underline">
+                Terms of Service
+              </a>
+              {" • "}
+              <a href="#" className="hover:text-gray-700 hover:underline">
+                Privacy Policy
+              </a>
+            </p>
+          </div>
+        )}
       </form>
     </div>
   );

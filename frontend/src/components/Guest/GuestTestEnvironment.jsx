@@ -1,154 +1,50 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { PiLockFill, PiGoogleLogoBold, PiEnvelopeFill, PiLockKeyFill } from "react-icons/pi";
+import { PiLockFill } from "react-icons/pi";
 import useAxios from "../../hooks/useAxios";
-import useAuth from "../../hooks/useAuth";
 import Speaking from "../Dashboard/Student Dashboard/Speaking/Speaking";
 import Listening from "../Dashboard/Student Dashboard/Listening/Listening";
+import Login from "../Auth/Login";
+import Register from "../Auth/Register";
 
 // ─── Inline Auth Modal ────────────────────────────────────────────────────────
 function InlineAuthModal({ onClose, onSuccess }) {
-  const { signIn, register, signInGoogle } = useAuth();
   const [tab, setTab] = useState("login"); // "login" | "register"
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleEmailAuth = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (tab === "login") {
-        await signIn(email, password);
-      } else {
-        await register(email, password);
-      }
-      toast.success("Logged in successfully.");
-      onSuccess();
-    } catch (err) {
-      toast.error(err.message || "Authentication failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogle = async () => {
-    setLoading(true);
-    try {
-      await signInGoogle();
-      toast.success("Logged in! Submitting your response...");
-      onSuccess();
-    } catch (err) {
-      toast.error(err.message || "Google sign-in failed");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <motion.div
         initial={{ scale: 0.88, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-[2.5rem] p-10 max-w-md w-full mx-4 shadow-2xl"
+        className="bg-white rounded-[2.5rem] p-6 md:p-10 max-w-md w-full relative max-h-[95vh] overflow-y-auto shadow-2xl"
       >
-        {/* Icon + heading */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <PiLockFill className="text-3xl text-primary" />
+        <button 
+          onClick={onClose} 
+          className="absolute top-6 right-6 btn btn-circle btn-ghost btn-sm"
+        >
+          ✕
+        </button>
+        
+        <div className="text-center mb-6 mt-2">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <PiLockFill className="text-2xl text-primary" />
           </div>
-          <h2 className="text-2xl font-black text-slate-800">Almost there!</h2>
-          <p className="text-slate-500 text-sm mt-2">
-            Log in or create a free account to submit your response.
+          <h2 className="text-xl font-black text-slate-800">
+            {tab === "login" ? "Log in to Submit" : "Register to Submit"}
+          </h2>
+          <p className="text-slate-500 text-sm mt-1">
+            Please authenticate to save your test responses.
           </p>
         </div>
 
-        {/* Google */}
-        <button
-          onClick={handleGoogle}
-          disabled={loading}
-          className="btn btn-outline rounded-2xl w-full h-14 font-bold gap-3 mb-4"
-        >
-          <PiGoogleLogoBold className="text-xl" /> Continue with Google
-        </button>
-
-        <div className="divider text-xs text-slate-400 font-bold">OR</div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          {["login", "register"].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${
-                tab === t
-                  ? "bg-primary text-white shadow-lg shadow-primary/20"
-                  : "bg-base-200 text-slate-500"
-              }`}
-            >
-              {t === "login" ? "Log In" : "Register"}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={handleEmailAuth} className="space-y-4">
-          {tab === "register" && (
-            <div className="relative">
-              <PiEnvelopeFill className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Full Name"
-                className="input input-bordered w-full pl-10 rounded-2xl"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-          )}
-          <div className="relative">
-            <PiEnvelopeFill className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="email"
-              placeholder="Email address"
-              className="input input-bordered w-full pl-10 rounded-2xl"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="relative">
-            <PiLockKeyFill className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="password"
-              placeholder="Password"
-              className="input input-bordered w-full pl-10 rounded-2xl"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-ghost rounded-2xl flex-1 font-bold border border-base-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary rounded-2xl flex-1 font-black"
-            >
-              {loading ? <span className="loading loading-spinner" /> : tab === "login" ? "Log In & Submit" : "Register & Submit"}
-            </button>
-          </div>
-        </form>
+        {tab === "login" ? (
+          <Login onSuccess={onSuccess} isModal={true} onToggleAuth={() => setTab("register")} />
+        ) : (
+          <Register onSuccess={onSuccess} isModal={true} onToggleAuth={() => setTab("login")} />
+        )}
       </motion.div>
     </div>
   );
@@ -158,11 +54,8 @@ function InlineAuthModal({ onClose, onSuccess }) {
 export default function GuestTestEnvironment() {
   const { id } = useParams();
   const axiosPublic = useAxios();
-  const { user } = useAuth();
 
   const [showAuthModal, setShowAuthModal] = useState(false);
-  // After login, we need to know the child should retry submit
-  const [triggerSubmit, setTriggerSubmit] = useState(false);
 
   // Fetch the public question set
   const { data: test, isLoading, error } = useQuery({
@@ -179,21 +72,14 @@ export default function GuestTestEnvironment() {
     setShowAuthModal(true);
   };
 
-  // After login succeeds: close modal, set flag to trigger submit
+  // After login succeeds: close modal and prompt user to submit
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
     // Small delay to let auth state propagate
-    setTimeout(() => setTriggerSubmit(true), 500);
-  };
-
-  // Once triggerSubmit is true and user is set, clear the flag
-  // The Speaking/Listening component will now allow real submit since user?.email exists
-  useEffect(() => {
-    if (triggerSubmit && user?.email) {
-      setTriggerSubmit(false);
+    setTimeout(() => {
       toast.info("You're logged in! Click 'End Session' / 'Finalize Assessment' to complete your submission.");
-    }
-  }, [triggerSubmit, user?.email]);
+    }, 500);
+  };
 
   if (isLoading) {
     return (

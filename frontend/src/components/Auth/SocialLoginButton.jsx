@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { useNavigate, useLocation } from "react-router";
 import { motion } from "framer-motion";
 
-const SocialLoginButton = () => {
+const SocialLoginButton = ({ onSuccess }) => {
   const { signInGoogle, setLoading } = useAuth();
   const axiosInstance = useAxios();
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ const SocialLoginButton = () => {
         if (checkRes.data.success) {
           userExists = true;
         }
-      } catch (checkError) {
+      } catch {
         // If user not found (404), userExists remains false and we register them
       }
 
@@ -43,8 +43,12 @@ const SocialLoginButton = () => {
 
       toast.success("Logged In Successfully");
       
-      // Navigate to destination
-      navigate(redirectTo, { replace: true });
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Navigate to destination
+        navigate(redirectTo, { replace: true });
+      }
 
     } catch (error) {
       if(error.message == 'Firebase: Error (auth/popup-closed-by-user).'){
@@ -77,7 +81,7 @@ const SocialLoginButton = () => {
           <>
             <svg
               aria-hidden="true"
-              className="w-5 h-5 flex-shrink-0"
+              className="w-5 h-5 shrink-0"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 48 48"
             >
