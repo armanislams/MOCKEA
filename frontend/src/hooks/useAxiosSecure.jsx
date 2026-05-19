@@ -9,7 +9,7 @@ const axiosSecure = axios.create({
 });
 
 const useAxiosSecure = () => {
-  const { user } = useAuth()
+  const { user, logOut } = useAuth()
 
   useEffect(() => {
     //intercept request
@@ -23,13 +23,22 @@ const useAxiosSecure = () => {
     const resInterceptor = axiosSecure.interceptors.response.use((response) => {
      
       return response
-    }, (error) => {
+    }, async (error) => {
       // If there is no response, it likely means the request never reached the server (network error / server down)
       if (!error.response) {
         toast.error('Internal Server Error');
         return Promise.reject(error);
       }
       
+      const { status } = error.response;
+      if (status === 401 || status === 403) {
+        try {
+          await logOut();
+        } catch (logoutError) {
+          console.error("Logout failed during interceptor", logoutError);
+        }
+        window.location.href = "/auth/login";
+      }
 
       return Promise.reject(error);
 
@@ -41,7 +50,7 @@ const useAxiosSecure = () => {
 
     }
 
-  }, [user])
+  }, [user, logOut])
   return axiosSecure;
 };
 

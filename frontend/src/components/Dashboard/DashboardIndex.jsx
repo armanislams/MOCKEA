@@ -5,10 +5,14 @@ import DashboardHome from './Student Dashboard/DashboardHome';
 import { InstructorHome } from './Instructor Dashboard/InstructorHome';
 
 const DashboardIndex = () => {
-    const { role, roleLoading } = useRole();
+    const { role, roleLoading, isError } = useRole();
 
     if (roleLoading) {
         return <Loader />;
+    }
+
+    if (isError) {
+        return null;
     }
 
     if (role === 'admin') {
@@ -20,7 +24,11 @@ const DashboardIndex = () => {
     }
 
     // Default student dashboard home
-    return <DashboardHome  />;
+    if(role === 'student') return <DashboardHome  />;
+
+    return <div className='h-screen flex items-center justify-center'>
+        <p className='text-2xl font-bold mt-10 text-error'>Please Log In or Register to continue</p>
+    </div>
 };
 
 export default DashboardIndex;

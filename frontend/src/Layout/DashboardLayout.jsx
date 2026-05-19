@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, Link, NavLink, useNavigate } from "react-router";
 import { PiHouse, PiSignOut } from "react-icons/pi";
 import useAuth from "../hooks/useAuth";
@@ -9,8 +10,26 @@ import Loader from "../components/Loader/Loader";
 
 const DashboardLayout = () => {
   const { user, logOut } = useAuth();
-  const { role, roleLoading } = useRole();
+  const { role, roleLoading, isError } = useRole();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isError) {
+      logOut()
+        .then(() => {
+          navigate("/auth/login");
+        })
+        .catch((err) => console.error(err));
+    }
+  }, [isError, logOut, navigate]);
+
+  if (roleLoading) {
+    return <Loader />;
+  }
+
+  if (isError) {
+    return null;
+  }
 
   const handleLogOut = () => {
     logOut()
@@ -19,10 +38,6 @@ const DashboardLayout = () => {
       })
       .catch((err) => console.error(err));
   };
-
-  if (roleLoading) {
-    return <Loader />;
-  }
 
   const renderSidebarLinks = () => {
     switch (role) {

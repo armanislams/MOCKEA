@@ -7,7 +7,7 @@ export const useRole=()=>{
     const {user, loading: authLoading}= useAuth();
     const axiosSecure = useAxiosSecure()
 
-    const { isLoading: roleLoading, data: role } = useQuery({
+    const { isLoading: roleLoading, data: role = null, isError, error } = useQuery({
     queryKey: ["user-role", user?.email],
     enabled: !authLoading && !!user?.email,
     queryFn: async () => {
@@ -16,10 +16,15 @@ export const useRole=()=>{
         return res.data?.role || null;
         
       } catch (error) {
+        if(error.response?.status === 404){
+          toast.error('Something went wrong , please Login or Register again')
+        }
         // If there's no response, it likely means the server is down / network error
         if (!error?.response) {
           toast.error("Internal Server Error");
         }
+        console.log(error);
+        
         throw error;
       }
     },
@@ -28,5 +33,7 @@ export const useRole=()=>{
   return {
     roleLoading: authLoading || roleLoading,
     role,
+    isError,
+    error,
   };
 };

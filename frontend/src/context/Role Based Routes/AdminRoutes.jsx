@@ -5,9 +5,12 @@ import Forbidden from "../../components/Common/Forbidden"
 
 export const AdminRoutes = ({children})=>{
     const {user,loading} = useAuth()
-    const {role}= useRole()
-    if(loading){
+    const {role, roleLoading, isError}= useRole()
+    if(loading || roleLoading){
         return <Loader/>
+    }
+    if(isError) {
+        return null;
     }
     if(user && role === "admin"){
         return children;

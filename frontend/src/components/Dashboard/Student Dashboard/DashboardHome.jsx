@@ -11,8 +11,6 @@ import {
     PiLightningFill,
     PiTrendUpBold,
     PiTargetBold,
-    PiFireBold,
-    PiExamBold,
     PiArrowRightBold,
     PiCaretRightBold
 } from "react-icons/pi";
