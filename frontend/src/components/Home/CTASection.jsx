@@ -59,7 +59,7 @@ const CTASection = forwardRef((props, ref) => {
                 key={item.title}
                 to={item.to}
                 aria-describedby={tooltipId}
-                className="group relative flex min-h-[140px] md:min-h-[180px] flex-col items-center justify-center rounded-xl border-4 border-transparent bg-cta-btn px-5 py-8 text-center transition-[border-color,background-color] hover:border-bc-navy focus-visible:outline-none focus-visible:border-cta-btn"
+                className="group relative flex min-h-[140px] md:min-h-[180px] flex-col items-center justify-center rounded-xl border-4 border-transparent bg-red-800 px-5 py-8 text-center transition-[border-color,background-color] focus-visible:outline-none hover:bg-white hover:border-blue-800 hover:border-4 "
               >
                 <div className="relative mb-4 flex shrink-0 flex-col items-center">
                   <span
@@ -69,9 +69,9 @@ const CTASection = forwardRef((props, ref) => {
                   >
                     {item.tooltip}
                   </span>
-                  <Icon className="text-white" size={40} aria-hidden />
+                  <Icon className="text-white group-hover:text-black transition-colors duration-300" size={40} aria-hidden />
                 </div>
-                <span className="text-sm font-bold uppercase tracking-wide text-white sm:text-base">
+                <span className="text-sm font-bold uppercase tracking-wide text-white sm:text-base group-hover:text-black transition-colors duration-300">
                   {item.title}
                 </span>
               </Link>

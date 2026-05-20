@@ -11,6 +11,7 @@ import mockTestRouter from "./routes/mockTest.route.js";
 import publicMockTestRouter from "./routes/publicMockTest.route.js";
 import sRouter from "./routes/submissions.route.js";
 import pricingRouter from "./routes/pricing.route.js";
+import resourceRouter from "./routes/resource.route.js";
 const Port = process.env.PORT || 3000;
 
 
@@ -32,6 +33,7 @@ app.use('/api/error-logs', errorLogRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/settings/logs", errorLogRouter);
 app.use("/api/pricing", pricingRouter);
+app.use("/api/resources", resourceRouter);
 
 
 app.get("/", (req, res) => {

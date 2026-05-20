@@ -14,6 +14,7 @@ import ReadingSection from "./ReadingSection";
 import ListeningSection from "./ListeningSection";
 import WritingSection from "./WritingSection";
 import SpeakingSection from "./SpeakingSection";
+import Loader from "../../../Loader/Loader";
 
 const TestEnvironment = () => {
     const { id } = useParams();
@@ -106,6 +107,7 @@ const TestEnvironment = () => {
             confirmButtonText: "Yes, Exit Test",
             background: "#ffffff",
             customClass: {
+                container: "z-[99999]",
                 popup: "rounded-[2rem]",
                 confirmButton: "rounded-xl px-8 py-3 font-bold",
                 cancelButton: "rounded-xl px-8 py-3 font-bold"
@@ -136,9 +138,7 @@ const TestEnvironment = () => {
             axiosSecure.post("/mock-tests/start", { testId: id })
                 .then(res => {
                     setResultId(res.data.resultId);
-                    if (timeLeft === 0) {
-                        setTimeLeft((test.totalDuration || 165) * 60);
-                    }
+                    setTimeLeft(prev => prev === 0 ? (test.totalDuration || 165) * 60 : prev);
                 })
                 .catch(err => {
                     console.error(err);
@@ -224,13 +224,14 @@ const TestEnvironment = () => {
         };
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tabSwitches, isFullscreen, resultId, axiosSecure, navigate, isStarted, id]);
 
     const handleAnswerChange = (qId, val) => {
         setAnswers(prev => ({ ...prev, [qId]: val }));
     };
 
-    if (isLoading) return <div className="flex items-center justify-center h-screen"><span className="loading loading-spinner loading-lg" /></div>;
+    if (isLoading) return <Loader/>
 
     if (!isStarted) {
         return (
@@ -268,11 +269,11 @@ const TestEnvironment = () => {
             )}
 
             {tabSwitches > 0 && !showWarning && (
-                <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[9999] animate-bounce pointer-events-none">
+                <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[1040] animate-bounce pointer-events-none">
                     <div className="alert alert-warning shadow-2xl rounded-2xl border-none py-2 px-6 flex items-center gap-3">
                         <PiWarning className="w-5 h-5" />
                         <span className="text-xs font-black uppercase tracking-widest">
-                            Warning: {tabSwitches}/3 Tab Switches. Next violation will auto-submit.
+                            Warning: {tabSwitches}/3 Tab Switches. On 3rd tab switch, test will auto-submit.
                         </span>
                     </div>
                 </div>
@@ -387,7 +388,7 @@ const TestEnvironment = () => {
 };
 
 const WarningModal = ({ warningType, tabSwitches, setShowWarning, enterFullscreen, handleExitTest }) => (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+    <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
         <div className="card bg-white w-full max-w-md p-10 text-center space-y-6 animate-pulse rounded-[3rem] shadow-2xl">
             <div className="mx-auto w-24 h-24 rounded-full bg-error/10 flex items-center justify-center">
                 <PiMonitor className="w-12 h-12 text-error" />

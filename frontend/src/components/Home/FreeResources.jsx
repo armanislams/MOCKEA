@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import ResourceCard from "../FreeResources/ResourceCard";
 
 const RESOURCES = [
   {
@@ -42,35 +43,10 @@ export const FreeResources = forwardRef((props, ref) => {
 
         <div
           ref={ref}
-          className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 md:gap-8"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8"
         >
           {RESOURCES.map((item) => (
-            <article
-              key={item.title}
-              className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-8 hover:shadow-2xl"
-            >
-              <div className="aspect-4/3 w-full overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.alt}
-                  className="h-full w-full object-cover scale-110 transition-all duration-500 hover:scale-125"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-              <div className="space-y-3 p-5 text-left">
-                <h3 className="text-title-gray text-lg font-semibold">
-                  {item.title}
-                </h3>
-                <a
-                  href={item.href}
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-cta-btn underline-offset-4 transition hover:underline"
-                >
-                  {item.cta}
-                  <span aria-hidden>→</span>
-                </a>
-              </div>
-            </article>
+            <ResourceCard key={item.title} item={item} />
           ))}
         </div>
       </div>

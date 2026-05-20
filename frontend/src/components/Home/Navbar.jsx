@@ -1,5 +1,4 @@
 import { NavLink } from "react-router";
-import Dropdown from "./Navbar/Dropdown";
 import { Logo } from "./Logo";
 import AuthBtn from "../AuthBtn/AuthBtn";
 
@@ -7,24 +6,24 @@ const Navbar = () => {
   const links = (
     <>
       <li>
-        <a className="hover:text-primary" href="/#home">
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/">
           Home
-        </a>
+        </NavLink>
       </li>
       <li>
-        <NavLink className="hover:text-primary" to={"/about"}>
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/about">
           About Us
         </NavLink>
       </li>
       <li>
-        <a className="hover:text-primary" href="/#pricing">
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/pricing">
           Pricing
-        </a>
+        </NavLink>
       </li>
       <li>
-        <a className="hover:text-primary" href="/#freeResources">
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/free-resources">
           Free Resources
-        </a>
+        </NavLink>
       </li>
     </>
   );

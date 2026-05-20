@@ -33,6 +33,8 @@ import GuestTestLibrary from "../components/Guest/GuestTestLibrary";
 import FreePracticeLayout from "../Layout/FreePracticeLayout";
 import GuestTestEnvironment from "../components/Guest/GuestTestEnvironment";
 import AuthLayout from "../components/Auth/AuthLayout";
+import PricingPage from "../components/PricingPage/PricingPage";
+import FreeResourcesPage from "../components/FreeResources/FreeResourcesPage";
 
 const router = createBrowserRouter([
   {
@@ -52,6 +54,14 @@ const router = createBrowserRouter([
             <Practice />
           </PrivateRoute>
         ),
+      },
+      {
+        path: "/pricing",
+        element: <PricingPage />,
+      },
+      {
+        path: "/free-resources",
+        element: <FreeResourcesPage />,
       },
     ],
   },

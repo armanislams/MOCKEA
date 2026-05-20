@@ -18,6 +18,7 @@ const InstructionModal = ({ test, onClose }) => {
         { label: "Reading", duration: "60 minutes", details: "3 passages · 40 questions", icon: <PiBookOpen /> },
         { label: "Listening", duration: "30 minutes", details: "4 parts · 40 questions", icon: <PiEar /> },
         { label: "Writing", duration: "60 minutes", details: "2 tasks", icon: <PiPencilLine /> },
+        { label: "Speaking", duration: "15 minutes", details: "3 parts", icon: <PiMicrophoneStage /> },
     ];
 
     const handleStart = () => {

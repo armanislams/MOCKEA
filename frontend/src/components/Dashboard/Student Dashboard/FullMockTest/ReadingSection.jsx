@@ -1,9 +1,6 @@
-import { useState } from "react";
 import { PiBookOpen, PiNotePencil } from "react-icons/pi";
 
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
-    const [selectedQuestion, setSelectedQuestion] = useState(0);
-
     return (
         <div className="flex h-full overflow-hidden bg-white">
             {/* Left Pane: Passage */}
@@ -77,7 +74,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
 
                                 {q.type === 'multiple-choice' && (
                                     <div className="space-y-2 ml-14">
-                                        {q.options?.map((opt, optIdx) => (
+                                        {q.options?.filter(opt => opt && opt.trim() !== "").map((opt, optIdx) => (
                                             <button 
                                                 key={optIdx}
                                                 onClick={() => onAnswerChange(q.id, opt)}
