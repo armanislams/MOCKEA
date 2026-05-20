@@ -1,58 +1,24 @@
 import { motion } from 'framer-motion';
 import { FiCheck, FiArrowRight, FiStar, FiZap } from 'react-icons/fi';
 
-const pricingPlans = [
-  {
-    id: "free",
-    name: "Free Practice",
-    subtitle: "KICKSTART YOUR PREP",
-    price: "Free",
-    duration: "Unlimited",
-    features: [
-      "Sample Mock Tests",
-      "Instant Band Scores",
-      "Basic Dashboard Analytics"
-    ],
-    isPopular: false,
-    CtaBtn: "Start Free Practice",
-  },
-  {
-    id: "standard",
-    name: "Standard Prep",
-    subtitle: "ACCELERATED PREPARATION",
-    price: "$19",
-    duration: "30 days",
-    features: [
-      "Full Assess System (30 days)",
-      "2 Live speaking Mock Interviews",
-      "Personal Performance Tracker",
-      "Core Dashboard Access"
-    ],
-    isPopular: false,
-    CtaBtn: "Unlock Standard Prep",
-  },
-  {
-    id: "premium",
-    name: "Elite Premium",
-    subtitle: "UNLIMITED SUCCESS",
-    price: "$49",
-    duration: "90 days",
-    features: [
-      "Full Assess System (90 days)",
-      "5 Live speaking Mock Interviews",
-      "Unlimited AI Grading (All Modules)",
-      "24/7 Academic Support",
-      "Detailed Performance Analytics",
-      "Elite Instructor Review Access"
-    ],
-    isPopular: true,
-    CtaBtn: "Go Premium Elite",
-  },
-];
+import { useQuery } from '@tanstack/react-query';
+import useAxios from '../../hooks/useAxios';
+import Loader from '../Loader/Loader';
+import Error from '../Common/Error';
 
 export const Pricing = () => {
+  const axiosPublic = useAxios();
 
+  const { data: pricingPlans = [], isLoading, isError } = useQuery({
+    queryKey: ['pricing'],
+    queryFn: async () => {
+      const res = await axiosPublic.get('/pricing');
+      return res.data.pricing;
+    }
+  });
 
+  if (isLoading) return <Loader />;
+  if (isError) return <Error />;
 
   return (
     <section id="pricing" className="relative bg-white rounded-4xl px-4 py-10 md:px-8 overflow-hidden font-sans">
@@ -103,7 +69,7 @@ export const Pricing = () => {
         <div className="grid grid-cols-1 items-stretch gap-8 md:grid-cols-3">
           {pricingPlans.map((plan, index) => (
             <motion.article
-              key={plan.id}
+              key={plan.priceId}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
@@ -162,7 +128,7 @@ export const Pricing = () => {
                         <span className={`flex items-center justify-center w-5 h-5 rounded-full shrink-0 mt-0.5 ${
                           plan.isPopular ? "bg-green-500/20 text-green-400" : "bg-green-50 text-green-600"
                         }`}>
-                          <FiCheck className="w-3 h-3 stroke-[3]" />
+                          <FiCheck className="w-3 h-3 stroke-3" />
                         </span>
                         <span className={`text-sm leading-relaxed ${
                           plan.isPopular ? "text-slate-200 animate-fade-in" : "text-slate-600 animate-fade-in"

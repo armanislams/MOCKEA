@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const pricingSchema = new mongoose.Schema({
+    priceId:{
+        type: Number,
+        required: true,
+    },
     name: {
         type: String,
         required: true,
@@ -14,7 +18,7 @@ const pricingSchema = new mongoose.Schema({
         required: true,
     },
     price: {
-        type: Number,
+        type: String,
         required: true,
     },
     features: {
@@ -29,7 +33,7 @@ const pricingSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-});
+},{timestamps:true});
 
 const Pricing = mongoose.model("Pricing", pricingSchema);
 

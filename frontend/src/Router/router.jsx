@@ -24,6 +24,7 @@ import AddQuestionForm from "../components/Dashboard/Admin Dashboard/AddQuestion
 import ManageQuestions from "../components/Dashboard/Admin Dashboard/ManageQuestions";
 import CreateMockTest from "../components/Dashboard/Admin Dashboard/CreateMockTest";
 import ManageMockTests from "../components/Dashboard/Admin Dashboard/ManageMockTests";
+import ManagePricing from "../components/Dashboard/Admin Dashboard/ManagePricing";
 import TestEnvironment from "../components/Dashboard/Student Dashboard/FullMockTest/TestEnvironment";
 import Error from "../components/Common/Error";
 import GradeSubmissions from "../components/Dashboard/Instructor Dashboard/GradeSubmissions";
@@ -149,6 +150,14 @@ const router = createBrowserRouter([
         element: (
           <AdminRoutes>
             <ManageMockTests />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/manage-pricing",
+        element: (
+          <AdminRoutes>
+            <ManagePricing />
           </AdminRoutes>
         ),
       },
