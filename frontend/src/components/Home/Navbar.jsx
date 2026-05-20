@@ -1,12 +1,13 @@
 import { NavLink } from "react-router";
-import AuthBtn from "../AuthBtn/AuthBtn";
+import Dropdown from "./Navbar/Dropdown";
 import { Logo } from "./Logo";
+import AuthBtn from "../AuthBtn/AuthBtn";
 
 const Navbar = () => {
   const links = (
     <>
       <li>
-        <a  className="hover:text-primary" href="/#home">
+        <a className="hover:text-primary" href="/#home">
           Home
         </a>
       </li>
@@ -21,14 +22,9 @@ const Navbar = () => {
         </a>
       </li>
       <li>
-        <a  className="hover:text-primary" href="/#freeResources">
+        <a className="hover:text-primary" href="/#freeResources">
           Free Resources
         </a>
-      </li>
-      <li>
-        <NavLink className="hover:text-primary" to={"/dashboard"}>
-          Dashboard
-        </NavLink>
       </li>
     </>
   );
@@ -63,7 +59,7 @@ const Navbar = () => {
             {links}
           </ul>
         </div>
-        <Logo/>
+        <Logo />
       </div>
 
       {/* Desktop menu */}
@@ -73,7 +69,7 @@ const Navbar = () => {
         </ul>
       </div>
       <div className="navbar-end">
-        <AuthBtn />
+        <AuthBtn/>
       </div>
     </div>
   );

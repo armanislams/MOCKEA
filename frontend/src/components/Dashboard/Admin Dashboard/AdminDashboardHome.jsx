@@ -7,11 +7,12 @@ import {
   FiUserPlus,
   FiActivity,
   FiCalendar,
-  FiArrowRight,
   FiUser,
   FiClock
 } from "react-icons/fi";
 import { motion } from "framer-motion";
+import Loader from "../../Loader/Loader";
+import Error from "../../Common/Error";
 
 const AdminDashboardHome = () => {
   const axiosSecure = useAxiosSecure();
@@ -25,19 +26,11 @@ const AdminDashboardHome = () => {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
-      </div>
-    );
+    return<Loader/>
   }
 
   if (isError || !analytics) {
-    return (
-      <div className="text-center p-10 bg-red-50 rounded-xl border border-red-100">
-        <p className="text-red-500 font-medium">Failed to load dashboard data. Please try again later.</p>
-      </div>
-    );
+    return <Error/>
   }
 
   // Destructure with fallbacks to prevent "undefined" crashes
