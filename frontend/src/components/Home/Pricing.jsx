@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiCheck, FiArrowRight, FiStar, FiZap } from 'react-icons/fi';
 
@@ -15,7 +14,7 @@ const pricingPlans = [
       "Basic Dashboard Analytics"
     ],
     isPopular: false,
-    secondaryCta: "Start Free Practice",
+    CtaBtn: "Start Free Practice",
   },
   {
     id: "standard",
@@ -30,7 +29,7 @@ const pricingPlans = [
       "Core Dashboard Access"
     ],
     isPopular: false,
-    secondaryCta: "Unlock Standard Prep",
+    CtaBtn: "Unlock Standard Prep",
   },
   {
     id: "premium",
@@ -47,16 +46,13 @@ const pricingPlans = [
       "Elite Instructor Review Access"
     ],
     isPopular: true,
-    secondaryCta: "Go Premium Elite",
+    CtaBtn: "Go Premium Elite",
   },
 ];
 
 export const Pricing = () => {
-  const [triggerCrash, setTriggerCrash] = useState(false);
 
-  if (triggerCrash) {
-    throw new Error("Simulated React Component Crash in Pricing.jsx!");
-  }
+
 
   return (
     <section id="pricing" className="relative bg-white rounded-4xl px-4 py-10 md:px-8 overflow-hidden font-sans">
@@ -80,23 +76,6 @@ export const Pricing = () => {
               Pricing & Plans
             </motion.span>
 
-            {/* Simulated Error triggers for Developer verification */}
-            <div className="flex gap-2 justify-center mt-2">
-              <button 
-                onClick={() => setTriggerCrash(true)}
-                className="px-3 py-1 text-[10px] font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/20 rounded-full cursor-pointer transition-all"
-              >
-                Test UI Crash (ErrorBoundary)
-              </button>
-              <button 
-                onClick={() => {
-                  Promise.reject(new Error("Simulated Unhandled Promise Rejection in Pricing page!"));
-                }}
-                className="px-3 py-1 text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 rounded-full cursor-pointer transition-all"
-              >
-                Test Promise Rejection (Global)
-              </button>
-            </div>
           </div>
           
           <motion.h2 
@@ -136,13 +115,13 @@ export const Pricing = () => {
               }}
               className={`relative flex flex-col justify-between overflow-hidden rounded-3xl border transition-all duration-300 ${
                 plan.isPopular 
-                  ? "bg-gradient-to-b from-[#000f38] to-[#001754] border-cta-btn shadow-xl shadow-blue-950/20 text-white" 
+                  ? "bg-cta-btn shadow-xl shadow-blue-950/20 text-white" 
                   : "bg-white border-slate-200 shadow-md shadow-slate-100 text-slate-900"
               }`}
             >
               {/* Popular Badge - Positioned relative to article */}
               {plan.isPopular && (
-                <div className="absolute top-4 right-4 px-3.5 py-1.5 bg-cta-btn text-white text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-full shadow-md flex items-center gap-1 z-20">
+                <div className="absolute top-4 right-4 px-3.5 py-1.5 bg-cta-btn text-white text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1 z-20">
                   <FiStar className="w-3.5 h-3.5 fill-current animate-pulse text-white" />
                   Most Popular
                 </div>
@@ -155,7 +134,7 @@ export const Pricing = () => {
                   plan.isPopular ? "border-white/10" : "border-slate-100"
                 }`}>
                   <span className={`text-[10px] font-extrabold uppercase tracking-[0.2em] px-2.5 py-1 rounded-md ${
-                    plan.isPopular ? "bg-white/10 text-blue-200" : "bg-slate-100 text-slate-500"
+                    plan.isPopular ? "bg-white/95 text-black" : "bg-slate-100 text-slate-500"
                   }`}>
                     {plan.subtitle}
                   </span>
@@ -201,11 +180,11 @@ export const Pricing = () => {
                 <button 
                   className={`w-full group py-4 px-6 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 ${
                     plan.isPopular
-                      ? "bg-cta-btn hover:bg-cta-btn/95 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/30 hover:scale-[1.02] active:scale-98"
+                      ? "bg-cta-btn border-2 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/30 hover:scale-[1.02] active:scale-98"
                       : "bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-cta-btn text-slate-800 hover:text-cta-btn hover:scale-[1.02] active:scale-98"
                   }`}
                 >
-                  <span>{plan.secondaryCta}</span>
+                  <span>{plan.CtaBtn}</span>
                   <FiArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
               </div>

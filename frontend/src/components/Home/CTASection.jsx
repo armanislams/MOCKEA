@@ -31,6 +31,8 @@ const ctaItems = [
   },
 ];
 
+//choose module section
+
 const CTASection = forwardRef((props, ref) => {
   return (
     <section id='testFormats' className="py-16 bg-white border-b border-gray-200">
@@ -42,9 +44,7 @@ const CTASection = forwardRef((props, ref) => {
           <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-900">
             Start your IELTS practice with a single click
           </h2>
-          <p className="mt-3 text-gray-600 max-w-2xl mx-auto">
-            Select any module below. If you are not signed in, you will be asked to log in first and then returned to the module you chose.
-          </p>
+          
         </div>
 
         <div
@@ -59,7 +59,7 @@ const CTASection = forwardRef((props, ref) => {
                 key={item.title}
                 to={item.to}
                 aria-describedby={tooltipId}
-                className="group relative flex min-h-[140px] flex-col items-center justify-center rounded-xl border-4 border-transparent bg-bc-navy px-3 py-6 text-center transition-[border-color,background-color] hover:border-cta-btn hover:bg-bc-navy-hover focus-visible:outline-none focus-visible:border-cta-btn"
+                className="group relative flex min-h-[140px] md:min-h-[180px] flex-col items-center justify-center rounded-xl border-4 border-transparent bg-cta-btn px-5 py-8 text-center transition-[border-color,background-color] hover:border-bc-navy focus-visible:outline-none focus-visible:border-cta-btn"
               >
                 <div className="relative mb-4 flex shrink-0 flex-col items-center">
                   <span
