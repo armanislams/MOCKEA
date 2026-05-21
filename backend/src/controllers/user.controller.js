@@ -78,7 +78,7 @@ export const updateUserRole = async (req, res) => {
     const user = await User.findByIdAndUpdate(
         id,
         { role },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (!user) {
@@ -100,7 +100,7 @@ export const updateUserPlan = async (req, res) => {
     const user = await User.findByIdAndUpdate(
         id,
         { plan },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (!user) {

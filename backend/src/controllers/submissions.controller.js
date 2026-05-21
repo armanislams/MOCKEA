@@ -103,7 +103,7 @@ export const reviewSubmission = async (req, res) => {
                 lockedByEmail: null,
                 lockExpiresAt: null
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!submission) {

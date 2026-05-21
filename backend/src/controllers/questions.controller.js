@@ -42,7 +42,7 @@ export const postQuestion = async (req, res) => {
 
 export const updateQuestion = async (req, res) => {
     try {
-        const question = await Questions.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const question = await Questions.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
         res.status(200).json({ success: true, question });
     } catch (error) {

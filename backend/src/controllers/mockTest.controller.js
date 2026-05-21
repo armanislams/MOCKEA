@@ -266,7 +266,7 @@ export const createMockTest = async (req, res) => {
 
 export const updateMockTest = async (req, res) => {
     try {
-        const test = await MockTest.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const test = await MockTest.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         res.status(200).json({ success: true, test });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
