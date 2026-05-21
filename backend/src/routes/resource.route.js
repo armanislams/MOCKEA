@@ -7,6 +7,7 @@ import {
   createResource,
   updateResource,
   deleteResource,
+  getAllResourcesForManagement,
 } from "../controllers/resource.controller.js";
 
 const resourceRouter = express.Router();
@@ -15,10 +16,11 @@ const resourceRouter = express.Router();
 resourceRouter.get("/", getAllResources);
 resourceRouter.post("/:id/download", incrementDownload);
 
-// Admin-only routes
+// Secure admin/instructor routes
 resourceRouter.use(verifyUserToken);
-resourceRouter.use(verifyUserRole(["admin"]));
+resourceRouter.use(verifyUserRole(["admin", "instructor"]));
 
+resourceRouter.get("/manage", getAllResourcesForManagement);
 resourceRouter.post("/", createResource);
 resourceRouter.put("/:id", updateResource);
 resourceRouter.delete("/:id", deleteResource);

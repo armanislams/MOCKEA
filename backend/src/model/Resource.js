@@ -46,6 +46,15 @@ const resourceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    addedBy: {
+      type: String,
+      default: "system@mockea.com",
+    },
+    status: {
+      type: String,
+      enum: ["Approved", "Pending", "Rejected"],
+      default: "Approved",
+    },
   },
   { timestamps: true }
 );

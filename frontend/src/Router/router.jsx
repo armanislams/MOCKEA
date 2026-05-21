@@ -30,6 +30,7 @@ import TestEnvironment from "../components/Dashboard/Student Dashboard/FullMockT
 import Error from "../components/Common/Error";
 import GradeSubmissions from "../components/Dashboard/Instructor Dashboard/GradeSubmissions";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
+import { InstructorRoutes } from "../context/Role Based Routes/InstructorRoutes";
 import GuestTestLibrary from "../components/Guest/GuestTestLibrary";
 import FreePracticeLayout from "../Layout/FreePracticeLayout";
 import GuestTestEnvironment from "../components/Guest/GuestTestEnvironment";
@@ -198,7 +199,19 @@ const router = createBrowserRouter([
       },
       {
         path: "instructor/grade-submissions",
-        element: <GradeSubmissions />,
+        element: (
+          <InstructorRoutes>
+            <GradeSubmissions />
+          </InstructorRoutes>
+        ),
+      },
+      {
+        path: "instructor/manage-resources",
+        element: (
+          <InstructorRoutes>
+            <ManageResources />
+          </InstructorRoutes>
+        ),
       },
       {
         path: "admin/settings",
