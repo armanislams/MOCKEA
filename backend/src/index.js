@@ -18,7 +18,22 @@ const Port = process.env.PORT || 3000;
 const app = express();
 
 
-app.use(cors());
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS policy"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    optionsSuccessStatus: 200
+  })
+);
 
 app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
