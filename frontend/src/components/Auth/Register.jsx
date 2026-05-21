@@ -27,49 +27,65 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
 
   const password = watch("password");
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     if (!agreeToTerms) {
       toast.error("Please agree to the Terms of Service and Privacy Policy");
       return;
     }
     setIsLoading(true);
     try {
-      axiosInstance.get(`/user/verifyEmail/${data.email}`).then((res) => {
+      // 1. Verify if the email is already registered in the backend
+      let emailInUse = false;
+      try {
+        const res = await axiosInstance.get(`/user/verifyEmail/${data.email}`);
         if (res.data.success) {
-          toast.error("Email Already in Use. Please Login");
-          setIsLoading(false);
-          return;
+          emailInUse = true;
         }
-        registerUser(data.email, data.password)
-          .then(() => {
-            axiosInstance
-              .post("/user/auth/register", data)
-              .then(() => {
-                toast.success("User Created Successfully");
-                if (onSuccess) {
-                  onSuccess();
-                } else {
-                  navigate(from, { replace: true });
-                }
-              })
-              .catch(() => {
-                setLoading(false);
-                toast.error("User Creation Failed");
-              });
-          })
-          .catch((err) => {
-            console.log(err.message);
-            setLoading(false);
-            toast.error(
-              err.message == "Firebase: Error (auth/email-already-in-use)."
-                ? "Email Already in Use. Please Login"
-                : "Something Went Wrong. Please Try Again",
-            );
-          });
-      });
+      } catch (err) {
+        // If the server returns 404 (Not Found), it means the email is NOT in use, which is what we want!
+        if (err.response && err.response.status === 404) {
+          emailInUse = false;
+        } else {
+          // If it is another network or server error, throw it so the outer catch can handle it
+          throw err;
+        }
+      }
+
+      if (emailInUse) {
+        toast.error("Email Already in Use. Please Login");
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Register user in Firebase auth
+      await registerUser(data.email, data.password);
+
+      // 3. Register user in backend database
+      try {
+        await axiosInstance.post("/user/auth/register", data);
+        toast.success("User Created Successfully");
+        setIsLoading(false);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          navigate(from, { replace: true });
+        }
+      } catch (err) {
+        setLoading(false);
+        setIsLoading(false);
+        toast.error("User Creation Failed");
+      }
     } catch (error) {
       console.log(error);
-      toast.error("Something Went Wrong. Please Try Again");
+      setLoading(false);
+      setIsLoading(false);
+      
+      const message = error.message || "";
+      toast.error(
+        message === "Firebase: Error (auth/email-already-in-use)."
+          ? "Email Already in Use. Please Login"
+          : "Something Went Wrong. Please Try Again"
+      );
     }
   };
 

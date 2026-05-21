@@ -5,7 +5,6 @@ import {
   PiFiles,
   PiGear,
   PiBookOpen,
-  PiUser,
   PiCurrencyDollar,
 } from "react-icons/pi";
 
@@ -60,12 +59,7 @@ export const AdminDashboard = () => {
           Settings
         </NavLink>
       </li>
-      <li>
-        <NavLink to="/dashboard/profile">
-          <PiUser className="w-5 h-5" />
-          My Profile
-        </NavLink>
-      </li>
+     
     </>
   );
 };

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, Link, NavLink, useNavigate } from "react-router";
-import { PiHouse, PiSignOut } from "react-icons/pi";
+import { PiHouse, PiSignOut, PiUser } from "react-icons/pi";
 import useAuth from "../hooks/useAuth";
 import { useRole } from "../hooks/useRole";
 import { AdminDashboard } from "../components/RoleBasedSidebar/AdminDashboard";
@@ -126,6 +126,12 @@ const DashboardLayout = () => {
               Home
             </NavLink>
           </li>
+           <li>
+        <NavLink to="/dashboard/profile">
+          <PiUser className="w-5 h-5" />
+          My Profile
+        </NavLink>
+      </li>
           <li>
             <button onClick={handleLogOut}>
               <PiSignOut className="w-5 h-5" />

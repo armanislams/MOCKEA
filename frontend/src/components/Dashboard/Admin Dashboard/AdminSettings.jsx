@@ -139,6 +139,7 @@ const AdminSettings = () => {
                                                 log.method === 'CLIENT_GLOBAL' ? 'bg-indigo-950/60 text-indigo-300 border border-indigo-500/20 font-semibold' :
                                                 log.method === 'CLIENT_PROMISE' ? 'bg-fuchsia-950/60 text-fuchsia-300 border border-fuchsia-500/20 font-semibold' :
                                                 log.method === 'CLIENT_RENDER' ? 'bg-rose-950/60 text-rose-300 border border-rose-500/20 font-bold animate-pulse' :
+                                                log.method?.startsWith('CLIENT_') ? 'bg-purple-950/60 text-purple-300 border border-purple-500/20 font-semibold' :
                                                 'bg-gray-800 text-gray-400'
                                             }`}>
                                                 {log.method || 'N/A'}

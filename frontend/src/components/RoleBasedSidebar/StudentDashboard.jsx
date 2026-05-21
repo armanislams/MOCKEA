@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { PiChartBar, PiPenNib, PiMagnifyingGlass, PiTrendUp, PiUser, PiFiles } from "react-icons/pi";
+import { PiChartBar, PiPenNib, PiMagnifyingGlass, PiTrendUp, PiFiles } from "react-icons/pi";
 
 const StudentDashboard = () => {
     return (
@@ -32,12 +32,6 @@ const StudentDashboard = () => {
                 <NavLink to="/dashboard/analytics">
                     <PiTrendUp className="w-5 h-5" />
                     Analytics
-                </NavLink>
-            </li>
-            <li>
-                <NavLink to="/dashboard/profile">
-                    <PiUser className="w-5 h-5" />
-                    My Profile
                 </NavLink>
             </li>
         </>

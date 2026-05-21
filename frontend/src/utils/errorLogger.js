@@ -24,8 +24,47 @@ export const logErrorToBackend = async (error, extraDetails = {}) => {
 
     let message = 'Unknown Client Error';
     let stack = '';
+    let status = extraDetails.status || 500;
 
-    if (error instanceof Error) {
+    const isAxiosError = axios.isAxiosError(error) || (error && (error.isAxiosError || error.config || error.response));
+
+    if (isAxiosError) {
+      const method = error.config?.method?.toUpperCase() || extraDetails.method || 'UNKNOWN';
+      const url = error.config?.url || 'UNKNOWN_URL';
+      status = error.response?.status || error.status || 500;
+      
+      let responseBody = 'No response body';
+      if (error.response?.data) {
+        responseBody = typeof error.response.data === 'object' 
+          ? JSON.stringify(error.response.data, null, 2) 
+          : String(error.response.data);
+      }
+
+      // Read response error message if available
+      const backendMessage = error.response?.data?.message || error.response?.data?.error || '';
+      
+      message = `API Error [${method} ${url}] Status: ${status}`;
+      if (backendMessage) {
+        message += ` - ${backendMessage}`;
+      } else {
+        message += ` - ${error.message || 'Request failed'}`;
+      }
+
+      // Detailed Stack trace with API request and response data
+      stack = `--- API REQUEST DETAILS ---
+Method: ${method}
+URL: ${url}
+Request Data: ${error.config?.data ? (typeof error.config.data === 'string' ? error.config.data : JSON.stringify(error.config.data, null, 2)) : 'None'}
+Headers: ${error.config?.headers ? JSON.stringify(error.config.headers, null, 2) : 'None'}
+
+--- API RESPONSE DETAILS ---
+Status: ${status}
+Response Body: ${responseBody}
+
+--- CLIENT STACK TRACE ---
+${error.stack || 'No client stack trace available.'}`;
+
+    } else if (error instanceof Error) {
       message = error.message;
       stack = error.stack || '';
     } else if (typeof error === 'string') {
@@ -39,8 +78,8 @@ export const logErrorToBackend = async (error, extraDetails = {}) => {
       message,
       stack,
       path: extraDetails.path || window.location.href,
-      method: extraDetails.method || 'CLIENT',
-      status: extraDetails.status || 500,
+      method: isAxiosError ? `CLIENT_${error.config?.method?.toUpperCase() || 'API'}` : (extraDetails.method || 'CLIENT'),
+      status,
     };
 
     // Set up request headers
