@@ -7,13 +7,14 @@ export const postUser = async (req, res) => {
         return res.status(400).json({ success: false, message: "Please provide email and name" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const cleanEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: cleanEmail });
 
     if (existingUser) {
         return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-    const user = new User({ name, email });
+    const user = new User({ name, email: cleanEmail });
     await user.save();
 
     return res.status(201).json({ success: true, message: "User created successfully" });
@@ -41,7 +42,8 @@ export const getAllUser = async (req, res) => {
 
 export const getUserRole = async (req, res) => {
     const { email } = req.params;
-    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -50,7 +52,8 @@ export const getUserRole = async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
     const { email } = req.params;
-    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -59,7 +62,8 @@ export const getUserProfile = async (req, res) => {
 
 export const verifyEmail = async (req, res) => {
     const { email } = req.params;
-    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
     }

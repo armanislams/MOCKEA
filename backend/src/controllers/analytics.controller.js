@@ -42,18 +42,22 @@ export const getAnalyticsSummary = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Fetch all completed tests for this user
+    // Fetch all completed mock tests for this user
     const results = await MockTestResult.find({ 
       userId, 
       status: 'completed' 
     }).sort({ createdAt: -1 });
 
+    // Fetch all separate practice submissions for this user
+    const practices = await PracticeSubmission.find({ userId }).sort({ createdAt: -1 });
+
     const totalTests = results.length;
+    const totalPractices = practices.length;
     
-    // Calculate Accuracy from Reading/Listening sections
+    // Calculate Accuracy from Reading/Listening sections of mock tests
     let totalCorrect = 0;
     let totalQuestions = 0;
-    let recentAttempts = [];
+    const allAttempts = [];
 
     results.forEach(result => {
         let testScore = 0;
@@ -62,8 +66,6 @@ export const getAnalyticsSummary = async (req, res) => {
         result.sectionResults.forEach(section => {
             if (['reading', 'listening'].includes(section.sectionType) && section.isGraded) {
                 totalCorrect += section.score || 0;
-                // Assuming 40 questions per section for percentage calculation if not specified
-                // In a real app, we'd count ans.length
                 totalQuestions += 40; 
 
                 testScore += section.score || 0;
@@ -71,17 +73,40 @@ export const getAnalyticsSummary = async (req, res) => {
             }
         });
 
-        if (recentAttempts.length < 5) {
-            recentAttempts.push({
-                date: result.createdAt,
-                testName: "Mock Test",
-                accuracy: testQuestions > 0 ? Math.round((testScore / testQuestions) * 100) : 0,
-                band: estimateBand(testQuestions > 0 ? (testScore / testQuestions) * 100 : 0)
-            });
+        allAttempts.push({
+            date: result.createdAt,
+            testName: "Mock Test",
+            accuracy: testQuestions > 0 ? Math.round((testScore / testQuestions) * 100) : null,
+            band: estimateBand(testQuestions > 0 ? (testScore / testQuestions) * 100 : 0)
+        });
+    });
+
+    // Include reviewed practices in attempts
+    practices.forEach(practice => {
+        if (practice.status === 'reviewed' && practice.bandScore) {
+            const band = parseFloat(practice.bandScore);
+            if (!isNaN(band)) {
+                allAttempts.push({
+                    date: practice.createdAt,
+                    testName: `Practice: ${practice.testType.charAt(0).toUpperCase() + practice.testType.slice(1)}`,
+                    accuracy: null, // Subjective tests do not have a question-based accuracy percentage
+                    band: band
+                });
+            }
         }
     });
 
+    // Sort all attempts by date descending and take top 5
+    allAttempts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const recentAttempts = allAttempts.slice(0, 5);
+
     const averageAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+    // Gather all practice & mock test dates to calculate a unified study streak
+    const allPracticeDates = [
+      ...results.map(r => r.createdAt),
+      ...practices.map(p => p.createdAt)
+    ];
 
     return res.status(200).json({
       success: true,
@@ -89,7 +114,8 @@ export const getAnalyticsSummary = async (req, res) => {
         averageAccuracy,
         estimatedBand: estimateBand(averageAccuracy),
         testsCompleted: totalTests,
-        studyStreak: getStudyStreak(results.map(r => r.createdAt)),
+        practicesCompleted: totalPractices,
+        studyStreak: getStudyStreak(allPracticeDates),
         recentAttempts,
         weakAreas: [
             { title: "Time Management", percentage: 65 },

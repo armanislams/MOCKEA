@@ -205,12 +205,16 @@ const DashboardHome = () => {
                         <div className="font-black text-primary group-hover:tracking-wide transition-all">{item.testName}</div>
                       </td>
                       <td className="py-6">
-                        <div className="flex items-center gap-3">
-                            <span className="font-black text-lg">{item.accuracy}%</span>
-                            <div className="h-1.5 w-12 rounded-full bg-base-200 overflow-hidden shadow-inner">
-                                <div className="h-full bg-primary" style={{ width: `${item.accuracy}%` }} />
-                            </div>
-                        </div>
+                        {item.accuracy !== null && item.accuracy !== undefined ? (
+                          <div className="flex items-center gap-3">
+                              <span className="font-black text-lg">{item.accuracy}%</span>
+                              <div className="h-1.5 w-12 rounded-full bg-base-200 overflow-hidden shadow-inner">
+                                  <div className="h-full bg-primary" style={{ width: `${item.accuracy}%` }} />
+                              </div>
+                          </div>
+                        ) : (
+                          <span className="text-base-content/40 font-bold text-xs uppercase tracking-widest">N/A</span>
+                        )}
                       </td>
                       <td className="py-6">
                         <span className="badge badge-ghost font-black px-4 py-4 rounded-xl border-base-300">

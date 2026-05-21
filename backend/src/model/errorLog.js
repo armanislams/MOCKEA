@@ -21,9 +21,14 @@ const errorLogSchema = new mongoose.Schema(
     userEmail: {
       type: String,
     },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      expires: 30 * 24 * 60 * 60, // 30 days in seconds
+    },
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: false, updatedAt: true }, // Keep updatedAt handled by mongoose, but createdAt will be our custom TTL field
   }
 );
 
