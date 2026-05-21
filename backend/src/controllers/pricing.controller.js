@@ -21,7 +21,7 @@ export const createPricing = async (req, res) => {
 
 export const updatePricing = async (req, res) => {
     try {
-        const pricing = await Pricing.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const pricing = await Pricing.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         res.status(200).json({ success: true, data: pricing });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

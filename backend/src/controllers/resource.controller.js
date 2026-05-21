@@ -61,7 +61,7 @@ export const incrementDownload = async (req, res) => {
     const resource = await Resource.findByIdAndUpdate(
       req.params.id,
       { $inc: { downloadCount: 1 } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!resource) {
       return res.status(404).json({ success: false, message: "Resource not found" });
@@ -87,7 +87,7 @@ export const updateResource = async (req, res) => {
     const resource = await Resource.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (!resource) {
       return res.status(404).json({ success: false, message: "Resource not found" });

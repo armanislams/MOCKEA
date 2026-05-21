@@ -43,6 +43,12 @@ export const AdminDashboard = () => {
         </NavLink>
       </li>
       <li>
+        <NavLink to="/dashboard/admin/manage-resources">
+          <PiBookOpen className="w-5 h-5" />
+          Manage Resources
+        </NavLink>
+      </li>
+      <li>
         <NavLink to="/dashboard/instructor/grade-submissions">
           <PiBookOpen className="w-5 h-5" />
           Review Center

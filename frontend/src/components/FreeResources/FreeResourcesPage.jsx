@@ -93,7 +93,7 @@ export default function FreeResourcesPage() {
         </div>
 
         {/* 2. Search & Category Filters */}
-        <div className="max-w-4xl mx-auto mb-12 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="max-w-4xl mx-auto mb-12 flex flex-col gap-4 items-center justify-between">
           {/* Search Box */}
           <div className="relative w-full md:max-w-md">
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
