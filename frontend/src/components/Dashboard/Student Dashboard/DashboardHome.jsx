@@ -272,7 +272,7 @@ const DashboardHome = () => {
                         <span className="text-[10px] font-black uppercase tracking-widest text-primary">Smart Tip</span>
                     </div>
                     <p className="text-xs font-bold leading-relaxed text-base-content/60 italic">
-                        "Your Time Allocation has improved by 5% this week. Keep up the pace in Reading Section 3."
+                        "{summary?.smartTip || "Your Time Allocation has improved by 5% this week. Keep up the pace in Reading Section 3."}"
                     </p>
                 </div>
 

@@ -108,6 +108,89 @@ export const getAnalyticsSummary = async (req, res) => {
       ...practices.map(p => p.createdAt)
     ];
 
+    // 1. Gather Reading scores
+    let readingScoresSum = 0;
+    let readingCount = 0;
+    
+    // 2. Gather Listening scores
+    let listeningScoresSum = 0;
+    let listeningCount = 0;
+    
+    // 3. Gather Writing band scores
+    let writingBandsSum = 0;
+    let writingCount = 0;
+    
+    // 4. Gather Speaking band scores
+    let speakingBandsSum = 0;
+    let speakingCount = 0;
+
+    results.forEach(result => {
+        result.sectionResults.forEach(section => {
+            if (section.isGraded && section.score !== undefined && section.score !== null) {
+                if (section.sectionType === 'reading') {
+                    readingScoresSum += section.score;
+                    readingCount++;
+                } else if (section.sectionType === 'listening') {
+                    listeningScoresSum += section.score;
+                    listeningCount++;
+                } else if (section.sectionType === 'writing') {
+                    writingBandsSum += section.score; // subjective sections store band score in score
+                    writingCount++;
+                } else if (section.sectionType === 'speaking') {
+                    speakingBandsSum += section.score; // subjective sections store band score in score
+                    speakingCount++;
+                }
+            }
+        });
+    });
+
+    practices.forEach(practice => {
+        if (practice.status === 'reviewed' && practice.bandScore) {
+            const band = parseFloat(practice.bandScore);
+            if (!isNaN(band)) {
+                if (practice.testType === 'writing') {
+                    writingBandsSum += band;
+                    writingCount++;
+                } else if (practice.testType === 'speaking') {
+                    speakingBandsSum += band;
+                    speakingCount++;
+                }
+            }
+        }
+    });
+
+    // Calculate performance percentages (defaulting to friendly realistic baselines if no data is available yet)
+    const listeningPct = listeningCount > 0 ? Math.round((listeningScoresSum / (listeningCount * 40)) * 100) : 60;
+    const readingPct = readingCount > 0 ? Math.round((readingScoresSum / (readingCount * 40)) * 100) : 65;
+    const writingPct = writingCount > 0 ? Math.round((writingBandsSum / (writingCount * 9)) * 100) : 58;
+    const speakingPct = speakingCount > 0 ? Math.round((speakingBandsSum / (speakingCount * 9)) * 100) : 62;
+
+    const weakAreas = [
+        { title: "Listening Skills", percentage: listeningPct },
+        { title: "Reading Analysis", percentage: readingPct },
+        { title: "Writing Cohesion", percentage: writingPct },
+        { title: "Speaking Fluency", percentage: speakingPct }
+    ];
+
+    // Sort weakAreas ascending so the weakest ones appear first
+    weakAreas.sort((a, b) => a.percentage - b.percentage);
+
+    // Select the absolute weakest skill
+    const weakest = weakAreas[0];
+    let smartTip = "Welcome to MOCKEA! Start taking full mock tests or standalone section practices to build your IELTS insights.";
+    
+    if (results.length > 0 || practices.length > 0) {
+        if (weakest.title === "Listening Skills") {
+            smartTip = `Your Listening accuracy is currently at ${weakest.percentage}%. Focus on active listening by predicting the answer type (noun, number, date) before the audio plays.`;
+        } else if (weakest.title === "Reading Analysis") {
+            smartTip = `Reading is your primary growth zone (${weakest.percentage}%). Try skimming the passage first to capture general meaning, then scan specific paragraphs for key vocabulary.`;
+        } else if (weakest.title === "Writing Cohesion") {
+            smartTip = `Your Writing scores average around ${weakest.percentage}%. Try practicing task-response structure and using a wide variety of linking words to improve coherence.`;
+        } else {
+            smartTip = `To boost your Speaking score (currently ${weakest.percentage}%), record yourself doing 2-minute mock speaking sessions daily to improve natural flow and reduce pauses.`;
+        }
+    }
+
     return res.status(200).json({
       success: true,
       summary: {
@@ -117,10 +200,8 @@ export const getAnalyticsSummary = async (req, res) => {
         practicesCompleted: totalPractices,
         studyStreak: getStudyStreak(allPracticeDates),
         recentAttempts,
-        weakAreas: [
-            { title: "Time Management", percentage: 65 },
-            { title: "Vocabulary Range", percentage: 72 }
-        ]
+        weakAreas,
+        smartTip
       },
     });
   } catch (error) {

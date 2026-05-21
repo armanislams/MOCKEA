@@ -325,7 +325,7 @@ const Analytics = () => {
             ))}
             <div className="mt-10 p-6 bg-primary/5 rounded-[2rem] border border-primary/10">
                 <p className="text-xs font-bold leading-relaxed text-primary/70 italic">
-                    "Consistent practice in your growth areas will yield the fastest band score improvement."
+                    "{summary?.smartTip || "Consistent practice in your growth areas will yield the fastest band score improvement."}"
                 </p>
             </div>
           </div>
