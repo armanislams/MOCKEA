@@ -23,6 +23,8 @@ export default function FreeResourcesPage() {
       return res.data.resources;
     }
   });
+  console.log(resources);
+  
 
   // Increment Download Count Mutation
   const downloadMutation = useMutation({

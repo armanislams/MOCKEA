@@ -4,6 +4,7 @@ import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import { toast } from 'react-toastify';
 import { FiTrash2, FiAlertCircle, FiX, FiTerminal } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import Swal from 'sweetalert2';
 
 const AdminSettings = () => {
     const axiosSecure = useAxiosSecure();
@@ -31,8 +32,24 @@ const AdminSettings = () => {
         }
     });
 
-    const handleClearLogs = () => {
-        if (window.confirm('Are you sure you want to clear all error logs? This cannot be undone.')) {
+    const handleClearLogs = async () => {
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "Are you sure you want to clear all error logs? This cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#EF4444",
+            cancelButtonColor: "#6B7280",
+            confirmButtonText: "Yes, clear them!",
+            background: "#ffffff",
+            customClass: {
+                popup: "rounded-[2rem]",
+                confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+                cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+            }
+        });
+
+        if (result.isConfirmed) {
             clearLogsMutation.mutate(); 
         }
     };

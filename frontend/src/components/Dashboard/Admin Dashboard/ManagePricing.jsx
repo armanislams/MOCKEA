@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FiEdit2, FiTrash2, FiPlus, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import Swal from 'sweetalert2';
 
 const ManagePricing = () => {
   const axiosSecure = useAxiosSecure();
@@ -63,6 +64,28 @@ const ManagePricing = () => {
     },
     onError: (error) => toast.error('Error deleting plan')
   });
+
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Are you sure you want to delete this plan? This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Yes, delete it!",
+      background: "#ffffff",
+      customClass: {
+        popup: "rounded-[2rem]",
+        confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+        cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+      }
+    });
+
+    if (result.isConfirmed) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   const handleOpenModal = (plan = null) => {
     if (plan) {
@@ -166,11 +189,7 @@ const ManagePricing = () => {
                         <FiEdit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => {
-                          if(window.confirm('Are you sure you want to delete this plan?')) {
-                            deleteMutation.mutate(plan._id);
-                          }
-                        }} 
+                        onClick={() => handleDelete(plan._id)} 
                         className="text-red-500 hover:text-red-700 transition-colors p-2 bg-red-50 hover:bg-red-100 rounded-lg"
                       >
                         <FiTrash2 className="w-4 h-4" />

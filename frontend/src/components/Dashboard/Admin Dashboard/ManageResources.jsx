@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import useAuth from '../../../hooks/useAuth';
 import { useRole } from '../../../hooks/useRole';
+import Swal from 'sweetalert2';
 
 const CATEGORIES = ["Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips", "General"];
 
@@ -88,6 +89,28 @@ const ManageResources = () => {
     },
     onError: (error) => toast.error('Error deleting resource')
   });
+
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Are you sure you want to delete this resource? This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Yes, delete it!",
+      background: "#ffffff",
+      customClass: {
+        popup: "rounded-[2rem]",
+        confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+        cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+      }
+    });
+
+    if (result.isConfirmed) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   const handleOpenModal = (resource = null) => {
     if (resource) {
@@ -243,11 +266,7 @@ const ManageResources = () => {
                         <FiEdit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this resource?')) {
-                            deleteMutation.mutate(res._id);
-                          }
-                        }} 
+                        onClick={() => handleDelete(res._id)} 
                         className="text-red-500 hover:text-red-700 transition-colors p-2 bg-red-50 hover:bg-red-100 rounded-lg cursor-pointer"
                       >
                         <FiTrash2 className="w-4 h-4" />
