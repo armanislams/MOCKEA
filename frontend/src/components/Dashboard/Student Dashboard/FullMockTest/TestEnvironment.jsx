@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
@@ -87,6 +87,11 @@ const TestEnvironment = () => {
     };
 
     const handleNextModule = async () => {
+        if (answeredQuestions < totalQuestions) {
+            const remaining = totalQuestions - answeredQuestions;
+            toast.error(`Please answer all ${totalQuestions} questions before continuing (${remaining} remaining).`);
+            return;
+        }
         await handleSaveProgress();
         if (currentModuleIdx < 3) {
             setCurrentModuleIdx(prev => prev + 1);
@@ -231,6 +236,40 @@ const TestEnvironment = () => {
         setAnswers(prev => ({ ...prev, [qId]: val }));
     };
 
+    const { total: totalQuestions, answered: answeredQuestions } = useMemo(() => {
+        if (!test) return { total: 0, answered: 0 };
+        if (currentModuleIdx === 0) {
+            const questions = test.sections?.reading?.[0]?.questions || [];
+            return {
+                total: questions.length,
+                answered: questions.filter(q => !!answers[q.id || q._id]).length
+            };
+        }
+        if (currentModuleIdx === 1) {
+            const questions = test.sections?.listening?.[0]?.questions || [];
+            return {
+                total: questions.length,
+                answered: questions.filter(q => !!answers[q.id || q._id]).length
+            };
+        }
+        if (currentModuleIdx === 2) {
+            const writingData = test.sections?.writing?.[0];
+            return {
+                total: writingData ? 1 : 0,
+                answered: writingData && answers[writingData._id]?.trim() ? 1 : 0
+            };
+        }
+        if (currentModuleIdx === 3) {
+            const speakingData = test.sections?.speaking?.[0];
+            const key = speakingData?._id || 'speaking_attempt';
+            return {
+                total: speakingData ? 1 : 0,
+                answered: answers[key] === 'started' ? 1 : 0
+            };
+        }
+        return { total: 0, answered: 0 };
+    }, [test, currentModuleIdx, answers]);
+
     if (isLoading) return <Loader/>
 
     if (!isStarted) {
@@ -346,34 +385,21 @@ const TestEnvironment = () => {
                 {currentModuleIdx === 3 && test?.sections?.speaking?.[0] && (
                     <SpeakingSection 
                         data={test.sections.speaking[0]} 
+                        answers={answers}
+                        onAnswerChange={handleAnswerChange}
                     />
                 )}
             </main>
 
             <footer className="bg-white border-t border-base-300 h-20 px-8 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
                 <div className="flex items-center gap-6">
-                    <div className="hidden sm:flex items-center gap-2">
-                        <span className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Question Palette</span>
-                        <div className="flex gap-1 ml-4">
-                            {Array.from({length: 13}).map((_, i) => (
-                                <button key={i} className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
-                                    i === 0 
-                                    ? "bg-primary text-white border-primary-dark shadow-lg shadow-primary/20" 
-                                    : "bg-base-200 border-base-300 hover:bg-base-300"
-                                }`}>
-                                    {i + 1}
-                                </button>
-                            ))}
-                        </div>
+                    <div className="text-left">
+                        <p className="text-[10px] font-black text-base-content/30 uppercase tracking-widest leading-none mb-1">Current Section Progress</p>
+                        <p className="text-base font-bold text-primary">{answeredQuestions} of {totalQuestions} Answered</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-8">
-                    <div className="text-right hidden sm:block">
-                        <p className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Questions Attempted</p>
-                        <p className="text-sm font-bold text-primary">0 of 13 Answered</p>
-                    </div>
-
                     <button 
                         onClick={handleNextModule}
                         className="btn btn-primary btn-lg rounded-2xl px-10 h-14 text-sm font-black shadow-xl shadow-primary/30 flex items-center gap-3 group"

@@ -3,19 +3,51 @@ import { PiBookOpen, PiNotePencil } from "react-icons/pi";
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
     return (
         <div className="flex h-full overflow-hidden bg-white">
-            {/* Left Pane: Passage */}
-            <div className="w-1/2 overflow-y-auto p-12 border-r border-base-200">
-                <div className="max-w-2xl mx-auto space-y-8">
-                    <header className="space-y-2">
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Part 1</p>
-                        <h1 className="text-4xl font-extrabold tracking-tight">{data?.passageTitle || data?.title}</h1>
-                        <p className="text-base-content/60 italic leading-relaxed text-lg">
-                            An exploration of the ancient origins and development of map-making, highlighting key innovations and their impact on navigation, exploration, and understanding of the world.
-                        </p>
-                    </header>
+            {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
+            <div className="w-1/2 flex flex-col h-full border-r border-base-200">
+                <div className="flex-1 overflow-y-auto p-12">
+                    <div className="max-w-2xl mx-auto space-y-8">
+                        <header className="space-y-2">
+                            <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Part 1</p>
+                            <h1 className="text-4xl font-extrabold tracking-tight">{data?.passageTitle || data?.title}</h1>
+                            <p className="text-base-content/60 italic leading-relaxed text-lg">
+                                An exploration of the ancient origins and development of map-making, highlighting key innovations and their impact on navigation, exploration, and understanding of the world.
+                            </p>
+                        </header>
 
-                    <div className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6">
-                        {data?.passage || data?.sections?.[0]?.content || "No passage content available."}
+                        <div className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6">
+                            {data?.passage || data?.sections?.[0]?.content || "No passage content available."}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sticky Question Palette */}
+                <div className="p-6 border-t border-base-200 bg-white">
+                    <div className="max-w-2xl mx-auto flex flex-col gap-3">
+                        <span className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Question Palette</span>
+                        <div className="flex flex-wrap gap-2">
+                            {data?.questions?.map((q, i) => {
+                                const isAnswered = !!answers[q.id];
+                                return (
+                                    <button 
+                                        key={q.id || i} 
+                                        onClick={() => {
+                                            const element = document.getElementById(`question-${i}`);
+                                            if (element) {
+                                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            }
+                                        }}
+                                        className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
+                                            isAnswered 
+                                            ? "bg-primary text-white border-primary-dark shadow-lg shadow-primary/20" 
+                                            : "bg-base-200 border-base-300 hover:bg-base-300"
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -26,12 +58,12 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                     <header className="space-y-4">
                         <div className="flex items-center gap-2 text-primary">
                             <PiNotePencil className="w-6 h-6" />
-                            <h2 className="text-xl font-black uppercase tracking-widest">Questions 1–13</h2>
+                            <h2 className="text-xl font-black uppercase tracking-widest">Questions 1–{data?.questions?.length || 13}</h2>
                         </div>
                         <div className="p-6 rounded-2xl bg-white border border-base-200 shadow-sm">
                             <h3 className="font-bold mb-2">Instructions:</h3>
                             <p className="text-sm text-base-content/70">
-                                Do the following statements agree with the information given in Reading Passage 1? In boxes 1–13 on your answer sheet, write:
+                                Do the following statements agree with the information given in Reading Passage 1? In boxes 1–{data?.questions?.length || 13} on your answer sheet, write:
                                 <br/><br/>
                                 <span className="font-bold">TRUE</span> if the statement agrees with the information
                                 <br/>
@@ -44,7 +76,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
 
                     <div className="space-y-8">
                         {data?.questions?.map((q, idx) => (
-                            <div key={q.id || idx} className="space-y-4">
+                            <div key={q.id || idx} id={`question-${idx}`} className="space-y-4 scroll-mt-6">
                                 <div className="flex items-start gap-4">
                                     <div className="flex-none w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black">
                                         {idx + 1}

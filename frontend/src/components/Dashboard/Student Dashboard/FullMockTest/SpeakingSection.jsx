@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { PiMicrophoneStage, PiClock, PiPlay, PiInfo } from "react-icons/pi";
 
-const SpeakingSection = ({ data }) => {
+const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     const [prepTime, setPrepTime] = useState(60);
     const [isPrepActive, setIsPrepActive] = useState(false);
     const [speakingTime, setSpeakingTime] = useState(120);
@@ -40,11 +40,13 @@ const SpeakingSection = ({ data }) => {
         return () => clearInterval(interval);
     }, [isSpeakingActive]);
 
+    const isAttempted = answers[data?._id || 'speaking_attempt'] === 'started';
+
     return (
         <div className="flex h-full bg-base-100 overflow-hidden">
-            {/* Left Sidebar: Instructions */}
-            <div className="w-1/3 p-12 bg-white border-r border-base-200 overflow-y-auto">
-                <div className="space-y-8">
+            {/* Left Sidebar: Instructions with Sticky Question Palette at the Bottom */}
+            <div className="w-1/3 flex flex-col h-full bg-white border-r border-base-200">
+                <div className="flex-1 overflow-y-auto p-12 space-y-8">
                     <header className="space-y-2">
                         <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Speaking Part 2</p>
                         <h1 className="text-3xl font-black">The Cue Card</h1>
@@ -64,13 +66,36 @@ const SpeakingSection = ({ data }) => {
 
                     {!isPrepActive && !isSpeakingActive && (
                         <button 
-                            onClick={() => setIsPrepActive(true)}
+                            onClick={() => {
+                                setIsPrepActive(true);
+                                if (onAnswerChange) {
+                                    onAnswerChange(data?._id || 'speaking_attempt', 'started');
+                                }
+                            }}
                             className="btn btn-primary btn-lg w-full rounded-2xl h-16 shadow-lg shadow-primary/20 gap-3"
                         >
                             <PiPlay className="w-6 h-6" />
                             Start Preparation
                         </button>
                     )}
+                </div>
+
+                {/* Sticky Question Palette */}
+                <div className="p-6 border-t border-base-200 bg-white">
+                    <div className="max-w-2xl mx-auto flex flex-col gap-3">
+                        <span className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Question Palette</span>
+                        <div className="flex flex-wrap gap-2">
+                            <button 
+                                className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
+                                    isAttempted 
+                                    ? "bg-primary text-white border-primary-dark shadow-lg shadow-primary/20" 
+                                    : "bg-base-200 border-base-300 hover:bg-base-300"
+                                }`}
+                            >
+                                1
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

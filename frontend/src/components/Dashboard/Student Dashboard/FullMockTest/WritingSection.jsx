@@ -6,40 +6,60 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
 
     return (
         <div className="flex h-full overflow-hidden bg-white">
-            {/* Left Pane: Prompt & Image */}
-            <div className="w-1/2 overflow-y-auto p-12 border-r border-base-200 bg-base-50/30">
-                <div className="max-w-2xl mx-auto space-y-8">
-                    <header className="space-y-2">
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Writing Task 1</p>
-                        <h1 className="text-3xl font-extrabold tracking-tight">Academic Writing Task</h1>
-                    </header>
+            {/* Left Pane: Prompt & Image with Sticky Question Palette at the Bottom */}
+            <div className="w-1/2 flex flex-col h-full border-r border-base-200 bg-base-50/30">
+                <div className="flex-1 overflow-y-auto p-12">
+                    <div className="max-w-2xl mx-auto space-y-8">
+                        <header className="space-y-2">
+                            <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Writing Task 1</p>
+                            <h1 className="text-3xl font-extrabold tracking-tight">Academic Writing Task</h1>
+                        </header>
 
-                    <div className="p-8 rounded-[2.5rem] bg-white border border-base-200 shadow-sm space-y-6">
-                        <div className="flex items-center gap-2 text-primary font-bold">
-                            <PiWarningCircle className="w-6 h-6" />
-                            <span>Instructions</span>
-                        </div>
-                        <p className="text-lg leading-relaxed text-base-content/80">
-                            {data?.instructions || "You should spend about 20 minutes on this task. Write about the following topic:"}
-                        </p>
-                        
-                        <div className="prose prose-lg font-medium text-base-content">
-                            {data?.passage || "The chart below shows the percentage of households with access to the internet in different regions between 2010 and 2020."}
-                        </div>
-
-                        {data?.images?.length > 0 && (
-                            <div className="mt-8 rounded-3xl overflow-hidden border border-base-200 shadow-inner">
-                                <img 
-                                    src={data.images[0]} 
-                                    alt="Writing Task Prompt" 
-                                    className="w-full h-auto object-cover"
-                                />
+                        <div className="p-8 rounded-[2.5rem] bg-white border border-base-200 shadow-sm space-y-6">
+                            <div className="flex items-center gap-2 text-primary font-bold">
+                                <PiWarningCircle className="w-6 h-6" />
+                                <span>Instructions</span>
                             </div>
-                        )}
+                            <p className="text-lg leading-relaxed text-base-content/80">
+                                {data?.instructions || "You should spend about 20 minutes on this task. Write about the following topic:"}
+                            </p>
+                            
+                            <div className="prose prose-lg font-medium text-base-content">
+                                {data?.passage || "The chart below shows the percentage of households with access to the internet in different regions between 2010 and 2020."}
+                            </div>
 
-                        <div className="pt-4 flex items-center gap-4 text-sm font-bold text-base-content/40">
-                            <div className="flex items-center gap-1"><PiClock /> 20 Minutes</div>
-                            <div className="flex items-center gap-1"><PiTextT /> Min 150 Words</div>
+                            {data?.images?.length > 0 && (
+                                <div className="mt-8 rounded-3xl overflow-hidden border border-base-200 shadow-inner">
+                                    <img 
+                                        src={data.images[0]} 
+                                        alt="Writing Task Prompt" 
+                                        className="w-full h-auto object-cover"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="pt-4 flex items-center gap-4 text-sm font-bold text-base-content/40">
+                                <div className="flex items-center gap-1"><PiClock /> 20 Minutes</div>
+                                <div className="flex items-center gap-1"><PiTextT /> Min 150 Words</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sticky Question Palette */}
+                <div className="p-6 border-t border-base-200 bg-white">
+                    <div className="max-w-2xl mx-auto flex flex-col gap-3">
+                        <span className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Question Palette</span>
+                        <div className="flex flex-wrap gap-2">
+                            <button 
+                                className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
+                                    wordCount > 0 
+                                    ? "bg-primary text-white border-primary-dark shadow-lg shadow-primary/20" 
+                                    : "bg-base-200 border-base-300 hover:bg-base-300"
+                                }`}
+                            >
+                                1
+                            </button>
                         </div>
                     </div>
                 </div>
