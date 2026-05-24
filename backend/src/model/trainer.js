@@ -41,7 +41,6 @@ const trainerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-trainerSchema.index({ email: 1 });
 trainerSchema.index({ specialty: 1 });
 
 const Trainer = mongoose.model("Trainer", trainerSchema);

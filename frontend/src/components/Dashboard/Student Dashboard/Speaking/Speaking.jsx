@@ -33,14 +33,83 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [submitted, setSubmitted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
+  const [mediaStream, setMediaStream] = useState(null);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const canvasRef = useRef(null);
 
   const activeSet = useMemo(
     () => preloadedSet || speakingSets.find((set) => set._id === selectedSetId) || null,
     [preloadedSet, speakingSets, selectedSetId],
   );
+
+  // Real-time Canvas Soundwave Visualizer
+  useEffect(() => {
+    if (!mediaStream || !canvasRef.current) return;
+
+    let audioCtx;
+    let analyser;
+    let source;
+    let animationFrameId;
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128; // high performance, clean bars
+      
+      source = audioCtx.createMediaStreamSource(mediaStream);
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+
+      const draw = () => {
+        animationFrameId = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const barWidth = (canvas.width / bufferLength) * 1.6;
+        let barHeight;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+          // Normalize height to canvas dimension
+          barHeight = (dataArray[i] / 255) * canvas.height * 0.75;
+          if (barHeight < 4) barHeight = 4; // minimum height bar for aesthetic consistency
+
+          // Violet to Pink linear gradient
+          const gradient = ctx.createLinearGradient(0, (canvas.height - barHeight) / 2, 0, (canvas.height + barHeight) / 2);
+          gradient.addColorStop(0, "#c084fc"); // purple-400
+          gradient.addColorStop(0.5, "#ec4899"); // pink-500
+          gradient.addColorStop(1, "#c084fc"); // purple-400
+
+          ctx.fillStyle = gradient;
+
+          const y = (canvas.height - barHeight) / 2;
+          const radius = 3;
+
+          ctx.beginPath();
+          ctx.roundRect(x, y, barWidth - 2, barHeight, radius);
+          ctx.fill();
+
+          x += barWidth;
+        }
+      };
+
+      draw();
+    } catch (e) {
+      console.error("Audio visualizer failed:", e);
+    }
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (audioCtx && audioCtx.state !== "closed") audioCtx.close();
+    };
+  }, [mediaStream]);
 
   useEffect(() => {
     if (preloadedSet) return; // guest: data already provided, loading already false via useState(!preloadedSet)
@@ -62,6 +131,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMediaStream(stream);
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
 
@@ -75,6 +145,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         setAudioBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
+        setMediaStream(null);
       };
 
       mediaRecorderRef.current.start();
@@ -448,6 +519,14 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       </div>
 
                       <div className="space-y-4">
+                        <div className="w-full flex justify-center py-2">
+                          <canvas
+                            ref={canvasRef}
+                            width={320}
+                            height={80}
+                            className="bg-slate-950/50 rounded-3xl border border-white/5 shadow-inner"
+                          />
+                        </div>
                         <div className="text-5xl font-mono font-black">
                           {fmt(recordingTime)}
                         </div>

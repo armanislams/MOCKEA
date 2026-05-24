@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
@@ -48,6 +48,39 @@ const TestEnvironment = () => {
     });
     const [showWarning, setShowWarning] = useState(false);
     const [warningType, setWarningType] = useState(""); // "fullscreen" or "tab"
+
+    // Scratchpad States & Drag-Handlers
+    const [showScratchpad, setShowScratchpad] = useState(false);
+    const [scratchpadText, setScratchpadText] = useState(() => localStorage.getItem(`test_scratchpad_${id}`) || "");
+    const [scratchpadPos, setScratchpadPos] = useState({ x: 100, y: 120 });
+    const dragStartRef = useRef(null);
+
+    const handleDragStart = (e) => {
+        dragStartRef.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            startPosX: scratchpadPos.x,
+            startPosY: scratchpadPos.y
+        };
+        document.addEventListener("mousemove", handleDragging);
+        document.addEventListener("mouseup", handleDragEnd);
+    };
+
+    const handleDragging = (e) => {
+        if (!dragStartRef.current) return;
+        const dx = e.clientX - dragStartRef.current.startX;
+        const dy = e.clientY - dragStartRef.current.startY;
+        setScratchpadPos({
+            x: dragStartRef.current.startPosX + dx,
+            y: dragStartRef.current.startPosY + dy
+        });
+    };
+
+    const handleDragEnd = () => {
+        dragStartRef.current = null;
+        document.removeEventListener("mousemove", handleDragging);
+        document.removeEventListener("mouseup", handleDragEnd);
+    };
 
     // --- Helper Functions (Defined before Effects to avoid TDZ errors) ---
 
@@ -174,6 +207,13 @@ const TestEnvironment = () => {
             }));
         }
     }, [answers, currentModuleIdx, timeLeft, tabSwitches, id, resultId, isStarted]);
+
+    // 4.1 Scratchpad Persistence Logic
+    useEffect(() => {
+        if (isStarted) {
+            localStorage.setItem(`test_scratchpad_${id}`, scratchpadText);
+        }
+    }, [scratchpadText, id, isStarted]);
 
     // 4.5 Keyboard Interceptor (Anti-Cheat & DevTools protection)
     useEffect(() => {
@@ -376,6 +416,16 @@ const TestEnvironment = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setShowScratchpad(prev => !prev)}
+                        className={`btn rounded-2xl h-12 font-black text-xs uppercase tracking-widest px-5 ${
+                            showScratchpad 
+                            ? "btn-primary shadow-xl shadow-primary/20 border-none" 
+                            : "btn-ghost border border-base-300 bg-white hover:bg-base-100"
+                        }`}
+                    >
+                        📝 Scratchpad
+                    </button>
                     <div className={`flex items-center gap-3 px-6 py-2.5 rounded-2xl font-mono text-2xl shadow-xl transition-all border-b-4 ${
                         timeLeft < 300 
                             ? "bg-error text-white border-error-dark animate-pulse" 
@@ -436,6 +486,48 @@ const TestEnvironment = () => {
                     </button>
                 </div>
             </footer>
+
+            {/* Draggable Resizable Scratchpad Panel */}
+            {showScratchpad && (
+                <div 
+                    className="fixed z-[999] bg-slate-900 text-white rounded-[2rem] shadow-2xl border border-white/10 flex flex-col select-text overflow-hidden"
+                    style={{ 
+                        top: `${scratchpadPos.y}px`, 
+                        left: `${scratchpadPos.x}px`,
+                        width: "360px",
+                        height: "280px",
+                        resize: "both",
+                        minWidth: "280px",
+                        minHeight: "200px"
+                    }}
+                >
+                    {/* Header */}
+                    <div 
+                        onMouseDown={handleDragStart}
+                        className="bg-slate-950/80 px-5 py-3.5 flex items-center justify-between border-b border-white/5 cursor-move select-none"
+                    >
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+                            📝 Exam Notes Scratchpad
+                        </span>
+                        <button 
+                            onClick={() => setShowScratchpad(false)}
+                            className="btn btn-ghost btn-circle btn-xs text-white/40 hover:text-white hover:bg-white/10"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    {/* Content Textarea */}
+                    <div className="flex-1 p-4 flex">
+                        <textarea
+                            value={scratchpadText}
+                            onChange={(e) => setScratchpadText(e.target.value)}
+                            placeholder="Write down any notes, exam keywords, or essay outlines here. Notes are saved automatically."
+                            className="w-full h-full bg-slate-950/40 text-slate-200 border-none resize-none focus:outline-none text-xs p-4 rounded-2xl placeholder-slate-600 font-medium font-serif leading-relaxed"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

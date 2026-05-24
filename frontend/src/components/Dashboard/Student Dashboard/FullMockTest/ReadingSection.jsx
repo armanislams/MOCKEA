@@ -1,6 +1,78 @@
+import { useState, useRef } from "react";
 import { PiBookOpen, PiNotePencil } from "react-icons/pi";
 
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
+    const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
+    const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
+
+    const handleTextSelection = (e) => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || selection.toString().trim() === "") {
+            setToolbar((prev) => ({ ...prev, show: false }));
+            return;
+        }
+
+        const range = selection.getRangeAt(0);
+        const container = e.currentTarget;
+        if (!container.contains(range.commonAncestorContainer)) {
+            return;
+        }
+
+        const rect = range.getBoundingClientRect();
+        setToolbar({
+            show: true,
+            x: rect.left + window.scrollX + rect.width / 2,
+            y: rect.top + window.scrollY - 45,
+            range: range.cloneRange()
+        });
+    };
+
+    const applyHighlight = (colorClass) => {
+        if (!toolbar.range) return;
+
+        const span = document.createElement("mark");
+        span.className = `${colorClass} text-slate-900 cursor-pointer rounded px-0.5 transition-all hover:opacity-90 relative`;
+        span.setAttribute("data-highlight", "true");
+        span.setAttribute("data-color", colorClass);
+        span.setAttribute("data-note", "");
+
+        span.onclick = (e) => {
+            e.stopPropagation();
+            openNoteModal(span);
+        };
+
+        try {
+            toolbar.range.surroundContents(span);
+        } catch (err) {
+            console.warn("Could not wrap complex selection:", err);
+        }
+
+        window.getSelection().removeAllRanges();
+        setToolbar({ show: false, x: 0, y: 0, range: null });
+    };
+
+    const openNoteModal = (element) => {
+        const rect = element.getBoundingClientRect();
+        const noteText = element.getAttribute("data-note") || "";
+        setActiveNote({
+            show: true,
+            text: noteText,
+            element: element,
+            x: rect.left + window.scrollX + rect.width / 2,
+            y: rect.top + window.scrollY + rect.height + 10
+        });
+    };
+
+    const removeHighlight = (element) => {
+        if (!element) return;
+        const parent = element.parentNode;
+        while (element.firstChild) {
+            parent.insertBefore(element.firstChild, element);
+        }
+        parent.removeChild(element);
+        setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 });
+    };
+
     return (
         <div className="flex h-full overflow-hidden bg-white">
             {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
@@ -15,7 +87,10 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                             </p>
                         </header>
 
-                        <div className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6">
+                        <div 
+                            onMouseUp={handleTextSelection}
+                            className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
+                        >
                             {data?.passage || data?.sections?.[0]?.content || "No passage content available."}
                         </div>
                     </div>
@@ -129,6 +204,81 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                     </div>
                 </div>
             </div>
+            {/* Floating Highlight Action Toolbar */}
+            {toolbar.show && (
+                <div 
+                    className="absolute z-[100] flex items-center gap-2 p-2 bg-slate-900/95 text-white rounded-2xl shadow-2xl border border-white/10 backdrop-blur-md -translate-x-1/2"
+                    style={{ top: `${toolbar.y}px`, left: `${toolbar.x}px` }}
+                >
+                    <button 
+                        onClick={() => applyHighlight("bg-yellow-200")}
+                        className="w-6 h-6 rounded-full bg-yellow-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
+                        title="Yellow"
+                    />
+                    <button 
+                        onClick={() => applyHighlight("bg-emerald-200")}
+                        className="w-6 h-6 rounded-full bg-emerald-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
+                        title="Mint Green"
+                    />
+                    <button 
+                        onClick={() => applyHighlight("bg-sky-200")}
+                        className="w-6 h-6 rounded-full bg-sky-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
+                        title="Soft Blue"
+                    />
+                    <button 
+                        onClick={() => applyHighlight("bg-pink-200")}
+                        className="w-6 h-6 rounded-full bg-pink-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
+                        title="Rose Pink"
+                    />
+                    <div className="w-px h-5 bg-white/25 mx-1" />
+                    <button 
+                        onClick={() => applyHighlight("bg-yellow-100/50 border-b-2 border-yellow-400")}
+                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 hover:bg-white/10 rounded-xl transition-all text-white/90"
+                    >
+                        <PiNotePencil className="w-4 h-4 text-yellow-300" /> Add Note
+                    </button>
+                </div>
+            )}
+
+            {/* Sticky Note Popover Editor */}
+            {activeNote.show && (
+                <div 
+                    className="absolute z-[110] w-64 p-4 bg-white rounded-3xl shadow-2xl border border-base-200 -translate-x-1/2 flex flex-col gap-3"
+                    style={{ 
+                        top: `${activeNote.y}px`, 
+                        left: `${activeNote.x}px` 
+                    }}
+                >
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1">
+                            <PiNotePencil className="text-sm" /> Sticky Note
+                        </span>
+                        <button 
+                            onClick={() => removeHighlight(activeNote.element)}
+                            className="btn btn-ghost btn-xs text-error font-black uppercase text-[9px] tracking-wider hover:bg-error/10 rounded-lg"
+                        >
+                            Delete Note
+                        </button>
+                    </div>
+                    <textarea
+                        value={activeNote.text}
+                        onChange={(e) => {
+                            setActiveNote((prev) => ({ ...prev, text: e.target.value }));
+                            activeNote.element.setAttribute("data-note", e.target.value);
+                        }}
+                        placeholder="Jot down a quick note..."
+                        className="textarea textarea-bordered rounded-2xl w-full h-24 text-xs font-medium focus:outline-none"
+                    />
+                    <div className="flex justify-end gap-2">
+                        <button 
+                            onClick={() => setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 })}
+                            className="btn btn-primary btn-sm rounded-xl text-[10px] font-black uppercase tracking-widest px-4 border-none shadow-md shadow-primary/20"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
