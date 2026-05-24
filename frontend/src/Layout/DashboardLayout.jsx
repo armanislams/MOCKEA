@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet, Link, NavLink, useNavigate } from "react-router";
+import { Outlet, NavLink, useNavigate } from "react-router";
 import { PiHouse, PiSignOut, PiUser } from "react-icons/pi";
 import useAuth from "../hooks/useAuth";
 import { useRole } from "../hooks/useRole";
@@ -7,6 +7,7 @@ import { AdminDashboard } from "../components/RoleBasedSidebar/AdminDashboard";
 import { InstructorDashboard } from "../components/RoleBasedSidebar/InstructorDashboard";
 import StudentDashboard from "../components/RoleBasedSidebar/StudentDashboard";
 import Loader from "../components/Loader/Loader";
+import { Logo } from "../components/Home/Logo";
 
 const DashboardLayout = () => {
   const { user, logOut } = useAuth();
@@ -56,7 +57,7 @@ const DashboardLayout = () => {
       <input id="dashboard-drawer" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content flex flex-col items-center justify-start bg-base-200">
         {/* Page content here */}
-        <div className="w-full navbar bg-base-100 lg:hidden shadow-sm">
+        {/* <div className="w-full navbar bg-base-100 lg:hidden shadow-sm">
           <div className="flex-none">
             <label
               htmlFor="dashboard-drawer"
@@ -77,10 +78,8 @@ const DashboardLayout = () => {
               </svg>
             </label>
           </div>
-          <div className="flex-1 px-2 mx-2 font-bold text-xl text-primary">
-            <Link to={"/"}>MOCKEA</Link>
-          </div>
-        </div>
+          <Logo/>
+        </div> */}
 
         <div className="w-full flex-1 p-4 md:p-8 overflow-y-auto">
           <Outlet />
@@ -92,9 +91,7 @@ const DashboardLayout = () => {
         <ul className="menu p-4 w-80 min-h-full bg-base-100 text-base-content border-r border-base-200">
           {/* Sidebar content here */}
           <div className="mb-8 px-4">
-            <Link to="/" className="text-2xl font-bold text-primary">
-              MOCKEA
-            </Link>
+           <Logo/>
             <p className="text-xs text-base-content/50 mt-1">IELTS mock test dashboard</p>
           </div>
 

@@ -113,7 +113,7 @@ export const Pricing = () => {
                       {plan.price}
                     </span>
                     <span className={`text-xs font-medium ${
-                      plan.isPopular ? "text-blue-200/80" : "text-slate-500"
+                      plan.isPopular ? "text-white" : "text-slate-500"
                     }`}>
                       / {plan.duration}
                     </span>
@@ -130,8 +130,8 @@ export const Pricing = () => {
                         }`}>
                           <FiCheck className="w-3 h-3 stroke-3" />
                         </span>
-                        <span className={`text-sm leading-relaxed ${
-                          plan.isPopular ? "text-slate-200 animate-fade-in" : "text-slate-600 animate-fade-in"
+                        <span className={`text-sm leading-relaxed font-bold ${
+                          plan.isPopular ? "text-white animate-fade-in" : "text-slate-600 animate-fade-in"
                         }`}>
                           {feature}
                         </span>

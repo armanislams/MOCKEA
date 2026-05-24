@@ -69,9 +69,9 @@ export const Testimonials = forwardRef((props, ref) => {
             slidesPerView={1}
             loop
             loopAdditionalSlides={2}
-            speed={1200}
+            speed={1000}
             autoplay={{
-              delay: 2000,
+              delay: 200,
               disableOnInteraction: false,
               pauseOnMouseEnter: true,
             }}

@@ -107,7 +107,7 @@ const Hero2 = () => {
               x: { duration: 0.6, delay: 0.4 },
               y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
             }}
-            className="absolute z-30 top-[2%] right-[0%] w-[45%] h-[40%] rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-md"
+            className="absolute z-30 top-[-5%] right-[-7%] w-[45%] h-[40%] rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-md"
           >
             <img src={heroAbstract} alt="Abstract exam elements" className="w-full h-full object-cover opacity-90" />
             <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent flex items-end p-3 sm:p-4">
@@ -132,7 +132,7 @@ const Hero2 = () => {
               x: { duration: 0.6, delay: 0.6 },
               y: { duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }
             }}
-            className="absolute z-10 bottom-[5%] left-[0%] w-[50%] h-[45%] rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-md"
+            className="absolute z-10 bottom-[-10%] left-[-20%] w-[50%] h-[45%] rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-md"
           >
             <img src={heroGroup} alt="Group study" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent flex items-end p-3 sm:p-4">

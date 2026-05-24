@@ -14,13 +14,13 @@ const AuthBtn = () => {
     <div className="flex gap-1 sm:gap-5">
       <NavLink
         to={"/auth/login"}
-        className="btn hover:bg-primary-hover hover:text-white border-bc-navy border-2 sm:px-6 min-h-0 sm:h-10 rounded-full font-bold transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-md"
+        className="btn hover:bg-primary-hover hover:text-white border-bc-navy border-2 sm:px-6 min-h-0 sm:h-10 rounded-lg font-bold transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-md"
       >
         Log in
       </NavLink>
       <NavLink
         to={"/free-practice"}
-        className="btn bg-cta-btn hover:bg-primary-hover text-white border-none sm:px-6 min-h-0 sm:h-10 rounded-full font-bold transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-md"
+        className="btn bg-cta-btn hover:bg-primary-hover text-white border-none sm:px-6 min-h-0 sm:h-10 rounded-lg font-bold transition duration-200 ease-out transform hover:-translate-y-0.5 hover:shadow-md"
       >
         Try For Free...
       </NavLink>
