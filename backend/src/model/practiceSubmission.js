@@ -77,5 +77,9 @@ const PracticeSubmissionSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+PracticeSubmissionSchema.index({ userId: 1 });
+PracticeSubmissionSchema.index({ questionSetId: 1 });
+PracticeSubmissionSchema.index({ status: 1 });
+
 const PracticeSubmission = mongoose.model('PracticeSubmission', PracticeSubmissionSchema);
 export default PracticeSubmission;

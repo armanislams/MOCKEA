@@ -169,10 +169,37 @@ const TestEnvironment = () => {
                 currentModuleIdx,
                 timeLeft,
                 tabSwitches,
-                resultId
+                resultId,
+                timestamp: Date.now()
             }));
         }
     }, [answers, currentModuleIdx, timeLeft, tabSwitches, id, resultId, isStarted]);
+
+    // 4.5 Keyboard Interceptor (Anti-Cheat & DevTools protection)
+    useEffect(() => {
+        if (!isStarted) return;
+        const handleKeyDown = (e) => {
+            const isMeta = e.ctrlKey || e.metaKey;
+            const key = e.key.toLowerCase();
+            
+            // Intercept Copy, Paste, Cut, Select All
+            if (isMeta && ['c', 'v', 'x', 'a'].includes(key)) {
+                e.preventDefault();
+                toast.warning("Copy, paste, cut, and select-all actions are disabled to maintain exam integrity.");
+                return;
+            }
+            
+            // Intercept DevTools Access
+            if (e.key === 'F12' || (isMeta && e.shiftKey && key === 'i')) {
+                e.preventDefault();
+                toast.warning("Developer Tools access is disabled during the exam.");
+                return;
+            }
+        };
+        
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isStarted]);
 
     // 5. Restore Session Effect
     useEffect(() => {

@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { PiChartBar, PiFiles, PiBookOpen } from "react-icons/pi";
+import { PiChartBar, PiFiles, PiBookOpen, PiGraduationCap } from "react-icons/pi";
 
 export const InstructorDashboard = () => {
   return (
@@ -22,6 +22,13 @@ export const InstructorDashboard = () => {
         <NavLink to="/dashboard/instructor/manage-resources">
           <PiBookOpen className="w-5 h-5" />
           Manage Resources
+        </NavLink>
+      </li>
+      
+      <li>
+        <NavLink to="/dashboard/trainer">
+          <PiGraduationCap className="w-5 h-5" />
+          Trainers
         </NavLink>
       </li>
       

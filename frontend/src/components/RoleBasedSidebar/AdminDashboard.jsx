@@ -6,6 +6,7 @@ import {
   PiGear,
   PiBookOpen,
   PiCurrencyDollar,
+  PiGraduationCap,
 } from "react-icons/pi";
 
 export const AdminDashboard = () => {
@@ -45,6 +46,12 @@ export const AdminDashboard = () => {
         <NavLink to="/dashboard/admin/manage-resources">
           <PiBookOpen className="w-5 h-5" />
           Manage Resources
+        </NavLink>
+      </li>
+      <li>
+        <NavLink to="/dashboard/admin/manage-trainers">
+          <PiGraduationCap className="w-5 h-5" />
+          Manage Trainers
         </NavLink>
       </li>
       <li>

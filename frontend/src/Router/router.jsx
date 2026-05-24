@@ -28,6 +28,8 @@ import ManagePricing from "../components/Dashboard/Admin Dashboard/ManagePricing
 import ManageResources from "../components/Dashboard/Admin Dashboard/ManageResources";
 import TestEnvironment from "../components/Dashboard/Student Dashboard/FullMockTest/TestEnvironment";
 import Error from "../components/Common/Error";
+import TrainerLibrary from "../components/Dashboard/Student Dashboard/TrainerLibrary";
+import ManageTrainers from "../components/Dashboard/Admin Dashboard/ManageTrainers";
 import GradeSubmissions from "../components/Dashboard/Instructor Dashboard/GradeSubmissions";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 import { InstructorRoutes } from "../context/Role Based Routes/InstructorRoutes";
@@ -126,6 +128,10 @@ const router = createBrowserRouter([
         element: <Profile />,
       },
       {
+        path: "trainer",
+        element: <TrainerLibrary />,
+      },
+      {
         path: "reading",
         element: <Reading />,
       },
@@ -178,6 +184,14 @@ const router = createBrowserRouter([
         element: (
           <AdminRoutes>
             <ManageResources />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/manage-trainers",
+        element: (
+          <AdminRoutes>
+            <ManageTrainers />
           </AdminRoutes>
         ),
       },

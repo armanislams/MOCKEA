@@ -10,7 +10,7 @@ import {
     PiCrownFill,
     PiSparkleFill
 } from "react-icons/pi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import MockTestCard from "./MockTestCard";
 import InstructionModal from "./InstructionModal";
@@ -19,6 +19,29 @@ import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 const FullMockTestLibrary = () => {
     const axiosSecure = useAxiosSecure();
     const [selectedTest, setSelectedTest] = useState(null);
+
+    useEffect(() => {
+        // Cleanup expired test caches older than 24 hours
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('test_cache_')) {
+                try {
+                    const cached = JSON.parse(localStorage.getItem(key));
+                    if (cached && cached.timestamp) {
+                        const ageInHours = (Date.now() - cached.timestamp) / (1000 * 60 * 60);
+                        if (ageInHours > 24) {
+                            localStorage.removeItem(key);
+                        }
+                    } else if (cached && !cached.timestamp) {
+                        // Migrate pre-existing cache objects to expire in 24 hours
+                        cached.timestamp = Date.now();
+                        localStorage.setItem(key, JSON.stringify(cached));
+                    }
+                } catch (e) {
+                    localStorage.removeItem(key); // Clear corrupted cache
+                }
+            }
+        });
+    }, []);
 
     const { data: tests = [], isLoading } = useQuery({
         queryKey: ["full-mock-tests"],

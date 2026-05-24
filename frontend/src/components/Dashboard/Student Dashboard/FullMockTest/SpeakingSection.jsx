@@ -138,9 +138,24 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                     </div>
 
                     {isSpeakingActive && (
-                        <div className="flex items-center justify-center gap-4 animate-pulse">
-                            <div className="w-3 h-3 rounded-full bg-error" />
-                            <span className="font-black text-error uppercase tracking-widest">Live Recording Session</span>
+                        <div className="flex flex-col items-center justify-center gap-4 py-8 bg-slate-950 rounded-4xl border border-white/5 shadow-2xl relative overflow-hidden max-w-md mx-auto w-full mt-6">
+                            <div className="flex items-center gap-1.5 h-16">
+                                {Array.from({ length: 15 }).map((_, i) => (
+                                    <div 
+                                        key={i} 
+                                        className="w-1.5 bg-gradient-to-t from-indigo-500 via-indigo-400 to-emerald-400 rounded-full animate-voice-bar animate-pulse"
+                                        style={{
+                                            height: '20%',
+                                            animationDelay: `${i * 0.08}s`,
+                                            animationDuration: `${0.6 + Math.random() * 0.4}s`
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 rounded-full bg-error animate-ping" />
+                                <span className="font-black text-error text-[10px] uppercase tracking-[0.25em]">Live Speaking Session</span>
+                            </div>
                         </div>
                     )}
                 </div>
