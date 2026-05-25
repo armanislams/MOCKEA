@@ -13,6 +13,11 @@ const mockTestSchema = new mongoose.Schema({
         enum: ['free', 'standard', 'premium'],
         default: 'free'
     },
+    examType: {
+        type: String,
+        enum: ['IELTS', 'PTE', 'BOTH'],
+        default: 'IELTS'
+    },
     isPublic: { type: Boolean, default: false },
     sections: {
         reading: [{

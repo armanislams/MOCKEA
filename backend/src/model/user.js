@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema(
       enum: ["free", "standard", "premium"],
       default: "free",
     },
+    targetExam: {
+      type: String,
+      enum: ["IELTS", "PTE", "BOTH"],
+      default: "IELTS",
+    },
     isBanned: {
       type: Boolean,
       default: false,

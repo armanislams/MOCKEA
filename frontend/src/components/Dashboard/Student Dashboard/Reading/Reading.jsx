@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
+import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
 import Loader from "../../../Loader/Loader.jsx";
@@ -22,6 +23,8 @@ import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.j
 const Reading = () => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
+  const { userData } = useUserProfile();
+  const targetExam = userData?.targetExam || "IELTS";
 
   const [readingSets, setReadingSets] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");
@@ -161,40 +164,90 @@ const Reading = () => {
     return (
         <div className="max-w-7xl mx-auto px-6 pt-2 pb-20">
             <div className="text-center space-y-4 mb-16">
-                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">
+                <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest border ${
+                    readingSets.length > 0
+                    ? "bg-primary/10 text-primary border-primary/20"
+                    : "bg-amber-50 text-amber-600 border-amber-200"
+                }`}>
                     <PiBookOpenFill /> {readingSets.length} Modules Available
                 </div>
                 <h2 className="text-5xl font-black tracking-tighter text-slate-800">Select a <span className="text-primary italic">Reading Lab</span></h2>
                 <p className="text-slate-400 font-medium text-lg">Choose a comprehensive passage to sharpen your analytical skills.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {readingSets.map((set, idx) => (
-                    <motion.div 
-                        key={set._id}
-                        whileHover={{ y: -10 }}
-                        className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
-                        onClick={() => setSelectedSetId(set._id)}
-                    >
-                        <div className="flex flex-col h-full space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
-                                    <PiBookOpenFill />
-                                </div>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Module {idx + 1}</span>
-                            </div>
-                            <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
-                            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                                <span className="flex items-center gap-1.5"><PiClockFill /> 60m</span>
-                                <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
-                            </div>
-                            <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
-                                Open Module
-                            </button>
+            {readingSets.length === 0 ? (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="max-w-xl mx-auto"
+                >
+                    <div className="card bg-white border-2 border-dashed border-base-300 p-16 rounded-[3rem] text-center space-y-6">
+                        <div className="w-20 h-20 rounded-[2rem] bg-amber-50 border border-amber-100 flex items-center justify-center text-4xl mx-auto">
+                            📖
                         </div>
-                    </motion.div>
-                ))}
-            </div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-black tracking-tight text-slate-800">
+                                No Reading Modules Yet
+                            </h3>
+                            <p className="text-slate-500 font-medium leading-relaxed">
+                                No reading content is available for your current exam track{" "}
+                                <span className="font-black text-primary">({targetExam})</span>.
+                                This could be because:
+                            </p>
+                        </div>
+                        <ul className="text-left space-y-3 text-sm text-slate-500 font-medium">
+                            <li className="flex items-start gap-3">
+                                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">1</span>
+                                The admin hasn't uploaded any reading passages for <strong>{targetExam}</strong> yet.
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">2</span>
+                                Your exam preference might not match the available content — try switching to <strong>IELTS</strong> or <strong>BOTH</strong>.
+                            </li>
+                        </ul>
+                        <a
+                            href="/dashboard/profile"
+                            className="btn btn-primary btn-block rounded-2xl h-14 font-black text-sm uppercase tracking-widest shadow-lg shadow-primary/20"
+                        >
+                            Change Exam Preference →
+                        </a>
+                    </div>
+                </motion.div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {readingSets.map((set, idx) => (
+                        <motion.div 
+                            key={set._id}
+                            whileHover={{ y: -10 }}
+                            className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
+                            onClick={() => setSelectedSetId(set._id)}
+                        >
+                            <div className="flex flex-col h-full space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
+                                        <PiBookOpenFill />
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Module {idx + 1}</span>
+                                </div>
+                                <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
+                                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                    <span className="flex items-center gap-1.5"><PiClockFill /> 60m</span>
+                                    <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
+                                    {set.examType && (
+                                        <span className={`badge badge-sm font-black ${
+                                            set.examType === 'IELTS' ? 'badge-primary' :
+                                            set.examType === 'PTE' ? 'badge-success' : 'badge-warning'
+                                        }`}>{set.examType}</span>
+                                    )}
+                                </div>
+                                <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
+                                    Open Module
+                                </button>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
         </div>
     );
   }

@@ -39,6 +39,9 @@ const AddQuestionForm = () => {
         task1Prompt: "",
         task1Image: "",
         task2Prompt: "",
+        exampleQuestion: "Destination:",
+        exampleAnswer: "Harbour City",
+        examType: "IELTS",
         forPlanType: "free",
         isPublic: false,
         questions: [
@@ -135,6 +138,19 @@ const AddQuestionForm = () => {
             submissionData.questions = [
                 { id: "s1", type: "short-answer", question: "Speaking Recording Response:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" }
             ];
+        } else if (testType === "listening" && (formData.examType === "IELTS" || formData.examType === "BOTH")) {
+            // Compile Example & Gapped Notes into passage
+            const exampleHTML = `
+  <div class="mb-6 p-5 bg-indigo-50/50 border border-indigo-100 rounded-3xl">
+    <div class="text-[9px] font-black uppercase tracking-widest text-primary mb-2">Example</div>
+    <div class="flex items-center justify-between text-sm font-semibold text-slate-700">
+      <span>${formData.exampleQuestion || "Destination:"}</span>
+      <span class="px-3 py-1 bg-white border border-slate-200 rounded-xl font-bold text-slate-800">${formData.exampleAnswer || "Harbour City"}</span>
+    </div>
+  </div>
+            `.trim();
+
+            submissionData.passage = `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">${formData.passage}</div>`;
         }
 
         mutation.mutate(submissionData);
@@ -178,8 +194,8 @@ const AddQuestionForm = () => {
                     <h2 className="text-xl font-bold flex items-center gap-2">
                         <PiPlusCircle className="text-primary" /> General Information
                     </h2>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="form-control">
+                    <div className="grid md:grid-cols-3 gap-4">
+                        <div className="form-control md:col-span-1">
                             <label className="label"><span className="label-text font-semibold">Test Title</span></label>
                             <input 
                                 type="text" 
@@ -191,6 +207,18 @@ const AddQuestionForm = () => {
                             />
                         </div>
                         <div className="form-control">
+                            <label className="label"><span className="label-text font-semibold">Exam Program</span></label>
+                            <select 
+                                className="select select-bordered rounded-2xl font-bold"
+                                value={formData.examType}
+                                onChange={(e) => setFormData({...formData, examType: e.target.value})}
+                            >
+                                <option value="IELTS">🎓 IELTS</option>
+                                <option value="PTE">📘 PTE Academic</option>
+                                <option value="BOTH">🌐 Both (IELTS &amp; PTE)</option>
+                            </select>
+                        </div>
+                        <div className="form-control">
                             <label className="label"><span className="label-text font-semibold">Plan Type</span></label>
                             <select 
                                 className="select select-bordered rounded-2xl"
@@ -198,6 +226,7 @@ const AddQuestionForm = () => {
                                 onChange={(e) => setFormData({...formData, forPlanType: e.target.value})}
                             >
                                 <option value="free">Free</option>
+                                <option value="standard">Standard</option>
                                 <option value="premium">Premium</option>
                             </select>
                         </div>
@@ -245,16 +274,67 @@ const AddQuestionForm = () => {
                     )}
 
                     {testType === 'listening' && (
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-semibold">Audio URL</span></label>
-                            <input 
-                                type="url" 
-                                className="input input-bordered rounded-2xl" 
-                                placeholder="Link to the audio file (Dropbox, S3, etc.)"
-                                value={formData.audioUrl}
-                                onChange={(e) => setFormData({...formData, audioUrl: e.target.value})}
-                                required
-                            />
+                        <div className="space-y-5">
+                            {/* Audio URL — always required */}
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-semibold">Audio URL</span></label>
+                                <input 
+                                    type="url" 
+                                    className="input input-bordered rounded-2xl" 
+                                    placeholder="Link to the audio file (Dropbox, S3, etc.)"
+                                    value={formData.audioUrl}
+                                    onChange={(e) => setFormData({...formData, audioUrl: e.target.value})}
+                                    required
+                                />
+                            </div>
+
+                            {/* IELTS / BOTH: British Council Note Completion Inputs */}
+                            {(formData.examType === 'IELTS' || formData.examType === 'BOTH') && (
+                                <div className="p-6 bg-indigo-50/40 border border-indigo-100 rounded-3xl space-y-5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-sm">
+                                            <PiEar />
+                                        </div>
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-primary">IELTS Format — Note/Form Completion</h3>
+                                    </div>
+
+                                    {/* Example Row (pre-filled for candidates) */}
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="form-control">
+                                            <label className="label"><span className="label-text font-semibold text-xs text-indigo-700">Example Question Label</span></label>
+                                            <input
+                                                type="text"
+                                                className="input input-bordered rounded-2xl text-sm"
+                                                placeholder="e.g. Destination:"
+                                                value={formData.exampleQuestion}
+                                                onChange={(e) => setFormData({...formData, exampleQuestion: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="form-control">
+                                            <label className="label"><span className="label-text font-semibold text-xs text-indigo-700">Example Answer (pre-filled for student)</span></label>
+                                            <input
+                                                type="text"
+                                                className="input input-bordered rounded-2xl text-sm"
+                                                placeholder="e.g. Harbour City"
+                                                value={formData.exampleAnswer}
+                                                onChange={(e) => setFormData({...formData, exampleAnswer: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Gapped Passage / Notes context text */}
+                                    <div className="form-control">
+                                        <label className="label"><span className="label-text font-semibold text-xs text-indigo-700">Gapped Notes / Passage Context (Optional)</span></label>
+                                        <textarea
+                                            className="textarea textarea-bordered rounded-2xl h-28 text-sm font-serif"
+                                            placeholder="e.g. Transport from Bayswater&#10;The passenger wants to travel to ___1___ on ___2___ of this month..."
+                                            value={formData.passage}
+                                            onChange={(e) => setFormData({...formData, passage: e.target.value})}
+                                        />
+                                        <p className="text-[10px] text-slate-400 font-semibold mt-1">Use ___1___ ___2___ etc. to indicate where the answer gaps are in context text.</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

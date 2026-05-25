@@ -9,6 +9,7 @@ import {
   toggleBanUser,
   getUserProfile,
   verifyEmail,
+  updateUserExamPreference,
 } from "../controllers/user.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
@@ -24,6 +25,7 @@ userRouter.use(verifyUserToken);
 userRouter.get("/all", getAllUser);
 userRouter.get("/:email/role", getUserRole);
 userRouter.get("/:email", getUserProfile);
+userRouter.patch("/:id/exam-preference", updateUserExamPreference);
 
 // Admin-only routes
 userRouter.patch("/:id/role", verifyUserRole(["admin"]), updateUserRole);

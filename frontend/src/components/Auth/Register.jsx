@@ -143,6 +143,26 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
           )}
         </div>
 
+        {/* Targeted Exam Preference */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Target Exam Program
+          </label>
+          <select
+            className="w-full px-4 py-2.5 border-2 rounded-lg border-gray-200 focus:border-blue-600 focus:bg-blue-50 focus:outline-none text-sm font-semibold"
+            {...register("targetExam", { required: "Please select your target exam program" })}
+          >
+            <option value="IELTS">IELTS Preparation</option>
+            <option value="PTE">PTE Academic Preparation</option>
+            <option value="BOTH">Both IELTS & PTE Programs</option>
+          </select>
+          {errors.targetExam && (
+            <span className="text-red-500 text-xs mt-2 block font-semibold">
+              {errors.targetExam.message}
+            </span>
+          )}
+        </div>
+
         {/* Email */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-1">

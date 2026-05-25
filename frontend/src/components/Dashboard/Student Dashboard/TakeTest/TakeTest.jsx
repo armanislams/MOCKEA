@@ -11,66 +11,138 @@ import {
     PiArrowRightBold,
     PiSparkleFill
 } from "react-icons/pi";
+import useUserProfile from "../../../../hooks/useUserProfile";
 
-const sectionTests = [
-  {
-    title: 'Listening Test',
-    description: 'Academic lectures and everyday conversations with time-based immersive audio.',
-    icon: <PiEarFill />,
-    color: 'from-emerald-500 to-teal-600',
-    lightColor: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-    duration: '30 min',
-    questions: '40 Qs',
-    band: '6.5-7.0',
-    to: '/dashboard/listening',
-  },
-  {
-    title: 'Reading Test',
-    description: 'Complex passages covering science and technology with deep comprehension checks.',
-    icon: <PiBookOpenFill />,
-    color: 'from-blue-500 to-indigo-600',
-    lightColor: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-    duration: '60 min',
-    questions: '40 Qs',
-    band: '7.0-8.0',
-    to: '/dashboard/reading',
-  },
-  {
-    title: 'Writing Test',
-    description: 'Guided Task 1 & 2 prompts to master essay structure, coherence, and lexical range.',
-    icon: <PiPencilLineFill />,
-    color: 'from-purple-500 to-pink-600',
-    lightColor: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-    duration: '60 min',
-    questions: '2 Tasks',
-    band: '6.0-7.5',
-    to: '/dashboard/writing',
-  },
-  {
-    title: 'Speaking Test',
-    description: 'Real-time cue cards and follow-up prompts to build professional fluency and confidence.',
-    icon: <PiMicrophoneStageFill />,
-    color: 'from-orange-500 to-red-600',
-    lightColor: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
-    duration: '15 min',
-    questions: '3 Parts',
-    band: '6.5-7.5',
-    to: '/dashboard/speaking',
-  },
+// --- Section config — two variants: IELTS and PTE ---
+const SECTIONS_IELTS = [
+    {
+        title: 'Listening Test',
+        description: 'Academic lectures and everyday conversations with time-based immersive audio.',
+        icon: <PiEarFill />,
+        color: 'from-emerald-500 to-teal-600',
+        lightColor: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+        duration: '30 min',
+        questions: '40 Qs',
+        scoreLabel: 'Band Est.',
+        score: '6.5–7.0',
+        to: '/dashboard/listening',
+    },
+    {
+        title: 'Reading Test',
+        description: 'Complex passages covering science and technology with deep comprehension checks.',
+        icon: <PiBookOpenFill />,
+        color: 'from-blue-500 to-indigo-600',
+        lightColor: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+        duration: '60 min',
+        questions: '40 Qs',
+        scoreLabel: 'Band Est.',
+        score: '7.0–8.0',
+        to: '/dashboard/reading',
+    },
+    {
+        title: 'Writing Test',
+        description: 'Guided Task 1 & 2 prompts to master essay structure, coherence, and lexical range.',
+        icon: <PiPencilLineFill />,
+        color: 'from-purple-500 to-pink-600',
+        lightColor: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+        duration: '60 min',
+        questions: '2 Tasks',
+        scoreLabel: 'Band Est.',
+        score: '6.0–7.5',
+        to: '/dashboard/writing',
+    },
+    {
+        title: 'Speaking Test',
+        description: 'Real-time cue cards and follow-up prompts to build professional fluency and confidence.',
+        icon: <PiMicrophoneStageFill />,
+        color: 'from-orange-500 to-red-600',
+        lightColor: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+        duration: '15 min',
+        questions: '3 Parts',
+        scoreLabel: 'Band Est.',
+        score: '6.5–7.5',
+        to: '/dashboard/speaking',
+    },
+];
+
+const SECTIONS_PTE = [
+    {
+        title: 'Listening Test',
+        description: 'Summarise spoken text, fill-in-the-blanks, and highlight correct summary tasks.',
+        icon: <PiEarFill />,
+        color: 'from-emerald-500 to-teal-600',
+        lightColor: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+        duration: '45 min',
+        questions: '20–30 Qs',
+        scoreLabel: 'Score Est.',
+        score: '50–70',
+        to: '/dashboard/listening',
+    },
+    {
+        title: 'Reading Test',
+        description: 'Multiple choice, reorder paragraphs, and fill-in-the-blanks across academic texts.',
+        icon: <PiBookOpenFill />,
+        color: 'from-blue-500 to-indigo-600',
+        lightColor: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+        duration: '29 min',
+        questions: '15–20 Qs',
+        scoreLabel: 'Score Est.',
+        score: '55–75',
+        to: '/dashboard/reading',
+    },
+    {
+        title: 'Writing Test',
+        description: 'Summarise written text and compose argumentative essays under strict time limits.',
+        icon: <PiPencilLineFill />,
+        color: 'from-purple-500 to-pink-600',
+        lightColor: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+        duration: '50 min',
+        questions: '2 Tasks',
+        scoreLabel: 'Score Est.',
+        score: '50–65',
+        to: '/dashboard/writing',
+    },
+    {
+        title: 'Speaking Test',
+        description: 'Read aloud, repeat sentence, describe image, and retell lecture with AI scoring.',
+        icon: <PiMicrophoneStageFill />,
+        color: 'from-orange-500 to-red-600',
+        lightColor: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+        duration: '30 min',
+        questions: '5 Types',
+        scoreLabel: 'Score Est.',
+        score: '45–65',
+        to: '/dashboard/speaking',
+    },
 ];
 
 const TakeTest = () => {
+    const { userData } = useUserProfile();
+    const targetExam = userData?.targetExam || "IELTS";
+
+    // Select content based on user preference — BOTH shows IELTS sections as primary
+    const sectionTests = targetExam === "PTE" ? SECTIONS_PTE : SECTIONS_IELTS;
+
     const container = {
         hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1 }
-        }
+        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
     };
 
     const item = {
         hidden: { y: 20, opacity: 0 },
         show: { y: 0, opacity: 1 }
+    };
+
+    const examBadgeStyle = {
+        IELTS: "bg-primary/20 text-primary border-primary/30",
+        PTE: "bg-emerald-500/20 text-emerald-400 border-emerald-400/30",
+        BOTH: "bg-amber-500/20 text-amber-400 border-amber-400/30",
+    };
+
+    const examLabel = {
+        IELTS: "🎓 IELTS Program",
+        PTE: "📘 PTE Academic Program",
+        BOTH: "🌐 IELTS + PTE Program",
     };
 
     return (
@@ -86,8 +158,14 @@ const TakeTest = () => {
                 className="relative overflow-hidden rounded-[3rem] bg-linear-to-br from-indigo-900 via-slate-900 to-black p-12 lg:p-20 text-white shadow-2xl"
             >
                 <div className="relative z-10 space-y-6">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary border border-primary/20 backdrop-blur-md">
-                        <PiSparkleFill className="text-yellow-400" /> Mastery Pathways
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary border border-primary/20 backdrop-blur-md">
+                            <PiSparkleFill className="text-yellow-400" /> Mastery Pathways
+                        </div>
+                        {/* Exam track badge */}
+                        <div className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] border backdrop-blur-md ${examBadgeStyle[targetExam] || examBadgeStyle.IELTS}`}>
+                            {examLabel[targetExam] || examLabel.IELTS}
+                        </div>
                     </div>
                     <div className="max-w-3xl">
                         <h1 className="text-4xl lg:text-7xl font-black tracking-tighter leading-[0.9]">
@@ -95,8 +173,10 @@ const TakeTest = () => {
                             <span className="text-primary italic">Practice Test</span>
                         </h1>
                         <p className="mt-8 text-lg lg:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl">
-                            Target specific IELTS skills with our optimized training modules. 
-                            Each test is designed to simulate actual exam pressure while providing a focused learning environment.
+                            {targetExam === "PTE"
+                                ? "Target specific PTE Academic skills with our optimized training modules. Each test simulates actual PTE exam tasks for maximum score improvement."
+                                : "Target specific IELTS skills with our optimized training modules. Each test is designed to simulate actual exam pressure while providing a focused learning environment."
+                            }
                         </p>
                     </div>
                 </div>
@@ -146,8 +226,8 @@ const TakeTest = () => {
                                 </div>
                                 <div className="p-5 rounded-[1.8rem] bg-base-100 border border-base-200 flex flex-col items-center text-center group-hover:bg-primary/5 group-hover:border-primary/10 transition-all">
                                     <PiChartLineUpFill className="text-xl text-base-content/20 mb-2 group-hover:text-primary/40" />
-                                    <div className="text-xs font-black tracking-tighter">{test.band}</div>
-                                    <div className="text-[8px] font-black uppercase tracking-widest text-base-content/30 mt-1">Band Est.</div>
+                                    <div className="text-xs font-black tracking-tighter">{test.score}</div>
+                                    <div className="text-[8px] font-black uppercase tracking-widest text-base-content/30 mt-1">{test.scoreLabel}</div>
                                 </div>
                             </div>
 

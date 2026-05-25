@@ -51,6 +51,11 @@ const QuestionsSchema = new mongoose.Schema(
             required: true,
             default: 'reading'
         },
+        examType: {
+            type: String,
+            enum: ['IELTS', 'PTE', 'BOTH'],
+            default: 'IELTS'
+        },
         title: {
             type: String,
             required: true,

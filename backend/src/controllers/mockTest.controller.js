@@ -1,10 +1,46 @@
 import MockTest from '../model/mockTest.js';
 import MockTestResult from '../model/mockTestResult.js';
+import User from '../model/user.js';
 
 // Get all mock tests (Library)
 export const getAllMockTests = async (req, res) => {
     try {
-        const tests = await MockTest.find().populate('sections.reading sections.listening sections.writing sections.speaking');
+        const email = req.decoded_email;
+        let examPreference = "IELTS";
+        let userRole = "student";
+
+        if (email) {
+            const userObj = await User.findOne({ email });
+            if (userObj && userObj.targetExam) {
+                examPreference = userObj.targetExam;
+            }
+            if (userObj && userObj.role) {
+                userRole = userObj.role;
+            }
+        }
+
+        const filter = {};
+
+        // Admins see ALL mock tests regardless of examType
+        // Students see tests matching their preference, or legacy tests without examType
+        if (userRole !== "admin") {
+            if (examPreference === "IELTS") {
+                filter.$or = [
+                    { examType: { $in: ["IELTS", "BOTH"] } },
+                    { examType: { $exists: false } },
+                    { examType: null }
+                ];
+            } else if (examPreference === "PTE") {
+                filter.$or = [
+                    { examType: { $in: ["PTE", "BOTH"] } },
+                    { examType: { $exists: false } },
+                    { examType: null }
+                ];
+            }
+            // BOTH: no filter — student sees everything
+        }
+
+        const tests = await MockTest.find(filter).populate('sections.reading sections.listening sections.writing sections.speaking');
         res.status(200).json({ success: true, tests });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

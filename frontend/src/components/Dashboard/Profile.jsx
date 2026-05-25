@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../hooks/useAuth";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 import Loader from "../Loader/Loader";
+import { toast } from "react-toastify";
 import { 
     PiUserCircleFill, 
     PiEnvelopeSimpleFill, 
@@ -11,9 +12,9 @@ import {
     PiCalendarBlankFill,
     PiIdentificationCardFill,
     PiPencilFill,
-    PiSparkleFill,
     PiStarFill,
-    PiLightningFill
+    PiLightningFill,
+    PiSparkleFill
 } from "react-icons/pi";
 
 const PLAN_CONFIG = {
@@ -87,6 +88,7 @@ const PLAN_CONFIG = {
 const Profile = () => {
     const { user: authUser } = useAuth();
     const axiosSecure = useAxiosSecure();
+    const queryClient = useQueryClient();
 
     const { data: userData, isLoading } = useQuery({
         queryKey: ["user-profile", authUser?.email],
@@ -95,6 +97,20 @@ const Profile = () => {
             return data?.user || null;
         },
         enabled: !!authUser?.email
+    });
+
+    const mutation = useMutation({
+        mutationFn: async (targetExam) => {
+            const { data } = await axiosSecure.patch(`/user/${userData?._id}/exam-preference`, { targetExam });
+            return data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["user-profile", authUser?.email]);
+            toast.success(`Target exam preference updated to ${data?.user?.targetExam}!`);
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || "Failed to update exam preference");
+        }
     });
 
     if (isLoading) return <Loader />;
@@ -193,9 +209,22 @@ const Profile = () => {
                                 <PiShieldCheckFill /> {userData?.isBanned ? 'Restricted' : 'Verified Security Status'}
                             </div>
                         </div>
-                        <button className="btn btn-primary btn-block rounded-2xl h-14 font-black shadow-lg shadow-primary/10">
-                            Update Profile
-                        </button>
+                        <div className="p-5 bg-base-100 rounded-3xl border border-base-200">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-1">Target Exam Preference</div>
+                            {mutation.isPending ? (
+                                <span className="loading loading-spinner loading-xs mt-1"></span>
+                            ) : (
+                                <select
+                                    value={userData?.targetExam || "IELTS"}
+                                    onChange={(e) => mutation.mutate(e.target.value)}
+                                    className="w-full bg-transparent font-bold text-sm outline-none focus:ring-0 cursor-pointer pt-1"
+                                >
+                                    <option value="IELTS">IELTS Preparation</option>
+                                    <option value="PTE">PTE Academic Preparation</option>
+                                    <option value="BOTH">Both IELTS & PTE Programs</option>
+                                </select>
+                            )}
+                        </div>
                     </div>
                 </motion.section>
 

@@ -21,11 +21,13 @@ import alerts from "../../../../utils/alerts";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuth from "../../../../hooks/useAuth";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
+import useUserProfile from "../../../../hooks/useUserProfile";
 import Loader from "../../../Loader/Loader";
 import { useNavigate } from "react-router";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity";
 import FullscreenGate from "../../../Common/FullscreenGate";
 import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay";
+import IeltsListeningFormat from "./IeltsListeningFormat";
 
 const fmt = (s) => {
   if (!s || isNaN(s)) return "00:00";
@@ -38,6 +40,8 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { userData } = useUserProfile();
+  const targetExam = userData?.targetExam || "IELTS";
 
   /* --- Data State --- */
   const [listeningSets, setListeningSets] = useState([]);
@@ -258,40 +262,90 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return (
         <div className="max-w-7xl mx-auto px-6 pt-2 pb-20">
             <div className="text-center space-y-4 mb-16">
-                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">
+                <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest border ${
+                    listeningSets.length > 0 
+                    ? "bg-primary/10 text-primary border-primary/20" 
+                    : "bg-amber-50 text-amber-600 border-amber-200"
+                }`}>
                     <PiHeadphonesFill /> {listeningSets.length} Modules Available
                 </div>
                 <h2 className="text-5xl font-black tracking-tighter text-slate-800">Choose a <span className="text-primary italic">Listening Module</span></h2>
                 <p className="text-slate-400 font-medium text-lg">Select a standardized unit to begin your immersive training.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {listeningSets.map((set, idx) => (
-                    <motion.div 
-                        key={set._id}
-                        whileHover={{ y: -10 }}
-                        className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
-                        onClick={() => setSelectedSetId(set._id)}
-                    >
-                        <div className="flex flex-col h-full space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
-                                    <PiHeadphonesFill />
-                                </div>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
-                            </div>
-                            <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
-                            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                                <span className="flex items-center gap-1.5"><PiClockFill /> 30m</span>
-                                <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
-                            </div>
-                            <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
-                                Start Lab
-                            </button>
+            {listeningSets.length === 0 ? (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="max-w-xl mx-auto"
+                >
+                    <div className="card bg-white border-2 border-dashed border-base-300 p-16 rounded-[3rem] text-center space-y-6">
+                        <div className="w-20 h-20 rounded-[2rem] bg-amber-50 border border-amber-100 flex items-center justify-center text-4xl mx-auto">
+                            🎧
                         </div>
-                    </motion.div>
-                ))}
-            </div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-black tracking-tight text-slate-800">
+                                No Listening Modules Yet
+                            </h3>
+                            <p className="text-slate-500 font-medium leading-relaxed">
+                                No listening content is available for your current exam track{" "}
+                                <span className="font-black text-primary">({targetExam})</span>.
+                                This could be because:
+                            </p>
+                        </div>
+                        <ul className="text-left space-y-3 text-sm text-slate-500 font-medium">
+                            <li className="flex items-start gap-3">
+                                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">1</span>
+                                The admin hasn't uploaded any listening questions for <strong>{targetExam}</strong> yet.
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">2</span>
+                                Your exam preference might not match the available content — try switching to <strong>IELTS</strong> or <strong>BOTH</strong>.
+                            </li>
+                        </ul>
+                        <a
+                            href="/dashboard/profile"
+                            className="btn btn-primary btn-block rounded-2xl h-14 font-black text-sm uppercase tracking-widest shadow-lg shadow-primary/20"
+                        >
+                            Change Exam Preference →
+                        </a>
+                    </div>
+                </motion.div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {listeningSets.map((set, idx) => (
+                        <motion.div 
+                            key={set._id}
+                            whileHover={{ y: -10 }}
+                            className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
+                            onClick={() => setSelectedSetId(set._id)}
+                        >
+                            <div className="flex flex-col h-full space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
+                                        <PiHeadphonesFill />
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
+                                </div>
+                                <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
+                                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                    <span className="flex items-center gap-1.5"><PiClockFill /> 30m</span>
+                                    <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
+                                    {set.examType && (
+                                        <span className={`badge badge-sm font-black ${
+                                            set.examType === 'IELTS' ? 'badge-primary' :
+                                            set.examType === 'PTE' ? 'badge-success' : 'badge-warning'
+                                        }`}>{set.examType}</span>
+                                    )}
+                                </div>
+                                <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
+                                    Start Lab
+                                </button>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
         </div>
     );
   }
@@ -474,102 +528,128 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 )}
                 </AnimatePresence>
 
-                <div className="card bg-white p-10 rounded-[3.5rem] border border-base-300 shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-10 text-primary/5 text-9xl">
-                        <PiHeadphonesFill />
-                    </div>
-                    
-                    <div className="relative z-10 space-y-10">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-3xl font-black tracking-tighter italic text-slate-800">Practice Modules</h2>
-                            <span className="badge badge-primary px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest">Questions 1–{activeSet.questions.length}</span>
+                {/* Questions Panel — IELTS: inline form completion, PTE: vertical list */}
+                {
+                    (activeSet.examType === 'IELTS' || activeSet.examType === 'BOTH' ||
+                     (activeSet.examType !== 'PTE' && targetExam !== 'PTE')) ? (
+                        <div className="space-y-8">
+                            <IeltsListeningFormat
+                                activeSet={activeSet}
+                                answers={answers}
+                                onAnswerChange={handleAnswerChange}
+                                submitted={submitted}
+                                result={result}
+                            />
+                            {!submitted && (
+                                <button
+                                    onClick={handleEvaluate}
+                                    disabled={submitting}
+                                    className="btn btn-primary btn-block rounded-[2rem] h-20 text-sm font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02]"
+                                >
+                                    {submitting ? <span className="loading loading-spinner" /> : "Finalize Assessment"}
+                                    <PiArrowRightBold />
+                                </button>
+                            )}
                         </div>
+                    ) : (
+                        <div className="card bg-white p-10 rounded-[3.5rem] border border-base-300 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-10 text-primary/5 text-9xl">
+                                <PiHeadphonesFill />
+                            </div>
+                    
+                            <div className="relative z-10 space-y-10">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-3xl font-black tracking-tighter italic text-slate-800">Practice Modules</h2>
+                                    <span className="badge badge-primary px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest">Questions 1–{activeSet.questions.length}</span>
+                                </div>
 
-                        <div className="space-y-12">
-                            {activeSet.questions.map((q, idx) => {
-                                const evaluation = result?.evaluatedAnswers.find(a => a.questionId === q.id);
-                                const isCorrect = evaluation?.isCorrect;
+                                <div className="space-y-12">
+                                    {activeSet.questions.map((q, idx) => {
+                                        const evaluation = result?.evaluatedAnswers.find(a => a.questionId === q.id);
+                                        const isCorrect = evaluation?.isCorrect;
 
-                                return (
-                                    <div key={q.id} className={`group space-y-6 p-8 rounded-[2.5rem] transition-all border ${
-                                        submitted 
-                                        ? (isCorrect ? "bg-emerald-50/50 border-emerald-500/20" : "bg-red-50/50 border-red-500/20")
-                                        : "bg-base-50/50 border-base-200 hover:border-primary/20"
-                                    }`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-2xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-sm group-hover:scale-110 transition-transform">
-                                                    {idx + 1}
+                                        return (
+                                            <div key={q.id} className={`group space-y-6 p-8 rounded-[2.5rem] transition-all border ${
+                                                submitted 
+                                                ? (isCorrect ? "bg-emerald-50/50 border-emerald-500/20" : "bg-red-50/50 border-red-500/20")
+                                                : "bg-base-50/50 border-base-200 hover:border-primary/20"
+                                            }`}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-2xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-sm group-hover:scale-110 transition-transform">
+                                                            {idx + 1}
+                                                        </div>
+                                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-base-content/30">Listen Carefully</span>
+                                                    </div>
+                                                    {submitted && (
+                                                        isCorrect ? <PiCheckCircleFill className="text-emerald-500 text-2xl" /> : <PiXCircleFill className="text-red-500 text-2xl" />
+                                                    )}
                                                 </div>
-                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-base-content/30">Listen Carefully</span>
-                                            </div>
-                                            {submitted && (
-                                                isCorrect ? <PiCheckCircleFill className="text-emerald-500 text-2xl" /> : <PiXCircleFill className="text-red-500 text-2xl" />
-                                            )}
-                                        </div>
 
-                                        <p className="text-lg font-black text-slate-700 leading-tight">{q.question}</p>
+                                                <p className="text-lg font-black text-slate-700 leading-tight">{q.question}</p>
 
-                                        {q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
-                                            <div className="grid md:grid-cols-2 gap-4">
-                                                {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
-                                                    <label 
-                                                        key={oIdx}
-                                                        className={`flex items-center gap-3 p-5 rounded-2xl border transition-all cursor-pointer ${
-                                                            answers[q.id] === opt 
-                                                            ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 font-bold" 
-                                                            : "bg-white border-base-200 hover:border-primary/30"
-                                                        }`}
-                                                    >
+                                                {q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
+                                                    <div className="grid md:grid-cols-2 gap-4">
+                                                        {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
+                                                            <label 
+                                                                key={oIdx}
+                                                                className={`flex items-center gap-3 p-5 rounded-2xl border transition-all cursor-pointer ${
+                                                                    answers[q.id] === opt 
+                                                                    ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 font-bold" 
+                                                                    : "bg-white border-base-200 hover:border-primary/30"
+                                                                }`}
+                                                            >
+                                                                <input 
+                                                                    type="radio" 
+                                                                    className="hidden"
+                                                                    name={q.id}
+                                                                    value={opt}
+                                                                    disabled={submitted}
+                                                                    onChange={() => handleAnswerChange(q.id, opt)}
+                                                                />
+                                                                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-1 ${answers[q.id] === opt ? "border-white" : "border-base-300"}`}>
+                                                                    {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-white" />}
+                                                                </span>
+                                                                <span className="text-sm">{opt}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
                                                         <input 
-                                                            type="radio" 
-                                                            className="hidden"
-                                                            name={q.id}
-                                                            value={opt}
+                                                            type="text"
                                                             disabled={submitted}
-                                                            onChange={() => handleAnswerChange(q.id, opt)}
+                                                            className="input input-bordered w-full h-14 rounded-2xl font-bold bg-white focus:border-primary text-lg"
+                                                            placeholder="Enter your observation..."
+                                                            value={answers[q.id] || ""}
+                                                            onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                                                         />
-                                                        <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-1 ${answers[q.id] === opt ? "border-white" : "border-base-300"}`}>
-                                                            {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-white" />}
-                                                        </span>
-                                                        <span className="text-sm">{opt}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                <input 
-                                                    type="text"
-                                                    disabled={submitted}
-                                                    className="input input-bordered w-full h-14 rounded-2xl font-bold bg-white focus:border-primary text-lg"
-                                                    placeholder="Enter your observation..."
-                                                    value={answers[q.id] || ""}
-                                                    onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                                                />
-                                                {submitted && !isCorrect && (
-                                                    <div className="flex items-center gap-2 p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-widest border border-emerald-500/20">
-                                                        <PiCheckCircleFill /> Correct Key: {q.correctAnswer}
+                                                        {submitted && !isCorrect && (
+                                                            <div className="flex items-center gap-2 p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-widest border border-emerald-500/20">
+                                                                <PiCheckCircleFill /> Correct Key: {q.correctAnswer}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                        );
+                                    })}
+                                </div>
 
-                        {!submitted && (
-                            <button 
-                                onClick={handleEvaluate}
-                                disabled={submitting}
-                                className="btn btn-primary btn-block rounded-[2rem] h-20 text-sm font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 mt-12 transition-all hover:scale-[1.02]"
-                            >
-                                {submitting ? <span className="loading loading-spinner" /> : "Finalize Assessment"}
-                                <PiArrowRightBold />
-                            </button>
-                        )}
-                    </div>
-                </div>
+                                {!submitted && (
+                                    <button 
+                                        onClick={handleEvaluate}
+                                        disabled={submitting}
+                                        className="btn btn-primary btn-block rounded-[2rem] h-20 text-sm font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 mt-12 transition-all hover:scale-[1.02]"
+                                    >
+                                        {submitting ? <span className="loading loading-spinner" /> : "Finalize Assessment"}
+                                        <PiArrowRightBold />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )
+                }
             </div>
 
             {/* Sidebar Widgets */}

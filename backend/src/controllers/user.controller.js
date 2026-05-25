@@ -1,7 +1,7 @@
 import User from "../model/user.js";
 
 export const postUser = async (req, res) => {
-    const { email, name } = req.body;
+    const { email, name, targetExam } = req.body;
 
     if (!email || !name) {
         return res.status(400).json({ success: false, message: "Please provide email and name" });
@@ -14,7 +14,7 @@ export const postUser = async (req, res) => {
         return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-    const user = new User({ name, email: cleanEmail });
+    const user = new User({ name, email: cleanEmail, targetExam: targetExam || "IELTS" });
     await user.save();
 
     return res.status(201).json({ success: true, message: "User created successfully" });
@@ -143,4 +143,30 @@ export const toggleBanUser = async (req, res) => {
         message: user.isBanned ? "User has been banned" : "User has been unbanned",
         user,
     });
+};
+
+export const updateUserExamPreference = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { targetExam } = req.body;
+
+        const allowedExams = ["IELTS", "PTE", "BOTH"];
+        if (!allowedExams.includes(targetExam)) {
+            return res.status(400).json({ success: false, message: "Invalid exam preference specified" });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            id,
+            { targetExam },
+            { returnDocument: 'after' }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        res.status(200).json({ success: true, message: `Exam preference updated to ${targetExam}`, user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
