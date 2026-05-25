@@ -1,8 +1,6 @@
 // import { Hero } from './Hero';
 import Hero2 from './Hero2';
-import { lazy } from 'react';
-
-const LandingStack = lazy(() => import('./LandingStack').then(module => ({ default: module.LandingStack })))
+import { LandingStack } from './LandingStack';
 
 
 

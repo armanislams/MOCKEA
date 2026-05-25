@@ -1,138 +1,135 @@
-# Allow Public Access to Mock Tests for Non-Users with Forced Login on Submit
+# The Ultimate Implementation Plan - MOCKEA Premium AI Global Chatbot
 
-This plan describes how to let guests start public mock tests, but require authentication before final submission so their attempt is processed like a normal logged-in user.
+This comprehensive implementation plan defines the complete architecture, security features, and premium functionalities for the **MOCKEA Global AI Chatbot & Site Guide**. By utilizing high-performance native Web APIs, this chatbot requires **zero heavy external dependencies** and maintains complete code safety.
 
-## User Review Required
+---
 
-> [!IMPORTANT]
-> Guests can preview and answer the speaking and Listening sections without logging in, but when they submit the test they must authenticate first. Once they sign in, the submission should be handled through the same authenticated test flow used by logged-in users.
+## 🌟 Full Feature Map
+```mermaid
+graph TD
+    User([Chat User]) --> Input_Bar[Chat Input UI]
+    Input_Bar -->|Speak| Mic[webkitSpeechRecognition]
+    Input_Bar -->|Type| Security_Check[sanitizeChatInput]
+    
+    Security_Check -->|Blocked| Safety_Alert[Safety Alert Output]
+    Security_Check -->|Clear| Post[POST /api/chatbot/chat]
+    
+    Post --> Model{Load ChatbotSettings & Check Quotas}
+    Model -->|Limit Exceeded| Quota_Alert[Quota Alert Popup]
+    Model -->|Active| Gemini[Gemini 2.5 Flash]
+    
+    Gemini --> Render[Display Chat Bubble]
+    Render -->|Listen| TTS[window.speechSynthesis]
+    Render -->|Download| PDF[Export Session PDF]
+```
 
-// user review
-Guests may begin a public mock test anonymously, but final submission requires login. After authentication, progress should continue and the attempt should be saved like a normal user attempt.
-
-## Open Questions
-
-1. **Placement of Public Tests:** Where should unauthenticated users find these public tests? I recommend adding a "Free Practice" link to the main landing page.
-2. **Admin Control:** Should admins be able to toggle `isPublic` on existing tests? I recommend enabling this in both Create and Manage screens.
+---
 
 ## Proposed Changes
 
----
+### 1. Dynamic Admin Configurations (Database & Routes)
 
-### Backend Components
+#### [NEW] [chatbotSettings.js](file:///g:/project/MOCKEA/backend/src/model/chatbotSettings.js)
+*   Create a schema to store chatbot limits and configurations globally:
+    ```javascript
+    import mongoose from "mongoose";
 
-#### [MODIFY] `backend/src/model/mockTest.js`
+    const chatbotSettingsSchema = new mongoose.Schema({
+      isActive: { type: Boolean, default: true },
+      welcomeMessage: { 
+        type: String, 
+        default: "Hello! I'm your MOCKEA IELTS Tutor & Support Assistant. How can I help you today?" 
+      },
+      guestLimit: { type: Number, default: 5 },
+      basicLimit: { type: Number, default: 20 },
+      proLimit: { type: Number, default: 100 },
+      eliteLimit: { type: Number, default: 999999 }
+    }, { timestamps: true });
 
-- Add `isPublic: { type: Boolean, default: false }` to the `mockTestSchema`.
+    const ChatbotSettings = mongoose.model("ChatbotSettings", chatbotSettingsSchema);
+    export default ChatbotSettings;
+    ```
 
-#### [NEW] `backend/src/controllers/publicMockTest.controller.js`
+#### [NEW] [chatbot.controller.js](file:///g:/project/MOCKEA/backend/src/controllers/chatbot.controller.js)
+*   **`getChatbotSettings`:** Retrieve active settings or create default settings if empty.
+*   **`updateChatbotSettings`:** Admin-only route to save updated limits, greetings, or toggle active state.
+*   **`chatWithAI`:**
+    *   Validate inputs, check the user's active tier, and reset daily usage counts if a new calendar day has started.
+    *   If active message counts exceed the dynamic tier limit from MongoDB, return `429 Limit Exceeded`.
 
-- Create controllers for public access:
-  - `getPublicMockTests`: Returns tests where `isPublic: true`.
-  - `getPublicMockTestById`: Returns a single public test with its questions.
-- Do not add a separate guest evaluation endpoint. Guests will authenticate before submission and use the existing authenticated submission endpoints.
-
-#### [NEW] `backend/src/routes/publicMockTest.route.js`
-
-- Define public read-only endpoints:
-  - `GET /` → public test list
-  - `GET /:id` → public test detail
-- These routes will not use `verifyUserToken`.
-
-#### [MODIFY] `backend/src/index.js`
-
-- Mount the new router at `/api/public-mock-tests`.
-
----
-
-### Frontend Admin Components
-
-#### [MODIFY] `frontend/src/components/Dashboard/Admin Dashboard/CreateMockTest.jsx`
-
-- Add `isPublic` to the form state.
-- Add a checkbox/switch for "Make this test public".
-- Include `isPublic` in the creation payload.
-
-#### [MODIFY] `frontend/src/components/Dashboard/Admin Dashboard/ManageMockTests.jsx`
-
-- Display a badge or label when a test is public.
-- Optionally add a toggle to update `isPublic` if the backend supports it.
+#### [NEW] [chatbot.route.js](file:///g:/project/MOCKEA/backend/src/routes/chatbot.route.js)
+*   Expose endpoints for chat inputs and admin configurations.
 
 ---
 
-### Frontend Guest Components
+### 2. Multi-Layered Anti-Script Injection Security
 
-#### [NEW] `frontend/src/components/Guest/GuestTestLibrary.jsx`
+#### Layer A: Backend Code & Script Sanitizer
+*   **[NEW] [sanitizeInput.js](file:///g:/project/MOCKEA/backend/src/utils/sanitizeInput.js):**
+    *   Checks for script injections (`<script>`, `onerror=`, `onload=`, etc.).
+    *   Blocks common programming structures (`function`, `const`, `let`, `import`, `require`, `def`, `class`) to prevent code pushes.
+    *   Escapes all HTML characters. Rejects suspicious queries with a `400 Security Alert`.
 
-- Public page listing all `isPublic` mock tests.
-- Accessible without login.
-- Display title, duration, and Reading/Listening availability.
+#### Layer B: Prompt Injection Shield (LLM level)
+*   Configure backend instructions to block code outputs, prevent override commands (like *"ignore previous instructions"*), and restrict responses to supportive tutor details.
 
-#### [NEW] `frontend/src/components/Guest/GuestTestEnvironment.jsx`
-
-- Guest-facing test page for `/free-practice/:id`.
-- Fetch public test data from `/api/public-mock-tests/:id`.
-- Allow answering Reading and Listening sections in browser state.
-- Persist state locally using `localStorage` under a key like `guest_public_test_${testId}` with:
-  - `answers`
-  - `currentSection`
-  - `timeLeft`
-  - `testId`
-  - `resultId` (if created after login)
-  - `pendingSubmit` flag
-- Load persisted state automatically when the user returns or after login.
-- On submit, if the user is not authenticated, show a centered login/auth/register popup/modal that:
-  - explains the user must sign in to save results,
-  - offers buttons for `Login` and `Register`,
-  - keeps the current test state intact while authentication occurs,
-  - includes a `Continue Without Saving` secondary option only if explicitly desired.
-- After authentication, refresh frontend auth state, close the modal, restore saved test state, and continue submission using the existing authenticated endpoints (`/api/mock-tests/start`, `/api/mock-tests/submit-section`, `/api/mock-tests/finalize`).
-
-#### [NEW] `frontend/src/components/Guest/GuestResult.jsx`
-
-- Display the confirmed result after login-based submission.
-- Explain that Writing/Speaking grading and analytics require a user account.
-
-#### [MODIFY] `frontend/src/Router/router.jsx`
-
-- Add public routes:
-  - `/free-practice` → `GuestTestLibrary`
-  - `/free-practice/:id` → `GuestTestEnvironment`
-  - `/guest-result` → `GuestResult`
+#### Layer C: Frontend Display Escaping
+*   Convert HTML special characters globally inside bubble components to render tags safely as inert text.
 
 ---
 
-## Submission Flow
+### 3. Premium Interactive Frontend Upgrades
 
-1. Guest visits `/free-practice` and selects a public test.
-2. Guest starts the test and answers Reading and Listening.
-3. Save progress continuously in `localStorage` so keys are available on refresh or after login.
-4. When the guest taps submit:
-   - if unauthenticated, open a login/auth/register modal overlay,
-   - the modal shows a short message: "Please sign in to save and submit your mock test. Your progress is preserved.",
-   - allow the user to login or register without losing test state,
-   - keep the browser test page visible behind the modal so the user understands the flow.
-5. After successful authentication:
-   - automatically refresh auth/user state in the frontend,
-   - close the popup,
-   - restore saved test state from `localStorage`,
-   - proceed with the authenticated submission flow using the normal endpoints:
-     - `/api/mock-tests/start` if no `resultId` exists,
-     - `/api/mock-tests/submit-section` for Reading and Listening,
-     - `/api/mock-tests/finalize`.
-6. Save the backend `resultId` back into persisted state so the test can continue after page refresh.
-7. The completed attempt is stored and graded like any logged-in user submission.
+#### [NEW] [StudyBuddyChatbot.jsx](file:///g:/project/MOCKEA/frontend/src/components/Common/StudyBuddyChatbot.jsx)
+A floating toggle widget globally accessible inside `HomeLayout.jsx` and `DashboardLayout.jsx`. It includes:
+
+#### 🔊 Feature A: AI Vocal Pronunciation (Text-to-Speech)
+*   Each AI message bubble displays a Speaker icon.
+*   Clicking the icon triggers the **Web Speech Synthesis API**:
+    ```javascript
+    const speakText = (text) => {
+      window.speechSynthesis.cancel(); // stop previous speech
+      const cleanText = text.replace(/[*#_`]/g, ""); // remove markdown
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.voice = window.speechSynthesis.getVoices().find(v => v.lang.includes("en-GB") || v.lang.includes("en-US"));
+      utterance.rate = 0.95; // professional pedagogical speed
+      window.speechSynthesis.speak(utterance);
+    };
+    ```
+
+#### 🎙️ Feature B: Microphone Real-Time Input (Speech-to-Text)
+*   An interactive microphone icon is built into the input bar.
+*   Clicking it initializes **Web Speech Recognition (`webkitSpeechRecognition`)** to transcribe student answers in real-time, showing a pulsing recording card.
+
+#### 🎛️ Feature C: Tutor Mode Toggles (Personality Modes)
+*   A selection tab in the chatbot header enables users to toggle modes:
+    1.  **IELTS Tutor:** Warm study partner, tests vocabulary, and explains grammar rules.
+    2.  **IELTS Examiner:** Strict examiner. Initiates standard Speaking cue-card prompts and conducts a timed interview.
+    3.  **Site Assistant:** Answers questions about MOCKEA pages, features, full mock tests, anti-cheat regulations, and support emails.
+
+#### 📄 Feature D: Chat Session Exporter
+*   A header download button compiled with a client-side layout compiler. Automatically creates a beautifully organized text review file containing the dialogue transcripts, AI grammar notes, and corrections.
+
+---
+
+### 4. Admin Management Dashboard
+
+#### [MODIFY] [AdminSettings.jsx](file:///g:/project/MOCKEA/frontend/src/components/Dashboard/Admin Dashboard/AdminSettings.jsx)
+We will expand the Admin Settings dashboard with a dedicated card containing:
+*   Global Chatbot Toggle switch.
+*   Welcome message input box.
+*   Daily message limit input fields for Guest, Basic, Pro, and Elite packages.
+*   Save action syncing limits instantly to the database.
 
 ---
 
 ## Verification Plan
 
-### Manual Verification
-
-1. Visit the platform anonymously.
-2. Open `Free Practice` and view public tests.
-3. Start a public test and complete Reading and Listening.
-4. Attempt to submit: confirm the app requires login.
-5. Log in or register, then confirm the test resumes and submits normally.
-6. Verify the completed attempt is saved in the database and visible like a regular user result.
-7. Log in as admin and confirm `isPublic` can be set for a test.
+### Security & Functional Testing
+1.  **XSS / Code Injection:**
+    *   Attempt to type `<script>alert('inject')</script>` or `function test() {}`. Verify the UI or API rejects the query with a clean safety error block.
+2.  **Web Speech (Text-to-Speech & Speech-to-Text):**
+    *   Record voice and verify speech compiles directly into the input bar.
+    *   Tap speaker icon and confirm a natural vocal speech plays back.
+3.  **Dynamic Limits:**
+    *   Adjust a tier limit in Admin Panel. Confirm the backend enforces the new dynamic limit on the active tier immediately.
