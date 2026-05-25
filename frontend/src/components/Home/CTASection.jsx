@@ -1,31 +1,31 @@
-import { FaBookOpen, FaPencilAlt, FaHeadphones, FaMicrophone } from 'react-icons/fa';
 import { Link } from 'react-router';
 import { forwardRef } from 'react';
+
+
 
 const ctaItems = [
   {
     title: "Listening",
-    icon: FaHeadphones,
+    icon: "/listening-icon.png",
     to: "/dashboard/listening",
     tooltip:
       "Click to begin Listening practice with authentic IELTS-style audio.",
   },
   {
     title: "Reading",
-    icon: FaBookOpen,
+    icon: "/book-icon.png",
     to: "/dashboard/reading",
     tooltip: "Click to begin Reading practice with timed exam passages.",
   },
   {
     title: "Writing",
-    icon: FaPencilAlt,
+    icon: "/writing-icon.png",
     to: "/dashboard/writing",
     tooltip: "Click to begin Writing practice with instant feedback.",
   },
-
   {
     title: "Speaking",
-    icon: FaMicrophone,
+    icon: "/speaking-icon.png",
     to: "/dashboard/speaking",
     tooltip: "Click to begin Speaking evaluation (requires login)",
   },
@@ -46,7 +46,7 @@ const CTASection = forwardRef((props, ref) => {
           </h2>
           
         </div>
-
+ 
         <div
           ref={ref}
           className="mx-auto grid max-w-lg grid-cols-2 gap-4 sm:max-w-xl sm:gap-5"
@@ -69,7 +69,15 @@ const CTASection = forwardRef((props, ref) => {
                   >
                     {item.tooltip}
                   </span>
-                  <Icon className="text-white group-hover:text-black transition-colors duration-300" size={40} aria-hidden />
+                  
+                  
+                    <img 
+                      src={Icon} 
+                      alt={item.title} 
+                      className="w-28 h-28 sm:w-30 sm:h-30 object-contain transition-all duration-300 filter brightness-0 invert group-hover:scale-110 group-hover:filter-none" 
+                      aria-hidden 
+                    />
+                 
                 </div>
                 <span className="text-sm font-bold uppercase tracking-wide text-white sm:text-base group-hover:text-black transition-colors duration-300">
                   {item.title}
