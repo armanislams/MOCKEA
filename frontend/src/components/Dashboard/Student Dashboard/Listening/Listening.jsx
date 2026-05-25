@@ -328,7 +328,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                     <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
                                 </div>
                                 <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
-                                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                <div className="flex items-center gap-2 flex-wrap text-[10px] font-black uppercase tracking-widest text-base-content/40">
                                     <span className="flex items-center gap-1.5"><PiClockFill /> 30m</span>
                                     <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
                                     {set.examType && (
@@ -336,6 +336,11 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                             set.examType === 'IELTS' ? 'badge-primary' :
                                             set.examType === 'PTE' ? 'badge-success' : 'badge-warning'
                                         }`}>{set.examType}</span>
+                                    )}
+                                    {set.listeningPart && (set.examType === 'IELTS' || set.examType === 'BOTH') && (
+                                        <span className="badge badge-sm font-black badge-ghost border border-indigo-200 text-indigo-500">
+                                            Part {set.listeningPart}
+                                        </span>
                                     )}
                                 </div>
                                 <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
@@ -383,7 +388,12 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 </button>
                 <div>
                     <h1 className="text-sm font-black tracking-tight leading-tight text-slate-800">{activeSet?.title}</h1>
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Listening Practice</span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">
+                        {activeSet?.listeningPart && (activeSet?.examType === 'IELTS' || activeSet?.examType === 'BOTH')
+                            ? `IELTS Listening · Part ${activeSet.listeningPart}`
+                            : 'Listening Practice'
+                        }
+                    </span>
                 </div>
             </div>
             <div className="flex items-center gap-3">

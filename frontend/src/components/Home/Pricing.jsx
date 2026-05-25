@@ -201,7 +201,7 @@ export const Pricing = () => {
                 {/* 2. BACK SIDE (FLIPPED) */}
                 {plan.isPopular ? (
                   /* BACK: Popular Card (VIP Perks / Midnight Blue) */
-                  <div className="pricing-flip-card-back bg-[#000f38] text-white border border-white/5 shadow-2xl relative overflow-hidden flex flex-col justify-between h-full">
+                  <div className="pricing-flip-card-back bg-primary text-white border border-white/5 shadow-2xl relative overflow-hidden flex flex-col justify-between h-full">
                     <div className="absolute bottom-0 right-0 w-24 h-24 bg-red-500/5 rounded-full filter blur-md -mr-6 -mb-6" />
 
                     <div>
