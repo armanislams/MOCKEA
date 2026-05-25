@@ -27,7 +27,7 @@ const Hero2 = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-gray-900"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[100%] tracking-normal text-gray-900"
           >
             YOUR REAL IELTS EXPERIENCE <br className="hidden lg:block"/>
             <span className="text-gray-900">STARTS HERE .</span>

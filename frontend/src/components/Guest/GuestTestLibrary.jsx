@@ -25,7 +25,7 @@ export default function GuestTestLibrary() {
           <motion.h1 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-extrabold mb-4 bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent pb-2"
+            className="text-4xl md:text-5xl font-extrabold mb-4 text-cta-btn pb-2"
           >
             Free Practice Mock Tests
           </motion.h1>
@@ -63,17 +63,17 @@ export default function GuestTestLibrary() {
                 className="group relative bg-base-100 border border-base-200/80 shadow-xl hover:shadow-2xl rounded-3xl overflow-hidden transition-all duration-300 flex flex-col"
               >
                 {/* Decorative top gradient bar */}
-                <div className={`h-1.5 w-full ${test.testType === 'speaking' ? 'bg-linear-to-r from-emerald-400 to-teal-500' : 'bg-linear-to-r from-sky-400 to-indigo-500'}`}></div>
+                <div className={`h-1.5 w-full ${test.testType === 'speaking' ? 'bg-cta-btn' : 'bg-primary'}`}></div>
                 
                 {/* Subtle Glow effect on hover */}
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500 pointer-events-none ${test.testType === 'speaking' ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
 
                 <div className="p-8 grow flex flex-col relative z-10">
                   <div className="flex justify-between items-start mb-6">
-                    <div className={`p-4 rounded-2xl shadow-sm ${test.testType === 'speaking' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                    <div className={`p-4 rounded-2xl shadow-sm ${test.testType === 'speaking' ? 'bg-cta-btn text-white dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-primary text-white dark:bg-blue-900/30 dark:text-blue-400'}`}>
                       {test.testType === 'speaking' ? <FaMicrophone className="text-2xl" /> : <FaHeadphones className="text-2xl" />}
                     </div>
-                    <span className={`px-4 py-1.5 text-xs font-bold rounded-full uppercase tracking-widest ${test.testType === 'speaking' ? 'bg-emerald-100/50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-blue-100/50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'}`}>
+                    <span className={`px-4 py-1.5 text-xs font-bold rounded-full uppercase tracking-widest ${test.testType === 'speaking' ? 'bg-cta-btn text-white dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-primary text-white dark:bg-blue-900/50 dark:text-blue-300'}`}>
                       {test.testType}
                     </span>
                   </div>
@@ -88,7 +88,7 @@ export default function GuestTestLibrary() {
                   <div className="mt-auto">
                     <Link 
                       to={`/free-practice/tests/${test._id}`} 
-                      className={`w-full btn border-none rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-3 relative overflow-hidden text-white ${test.testType === 'speaking' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-indigo-500 hover:bg-indigo-600'}`}
+                      className={`w-full btn border-none rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-3 relative overflow-hidden text-white ${test.testType === 'speaking' ? 'bg-cta-btn' : 'bg-primary'}`}
                     >
                       <span className="relative z-10">Start Test</span>
                       <FaArrowRight className="relative z-10 group-hover:translate-x-1.5 transition-transform duration-300" />
