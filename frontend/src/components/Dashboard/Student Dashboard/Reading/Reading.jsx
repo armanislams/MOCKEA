@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import { toast } from "react-toastify";
-import Swal from "sweetalert2";
+import alerts from "../../../../utils/alerts";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion } from "framer-motion";
 import { 
@@ -34,7 +34,7 @@ const Reading = () => {
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
-  const { showWarning, setShowWarning, enterFullscreen } = useTestIntegrity(isStarted, submitted);
+  const { showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
 
   // Fetch reading data
   useEffect(() => {
@@ -114,23 +114,17 @@ const Reading = () => {
   };
 
   const handleExitTest = async () => {
-    const result = await Swal.fire({
-      title: "Exit and Auto-Submit?",
-      text: "Are you sure? This will finalize your practice test and automatically submit your answers for evaluation.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, Exit and Submit",
-      cancelButtonText: "Resume Practice",
-      background: "#ffffff",
-      customClass: {
-        container: "z-[99999]",
-        popup: "rounded-[2rem]",
-        confirmButton: "rounded-xl px-8 py-3 font-bold",
-        cancelButton: "rounded-xl px-8 py-3 font-bold"
-      }
-    });
+    if (submitted) {
+      exitFullscreen();
+      setIsStarted(false);
+      setSelectedSetId("");
+      setAnswers({});
+      setSubmitted(false);
+      setResult(null);
+      return;
+    }
+
+    const result = await alerts.confirmExitPractice("Reading Practice Lab");
 
     if (result.isConfirmed) {
       exitFullscreen();

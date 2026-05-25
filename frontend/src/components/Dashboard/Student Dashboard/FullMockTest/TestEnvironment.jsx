@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import Swal from "sweetalert2";
+import alerts from "../../../../utils/alerts";
 import { 
-    PiMonitor, 
     PiWarning,
     PiClock,
     PiCaretRightBold
 } from "react-icons/pi";
+import FullscreenGate from "../../../Common/FullscreenGate";
+import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import ReadingSection from "./ReadingSection";
 import ListeningSection from "./ListeningSection";
@@ -135,22 +136,7 @@ const TestEnvironment = () => {
     };
 
     const handleExitTest = async () => {
-        const result = await Swal.fire({
-            title: "Terminate Test?",
-            text: "Are you sure? This will discard your current progress and you cannot resume this attempt.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#EF4444",
-            cancelButtonColor: "#6B7280",
-            confirmButtonText: "Yes, Exit Test",
-            background: "#ffffff",
-            customClass: {
-                container: "z-[99999]",
-                popup: "rounded-[2rem]",
-                confirmButton: "rounded-xl px-8 py-3 font-bold",
-                cancelButton: "rounded-xl px-8 py-3 font-bold"
-            }
-        });
+        const result = await alerts.confirmExitMockTest();
 
         if (result.isConfirmed) {
             localStorage.removeItem(`test_cache_${id}`);
@@ -341,38 +327,25 @@ const TestEnvironment = () => {
 
     if (!isStarted) {
         return (
-            <div className="min-h-screen bg-base-200 flex items-center justify-center p-6">
-                <div className="card bg-white max-w-lg p-10 text-center space-y-8 shadow-2xl rounded-[3rem]">
-                    <div className="w-24 h-24 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto text-4xl">
-                        <PiMonitor />
-                    </div>
-                    <div className="space-y-2">
-                        <h1 className="text-3xl font-black uppercase">Ready to Start?</h1>
-                        <p className="text-base-content/60">This test will open in fullscreen mode. Ensure you are in a quiet environment.</p>
-                    </div>
-                    <button 
-                        onClick={() => { setIsStarted(true); enterFullscreen(); }}
-                        className="btn btn-primary btn-lg rounded-2xl h-16 w-full text-lg font-bold"
-                    >
-                        Enter Test Environment
-                    </button>
-                    <button onClick={() => navigate(-1)} className="btn btn-ghost">Cancel</button>
-                </div>
-            </div>
+            <FullscreenGate 
+                isStarted={isStarted}
+                onStart={() => { setIsStarted(true); enterFullscreen(); }}
+                onCancel={() => navigate(-1)}
+                title="Ready to Start?"
+                description="This test will open in fullscreen mode. Ensure you are in a quiet environment."
+            />
         );
     }
 
     return (
-        <div className="min-h-screen bg-base-200 flex flex-col relative select-none" onContextMenu={e => e.preventDefault()}>
-            {showWarning && (
-                <WarningModal 
-                    warningType={warningType}
-                    tabSwitches={tabSwitches}
-                    setShowWarning={setShowWarning}
-                    enterFullscreen={enterFullscreen}
-                    handleExitTest={handleExitTest}
-                />
-            )}
+        <div className="min-h-screen bg-[#FAF9F6] flex flex-col relative select-none" onContextMenu={e => e.preventDefault()}>
+            <FullscreenWarningOverlay 
+                isOpen={showWarning}
+                onResume={() => { setShowWarning(false); enterFullscreen(); }}
+                onExit={handleExitTest}
+                warningType={warningType}
+                tabSwitches={tabSwitches}
+            />
 
             {tabSwitches > 0 && !showWarning && (
                 <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[1040] animate-bounce pointer-events-none">
@@ -531,40 +504,6 @@ const TestEnvironment = () => {
         </div>
     );
 };
-
-const WarningModal = ({ warningType, tabSwitches, setShowWarning, enterFullscreen, handleExitTest }) => (
-    <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-        <div className="card bg-white w-full max-w-md p-10 text-center space-y-6 animate-pulse rounded-[3rem] shadow-2xl">
-            <div className="mx-auto w-24 h-24 rounded-full bg-error/10 flex items-center justify-center">
-                <PiMonitor className="w-12 h-12 text-error" />
-            </div>
-            <div className="space-y-2">
-                <h2 className="text-3xl font-black uppercase tracking-tighter">
-                    {warningType === "fullscreen" ? "Security Alert" : "Integrity Check"}
-                </h2>
-                <p className="text-base-content/60 leading-relaxed">
-                    {warningType === "fullscreen" 
-                        ? "Fullscreen mode is required to maintain test integrity. Please re-enter to continue." 
-                        : `You have switched tabs ${tabSwitches} times. Reaching 3 switches will result in automatic submission.`}
-                </p>
-            </div>
-            <div className="flex flex-col gap-3 pt-6">
-                <button 
-                    onClick={() => { setShowWarning(false); enterFullscreen(); }}
-                    className="btn btn-primary btn-lg rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20"
-                >
-                    Resume Test
-                </button>
-                <button 
-                    onClick={handleExitTest}
-                    className="btn btn-ghost text-error font-bold"
-                >
-                    Exit and Terminate
-                </button>
-            </div>
-        </div>
-    </div>
-);
 
 const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600);

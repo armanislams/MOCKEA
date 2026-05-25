@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import { toast } from "react-toastify";
-import Swal from "sweetalert2";
+import alerts from "../../../../utils/alerts";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -33,13 +33,25 @@ const Writing = () => {
   const [submitted, setSubmitted] = useState(false);
   
   // Student input
-  const [text, setText] = useState("");
+  const [activeTab, setActiveTab] = useState("task1"); // "task1" or "task2"
+  const [task1Text, setTask1Text] = useState("");
+  const [task2Text, setTask2Text] = useState("");
+
+  const text = useMemo(() => {
+    return `--- TASK 1 (150 Words Requirement) ---\n${task1Text}\n\n--- TASK 2 (250 Words Requirement) ---\n${task2Text}`;
+  }, [task1Text, task2Text]);
+
+  const resetText = () => {
+    setTask1Text("");
+    setTask2Text("");
+  };
+
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const [timerActive, setTimerActive] = useState(false);
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
-  const { showWarning, setShowWarning, enterFullscreen } = useTestIntegrity(isStarted, submitted);
+  const { showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
 
   const activeSet = useMemo(
     () => writingSets.find((set) => set._id === selectedSetId) || null,
@@ -47,6 +59,10 @@ const Writing = () => {
   );
 
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const wordCount1 = useMemo(() => task1Text.trim() ? task1Text.trim().split(/\s+/).filter(w => w.length > 0).length : 0, [task1Text]);
+  const wordCount2 = useMemo(() => task2Text.trim() ? task2Text.trim().split(/\s+/).filter(w => w.length > 0).length : 0, [task2Text]);
+  const currentWordCount = activeTab === "task1" ? wordCount1 : wordCount2;
+  const currentTargetWords = activeTab === "task1" ? 150 : 250;
 
   useEffect(() => {
     const fetchWriting = async () => {
@@ -105,23 +121,17 @@ const Writing = () => {
   };
 
   const handleExitTest = async () => {
-    const result = await Swal.fire({
-      title: "Exit and Auto-Submit?",
-      text: "Are you sure? This will finalize your practice test and automatically submit your essay draft for evaluation.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, Exit and Submit",
-      cancelButtonText: "Resume Practice",
-      background: "#ffffff",
-      customClass: {
-        container: "z-[99999]",
-        popup: "rounded-[2rem]",
-        confirmButton: "rounded-xl px-8 py-3 font-bold",
-        cancelButton: "rounded-xl px-8 py-3 font-bold"
-      }
-    });
+    if (submitted) {
+      exitFullscreen();
+      setIsStarted(false);
+      setSelectedSetId("");
+      resetText();
+      setSubmitted(false);
+      setTimerActive(false);
+      return;
+    }
+
+    const result = await alerts.confirmExitPractice("Writing Essay Composition");
 
     if (result.isConfirmed) {
       if (document.fullscreenElement) {
@@ -150,7 +160,7 @@ const Writing = () => {
       }
 
       setSelectedSetId("");
-      setText("");
+      resetText();
       setSubmitted(false);
       setTimerActive(false);
     }
@@ -305,21 +315,42 @@ const Writing = () => {
             <div className="space-y-6">
                 <div className="card bg-white rounded-[3rem] border border-base-300 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-180px)]">
                     {/* Editor Toolbar */}
-                    <div className="px-10 py-6 border-b border-base-200 bg-base-50/50 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <PiTextAaFill className="text-primary text-xl" />
-                            <span className="text-xs font-black uppercase tracking-widest">Editor Canvas</span>
+                    <div className="px-10 py-6 border-b border-slate-200 bg-base-50/50 flex items-center justify-between">
+                        <div className="flex bg-slate-200/60 p-1 rounded-2xl gap-1.5 shadow-inner">
+                            <button 
+                                onClick={() => setActiveTab("task1")}
+                                className={`py-2 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                    activeTab === "task1" 
+                                    ? "bg-white text-slate-800 shadow-sm" 
+                                    : "text-slate-400 hover:text-slate-600"
+                                }`}
+                            >
+                                Task 1
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab("task2")}
+                                className={`py-2 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                    activeTab === "task2" 
+                                    ? "bg-white text-slate-800 shadow-sm" 
+                                    : "text-slate-400 hover:text-slate-600"
+                                }`}
+                            >
+                                Task 2
+                            </button>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 px-4 py-1.5 bg-white border border-base-200 rounded-xl shadow-sm">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-base-content/30">Words:</span>
-                                <span className="text-sm font-black text-primary">{wordCount}</span>
+                            <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${
+                                currentWordCount >= currentTargetWords 
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                                : "bg-orange-50 text-orange-600 border-orange-100"
+                            }`}>
+                                Words: {currentWordCount} / {currentTargetWords} Target
                             </div>
                         </div>
                     </div>
 
                     {/* TextArea */}
-                    <div className="flex-1 p-10">
+                    <div className="flex-1 p-10 flex flex-col">
                         {submitted ? (
                             <motion.div 
                                 initial={{ opacity: 0 }}
@@ -339,21 +370,25 @@ const Writing = () => {
                             </motion.div>
                         ) : (
                             <textarea 
-                                className="w-full h-full resize-none border-none focus:ring-0 text-lg leading-relaxed text-slate-700 placeholder:text-slate-300 font-medium custom-scrollbar"
-                                placeholder="Start composing your response here..."
-                                value={text}
-                                onChange={(e) => {
-                                    setText(e.target.value);
-                                    if (!timerActive) setTimerActive(true);
-                                }}
+                                className="w-full h-full resize-none border-none focus:ring-0 text-lg leading-relaxed text-slate-700 placeholder:text-slate-300 font-medium custom-scrollbar focus:outline-none"
+                                placeholder={
+                                    activeTab === "task1" 
+                                    ? "Write your Task 1 academic report here (minimum 150 words)..." 
+                                    : "Write your Task 2 argumentative opinion essay here (minimum 250 words)..."
+                                }
+                                value={activeTab === "task1" ? task1Text : task2Text}
+                                onChange={(e) => handleTextChange(e.target.value)}
                             />
                         )}
                     </div>
 
                     {/* Editor Footer */}
-                    <div className="px-10 py-4 bg-base-50 border-t border-base-200 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-base-content/30">
+                    <div className="px-10 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
                         <span>Status: {timerActive ? 'Active Session' : 'Standby'}</span>
-                        <span>Autosave Enabled</span>
+                        <div className="flex items-center gap-4">
+                            <span>Task 1: {wordCount1}w</span>
+                            <span>Task 2: {wordCount2}w</span>
+                        </div>
                     </div>
                 </div>
             </div>

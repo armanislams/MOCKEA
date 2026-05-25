@@ -4,9 +4,14 @@ import { PiMonitor } from "react-icons/pi";
 export const FullscreenWarningOverlay = ({ 
   isOpen, 
   onResume, 
-  onExit 
+  onExit,
+  warningType = "fullscreen", // "fullscreen" or "tab"
+  tabSwitches = 0,
+  maxSwitches = 3
 }) => {
   if (!isOpen) return null;
+
+  const isTab = warningType === "tab";
 
   return (
     <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
@@ -16,10 +21,12 @@ export const FullscreenWarningOverlay = ({
         </div>
         <div className="space-y-2">
           <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-800">
-            Security Alert
+            {isTab ? "Integrity Check" : "Security Alert"}
           </h2>
           <p className="text-slate-500 leading-relaxed text-sm">
-            Fullscreen mode is required to maintain the realistic test environment. Please re-enter to continue your practice.
+            {isTab 
+              ? `You have switched tabs ${tabSwitches} times. Reaching ${maxSwitches} switches will auto-submit the exam.` 
+              : "Fullscreen mode is required to maintain test integrity. Please re-enter to continue."}
           </p>
         </div>
         <div className="flex flex-col gap-3 pt-6">
@@ -27,13 +34,13 @@ export const FullscreenWarningOverlay = ({
             onClick={onResume}
             className="btn btn-primary btn-lg rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
           >
-            Resume Practice
+            {isTab ? "Resume Test" : "Resume Practice"}
           </button>
           <button 
             onClick={onExit}
             className="btn btn-ghost text-error font-bold hover:bg-red-50 hover:text-red-600 rounded-2xl py-3"
           >
-            Exit Practice (Auto-Submits)
+            {isTab ? "Exit and Terminate" : "Exit Practice (Auto-Submits)"}
           </button>
         </div>
       </div>

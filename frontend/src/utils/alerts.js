@@ -1,0 +1,64 @@
+import Swal from "sweetalert2";
+
+const BASE_SWAL_CONFIG = {
+  background: "#ffffff",
+  customClass: {
+    container: "z-[99999]",
+    popup: "rounded-[2rem] shadow-2xl border border-slate-100",
+    confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-primary text-white border-none mx-2",
+    cancelButton: "rounded-xl px-8 py-3 font-bold btn btn-ghost text-slate-500 mx-2 hover:bg-slate-50"
+  },
+  buttonsStyling: false
+};
+
+export const alerts = {
+  success: (title, text = "") => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "success",
+      title,
+      text,
+      timer: 2000,
+      showConfirmButton: false
+    });
+  },
+
+  error: (title, text = "Something went wrong. Please try again.") => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "error",
+      title,
+      text
+    });
+  },
+
+  confirmExitPractice: (testType = "practice test") => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "warning",
+      title: "Exit and Auto-Submit?",
+      text: `Are you sure? This will finalize your ${testType} and automatically evaluate your current progress.`,
+      showCancelButton: true,
+      confirmButtonText: "Yes, Exit and Submit",
+      cancelButtonText: "Resume Practice",
+    });
+  },
+
+  confirmExitMockTest: () => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "warning",
+      title: "Terminate Exam Session?",
+      text: "Are you sure? This will discard your current mock exam progress and you cannot resume this attempt.",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Exit Exam",
+      cancelButtonText: "Resume Exam",
+      customClass: {
+        ...BASE_SWAL_CONFIG.customClass,
+        confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-error text-white border-none mx-2"
+      }
+    });
+  }
+};
+
+export default alerts;

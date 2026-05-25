@@ -4,7 +4,7 @@ import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import { toast } from "react-toastify";
-import Swal from "sweetalert2";
+import alerts from "../../../../utils/alerts";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -42,7 +42,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
-  const { showWarning, setShowWarning, enterFullscreen } = useTestIntegrity(isStarted, submitted);
+  const { showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -226,23 +226,14 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   };
 
   const handleExitTest = async () => {
-    const result = await Swal.fire({
-      title: "Exit and Auto-Submit?",
-      text: "Are you sure? This will finalize your practice test and automatically submit your recorded speech for evaluation.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, Exit and Submit",
-      cancelButtonText: "Resume Practice",
-      background: "#ffffff",
-      customClass: {
-        container: "z-[99999]",
-        popup: "rounded-[2rem]",
-        confirmButton: "rounded-xl px-8 py-3 font-bold",
-        cancelButton: "rounded-xl px-8 py-3 font-bold"
-      }
-    });
+    if (submitted) {
+      exitFullscreen();
+      setIsStarted(false);
+      navigate(-1);
+      return;
+    }
+
+    const result = await alerts.confirmExitPractice("Speaking Practice Interview");
 
     if (result.isConfirmed) {
       exitFullscreen();
