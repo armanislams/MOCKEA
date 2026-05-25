@@ -230,7 +230,7 @@ export const Pricing = () => {
                           </span>
                           <div>
                             <span className="text-sm font-black text-white">Priority AI Support Queue</span>
-                            <p className="text-xs text-white/60 mt-0.5 leading-relaxed">Instant, unlimited prioritised feedback for all Writing/Speaking labs.</p>
+                            <p className="text-xs text-white/60 mt-0.5 leading-relaxed">Instant, unlimited prioritised feedback for all Writing/Speaking tests.</p>
                           </div>
                         </li>
                         <li className="flex items-start gap-3.5 text-left">

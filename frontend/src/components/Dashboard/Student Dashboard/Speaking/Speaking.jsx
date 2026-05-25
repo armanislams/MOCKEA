@@ -2,7 +2,9 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import axios from "axios";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
+import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,8 +17,11 @@ import {
   PiClockFill,
   PiWaveformFill,
   PiUserCircleFill,
+  PiMonitor,
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
+import FullscreenGate from "../../../Common/FullscreenGate.jsx";
+import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
 
 const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const axiosSecure = useAxiosSecure();
@@ -34,6 +39,10 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [mediaStream, setMediaStream] = useState(null);
+
+  // Fullscreen & Gating States
+  const [isStarted, setIsStarted] = useState(false);
+  const { showWarning, setShowWarning, enterFullscreen } = useTestIntegrity(isStarted, submitted);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -216,44 +225,106 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return response.data.secure_url;
   };
 
-  const handleSubmit = async () => {
-    if (isRecording) {
-      toast.warning("Please stop recording before submitting.");
-      return;
-    }
-    if (!audioBlob) {
-      toast.error("No recording found. Please record your response first.");
-      return;
-    }
-
-    // Guest mode — hand off to parent handler (only if not yet logged in)
-    if (onSubmitGuest && !user?.email) {
-      onSubmitGuest(audioBlob);
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      toast.info("Uploading your audio...");
-      const cloudinaryUrl = await uploadToCloudinary(audioBlob);
-
-      const response = await axiosSecure.post("/submissions/submit", {
-        questionSetId: activeSet._id,
-        testType: "speaking",
-        title: activeSet.title,
-        content: cloudinaryUrl,
-        userName: user?.displayName || "Student",
-        userEmail: user?.email,
-      });
-
-      if (response.data.success) {
-        setSubmitted(true);
-        toast.success("Speaking session submitted for instructor review!");
+  const handleExitTest = async () => {
+    const result = await Swal.fire({
+      title: "Exit and Auto-Submit?",
+      text: "Are you sure? This will finalize your practice test and automatically submit your recorded speech for evaluation.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Exit and Submit",
+      cancelButtonText: "Resume Practice",
+      background: "#ffffff",
+      customClass: {
+        container: "z-[99999]",
+        popup: "rounded-[2rem]",
+        confirmButton: "rounded-xl px-8 py-3 font-bold",
+        cancelButton: "rounded-xl px-8 py-3 font-bold"
       }
-    } catch (error) {
-      toast.error(error.message || "Failed to submit session");
-    } finally {
-      setIsUploading(false);
+    });
+
+    if (result.isConfirmed) {
+      exitFullscreen();
+      setIsStarted(false);
+
+      // Guest mode - hand off directly to onSubmitGuest callback without uploading/saving to DB
+      if (onSubmitGuest && !user?.email) {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+          mediaRecorderRef.current.stop();
+          setTimeout(() => {
+            if (audioChunksRef.current.length > 0) {
+              const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+              onSubmitGuest(blob);
+              toast.success("Guest test submitted successfully!");
+            } else {
+              toast.info("No recording captured.");
+            }
+            navigate(-1);
+          }, 600);
+        } else if (audioBlob) {
+          onSubmitGuest(audioBlob);
+          toast.success("Guest test submitted successfully!");
+          navigate(-1);
+        } else {
+          toast.info("No recording captured. Exiting practice.");
+          navigate(-1);
+        }
+        return;
+      }
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+        setTimeout(async () => {
+          if (audioChunksRef.current.length > 0) {
+            const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+            try {
+              setIsUploading(true);
+              toast.info("Auto-submitting your audio response...");
+              const cloudinaryUrl = await uploadToCloudinary(blob);
+              await axiosSecure.post("/submissions/submit", {
+                questionSetId: activeSet._id,
+                testType: "speaking",
+                title: activeSet.title,
+                content: cloudinaryUrl,
+                userName: user?.displayName || "Student",
+                userEmail: user?.email,
+              });
+              toast.success("Practice test auto-submitted successfully!");
+            } catch (e) {
+              console.error("Auto submit failed:", e);
+              toast.error("Auto-submit failed: No recording uploaded.");
+            } finally {
+              setIsUploading(false);
+            }
+          }
+          navigate(-1);
+        }, 600);
+      } else if (audioBlob) {
+        try {
+          setIsUploading(true);
+          toast.info("Auto-submitting your audio response...");
+          const cloudinaryUrl = await uploadToCloudinary(audioBlob);
+          await axiosSecure.post("/submissions/submit", {
+            questionSetId: activeSet._id,
+            testType: "speaking",
+            title: activeSet.title,
+            content: cloudinaryUrl,
+            userName: user?.displayName || "Student",
+            userEmail: user?.email,
+          });
+          toast.success("Practice test auto-submitted successfully!");
+        } catch (e) {
+          console.error("Auto submit failed:", e);
+          toast.error("Auto-submit failed");
+        } finally {
+          setIsUploading(false);
+        }
+        navigate(-1);
+      } else {
+        toast.info("No recording captured. Exiting practice.");
+        navigate(-1);
+      }
     }
   };
 
@@ -267,13 +338,13 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   if (!activeSet || (!preloadedSet && !selectedSetId)) {
     return (
-      <div className="max-w-7xl mx-auto px-6 py-20">
+      <div className="max-w-7xl mx-auto px-6 pt-2 pb-20">
         <div className="text-center space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20 backdrop-blur-md">
             <PiMicrophoneStageFill /> {speakingSets.length} Sessions Available
           </div>
           <h2 className="text-5xl font-black tracking-tighter text-slate-800">
-            Choose a <span className="text-primary italic">Speaking Lab</span>
+            Choose a <span className="text-primary italic">Speaking Test</span>
           </h2>
           <p className="text-slate-400 font-medium text-lg">
             Select a standardized prompt to begin your virtual interview.
@@ -305,7 +376,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                     <PiClockFill /> 15m
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <PiMicrophoneFill /> Open Lab
+                    <PiMicrophoneFill /> Open Test
                   </span>
                 </div>
                 <button className="btn btn-block rounded-2xl h-14 bg-primary text-white border-none transition-all font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:bg-slate-900">
@@ -319,24 +390,43 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     );
   }
 
+  if (!isStarted) {
+    return (
+      <FullscreenGate 
+        isStarted={isStarted}
+        onStart={() => { setIsStarted(true); enterFullscreen(); }}
+        onCancel={() => navigate(-1)}
+        title="Ready to Start?"
+        description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment and your microphone is working."
+        icon={PiMicrophoneStageFill}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-20">
+    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
+      <FullscreenWarningOverlay 
+        isOpen={showWarning}
+        onResume={() => { setShowWarning(false); enterFullscreen(); }}
+        onExit={handleExitTest}
+      />
+
       {/* Immersive Header */}
-      <div className="bg-white/5 border-b border-white/10 sticky top-0 z-50 backdrop-blur-xl">
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <button
-              onClick={() => navigate(-1)}
-              className="btn btn-ghost btn-circle text-white/40"
+              onClick={handleExitTest}
+              className="btn btn-ghost btn-circle text-slate-400 hover:text-slate-600 hover:bg-slate-100"
             >
               <PiArrowLeftBold className="w-6 h-6" />
             </button>
             <div>
-              <h1 className="text-xl font-black tracking-tight">
+              <h1 className="text-xl font-black tracking-tight text-slate-800">
                 {activeSet.title}
               </h1>
               <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
-                Speaking Lab Session
+                Speaking Test Practice
               </p>
             </div>
           </div>
@@ -348,20 +438,20 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 <span className="text-xs font-black uppercase tracking-widest text-red-500">
                   Live Recording
                 </span>
-                <span className="text-lg font-mono font-black ml-2">
+                <span className="text-lg font-mono font-black ml-2 text-slate-800">
                   {fmt(recordingTime)}
                 </span>
               </div>
             )}
-            <div className="h-10 w-px bg-white/10" />
+            <div className="h-10 w-px bg-slate-200" />
             {submitted ? (
               <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
                 <PiCheckCircleFill className="text-xl" /> Session Finalized
               </div>
             ) : (
               <button
-                onClick={handleSubmit}
-                disabled={isRecording || isUploading}
+                onClick={handleExitTest}
+                disabled={isUploading}
                 className="btn btn-primary rounded-2xl px-8 h-12 font-black border-none shadow-xl shadow-primary/20"
               >
                 {isUploading ? (
@@ -447,10 +537,10 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
           {/* Recording Interface Side */}
           <div className="lg:col-span-5 space-y-8">
-            <div className="card bg-white/5 border border-white/10 p-10 rounded-[3.5rem] backdrop-blur-xl h-fit">
+            <div className="card bg-white border border-slate-100 p-10 rounded-[3.5rem] shadow-xl h-fit text-slate-800">
               <div className="space-y-10">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-black tracking-tight">
+                  <h3 className="text-lg font-black tracking-tight text-slate-800">
                     Audio Studio
                   </h3>
                   <PiWaveformFill className="text-2xl text-primary animate-pulse" />
@@ -467,17 +557,17 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       className="flex flex-col items-center text-center space-y-6 py-10"
                     >
                       <div className="w-32 h-32 rounded-full border-4 border-primary border-t-transparent animate-spin flex items-center justify-center p-2">
-                        <div className="w-full h-full rounded-full bg-primary/20 flex items-center justify-center animate-none">
+                        <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center animate-none">
                           <span className="text-3xl font-black font-mono text-primary">
                             {prepTime}s
                           </span>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-xl font-black">
+                        <h4 className="text-xl font-black text-slate-800">
                           Preparation Phase
                         </h4>
-                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                           Organize your thoughts
                         </p>
                       </div>
@@ -497,7 +587,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                     >
                       <div className="relative">
                         <div className="w-40 h-40 rounded-full bg-red-500/10 flex items-center justify-center">
-                          <div className="w-24 h-24 rounded-full bg-red-500 flex items-center justify-center text-5xl shadow-[0_0_50px_rgba(239,68,68,0.5)]">
+                          <div className="w-24 h-24 rounded-full bg-red-500 flex items-center justify-center text-white text-5xl shadow-[0_0_50px_rgba(239,68,68,0.3)]">
                             <PiMicrophoneFill />
                           </div>
                         </div>
@@ -524,10 +614,10 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             ref={canvasRef}
                             width={320}
                             height={80}
-                            className="bg-slate-950/50 rounded-3xl border border-white/5 shadow-inner"
+                            className="bg-slate-50 rounded-3xl border border-slate-200 shadow-inner"
                           />
                         </div>
-                        <div className="text-5xl font-mono font-black">
+                        <div className="text-5xl font-mono font-black text-slate-800">
                           {fmt(recordingTime)}
                         </div>
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">
@@ -549,12 +639,12 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       animate={{ opacity: 1 }}
                       className="flex flex-col items-center text-center space-y-8 py-10"
                     >
-                      <div className="w-32 h-32 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-5xl text-white/20">
+                      <div className="w-32 h-32 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-5xl text-slate-400">
                         <PiMicrophoneFill />
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-xl font-black">Ready to Start?</h4>
-                        <p className="text-xs font-bold text-white/40 leading-relaxed">
+                        <h4 className="text-xl font-black text-slate-800">Ready to Start?</h4>
+                        <p className="text-xs font-bold text-slate-500 leading-relaxed">
                           Prepare for 60 seconds or start <br /> speaking
                           immediately.
                         </p>
@@ -568,7 +658,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         </button>
                         <button
                           onClick={startRecording}
-                          className="btn btn-ghost rounded-2xl h-16 font-black text-xs uppercase tracking-widest border border-white/10"
+                          className="btn btn-ghost rounded-2xl h-16 font-black text-xs uppercase tracking-widest border border-slate-200 text-slate-600 hover:bg-slate-50"
                         >
                           Record Immediately
                         </button>

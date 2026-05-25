@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion } from "framer-motion";
 import { 
@@ -11,8 +12,12 @@ import {
     PiArrowRightBold,
     PiClockFill,
     PiChartLineUpFill,
-    PiArrowLeftBold
+    PiArrowLeftBold,
+    PiMonitor
 } from "react-icons/pi";
+import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
+import FullscreenGate from "../../../Common/FullscreenGate.jsx";
+import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
 
 const Reading = () => {
   const axiosSecure = useAxiosSecure();
@@ -26,6 +31,10 @@ const Reading = () => {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
+
+  // Fullscreen & Gating States
+  const [isStarted, setIsStarted] = useState(false);
+  const { showWarning, setShowWarning, enterFullscreen } = useTestIntegrity(isStarted, submitted);
 
   // Fetch reading data
   useEffect(() => {
@@ -104,11 +113,59 @@ const Reading = () => {
     }
   };
 
+  const handleExitTest = async () => {
+    const result = await Swal.fire({
+      title: "Exit and Auto-Submit?",
+      text: "Are you sure? This will finalize your practice test and automatically submit your answers for evaluation.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Exit and Submit",
+      cancelButtonText: "Resume Practice",
+      background: "#ffffff",
+      customClass: {
+        container: "z-[99999]",
+        popup: "rounded-[2rem]",
+        confirmButton: "rounded-xl px-8 py-3 font-bold",
+        cancelButton: "rounded-xl px-8 py-3 font-bold"
+      }
+    });
+
+    if (result.isConfirmed) {
+      exitFullscreen();
+      setIsStarted(false);
+
+      if (Object.keys(answers).length > 0) {
+        try {
+          toast.info("Auto-evaluating your answers...");
+          const response = await axiosSecure.post("/questions/evaluate", {
+            questionSetId: activeSet._id,
+            answers,
+          });
+          if (response.data.success) {
+            toast.success("Practice test auto-submitted successfully!");
+          }
+        } catch (error) {
+          console.error("Auto submit failed:", error);
+          toast.error("Auto-submit failed");
+        }
+      } else {
+        toast.info("No answers entered. Exiting practice.");
+      }
+
+      setSelectedSetId("");
+      setAnswers({});
+      setSubmitted(false);
+      setResult(null);
+    }
+  };
+
   if (loading) return <Loader />;
 
   if (!activeSet || !selectedSetId) {
     return (
-        <div className="max-w-7xl mx-auto px-6 py-20">
+        <div className="max-w-7xl mx-auto px-6 pt-2 pb-20">
             <div className="text-center space-y-4 mb-16">
                 <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">
                     <PiBookOpenFill /> {readingSets.length} Modules Available
@@ -148,25 +205,44 @@ const Reading = () => {
     );
   }
 
+  if (!isStarted) {
+    return (
+      <FullscreenGate 
+        isStarted={isStarted}
+        onStart={() => { setIsStarted(true); enterFullscreen(); }}
+        onCancel={() => setSelectedSetId("")}
+        title="Ready to Start?"
+        description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment."
+        icon={PiBookOpenFill}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-base-200 pb-20">
+    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
+      <FullscreenWarningOverlay 
+        isOpen={showWarning}
+        onResume={() => { setShowWarning(false); enterFullscreen(); }}
+        onExit={handleExitTest}
+      />
+
       {/* Premium Header */}
-      <div className="bg-white border-b border-base-300 sticky top-0 z-50">
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div className="flex items-center gap-4">
-                <button onClick={() => setSelectedSetId("")} className="btn btn-ghost btn-circle">
+                <button onClick={handleExitTest} className="btn btn-ghost btn-circle text-slate-400 hover:text-slate-600 hover:bg-slate-100">
                     <PiArrowLeftBold />
                 </button>
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 tracking-tight">{activeSet?.title}</h1>
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Reading Skill Lab</p>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Reading Practice</p>
                 </div>
             </div>
 
             <div className="flex items-center gap-4">
                 {readingSets.length > 1 && (
                     <select 
-                        className="select select-sm rounded-xl font-bold bg-base-100 border-base-300"
+                        className="select select-sm rounded-xl font-bold bg-base-100 border border-slate-200"
                         value={selectedSetId}
                         onChange={(e) => {
                             setSelectedSetId(e.target.value);

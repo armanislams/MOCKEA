@@ -8,11 +8,13 @@ import { InstructorDashboard } from "../components/RoleBasedSidebar/InstructorDa
 import StudentDashboard from "../components/RoleBasedSidebar/StudentDashboard";
 import Loader from "../components/Loader/Loader";
 import { Logo } from "../components/Home/Logo";
+import useFullscreen from "../hooks/useFullscreen";
 
 const DashboardLayout = () => {
   const { user, logOut } = useAuth();
   const { role, roleLoading, isError } = useRole();
   const navigate = useNavigate();
+  const { isFullscreen } = useFullscreen();
 
   useEffect(() => {
     if (isError) {
@@ -53,7 +55,7 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div className="drawer lg:drawer-open">
+    <div className={`drawer ${isFullscreen ? "" : "lg:drawer-open"}`}>
       <input id="dashboard-drawer" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content flex flex-col items-center justify-start bg-base-200">
         {/* Page content here */}
@@ -81,62 +83,64 @@ const DashboardLayout = () => {
           <Logo/>
         </div> */}
 
-        <div className="w-full flex-1 p-4 md:p-8 overflow-y-auto">
+        <div className={`w-full flex-1 overflow-y-auto ${isFullscreen ? "p-0" : "p-4 md:p-8"}`}>
           <Outlet />
         </div>
       </div>
 
-      <div className="drawer-side z-50">
-        <label htmlFor="dashboard-drawer" className="drawer-overlay"></label>
-        <ul className="menu p-4 w-80 min-h-full bg-base-100 text-base-content border-r border-base-200">
-          {/* Sidebar content here */}
-          <div className="mb-8 px-4">
-           <Logo/>
-            <p className="text-xs text-base-content/50 mt-1">IELTS mock test dashboard</p>
-          </div>
+      {!isFullscreen && (
+        <div className="drawer-side z-50">
+          <label htmlFor="dashboard-drawer" className="drawer-overlay"></label>
+          <ul className="menu p-4 w-80 min-h-full bg-base-100 text-base-content border-r border-base-200">
+            {/* Sidebar content here */}
+            <div className="mb-8 px-4">
+             <Logo/>
+              <p className="text-xs text-base-content/50 mt-1">IELTS mock test dashboard</p>
+            </div>
 
-          <div className="flex items-center gap-3 px-4 mb-6">
-            <div className="avatar placeholder">
-              <div className="bg-neutral text-neutral-content rounded-full w-10">
-                {user?.photoURL ? (
-                  <img src={user.photoURL} alt={user.displayName} />
-                ) : (
-                  <span className="text-xl">
-                    {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
-                  </span>
-                )}
+            <div className="flex items-center gap-3 px-4 mb-6">
+              <div className="avatar placeholder">
+                <div className="bg-neutral text-neutral-content rounded-full w-10">
+                  {user?.photoURL ? (
+                    <img src={user.photoURL} alt={user.displayName} />
+                  ) : (
+                    <span className="text-xl">
+                      {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="overflow-hidden">
+                <h3 className="font-bold truncate">{user?.displayName || user?.email?.split('@')[0] || "User"}</h3>
+                <p className="text-xs capitalize text-base-content/60">{role || "student"}</p>
               </div>
             </div>
-            <div className="overflow-hidden">
-              <h3 className="font-bold truncate">{user?.displayName || user?.email?.split('@')[0] || "User"}</h3>
-              <p className="text-xs capitalize text-base-content/60">{role || "student"}</p>
-            </div>
-          </div>
 
-          {renderSidebarLinks()}
+            {renderSidebarLinks()}
 
-          <div className="divider my-4"></div>
+            <div className="divider my-4"></div>
 
-          <li>
-            <NavLink to="/">
-              <PiHouse className="w-5 h-5" />
-              Home
-            </NavLink>
-          </li>
-           <li>
-        <NavLink to="/dashboard/profile">
-          <PiUser className="w-5 h-5" />
-          My Profile
-        </NavLink>
-      </li>
-          <li>
-            <button onClick={handleLogOut}>
-              <PiSignOut className="w-5 h-5" />
-              Logout
-            </button>
-          </li>
-        </ul>
+            <li>
+              <NavLink to="/">
+                <PiHouse className="w-5 h-5" />
+                Home
+              </NavLink>
+            </li>
+             <li>
+          <NavLink to="/dashboard/profile">
+            <PiUser className="w-5 h-5" />
+            My Profile
+          </NavLink>
+        </li>
+            <li>
+              <button onClick={handleLogOut}>
+                <PiSignOut className="w-5 h-5" />
+                Logout
+              </button>
+            </li>
+          </ul>
         </div>
+      )}
     </div>
   );
 };

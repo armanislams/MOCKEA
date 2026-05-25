@@ -24,7 +24,7 @@ const PLAN_CONFIG = {
         benefits: [
             "Limited Daily Mock Tests",
             "Community Writing Support",
-            "Standard Lab Access",
+            "Standard Test Access",
             "Basic Performance Tracking"
         ],
         buttonText: "Upgrade to Elite Tier",
@@ -37,7 +37,7 @@ const PLAN_CONFIG = {
         benefits: [
             "10 Full Mock Tests Monthly",
             "AI Writing Feedback",
-            "Extended Lab Access",
+            "Extended Test Access",
             "Advanced Analytics"
         ],
         buttonText: "Upgrade to Premium",
@@ -50,7 +50,7 @@ const PLAN_CONFIG = {
         benefits: [
             "Unlimited Full Mock Tests",
             "AI-Powered Writing Evaluation",
-            "Speaking Lab Priority Access",
+            "Speaking Test Priority Access",
             "Detailed Growth Analytics"
         ],
         buttonText: "Plan Active",

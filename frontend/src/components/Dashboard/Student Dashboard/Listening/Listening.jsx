@@ -13,14 +13,19 @@ import {
     PiArrowLeftBold,
     PiArrowClockwiseBold,
     PiInfoFill,
-    PiChartLineUpFill
+    PiChartLineUpFill,
+    PiMonitor
 } from "react-icons/pi";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuth from "../../../../hooks/useAuth";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import Loader from "../../../Loader/Loader";
 import { useNavigate } from "react-router";
+import useTestIntegrity from "../../../../hooks/useTestIntegrity";
+import FullscreenGate from "../../../Common/FullscreenGate";
+import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay";
 
 const fmt = (s) => {
   if (!s || isNaN(s)) return "00:00";
@@ -42,6 +47,10 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
   const [answers, setAnswers] = useState({});
+
+  // Fullscreen & Gating States
+  const [isStarted, setIsStarted] = useState(false);
+  const { showWarning, setShowWarning, enterFullscreen } = useTestIntegrity(isStarted, submitted);
 
   /* --- Audio State --- */
   const howlRef = useRef(null);
@@ -193,11 +202,63 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     }
   };
 
+  const handleExitTest = async () => {
+    const result = await Swal.fire({
+      title: "Exit and Auto-Submit?",
+      text: "Are you sure? This will finalize your practice test and automatically submit your answers for evaluation.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Exit and Submit",
+      cancelButtonText: "Resume Practice",
+      background: "#ffffff",
+      customClass: {
+        container: "z-[99999]",
+        popup: "rounded-[2rem]",
+        confirmButton: "rounded-xl px-8 py-3 font-bold",
+        cancelButton: "rounded-xl px-8 py-3 font-bold"
+      }
+    });
+
+    if (result.isConfirmed) {
+      exitFullscreen();
+      setIsStarted(false);
+
+      if (Object.keys(answers).length > 0) {
+        try {
+          toast.info("Auto-evaluating your answers...");
+          const response = await axiosSecure.post("/questions/evaluate", {
+            questionSetId: activeSet._id,
+            answers,
+          });
+          if (response.data.success) {
+            toast.success("Practice test auto-submitted successfully!");
+          }
+        } catch (error) {
+          console.error("Auto submit failed:", error);
+          toast.error("Auto-submit failed");
+        }
+      } else {
+        toast.info("No answers entered. Exiting practice.");
+      }
+
+      if (preloadedSet) {
+        navigate(-1);
+      } else {
+        setSelectedSetId("");
+        setAnswers({});
+        setSubmitted(false);
+        setResult(null);
+      }
+    }
+  };
+
   if (loading) return <Loader />;
 
   if (!activeSet || (!preloadedSet && !selectedSetId)) {
     return (
-        <div className="max-w-7xl mx-auto px-6 py-20">
+        <div className="max-w-7xl mx-auto px-6 pt-2 pb-20">
             <div className="text-center space-y-4 mb-16">
                 <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">
                     <PiHeadphonesFill /> {listeningSets.length} Modules Available
@@ -237,25 +298,44 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     );
   }
 
+  if (!isStarted) {
+    return (
+      <FullscreenGate 
+        isStarted={isStarted}
+        onStart={() => { setIsStarted(true); enterFullscreen(); }}
+        onCancel={() => preloadedSet ? navigate(-1) : setSelectedSetId("")}
+        title="Ready to Start?"
+        description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment and have headphones/speakers ready."
+        icon={PiHeadphonesFill}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-base-200 pb-20">
+    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
+      <FullscreenWarningOverlay 
+        isOpen={showWarning}
+        onResume={() => { setShowWarning(false); enterFullscreen(); }}
+        onExit={handleExitTest}
+      />
+
       {/* Minimal Sticky Nav Bar */}
-      <div className="bg-slate-950 text-white sticky top-0 z-50 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
+      <div className="bg-white border-b border-slate-200 text-slate-800 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
             <div className="flex items-center gap-4">
                 <button
-                    onClick={() => preloadedSet ? navigate(-1) : setSelectedSetId("")}
-                    className="btn btn-ghost btn-circle btn-sm text-white/40"
+                    onClick={handleExitTest}
+                    className="btn btn-ghost btn-circle text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                 >
                     <PiArrowLeftBold className="w-5 h-5" />
                 </button>
                 <div>
-                    <h1 className="text-sm font-black tracking-tight leading-tight">{activeSet?.title}</h1>
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Listening Lab</span>
+                    <h1 className="text-sm font-black tracking-tight leading-tight text-slate-800">{activeSet?.title}</h1>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Listening Practice</span>
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Time Left</div>
+                <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Time Left</div>
                 <div className={`text-lg font-mono font-black ${timeLeft < 300 ? 'text-red-500' : 'text-primary'}`}>
                     {fmtCountdown(timeLeft)}
                 </div>
@@ -272,25 +352,21 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 <motion.div
                     initial={{ y: 16, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="card bg-slate-950 text-white p-8 rounded-[3rem] shadow-2xl overflow-hidden relative"
+                    className="card bg-white border border-slate-200 p-8 rounded-[3rem] shadow-xl overflow-hidden relative"
                 >
-                    {/* background glow */}
-                    <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
-
                     <div className="relative z-10 space-y-6">
                         {/* Title row */}
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary mb-1">Now Playing</p>
-                                <h2 className="text-xl font-black tracking-tight">{activeSet?.title}</h2>
+                                <h2 className="text-xl font-black tracking-tight text-slate-800">{activeSet?.title}</h2>
                             </div>
-                               
                         </div>
 
                         {/* Progress bar */}
                         <div className="space-y-2">
                             <div
-                                className="h-3 w-full bg-white/10 rounded-full overflow-hidden relative cursor-pointer group"
+                                className="h-3 w-full bg-slate-100 rounded-full overflow-hidden relative cursor-pointer group"
                                 onClick={(e) => {
                                     if (!howlRef.current || !duration) return;
                                     const rect = e.currentTarget.getBoundingClientRect();
@@ -299,19 +375,19 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                 }}
                             >
                                 <motion.div
-                                    className="absolute inset-y-0 left-0 bg-primary rounded-full shadow-[0_0_16px_rgba(99,102,241,0.6)] group-hover:bg-indigo-400 transition-colors"
+                                    className="absolute inset-y-0 left-0 bg-primary rounded-full shadow-[0_0_16px_rgba(99,102,241,0.3)] group-hover:bg-indigo-400 transition-colors"
                                     animate={{ width: `${progress}%` }}
                                     transition={{ ease: 'linear', duration: 0.3 }}
                                 />
                                 {/* Thumb dot */}
                                 <motion.div
-                                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-lg"
+                                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-primary shadow-lg border border-white"
                                     animate={{ left: `calc(${progress}% - 8px)` }}
                                     transition={{ ease: 'linear', duration: 0.3 }}
                                 />
                             </div>
                             {/* Time labels */}
-                            <div className="flex justify-between text-[11px] font-mono font-bold text-white/40">
+                            <div className="flex justify-between text-[11px] font-mono font-bold text-slate-400">
                                 <span>{fmt(currentTime)}</span>
                                 <span>{fmt(duration)}</span>
                             </div>
@@ -322,14 +398,14 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             <button
                                 onClick={togglePlay}
                                 disabled={!isLoaded}
-                                className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-3xl shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white text-3xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 {isPlaying ? <PiPauseCircleFill /> : <PiPlayCircleFill />}
                             </button>
 
                             {/* Volume */}
                             <div className="flex items-center gap-3 flex-1">
-                                <button onClick={() => setIsMuted(!isMuted)} className="text-white/40 hover:text-white transition-colors">
+                                <button onClick={() => setIsMuted(!isMuted)} className="text-slate-400 hover:text-slate-700 transition-colors">
                                     {isMuted || volume === 0 ? <PiSpeakerSlashFill className="text-xl" /> : <PiSpeakerHighFill className="text-xl" />}
                                 </button>
                                 <input
@@ -347,11 +423,11 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
                             {/* Stats pills */}
                             <div className="flex items-center gap-3 ml-auto">
-                                <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Elapsed</p>
-                                    <p className="text-sm font-mono font-black">{fmt(elapsed)}</p>
+                                <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Elapsed</p>
+                                    <p className="text-sm font-mono font-black text-slate-700">{fmt(elapsed)}</p>
                                 </div>
-                                <div className="px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 text-center">
+                                <div className="px-4 py-2 bg-primary/5 rounded-xl border border-primary/10 text-center">
                                     <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">Duration</p>
                                     <p className="text-sm font-mono font-black text-primary">{fmt(duration)}</p>
                                 </div>
@@ -359,11 +435,11 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         </div>
 
                         {!activeSet?.audioUrl ? (
-                            <p className="text-[11px] text-amber-400/80 font-bold text-center">
+                            <p className="text-[11px] text-amber-500/80 font-bold text-center">
                                 ⚠ No audio URL configured for this test.
                             </p>
                         ) : !isLoaded ? (
-                            <p className="text-[11px] text-white/30 font-bold text-center animate-pulse">
+                            <p className="text-[11px] text-slate-400 font-bold text-center animate-pulse">
                                 Loading audio...
                             </p>
                         ) : null}

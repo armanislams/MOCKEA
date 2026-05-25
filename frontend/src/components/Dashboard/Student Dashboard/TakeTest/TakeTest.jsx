@@ -14,7 +14,7 @@ import {
 
 const sectionTests = [
   {
-    title: 'Listening Lab',
+    title: 'Listening Test',
     description: 'Academic lectures and everyday conversations with time-based immersive audio.',
     icon: <PiEarFill />,
     color: 'from-emerald-500 to-teal-600',
@@ -25,7 +25,7 @@ const sectionTests = [
     to: '/dashboard/listening',
   },
   {
-    title: 'Reading Lab',
+    title: 'Reading Test',
     description: 'Complex passages covering science and technology with deep comprehension checks.',
     icon: <PiBookOpenFill />,
     color: 'from-blue-500 to-indigo-600',
@@ -36,7 +36,7 @@ const sectionTests = [
     to: '/dashboard/reading',
   },
   {
-    title: 'Writing Lab',
+    title: 'Writing Test',
     description: 'Guided Task 1 & 2 prompts to master essay structure, coherence, and lexical range.',
     icon: <PiPencilLineFill />,
     color: 'from-purple-500 to-pink-600',
@@ -47,7 +47,7 @@ const sectionTests = [
     to: '/dashboard/writing',
   },
   {
-    title: 'Speaking Lab',
+    title: 'Speaking Test',
     description: 'Real-time cue cards and follow-up prompts to build professional fluency and confidence.',
     icon: <PiMicrophoneStageFill />,
     color: 'from-orange-500 to-red-600',
@@ -92,11 +92,11 @@ const TakeTest = () => {
                     <div className="max-w-3xl">
                         <h1 className="text-4xl lg:text-7xl font-black tracking-tighter leading-[0.9]">
                             Select Your <br />
-                            <span className="text-primary italic">Practice Lab</span>
+                            <span className="text-primary italic">Practice Test</span>
                         </h1>
                         <p className="mt-8 text-lg lg:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl">
                             Target specific IELTS skills with our optimized training modules. 
-                            Each lab is designed to simulate actual exam pressure while providing a focused learning environment.
+                            Each test is designed to simulate actual exam pressure while providing a focused learning environment.
                         </p>
                     </div>
                 </div>
@@ -156,7 +156,7 @@ const TakeTest = () => {
                                 to={test.to} 
                                 className="btn btn-block rounded-[1.8rem] h-16 bg-slate-900 text-white border-none text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-900/10 hover:bg-primary hover:shadow-primary/30 group/btn transition-all"
                             >
-                                Enter Practice Lab
+                                Enter Practice Test
                                 <PiArrowRightBold className="ml-2 transition-transform group-hover/btn:translate-x-2" />
                             </Link>
                         </div>

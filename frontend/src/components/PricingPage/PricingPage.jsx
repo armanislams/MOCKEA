@@ -6,7 +6,7 @@ import { Pricing } from '../Home/Pricing';
 const FAQS = [
   {
     q: "Is there a free tier available?",
-    a: "Yes! Our Free tier allows you to access basic mock tests, section-wise practice labs, and standard downloadable resource PDFs without ever entering a credit card."
+    a: "Yes! Our Free tier allows you to access basic mock tests, section-wise practice tests, and standard downloadable resource PDFs without ever entering a credit card."
   },
   {
     q: "How accurate is the AI evaluation system?",
@@ -28,7 +28,7 @@ const FAQS = [
 
 const COMPARISON_FEATURES = [
   { name: "Full-Length Mock Tests", free: "1 Test", essential: "5 Tests / Month", elite: "Unlimited" },
-  { name: "Section Practice Labs (R, L, W, S)", free: "Basic Labs", essential: "All Standard Labs", elite: "VIP Diagnostic Labs" },
+  { name: "Section Practice Tests (R, L, W, S)", free: "Basic Tests", essential: "All Standard Tests", elite: "VIP Diagnostic Tests" },
   { name: "Instant AI Score Prediction", free: "Band Range", essential: "Detailed Analytics", elite: "Deep Diagnostic Reports" },
   { name: "Certified Instructor Reviews", free: "✘", essential: "2 Reviews / Month", elite: "Unlimited Priority Reviews" },
   { name: "Premium Study Resources", free: "Standard PDFs", essential: "Full E-Book Library", elite: "VIP Custom Study Plans" },
