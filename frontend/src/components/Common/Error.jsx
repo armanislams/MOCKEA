@@ -11,7 +11,7 @@ const Error = () => {
 
   useEffect(() => {
     // Log the caught route error to backend
-    logErrorToBackend(error || new Error("Unknown React Router rendering error"), {
+    logErrorToBackend(error || new window.Error("Unknown React Router rendering error"), {
       path: window.location.href,
       method: 'CLIENT_ROUTE_ERROR',
       status: 500

@@ -39,11 +39,15 @@ import GuestTestEnvironment from "../components/Guest/GuestTestEnvironment";
 import AuthLayout from "../components/Auth/AuthLayout";
 import PricingPage from "../components/PricingPage/PricingPage";
 import FreeResourcesPage from "../components/FreeResources/FreeResourcesPage";
+import RootLayout from "../Layout/RootLayout";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <HomeLayout />,
+    element: <RootLayout />,
+    children: [
+      {
+        path: "/",
+        element: <HomeLayout />,
     hydrateFallbackElement: <Loader />,
     errorElement: <Error />,
     children: [
@@ -243,6 +247,8 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <GuestTestLibrary /> },
       { path: "tests/:id", element: <GuestTestEnvironment /> }
+    ]
+  }
     ]
   }
 ]);

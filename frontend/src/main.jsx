@@ -20,8 +20,7 @@ createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router}/>
-          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" />
+          <RouterProvider router={router}/>          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" />
         </QueryClientProvider>
       </AuthProvider>
     </ErrorBoundary>
