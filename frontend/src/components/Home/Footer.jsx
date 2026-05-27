@@ -1,4 +1,5 @@
 import { FaFacebookF, FaLinkedinIn, FaTwitter } from "react-icons/fa";
+import { Logo } from "./Logo";
 
 const Footer =()=>{
     return (
@@ -6,7 +7,7 @@ const Footer =()=>{
         <div className="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="space-y-4">
-              <div className="text-2xl font-bold">MOCKEA</div>
+              <Logo/>
               <p className="text-gray-200 max-w-md">
                 Your real IELTS experience. Practice smarter with guided
                 modules, instant feedback, and expert support.
