@@ -49,6 +49,14 @@ const Writing = () => {
     setTask2Text("");
   };
 
+  const handleTextChange = (val) => {
+    if (activeTab === "task1") {
+      setTask1Text(val);
+    } else {
+      setTask2Text(val);
+    }
+  };
+
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const [timerActive, setTimerActive] = useState(false);
 

@@ -13,6 +13,8 @@ import sRouter from "./routes/submissions.route.js";
 import pricingRouter from "./routes/pricing.route.js";
 import resourceRouter from "./routes/resource.route.js";
 import trainersRouter from "./routes/trainer.route.js";
+import apiRateLimiter from "./middlewares/apiRateLimiter.js";
+
 const Port = process.env.PORT || 3000;
 
 
@@ -38,6 +40,10 @@ app.use(
 
 app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
+
+// Apply global rate limiting to all public and private API routes (60 requests per minute per IP)
+app.use("/api", apiRateLimiter(60, 60 * 1000));
+
 
 app.use("/api/user", userRouter);
 app.use("/api/questions", qRouter);

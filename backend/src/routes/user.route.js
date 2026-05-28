@@ -13,11 +13,12 @@ import {
 } from "../controllers/user.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
+import apiRateLimiter from "../middlewares/apiRateLimiter.js";
 
 const userRouter = express.Router();
 
 userRouter.get("/verifyEmail/:email", verifyEmail);
-userRouter.post("/auth/register", postUser);
+userRouter.post("/auth/register", apiRateLimiter(10, 60 * 1000), postUser);
 
 userRouter.use(verifyUserToken);
 
