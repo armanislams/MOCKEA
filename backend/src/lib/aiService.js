@@ -218,6 +218,63 @@ You MUST respond with a valid, clean JSON object. Ensure that there are no markd
       ]
     };
   }
+
+  /**
+   * Generates a conversational response from Gemini 2.5 Flash.
+   * 
+   * @param {Array<object>} messages - Array of { role, content }
+   * @param {string} systemInstruction - The system instruction/persona details
+   * @returns {Promise<string>} The AI's response text
+   */
+  async chat(messages, systemInstruction) {
+    if (!this.apiKey) {
+      console.warn("WARNING: GEMINI_API_KEY is not defined. Falling back to a realistic simulated response.");
+      return "Hello! (Note: Simulated chat since Gemini API Key is missing). How can I support you today with your IELTS preparation?";
+    }
+
+    try {
+      // Convert standard { role, content } messages to Gemini format: { role: 'user'|'model', parts: [{ text: content }] }
+      const formattedContents = messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+      }));
+
+      const bodyPayload = {
+        contents: formattedContents
+      };
+
+      if (systemInstruction) {
+        bodyPayload.systemInstruction = {
+          parts: [{ text: systemInstruction }]
+        };
+      }
+
+      const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(bodyPayload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Gemini API Error (HTTP ${response.status}): ${errorText}`);
+      }
+
+      const resJson = await response.json();
+      const aiResponse = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!aiResponse) {
+        throw new Error("Invalid response format received from Gemini API.");
+      }
+
+      return aiResponse.trim();
+    } catch (error) {
+      console.error("AI Chatbot Error:", error);
+      throw new Error(`AI Chat failed: ${error.message}`);
+    }
+  }
 }
 
 export default new AIService();

@@ -9,6 +9,7 @@ import StudentDashboard from "../components/RoleBasedSidebar/StudentDashboard";
 import Loader from "../components/Loader/Loader";
 import { Logo } from "../components/Home/Logo";
 import useFullscreen from "../hooks/useFullscreen";
+import StudyBuddyChatbot from "../components/Common/StudyBuddyChatbot";
 
 const DashboardLayout = () => {
   const { user, logOut } = useAuth();
@@ -141,6 +142,7 @@ const DashboardLayout = () => {
           </ul>
         </div>
       )}
+      <StudyBuddyChatbot />
     </div>
   );
 };

@@ -14,6 +14,7 @@ import pricingRouter from "./routes/pricing.route.js";
 import resourceRouter from "./routes/resource.route.js";
 import trainersRouter from "./routes/trainer.route.js";
 import apiRateLimiter from "./middlewares/apiRateLimiter.js";
+import chatbotRouter from "./routes/chatbot.route.js";
 
 const Port = process.env.PORT || 3000;
 
@@ -57,6 +58,7 @@ app.use("/api/settings/logs", errorLogRouter);
 app.use("/api/pricing", pricingRouter);
 app.use("/api/resources", resourceRouter);
 app.use("/api/trainers", trainersRouter);
+app.use("/api/chatbot", chatbotRouter);
 
 
 app.get("/", (req, res) => {
