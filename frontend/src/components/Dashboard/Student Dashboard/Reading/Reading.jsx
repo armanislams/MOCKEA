@@ -304,7 +304,7 @@ const Reading = () => {
                 </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
                 {readingSets.length > 1 && (
                     <select 
                         className="select select-sm rounded-xl font-bold bg-base-100 border border-slate-200"
@@ -320,9 +320,22 @@ const Reading = () => {
                     </select>
                 )}
                 {!submitted && (
-                    <div className={`badge ${timeLeft < 300 ? 'bg-red-500 text-white' : 'badge-neutral'} p-4 rounded-xl font-black flex gap-2 border-none`}>
+                    <div className={`badge ${timeLeft < 300 ? 'bg-red-500 text-white animate-pulse' : 'badge-neutral'} p-4 rounded-xl font-black flex gap-2 border-none`}>
                         <PiClockFill /> {fmtTime(timeLeft)}
                     </div>
+                )}
+                <div className="h-10 w-px bg-slate-200" />
+                {submitted ? (
+                  <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
+                    <PiCheckCircleFill className="text-xl" /> Session Finalized
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleExitTest}
+                    className="btn btn-primary rounded-2xl px-8 h-12 font-black border-none shadow-xl shadow-primary/20"
+                  >
+                    End Session
+                  </button>
                 )}
             </div>
         </div>

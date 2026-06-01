@@ -419,11 +419,26 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                     </span>
                 </div>
             </div>
-            <div className="flex items-center gap-3">
-                <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Time Left</div>
-                <div className={`text-lg font-mono font-black ${timeLeft < 300 ? 'text-red-500' : 'text-primary'}`}>
-                    {fmtCountdown(timeLeft)}
+            <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Time Left</div>
+                    <div className={`text-lg font-mono font-black ${timeLeft < 300 ? 'text-red-500' : 'text-primary'}`}>
+                        {fmtCountdown(timeLeft)}
+                    </div>
                 </div>
+                <div className="h-10 w-px bg-slate-200" />
+                {submitted ? (
+                  <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
+                    <PiCheckCircleFill className="text-xl" /> Session Finalized
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleExitTest}
+                    className="btn btn-primary rounded-2xl px-8 h-12 font-black border-none shadow-xl shadow-primary/20"
+                  >
+                    End Session
+                  </button>
+                )}
             </div>
         </div>
       </div>

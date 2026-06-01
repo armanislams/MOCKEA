@@ -339,14 +339,26 @@ const Writing = () => {
                     </div>
                 </div>
                 <div className="h-10 w-px bg-slate-200" />
-                {!submitted && (
+                {submitted ? (
+                  <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
+                    <PiCheckCircleFill className="text-xl" /> Session Finalized
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
                     <button 
                         onClick={handleSubmit} 
                         disabled={submitting}
-                        className="btn btn-primary rounded-2xl px-8 h-12 font-black shadow-xl shadow-primary/20"
+                        className="btn btn-primary rounded-2xl px-6 h-12 font-black shadow-xl shadow-primary/20 border-none"
                     >
                         {submitting ? <span className="loading loading-spinner" /> : "Submit Draft"}
                     </button>
+                    <button
+                        onClick={handleExitTest}
+                        className="btn btn-ghost border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-2xl px-6 h-12 font-black text-xs uppercase tracking-widest"
+                    >
+                        End Session
+                    </button>
+                  </div>
                 )}
             </div>
         </div>
