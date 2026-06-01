@@ -177,6 +177,23 @@ const Writing = () => {
       resetText();
       setSubmitted(false);
       setTimerActive(false);
+    } else if (result.isDenied) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsStarted(false);
+
+      Object.keys(localStorage).forEach((key) => {
+        if (key.includes("test_cache") || key.includes("test_scratchpad") || key.includes("writing")) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      toast.info("Practice cancelled. Essay discarded.");
+      setSelectedSetId("");
+      resetText();
+      setSubmitted(false);
+      setTimerActive(false);
     }
   };
 

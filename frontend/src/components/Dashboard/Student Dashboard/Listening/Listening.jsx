@@ -256,6 +256,26 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
         setSubmitted(false);
         setResult(null);
       }
+    } else if (result.isDenied) {
+      exitFullscreen();
+      setIsStarted(false);
+
+      Object.keys(localStorage).forEach((key) => {
+        if (key.includes("test_cache") || key.includes("test_scratchpad") || key.includes("listening")) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      toast.info("Practice cancelled. Answers discarded.");
+
+      if (preloadedSet) {
+        navigate(-1);
+      } else {
+        setSelectedSetId("");
+        setAnswers({});
+        setSubmitted(false);
+        setResult(null);
+      }
     }
   };
 

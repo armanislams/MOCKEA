@@ -361,6 +361,27 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
         toast.info("No recording captured. Exiting practice.");
         navigate(-1);
       }
+    } else if (result.isDenied) {
+      exitFullscreen();
+      setIsStarted(false);
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+
+      setPart1Blob(null);
+      setPart2Blob(null);
+      setPart3Blob(null);
+      setAudioBlob(null);
+
+      Object.keys(localStorage).forEach((key) => {
+        if (key.includes("test_cache") || key.includes("test_scratchpad") || key.includes("speaking")) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      toast.info("Practice cancelled. Response discarded.");
+      navigate(-1);
     }
   };
 

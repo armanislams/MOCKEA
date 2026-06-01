@@ -39,8 +39,16 @@ export const alerts = {
       title: "Exit and Auto-Submit?",
       text: `Are you sure? This will finalize your ${testType} and automatically evaluate your current progress.`,
       showCancelButton: true,
+      showDenyButton: true,
       confirmButtonText: "Yes, Exit and Submit",
+      denyButtonText: "Cancel & Discard",
       cancelButtonText: "Resume Practice",
+      customClass: {
+        ...BASE_SWAL_CONFIG.customClass,
+        denyButton: "rounded-xl px-6 py-3 font-bold btn btn-error text-white border-none mx-2",
+        confirmButton: "rounded-xl px-6 py-3 font-bold btn btn-primary text-white border-none mx-2",
+        cancelButton: "rounded-xl px-6 py-3 font-bold btn btn-ghost text-slate-500 mx-2 hover:bg-slate-50"
+      }
     });
   },
 
