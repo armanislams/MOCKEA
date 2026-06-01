@@ -1,30 +1,61 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PiBookOpen, PiNotePencil } from "react-icons/pi";
 
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
-    const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
+       const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
     const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
+    const lastShownRef = useRef(0);
+
+    useEffect(() => {
+        const handleGlobalClick = (e) => {
+            // Hide selection toolbar if clicking away (outside both the toolbar and the passage container)
+            if (toolbar.show && !e.target.closest("[data-highlight-toolbar]") && !e.target.closest("[data-passage-container]")) {
+                setToolbar((prev) => ({ ...prev, show: false }));
+            }
+            // Close active sticky note editor if clicking away from it and from highlights
+            if (activeNote.show && !e.target.closest("[data-note-popover]") && !e.target.closest("[data-highlight]")) {
+                setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 });
+            }
+        };
+
+        document.addEventListener("pointerdown", handleGlobalClick);
+        return () => document.removeEventListener("pointerdown", handleGlobalClick);
+    }, [toolbar.show, activeNote.show]);
 
     const handleTextSelection = (e) => {
-        const selection = window.getSelection();
-        if (!selection || selection.isCollapsed || selection.toString().trim() === "") {
-            setToolbar((prev) => ({ ...prev, show: false }));
-            return;
-        }
-
-        const range = selection.getRangeAt(0);
+        e.stopPropagation();
         const container = e.currentTarget;
-        if (!container.contains(range.commonAncestorContainer)) {
-            return;
-        }
+        
+        setTimeout(() => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed || selection.toString().trim() === "") {
+                // If the toolbar was shown very recently (within 300ms), ignore the collapsed check
+                // to prevent trackpad pointer-up bounces/micro-clicks from hiding the toolbar.
+                if (Date.now() - lastShownRef.current < 300) {
+                    return;
+                }
+                setToolbar((prev) => ({ ...prev, show: false }));
+                return;
+            }
 
-        const rect = range.getBoundingClientRect();
-        setToolbar({
-            show: true,
-            x: rect.left + window.scrollX + rect.width / 2,
-            y: rect.top + window.scrollY - 45,
-            range: range.cloneRange()
-        });
+            try {
+                const range = selection.getRangeAt(0);
+                if (!container.contains(range.commonAncestorContainer)) {
+                    return;
+                }
+
+                const rect = range.getBoundingClientRect();
+                setToolbar({
+                    show: true,
+                    x: rect.left + window.scrollX + rect.width / 2,
+                    y: rect.top + window.scrollY - 45,
+                    range: range.cloneRange()
+                });
+                lastShownRef.current = Date.now();
+            } catch (err) {
+                console.debug("Highlight range capture skipped:", err);
+            }
+        }, 80);
     };
 
     const applyHighlight = (colorClass) => {
@@ -44,7 +75,20 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
         try {
             toolbar.range.surroundContents(span);
         } catch (err) {
-            console.warn("Could not wrap complex selection:", err);
+            console.warn("surroundContents failed, trying extractContents fallback:", err);
+            try {
+                const fragment = toolbar.range.extractContents();
+                span.appendChild(fragment);
+                toolbar.range.insertNode(span);
+            } catch (innerErr) {
+                console.error("Highlight extraction fallback failed:", innerErr);
+            }
+        }
+
+        // Auto-open note editor if "Add Note" was clicked
+        const isNote = colorClass.includes("border-yellow-400");
+        if (isNote) {
+            openNoteModal(span);
         }
 
         window.getSelection().removeAllRanges();
@@ -88,11 +132,15 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                         </header>
 
                         <div 
+                            data-passage-container="true"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
                             onMouseUp={handleTextSelection}
+                            onPointerUp={handleTextSelection}
+                            onClick={(e) => e.stopPropagation()}
                             className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
-                        >
-                            {data?.passage || data?.sections?.[0]?.content || "No passage content available."}
-                        </div>
+                            dangerouslySetInnerHTML={{ __html: data?.passage || data?.sections?.[0]?.content || "No passage content available." }}
+                        />
                     </div>
                 </div>
 
@@ -207,6 +255,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
             {/* Floating Highlight Action Toolbar */}
             {toolbar.show && (
                 <div 
+                    data-highlight-toolbar="true"
                     className="absolute z-[100] flex items-center gap-2 p-2 bg-slate-900/95 text-white rounded-2xl shadow-2xl border border-white/10 backdrop-blur-md -translate-x-1/2"
                     style={{ top: `${toolbar.y}px`, left: `${toolbar.x}px` }}
                 >
@@ -243,6 +292,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
             {/* Sticky Note Popover Editor */}
             {activeNote.show && (
                 <div 
+                    data-note-popover="true"
                     className="absolute z-[110] w-64 p-4 bg-white rounded-3xl shadow-2xl border border-base-200 -translate-x-1/2 flex flex-col gap-3"
                     style={{ 
                         top: `${activeNote.y}px`, 

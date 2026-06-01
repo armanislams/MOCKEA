@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
@@ -14,7 +14,8 @@ import {
     PiClockFill,
     PiChartLineUpFill,
     PiArrowLeftBold,
-    PiMonitor
+    PiMonitor,
+    PiNotePencil
 } from "react-icons/pi";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import FullscreenGate from "../../../Common/FullscreenGate.jsx";
@@ -34,6 +35,121 @@ const Reading = () => {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
+
+  const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
+  const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
+  const lastShownRef = useRef(0);
+
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      // Hide selection toolbar if clicking away (outside both the toolbar and the passage container)
+      if (toolbar.show && !e.target.closest("[data-highlight-toolbar]") && !e.target.closest("[data-passage-container]")) {
+        setToolbar((prev) => ({ ...prev, show: false }));
+      }
+      // Close active sticky note editor if clicking away from it and from highlights
+      if (activeNote.show && !e.target.closest("[data-note-popover]") && !e.target.closest("[data-highlight]")) {
+        setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 });
+      }
+    };
+
+    document.addEventListener("pointerdown", handleGlobalClick);
+    return () => document.removeEventListener("pointerdown", handleGlobalClick);
+  }, [toolbar.show, activeNote.show]);
+
+  const handleTextSelection = (e) => {
+    e.stopPropagation();
+    const container = e.currentTarget;
+    
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || selection.toString().trim() === "") {
+        // If the toolbar was shown very recently (within 300ms), ignore the collapsed check
+        // to prevent trackpad pointer-up bounces/micro-clicks from hiding the toolbar.
+        if (Date.now() - lastShownRef.current < 300) {
+          return;
+        }
+        setToolbar((prev) => ({ ...prev, show: false }));
+        return;
+      }
+
+      try {
+        const range = selection.getRangeAt(0);
+        if (!container.contains(range.commonAncestorContainer)) {
+          return;
+        }
+
+        const rect = range.getBoundingClientRect();
+        setToolbar({
+          show: true,
+          x: rect.left + window.scrollX + rect.width / 2,
+          y: rect.top + window.scrollY - 45,
+          range: range.cloneRange()
+        });
+        lastShownRef.current = Date.now();
+      } catch (err) {
+        console.debug("Highlight range capture skipped:", err);
+      }
+    }, 80);
+  };
+
+  const applyHighlight = (colorClass) => {
+    if (!toolbar.range) return;
+
+    const span = document.createElement("mark");
+    span.className = `${colorClass} text-slate-900 cursor-pointer rounded px-0.5 transition-all hover:opacity-90 relative`;
+    span.setAttribute("data-highlight", "true");
+    span.setAttribute("data-color", colorClass);
+    span.setAttribute("data-note", "");
+
+    span.onclick = (e) => {
+      e.stopPropagation();
+      openNoteModal(span);
+    };
+
+    try {
+      toolbar.range.surroundContents(span);
+    } catch (err) {
+      console.warn("surroundContents failed, trying extractContents fallback:", err);
+      try {
+        const fragment = toolbar.range.extractContents();
+        span.appendChild(fragment);
+        toolbar.range.insertNode(span);
+      } catch (innerErr) {
+        console.error("Highlight extraction fallback failed:", innerErr);
+      }
+    }
+
+    // Auto-open note editor if "Add Note" was clicked
+    const isNote = colorClass.includes("border-yellow-400");
+    if (isNote) {
+      openNoteModal(span);
+    }
+
+    window.getSelection().removeAllRanges();
+    setToolbar({ show: false, x: 0, y: 0, range: null });
+  };
+
+  const openNoteModal = (element) => {
+    const rect = element.getBoundingClientRect();
+    const noteText = element.getAttribute("data-note") || "";
+    setActiveNote({
+      show: true,
+      text: noteText,
+      element: element,
+      x: rect.left + window.scrollX + rect.width / 2,
+      y: rect.top + window.scrollY + rect.height + 10
+    });
+  };
+
+  const removeHighlight = (element) => {
+    if (!element) return;
+    const parent = element.parentNode;
+    while (element.firstChild) {
+      parent.insertBefore(element.firstChild, element);
+    }
+    parent.removeChild(element);
+    setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 });
+  };
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
@@ -361,8 +477,14 @@ const Reading = () => {
                     <div className="prose prose-slate max-w-none">
                         <h2 className="text-3xl font-black tracking-tight mb-8 text-slate-800">{activeSet.title}</h2>
                         <div 
+                            data-passage-container="true"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onMouseUp={handleTextSelection}
+                            onPointerUp={handleTextSelection}
+                            onClick={(e) => e.stopPropagation()}
                             dangerouslySetInnerHTML={{ __html: activeSet.passage }} 
-                            className="text-lg leading-relaxed text-slate-600 text-justify"
+                            className="text-lg leading-relaxed text-slate-600 text-justify select-text"
                         />
                     </div>
                 </div>
@@ -460,6 +582,84 @@ const Reading = () => {
             </div>
         </div>
       </div>
+
+      {/* Floating Highlight Action Toolbar */}
+      {toolbar.show && (
+          <div 
+              data-highlight-toolbar="true"
+              className="absolute z-[100] flex items-center gap-2 p-2 bg-slate-900/95 text-white rounded-2xl shadow-2xl border border-white/10 backdrop-blur-md -translate-x-1/2"
+              style={{ top: `${toolbar.y}px`, left: `${toolbar.x}px` }}
+          >
+              <button 
+                  onClick={() => applyHighlight("bg-yellow-200")}
+                  className="w-6 h-6 rounded-full bg-yellow-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
+                  title="Yellow"
+              />
+              <button 
+                  onClick={() => applyHighlight("bg-emerald-200")}
+                  className="w-6 h-6 rounded-full bg-emerald-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
+                  title="Mint Green"
+              />
+              <button 
+                  onClick={() => applyHighlight("bg-sky-200")}
+                  className="w-6 h-6 rounded-full bg-sky-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
+                  title="Soft Blue"
+              />
+              <button 
+                  onClick={() => applyHighlight("bg-pink-200")}
+                  className="w-6 h-6 rounded-full bg-pink-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
+                  title="Rose Pink"
+              />
+              <div className="w-px h-5 bg-white/25 mx-1" />
+              <button 
+                  onClick={() => applyHighlight("bg-yellow-100/50 border-b-2 border-yellow-400")}
+                  className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 hover:bg-white/10 rounded-xl transition-all text-white/90"
+              >
+                  <PiNotePencil className="w-4 h-4 text-yellow-300" /> Add Note
+              </button>
+          </div>
+      )}
+
+      {/* Sticky Note Popover Editor */}
+      {activeNote.show && (
+          <div 
+              data-note-popover="true"
+              className="absolute z-[110] w-64 p-4 bg-white rounded-3xl shadow-2xl border border-base-200 -translate-x-1/2 flex flex-col gap-3"
+              style={{ 
+                  top: `${activeNote.y}px`, 
+                  left: `${activeNote.x}px` 
+              }}
+          >
+              <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1">
+                      <PiNotePencil className="text-sm" /> Sticky Note
+                  </span>
+                  <button 
+                      onClick={() => removeHighlight(activeNote.element)}
+                      className="btn btn-ghost btn-xs text-error font-black uppercase text-[9px] tracking-wider hover:bg-error/10 rounded-lg"
+                  >
+                      Delete Note
+                  </button>
+              </div>
+              <textarea
+                  value={activeNote.text}
+                  onChange={(e) => {
+                      setActiveNote((prev) => ({ ...prev, text: e.target.value }));
+                      activeNote.element.setAttribute("data-note", e.target.value);
+                  }}
+                  placeholder="Jot down a quick note..."
+                  className="textarea textarea-bordered rounded-2xl w-full h-24 text-xs font-medium focus:outline-none bg-white text-slate-800"
+              />
+              <div className="flex justify-end gap-2">
+                  <button 
+                      onClick={() => setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 })}
+                      className="btn btn-primary btn-sm rounded-xl text-[10px] font-black uppercase tracking-widest px-4 border-none shadow-md shadow-primary/20"
+                  >
+                      Save
+                  </button>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
