@@ -57,7 +57,6 @@ const Reading = () => {
   }, [toolbar.show, activeNote.show]);
 
   const handleTextSelection = (e) => {
-    e.stopPropagation();
     const container = e.currentTarget;
     
     setTimeout(() => {
@@ -100,6 +99,20 @@ const Reading = () => {
     span.setAttribute("data-highlight", "true");
     span.setAttribute("data-color", colorClass);
     span.setAttribute("data-note", "");
+
+    // Set inline styles to completely bypass Tailwind/prose specificity overrides!
+    if (colorClass.includes("bg-yellow-200")) {
+      span.style.backgroundColor = "#fef08a"; // Yellow 200
+    } else if (colorClass.includes("bg-emerald-200")) {
+      span.style.backgroundColor = "#a7f3d0"; // Emerald 200
+    } else if (colorClass.includes("bg-sky-200")) {
+      span.style.backgroundColor = "#bae6fd"; // Sky 200
+    } else if (colorClass.includes("bg-pink-200")) {
+      span.style.backgroundColor = "#fbcfe8"; // Pink 200
+    } else if (colorClass.includes("border-yellow-400")) {
+      span.style.backgroundColor = "rgba(254, 240, 138, 0.5)"; // Yellow 100/50
+      span.style.borderBottom = "2px solid #eab308"; // Yellow 500 border
+    }
 
     span.onclick = (e) => {
       e.stopPropagation();
@@ -151,6 +164,8 @@ const Reading = () => {
     setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 });
   };
 
+
+
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
   const { showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
@@ -195,6 +210,19 @@ const Reading = () => {
     () => readingSets.find((set) => set._id === selectedSetId) || null,
     [readingSets, selectedSetId],
   );
+
+  const passageElement = useMemo(() => {
+    if (!activeSet) return null;
+    return (
+      <div 
+        data-passage-container="true"
+        onMouseUp={handleTextSelection}
+        onPointerUp={handleTextSelection}
+        dangerouslySetInnerHTML={{ __html: activeSet.passage }} 
+        className="text-lg leading-relaxed text-slate-600 text-justify select-text"
+      />
+    );
+  }, [activeSet]);
 
   const handleAnswerChange = (questionId, value) => {
     setAnswers((prev) => ({
@@ -476,16 +504,7 @@ const Reading = () => {
                 <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
                     <div className="prose prose-slate max-w-none">
                         <h2 className="text-3xl font-black tracking-tight mb-8 text-slate-800">{activeSet.title}</h2>
-                        <div 
-                            data-passage-container="true"
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseUp={handleTextSelection}
-                            onPointerUp={handleTextSelection}
-                            onClick={(e) => e.stopPropagation()}
-                            dangerouslySetInnerHTML={{ __html: activeSet.passage }} 
-                            className="text-lg leading-relaxed text-slate-600 text-justify select-text"
-                        />
+                        {passageElement}
                     </div>
                 </div>
             </div>

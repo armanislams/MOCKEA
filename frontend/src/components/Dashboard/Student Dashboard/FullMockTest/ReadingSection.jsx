@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { PiBookOpen, PiNotePencil } from "react-icons/pi";
 
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
@@ -23,7 +23,6 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
     }, [toolbar.show, activeNote.show]);
 
     const handleTextSelection = (e) => {
-        e.stopPropagation();
         const container = e.currentTarget;
         
         setTimeout(() => {
@@ -66,6 +65,20 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
         span.setAttribute("data-highlight", "true");
         span.setAttribute("data-color", colorClass);
         span.setAttribute("data-note", "");
+
+        // Set inline styles to completely bypass Tailwind/prose specificity overrides!
+        if (colorClass.includes("bg-yellow-200")) {
+            span.style.backgroundColor = "#fef08a"; // Yellow 200
+        } else if (colorClass.includes("bg-emerald-200")) {
+            span.style.backgroundColor = "#a7f3d0"; // Emerald 200
+        } else if (colorClass.includes("bg-sky-200")) {
+            span.style.backgroundColor = "#bae6fd"; // Sky 200
+        } else if (colorClass.includes("bg-pink-200")) {
+            span.style.backgroundColor = "#fbcfe8"; // Pink 200
+        } else if (colorClass.includes("border-yellow-400")) {
+            span.style.backgroundColor = "rgba(254, 240, 138, 0.5)"; // Yellow 100/50
+            span.style.borderBottom = "2px solid #eab308"; // Yellow 500 border
+        }
 
         span.onclick = (e) => {
             e.stopPropagation();
@@ -117,6 +130,18 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
         setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 });
     };
 
+    const passageElement = useMemo(() => {
+        return (
+            <div 
+                data-passage-container="true"
+                onMouseUp={handleTextSelection}
+                onPointerUp={handleTextSelection}
+                className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
+                dangerouslySetInnerHTML={{ __html: data?.passage || data?.sections?.[0]?.content || "No passage content available." }}
+            />
+        );
+    }, [data]);
+
     return (
         <div className="flex h-full overflow-hidden bg-white">
             {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
@@ -131,16 +156,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                             </p>
                         </header>
 
-                        <div 
-                            data-passage-container="true"
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseUp={handleTextSelection}
-                            onPointerUp={handleTextSelection}
-                            onClick={(e) => e.stopPropagation()}
-                            className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
-                            dangerouslySetInnerHTML={{ __html: data?.passage || data?.sections?.[0]?.content || "No passage content available." }}
-                        />
+                        {passageElement}
                     </div>
                 </div>
 
