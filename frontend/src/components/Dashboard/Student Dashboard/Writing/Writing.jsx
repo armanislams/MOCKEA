@@ -301,7 +301,7 @@ const Writing = () => {
     return (
       <FullscreenGate 
         isStarted={isStarted}
-        onStart={() => { setIsStarted(true); enterFullscreen(); }}
+        onStart={() => { setIsStarted(true); setTimerActive(true); enterFullscreen(); }}
         onCancel={() => setSelectedSetId("")}
         title="Ready to Start?"
         description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment."
