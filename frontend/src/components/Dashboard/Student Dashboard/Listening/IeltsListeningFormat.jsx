@@ -33,34 +33,36 @@ const COMPLETION_TYPES = new Set([
 const CompletionRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChange }) => {
     const isCorrect = evaluation?.isCorrect;
     return (
-        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+        <div className={`flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl border transition-all ${
             submitted
                 ? isCorrect
                     ? "bg-emerald-50/60 border-emerald-300/40"
                     : "bg-red-50/60 border-red-300/40"
                 : "bg-slate-50/60 border-slate-200 hover:border-primary/30"
         }`}>
-            {/* Number badge */}
-            <div className="w-8 h-8 rounded-xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-xs text-slate-700 flex-shrink-0">
-                {idx + 1}
+            <div className="flex items-center gap-4 flex-1">
+                {/* Number badge */}
+                <div className="w-8 h-8 rounded-xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-xs text-slate-700 flex-shrink-0">
+                    {idx + 1}
+                </div>
+
+                {/* Label */}
+                <span className="font-semibold text-sm text-slate-700 flex-1 leading-relaxed">
+                    {q.question}
+                </span>
             </div>
 
-            {/* Label */}
-            <span className="font-semibold text-sm text-slate-700 flex-shrink-0 min-w-[120px]">
-                {q.question}
-            </span>
-
             {/* Input */}
-            <div className="flex-1">
+            <div className="w-full sm:w-48 md:w-64 flex-shrink-0">
                 <input
                     type="text"
                     disabled={submitted}
-                    className={`w-full h-10 px-4 rounded-xl border text-sm font-bold bg-white transition-all outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:opacity-70 ${
+                    className={`w-full h-11 px-4 rounded-xl border text-sm font-bold bg-white transition-all outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:opacity-70 ${
                         submitted
                             ? isCorrect
                                 ? "border-emerald-400 bg-emerald-50 text-emerald-700"
                                 : "border-red-400 bg-red-50 text-red-700"
-                            : "border-base-300"
+                            : "border-base-300 focus:border-primary"
                     }`}
                     placeholder={`Answer ${idx + 1}`}
                     value={answers[q.id] || ""}
@@ -70,7 +72,7 @@ const CompletionRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerCh
 
             {/* Result icons */}
             {submitted && (
-                <>
+                <div className="flex items-center gap-2 flex-shrink-0">
                     {isCorrect
                         ? <PiCheckCircleFill className="text-emerald-500 text-2xl flex-shrink-0" />
                         : <PiXCircleFill className="text-red-500 text-2xl flex-shrink-0" />
@@ -80,7 +82,7 @@ const CompletionRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerCh
                             ✓ {q.correctAnswer}
                         </span>
                     )}
-                </>
+                </div>
             )}
         </div>
     );
