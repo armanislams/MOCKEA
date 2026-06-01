@@ -305,20 +305,6 @@ const Reading = () => {
             </div>
 
             <div className="flex items-center gap-6">
-                {readingSets.length > 1 && (
-                    <select 
-                        className="select select-sm rounded-xl font-bold bg-base-100 border border-slate-200"
-                        value={selectedSetId}
-                        onChange={(e) => {
-                            setSelectedSetId(e.target.value);
-                            setAnswers({});
-                            setSubmitted(false);
-                            setResult(null);
-                        }}
-                    >
-                        {readingSets.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
-                    </select>
-                )}
                 {!submitted && (
                     <div className={`badge ${timeLeft < 300 ? 'bg-red-500 text-white animate-pulse' : 'badge-neutral'} p-4 rounded-xl font-black flex gap-2 border-none`}>
                         <PiClockFill /> {fmtTime(timeLeft)}
