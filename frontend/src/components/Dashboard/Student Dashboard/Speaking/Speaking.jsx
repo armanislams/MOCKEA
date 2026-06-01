@@ -6,6 +6,7 @@ import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
+import Swal from "sweetalert2";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -51,6 +52,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [prepTime, setPrepTime] = useState(60); // 1 min prep
   const [recordingTime, setRecordingTime] = useState(0);
   const [isPrepPhase, setIsPrepPhase] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -77,10 +79,10 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   const activeBlob = useMemo(() => {
     if (speakingStep === 1) return part1Blob;
-    if (speakingStep === 2) return part2Blob || audioBlob;
+    if (speakingStep === 2) return part2Blob;
     if (speakingStep === 3) return part3Blob;
     return null;
-  }, [speakingStep, part1Blob, part2Blob, part3Blob, audioBlob]);
+  }, [speakingStep, part1Blob, part2Blob, part3Blob]);
 
   const activeAudioUrl = useMemo(() => {
     if (!activeBlob) return null;
@@ -192,6 +194,8 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
         setAudioBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
         setMediaStream(null);
+        setIsRecording(false);
+        setIsSaving(false);
       };
 
       mediaRecorderRef.current.start();
@@ -202,12 +206,13 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     } catch (err) {
       toast.error("Microphone access denied. Please enable it to record.");
     }
-  }, []);
+  }, [speakingStep]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      setIsSaving(true);
       setIsRecording(false);
+      mediaRecorderRef.current.stop();
       toast.info(
         "Recording captured. Ready for submission. Please submit your response.",
       );
@@ -246,6 +251,35 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     const iv = setInterval(() => setRecordingTime((p) => p + 1), 1000);
     return () => clearInterval(iv);
   }, [isRecording]);
+
+  // Auto-Stop for Speaking Part 2
+  useEffect(() => {
+    if (isRecording && speakingStep === 2 && recordingTime >= 120) {
+      stopRecording();
+      toast.info("Maximum speaking time (2 minutes) reached. Recording stopped.");
+    }
+  }, [recordingTime, isRecording, speakingStep, stopRecording]);
+
+  // 10s Warning Modal for Preparation countdown (Part 2)
+  useEffect(() => {
+    if (isPrepPhase && prepTime === 10) {
+      Swal.fire({
+        title: "10 Seconds of Prep Remaining!",
+        text: "Get ready! Recording will begin automatically in 10 seconds.",
+        icon: "warning",
+        timer: 3500,
+        showConfirmButton: false,
+        toast: true,
+        position: "top-end",
+        timerProgressBar: true,
+        background: "#FDFDFB",
+        color: "#1e293b",
+        customClass: {
+          popup: "rounded-[2rem] shadow-2xl border border-amber-300"
+        }
+      });
+    }
+  }, [prepTime, isPrepPhase]);
 
   const uploadToCloudinary = async (blob) => {
     const formData = new FormData();
@@ -857,9 +891,9 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       exit={{ opacity: 0, scale: 1.1 }}
                       className="flex flex-col items-center text-center space-y-6 py-10"
                     >
-                      <div className="w-32 h-32 rounded-full border-4 border-primary border-t-transparent animate-spin flex items-center justify-center p-2">
-                        <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center animate-none">
-                          <span className="text-3xl font-black font-mono text-primary">
+                      <div className="w-32 h-32 rounded-full border-4 border-red-500 border-t-transparent animate-spin flex items-center justify-center p-2">
+                        <div className="w-full h-full rounded-full bg-red-500/10 flex items-center justify-center animate-none">
+                          <span className="text-3xl font-black font-mono text-red-500">
                             {prepTime}s
                           </span>
                         </div>
@@ -933,6 +967,26 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       >
                         <PiStopCircleFill className="text-2xl" /> Stop Recording
                       </button>
+                    </motion.div>
+                  ) : isSaving ? (
+                    <motion.div
+                      key="saving"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 1.05 }}
+                      className="flex flex-col items-center text-center space-y-6 py-20 w-full"
+                    >
+                      <div className="w-20 h-20 rounded-[2rem] bg-primary/10 text-primary flex items-center justify-center text-4xl animate-pulse">
+                        💾
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-xl font-black text-slate-800">
+                          Saving Response...
+                        </h4>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">
+                          Processing your audio file
+                        </p>
+                      </div>
                     </motion.div>
                   ) : activeBlob ? (
                     <motion.div

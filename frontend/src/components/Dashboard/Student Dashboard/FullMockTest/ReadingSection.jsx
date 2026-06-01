@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { PiBookOpen, PiNotePencil } from "react-icons/pi";
+import { PiNotePencil } from "react-icons/pi";
 
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
        const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });

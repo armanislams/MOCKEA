@@ -9,10 +9,10 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     const [isSpeakingActive, setIsSpeakingActive] = useState(false);
 
     useEffect(() => {
-        if (speakingTime === 10 && isSpeakingActive) {
+        if (prepTime === 10 && isPrepActive) {
             Swal.fire({
-                title: "10 Seconds Remaining!",
-                text: "Please begin wrapping up your final thoughts.",
+                title: "10 Seconds of Prep Remaining!",
+                text: "Get ready! Recording will begin automatically in 10 seconds.",
                 icon: "warning",
                 timer: 3500,
                 showConfirmButton: false,
@@ -26,7 +26,7 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                 }
             });
         }
-    }, [speakingTime, isSpeakingActive]);
+    }, [prepTime, isPrepActive]);
 
     useEffect(() => {
         let interval;
