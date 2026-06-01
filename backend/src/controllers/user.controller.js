@@ -1,7 +1,7 @@
 import User from "../model/user.js";
 
 export const postUser = async (req, res) => {
-    const { email, name, targetExam } = req.body;
+    const { email, name, targetExam, gender } = req.body;
 
     if (!email || !name) {
         return res.status(400).json({ success: false, message: "Please provide email and name" });
@@ -14,7 +14,12 @@ export const postUser = async (req, res) => {
         return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-    const user = new User({ name, email: cleanEmail, targetExam: targetExam || "IELTS" });
+    const user = new User({
+        name,
+        email: cleanEmail,
+        targetExam: targetExam || "IELTS",
+        gender: gender || null
+    });
     await user.save();
 
     return res.status(201).json({ success: true, message: "User created successfully" });

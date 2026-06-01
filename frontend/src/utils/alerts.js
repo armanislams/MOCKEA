@@ -58,6 +58,38 @@ export const alerts = {
         confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-error text-white border-none mx-2"
       }
     });
+  },
+
+  confirmCancelPractice: (testType = "practice test") => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "warning",
+      title: "Cancel Practice?",
+      text: `You haven't answered any questions yet. Are you sure you want to cancel and exit this ${testType}?`,
+      showCancelButton: true,
+      confirmButtonText: "Yes, Cancel and Exit",
+      cancelButtonText: "Resume Practice",
+      customClass: {
+        ...BASE_SWAL_CONFIG.customClass,
+        confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-error text-white border-none mx-2"
+      }
+    });
+  },
+
+  confirmCancelMockTest: () => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "warning",
+      title: "Cancel Exam Session?",
+      text: "You haven't answered any questions. Are you sure you want to cancel and exit? Your progress will not be saved.",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Cancel and Exit",
+      cancelButtonText: "Resume Exam",
+      customClass: {
+        ...BASE_SWAL_CONFIG.customClass,
+        confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-error text-white border-none mx-2"
+      }
+    });
   }
 };
 

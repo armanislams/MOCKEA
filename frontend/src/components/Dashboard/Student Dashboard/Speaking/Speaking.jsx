@@ -24,6 +24,19 @@ import { useNavigate } from "react-router";
 import FullscreenGate from "../../../Common/FullscreenGate.jsx";
 import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
 
+const defaultPart1Questions = [
+  "Do you work or study?",
+  "What do you like most about your home town?",
+  "How do you usually spend your weekends?",
+  "What is your favorite type of music or movie?"
+];
+
+const defaultPart3Questions = [
+  "Why do you think protecting historic structures or old buildings is important?",
+  "How do buildings of the past differ from modern architectural designs?",
+  "What kind of buildings or homes do you think people will live in in the future?"
+];
+
 const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
@@ -43,6 +56,12 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [audioBlob, setAudioBlob] = useState(null);
   const [mediaStream, setMediaStream] = useState(null);
 
+  // 3-Part Speaking States
+  const [speakingStep, setSpeakingStep] = useState(1); // 1, 2, or 3
+  const [part1Blob, setPart1Blob] = useState(null);
+  const [part2Blob, setPart2Blob] = useState(null);
+  const [part3Blob, setPart3Blob] = useState(null);
+
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
   const { showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
@@ -55,6 +74,18 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     () => preloadedSet || speakingSets.find((set) => set._id === selectedSetId) || null,
     [preloadedSet, speakingSets, selectedSetId],
   );
+
+  const activeBlob = useMemo(() => {
+    if (speakingStep === 1) return part1Blob;
+    if (speakingStep === 2) return part2Blob || audioBlob;
+    if (speakingStep === 3) return part3Blob;
+    return null;
+  }, [speakingStep, part1Blob, part2Blob, part3Blob, audioBlob]);
+
+  const activeAudioUrl = useMemo(() => {
+    if (!activeBlob) return null;
+    return URL.createObjectURL(activeBlob);
+  }, [activeBlob]);
 
   // Real-time Canvas Soundwave Visualizer
   useEffect(() => {
@@ -155,6 +186,9 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        if (speakingStep === 1) setPart1Blob(blob);
+        else if (speakingStep === 2) setPart2Blob(blob);
+        else if (speakingStep === 3) setPart3Blob(blob);
         setAudioBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
         setMediaStream(null);
@@ -228,6 +262,75 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return response.data.secure_url;
   };
 
+  const handleSubmitSpeaking = async () => {
+    const hasRecording = part1Blob || part2Blob || part3Blob || audioBlob;
+    if (!hasRecording) {
+      toast.info("No audio recording captured. Exiting practice.");
+      exitFullscreen();
+      setIsStarted(false);
+      navigate(-1);
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      toast.info("Auto-submitting your 3-part speaking responses...");
+
+      const urls = [];
+      if (part1Blob) {
+        toast.info("Uploading Part 1 response...");
+        const url1 = await uploadToCloudinary(part1Blob);
+        urls.push(`Part 1 Interview: ${url1}`);
+      }
+      if (part2Blob) {
+        toast.info("Uploading Part 2 response...");
+        const url2 = await uploadToCloudinary(part2Blob);
+        urls.push(`Part 2 Cue Card: ${url2}`);
+      } else if (audioBlob && !part2Blob && !part1Blob && !part3Blob) {
+        toast.info("Uploading Cue Card response...");
+        const url2 = await uploadToCloudinary(audioBlob);
+        urls.push(`Part 2 Cue Card: ${url2}`);
+      }
+      if (part3Blob) {
+        toast.info("Uploading Part 3 response...");
+        const url3 = await uploadToCloudinary(part3Blob);
+        urls.push(`Part 3 Discussion: ${url3}`);
+      }
+
+      const combinedContent = urls.join("\n\n");
+
+      if (onSubmitGuest && !user?.email) {
+        onSubmitGuest(combinedContent);
+        toast.success("Guest test submitted successfully!");
+        setSubmitted(true);
+        exitFullscreen();
+        setIsStarted(false);
+        navigate(-1);
+        return;
+      }
+
+      await axiosSecure.post("/submissions/submit", {
+        questionSetId: activeSet._id,
+        testType: "speaking",
+        title: activeSet.title,
+        content: combinedContent,
+        userName: user?.displayName || "Student",
+        userEmail: user?.email,
+      });
+
+      toast.success("Speaking practice test submitted successfully!");
+      setSubmitted(true);
+      exitFullscreen();
+      setIsStarted(false);
+      navigate(-1);
+    } catch (e) {
+      console.error("Submission failed:", e);
+      toast.error("Failed to submit speaking response.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleExitTest = async () => {
     if (submitted) {
       exitFullscreen();
@@ -236,85 +339,24 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       return;
     }
 
-    const result = await alerts.confirmExitPractice("Speaking Practice Interview");
+    const hasRecording = part1Blob || part2Blob || part3Blob || audioBlob || (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive");
+    const result = hasRecording
+      ? await alerts.confirmExitPractice("Speaking Practice Interview")
+      : await alerts.confirmCancelPractice("Speaking Practice Interview");
 
     if (result.isConfirmed) {
       exitFullscreen();
       setIsStarted(false);
 
-      // Guest mode - hand off directly to onSubmitGuest callback without uploading/saving to DB
-      if (onSubmitGuest && !user?.email) {
+      if (hasRecording) {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
           mediaRecorderRef.current.stop();
-          setTimeout(() => {
-            if (audioChunksRef.current.length > 0) {
-              const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-              onSubmitGuest(blob);
-              toast.success("Guest test submitted successfully!");
-            } else {
-              toast.info("No recording captured.");
-            }
-            navigate(-1);
+          setTimeout(async () => {
+            await handleSubmitSpeaking();
           }, 600);
-        } else if (audioBlob) {
-          onSubmitGuest(audioBlob);
-          toast.success("Guest test submitted successfully!");
-          navigate(-1);
         } else {
-          toast.info("No recording captured. Exiting practice.");
-          navigate(-1);
+          await handleSubmitSpeaking();
         }
-        return;
-      }
-
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
-        setTimeout(async () => {
-          if (audioChunksRef.current.length > 0) {
-            const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-            try {
-              setIsUploading(true);
-              toast.info("Auto-submitting your audio response...");
-              const cloudinaryUrl = await uploadToCloudinary(blob);
-              await axiosSecure.post("/submissions/submit", {
-                questionSetId: activeSet._id,
-                testType: "speaking",
-                title: activeSet.title,
-                content: cloudinaryUrl,
-                userName: user?.displayName || "Student",
-                userEmail: user?.email,
-              });
-              toast.success("Practice test auto-submitted successfully!");
-            } catch (e) {
-              console.error("Auto submit failed:", e);
-              toast.error("Auto-submit failed: No recording uploaded.");
-            } finally {
-              setIsUploading(false);
-            }
-          }
-          navigate(-1);
-        }, 600);
-      } else if (audioBlob) {
-        try {
-          setIsUploading(true);
-          toast.info("Auto-submitting your audio response...");
-          const cloudinaryUrl = await uploadToCloudinary(audioBlob);
-          await axiosSecure.post("/submissions/submit", {
-            questionSetId: activeSet._id,
-            testType: "speaking",
-            title: activeSet.title,
-            content: cloudinaryUrl,
-            userName: user?.displayName || "Student",
-            userEmail: user?.email,
-          });
-          toast.success("Practice test auto-submitted successfully!");
-        } catch (e) {
-          console.error("Auto submit failed:", e);
-          toast.error("Auto-submit failed");
-        } finally {
-          setIsUploading(false);
-        }
-        navigate(-1);
       } else {
         toast.info("No recording captured. Exiting practice.");
         navigate(-1);
@@ -326,6 +368,79 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+
+  const renderNavigationWizard = () => {
+    return (
+      <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <button
+          type="button"
+          disabled={speakingStep === 1}
+          onClick={() => {
+            if (isRecording) {
+              toast.warning("Please stop recording before switching sections");
+              return;
+            }
+            setSpeakingStep((p) => Math.max(1, p - 1));
+          }}
+          className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-2xl px-6 h-12 font-black text-xs uppercase tracking-widest gap-2 flex items-center disabled:opacity-30 w-full md:w-auto"
+        >
+          <PiArrowLeftBold className="w-4 h-4" /> Previous Part
+        </button>
+
+        <div className="flex items-center gap-3">
+          {[1, 2, 3].map((step) => (
+            <button
+              key={step}
+              type="button"
+              onClick={() => {
+                if (isRecording) {
+                  toast.warning("Please stop recording before switching sections");
+                  return;
+                }
+                setSpeakingStep(step);
+              }}
+              className={`w-10 h-10 rounded-full font-black text-sm transition-all flex items-center justify-center ${
+                speakingStep === step
+                  ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-500"
+              }`}
+            >
+              {step}
+            </button>
+          ))}
+        </div>
+
+        {speakingStep < 3 ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (isRecording) {
+                toast.warning("Please stop recording before switching sections");
+                return;
+              }
+              setSpeakingStep((p) => Math.min(3, p + 1));
+            }}
+            className="btn btn-primary rounded-2xl px-6 h-12 font-black text-xs uppercase tracking-widest flex items-center gap-2 w-full md:w-auto"
+          >
+            Next Part →
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={handleSubmitSpeaking}
+            className="btn btn-success text-white border-none shadow-xl shadow-success/20 rounded-2xl px-6 h-12 font-black text-xs uppercase tracking-widest flex items-center gap-2 w-full md:w-auto"
+          >
+            {isUploading ? (
+              <span className="loading loading-spinner" />
+            ) : (
+              "Finish & Submit ✔"
+            )}
+          </button>
+        )}
+      </div>
+    );
   };
 
   if (loading) return <Loader />;
@@ -444,7 +559,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
+    <div className="min-h-screen bg-[#FDFDFB] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
       <FullscreenWarningOverlay 
         isOpen={showWarning}
         onResume={() => { setShowWarning(false); enterFullscreen(); }}
@@ -507,86 +622,211 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
       <div className="max-w-7xl mx-auto px-6 pt-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Cue Card Side */}
+          {/* Left Side: 3-Part Cue Card & Questions Display */}
           <div className="lg:col-span-7 space-y-8">
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="card bg-white p-12 rounded-[4rem] text-slate-900 shadow-2xl relative overflow-hidden h-fit"
-            >
-              <div className="absolute top-0 right-0 p-12 text-slate-100 text-9xl -mr-10 -mt-10">
-                <PiMicrophoneStageFill />
-              </div>
-
-              <div className="relative z-10 space-y-10">
-                <div className="flex items-center justify-between">
-                  <span className="badge badge-primary px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em]">
-                    Official Cue Card
-                  </span>
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <PiClockFill />
-                    <span className="text-xs font-bold uppercase">
-                      2 Minutes Max
-                    </span>
+            <AnimatePresence mode="wait">
+              {speakingStep === 1 && (
+                <motion.div
+                  key="part1-card"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="card bg-white p-12 rounded-[4rem] text-slate-900 shadow-2xl relative overflow-hidden h-fit border border-slate-100"
+                >
+                  <div className="absolute top-0 right-0 p-12 text-slate-100 text-9xl -mr-10 -mt-10 pointer-events-none">
+                    <PiMicrophoneStageFill />
                   </div>
-                </div>
 
-                <div className="prose prose-slate max-w-none">
-                  <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
-                    {activeSet.title}
-                  </h2>
-                  <div className="text-xl leading-relaxed text-slate-600 space-y-6 pt-4 font-medium italic">
-                    {activeSet.passage || activeSet.content}
-                  </div>
-                </div>
-
-                {activeSet.images?.length > 0 && (
-                  <div className="grid gap-6 pt-6">
-                    {activeSet.images.map((img, i) => (
-                      <div
-                        key={i}
-                        className="rounded-[2.5rem] overflow-hidden border-8 border-slate-50 shadow-inner"
-                      >
-                        <img
-                          src={img}
-                          alt="Cue Card Visual"
-                          className="w-full h-auto"
-                        />
+                  <div className="relative z-10 space-y-10">
+                    <div className="flex items-center justify-between">
+                      <span className="badge badge-primary px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em]">
+                        Part 1: Introduction & Interview
+                      </span>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <PiClockFill />
+                        <span className="text-xs font-bold uppercase">
+                          4-5 Minutes
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
 
-                <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10 flex items-start gap-5">
-                  <PiInfoFill className="text-primary text-3xl shrink-0" />
-                  <div>
-                    <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-2">
-                      Examiner Instructions
-                    </h4>
-                    <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
-                      "
-                      {activeSet.instructions ||
-                        "You should speak for 1 to 2 minutes on this topic. You have one minute to prepare what you are going to say."}
-                      "
-                    </p>
+                    <div className="prose prose-slate max-w-none">
+                      <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
+                        {activeSet.title}
+                      </h2>
+                      <p className="text-slate-500 font-semibold text-sm">
+                        Answer the following general questions about yourself, your life, and your interests.
+                      </p>
+                      
+                      <div className="mt-8 space-y-4">
+                        {(activeSet.speakingPart1Questions && activeSet.speakingPart1Questions.length > 0
+                          ? activeSet.speakingPart1Questions
+                          : defaultPart1Questions
+                        ).map((q, index) => (
+                          <div key={index} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex gap-4 items-start shadow-sm hover:shadow-md transition-shadow">
+                            <span className="w-8 h-8 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center shrink-0 mt-0.5">
+                              {index + 1}
+                            </span>
+                            <p className="text-lg font-bold text-slate-700 leading-relaxed pt-0.5">
+                              {q}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {renderNavigationWizard()}
                   </div>
-                </div>
-              </div>
-            </motion.div>
+                </motion.div>
+              )}
+
+              {speakingStep === 2 && (
+                <motion.div
+                  key="part2-card"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="card bg-white p-12 rounded-[4rem] text-slate-900 shadow-2xl relative overflow-hidden h-fit border border-slate-100"
+                >
+                  <div className="absolute top-0 right-0 p-12 text-slate-100 text-9xl -mr-10 -mt-10 pointer-events-none">
+                    <PiMicrophoneStageFill />
+                  </div>
+
+                  <div className="relative z-10 space-y-10">
+                    <div className="flex items-center justify-between">
+                      <span className="badge badge-primary px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em]">
+                        Part 2: Long Turn (Cue Card)
+                      </span>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <PiClockFill />
+                        <span className="text-xs font-bold uppercase">
+                          2 Minutes Max
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="prose prose-slate max-w-none">
+                      <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
+                        {activeSet.title}
+                      </h2>
+                      <div className="text-xl leading-relaxed text-slate-600 space-y-6 pt-4 font-medium italic">
+                        {activeSet.speakingPrompt || activeSet.passage || activeSet.content}
+                      </div>
+                    </div>
+
+                    {activeSet.images?.length > 0 && (
+                      <div className="grid gap-6 pt-6">
+                        {activeSet.images.map((img, i) => (
+                          <div
+                            key={i}
+                            className="rounded-[2.5rem] overflow-hidden border-8 border-slate-50 shadow-inner"
+                          >
+                            <img
+                              src={img}
+                              alt="Cue Card Visual"
+                              className="w-full h-auto"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10 flex items-start gap-5">
+                      <PiInfoFill className="text-primary text-3xl shrink-0" />
+                      <div>
+                        <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-2">
+                          Examiner Instructions
+                        </h4>
+                        <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
+                          "
+                          {activeSet.instructions ||
+                            "You should speak for 1 to 2 minutes on this topic. You have one minute to prepare what you are going to say."}
+                          "
+                        </p>
+                      </div>
+                    </div>
+
+                    {renderNavigationWizard()}
+                  </div>
+                </motion.div>
+              )}
+
+              {speakingStep === 3 && (
+                <motion.div
+                  key="part3-card"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="card bg-white p-12 rounded-[4rem] text-slate-900 shadow-2xl relative overflow-hidden h-fit border border-slate-100"
+                >
+                  <div className="absolute top-0 right-0 p-12 text-slate-100 text-9xl -mr-10 -mt-10 pointer-events-none">
+                    <PiMicrophoneStageFill />
+                  </div>
+
+                  <div className="relative z-10 space-y-10">
+                    <div className="flex items-center justify-between">
+                      <span className="badge badge-primary px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em]">
+                        Part 3: Two-way Analytical Discussion
+                      </span>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <PiClockFill />
+                        <span className="text-xs font-bold uppercase">
+                          4-5 Minutes
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="prose prose-slate max-w-none">
+                      <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
+                        {activeSet.title}
+                      </h2>
+                      <p className="text-slate-500 font-semibold text-sm">
+                        Discuss abstract issues and concepts related to the topic of Part 2.
+                      </p>
+                      
+                      <div className="mt-8 space-y-4">
+                        {(activeSet.speakingPart3Questions && activeSet.speakingPart3Questions.length > 0
+                          ? activeSet.speakingPart3Questions
+                          : defaultPart3Questions
+                        ).map((q, index) => (
+                          <div key={index} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex gap-4 items-start shadow-sm hover:shadow-md transition-shadow">
+                            <span className="w-8 h-8 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center shrink-0 mt-0.5">
+                              {index + 1}
+                            </span>
+                            <p className="text-lg font-bold text-slate-700 leading-relaxed pt-0.5">
+                              {q}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {renderNavigationWizard()}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Recording Interface Side */}
+          {/* Right Side: Audio Recording Studio */}
           <div className="lg:col-span-5 space-y-8">
             <div className="card bg-white border border-slate-100 p-10 rounded-[3.5rem] shadow-xl h-fit text-slate-800">
               <div className="space-y-10">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-black tracking-tight text-slate-800">
-                    Audio Studio
-                  </h3>
-                  <PiWaveformFill className="text-2xl text-primary animate-pulse" />
+                  <div>
+                    <h3 className="text-lg font-black tracking-tight text-slate-800">
+                      Audio Studio
+                    </h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                      Part {speakingStep} of 3
+                    </p>
+                  </div>
+                  <PiWaveformFill className={`text-2xl text-primary ${isRecording ? "animate-pulse" : ""}`} />
                 </div>
 
-                {/* Prep Phase */}
                 <AnimatePresence mode="wait">
                   {isPrepPhase ? (
                     <motion.div
@@ -612,6 +852,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         </p>
                       </div>
                       <button
+                        type="button"
                         onClick={startRecording}
                         className="btn btn-primary rounded-2xl px-10 h-14 font-black w-full"
                       >
@@ -631,8 +872,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             <PiMicrophoneFill />
                           </div>
                         </div>
-                        {/* Waveform Animation Placeholder */}
-                        <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           {[...Array(5)].map((_, i) => (
                             <motion.div
                               key={i}
@@ -648,7 +888,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         </div>
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-4 w-full">
                         <div className="w-full flex justify-center py-2">
                           <canvas
                             ref={canvasRef}
@@ -666,11 +906,64 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       </div>
 
                       <button
+                        type="button"
                         onClick={stopRecording}
                         className="btn btn-error btn-outline rounded-2xl px-12 h-16 font-black w-full border-2"
                       >
                         <PiStopCircleFill className="text-2xl" /> Stop Recording
                       </button>
+                    </motion.div>
+                  ) : activeBlob ? (
+                    <motion.div
+                      key="recorded"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex flex-col items-center text-center space-y-8 py-10"
+                    >
+                      <div className="w-32 h-32 rounded-full bg-success/10 border border-success/20 flex items-center justify-center text-5xl text-success animate-pulse">
+                        <PiCheckCircleFill />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-xl font-black text-slate-800">Part {speakingStep} Response Captured</h4>
+                        <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                          Your response has been saved. Review your recording below or re-record to improve.
+                        </p>
+                      </div>
+
+                      {activeAudioUrl && (
+                        <div className="w-full py-2">
+                          <audio src={activeAudioUrl} controls className="w-full rounded-2xl border border-slate-200 shadow-sm" />
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 w-full gap-4">
+                        {speakingStep === 2 ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={startPrep}
+                              className="btn btn-ghost border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-2xl h-16 font-black text-xs uppercase tracking-widest"
+                            >
+                              Re-record with Prep Time
+                            </button>
+                            <button
+                              type="button"
+                              onClick={startRecording}
+                              className="btn btn-primary rounded-2xl h-16 font-black text-sm uppercase tracking-widest"
+                            >
+                              Re-record Immediately
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={startRecording}
+                            className="btn btn-primary rounded-2xl h-16 font-black text-sm uppercase tracking-widest"
+                          >
+                            Re-record Response
+                          </button>
+                        )}
+                      </div>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -683,25 +976,40 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         <PiMicrophoneFill />
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-xl font-black text-slate-800">Ready to Start?</h4>
+                        <h4 className="text-xl font-black text-slate-800">Ready to Record Part {speakingStep}?</h4>
                         <p className="text-xs font-bold text-slate-500 leading-relaxed">
-                          Prepare for 60 seconds or start <br /> speaking
-                          immediately.
+                          {speakingStep === 2
+                            ? "Prepare for 60 seconds or start speaking immediately."
+                            : "Record your answers to the interview questions."}
                         </p>
                       </div>
                       <div className="grid grid-cols-1 w-full gap-4">
-                        <button
-                          onClick={startPrep}
-                          className="btn btn-primary rounded-2xl h-16 font-black text-sm uppercase tracking-widest"
-                        >
-                          Start Prep Time
-                        </button>
-                        <button
-                          onClick={startRecording}
-                          className="btn btn-ghost rounded-2xl h-16 font-black text-xs uppercase tracking-widest border border-slate-200 text-slate-600 hover:bg-slate-50"
-                        >
-                          Record Immediately
-                        </button>
+                        {speakingStep === 2 ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={startPrep}
+                              className="btn btn-primary rounded-2xl h-16 font-black text-sm uppercase tracking-widest"
+                            >
+                              Start Prep Time
+                            </button>
+                            <button
+                              type="button"
+                              onClick={startRecording}
+                              className="btn btn-ghost rounded-2xl h-16 font-black text-xs uppercase tracking-widest border border-slate-200 text-slate-600 hover:bg-slate-50"
+                            >
+                              Record Immediately
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={startRecording}
+                            className="btn btn-primary rounded-2xl h-16 font-black text-sm uppercase tracking-widest"
+                          >
+                            Start Recording
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -719,8 +1027,11 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                   Examiner Perspective
                 </h4>
                 <p className="text-sm font-black leading-tight italic">
-                  "Fluency and coherence are key. Try to use complex structures
-                  naturally."
+                  {speakingStep === 1
+                    ? '"Speak naturally and give detailed answers. Do not give simple yes or no responses."'
+                    : speakingStep === 2
+                    ? '"Try to talk for the full two minutes. Make sure to cover every point on the cue card."'
+                    : '"This is your chance to show off advanced vocabulary and explain complex, abstract opinions."'}
                 </p>
               </div>
             </div>

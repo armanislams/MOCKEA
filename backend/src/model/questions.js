@@ -115,6 +115,14 @@ const QuestionsSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
+        speakingPart1Questions: {
+            type: [String],
+            default: []
+        },
+        speakingPart3Questions: {
+            type: [String],
+            default: []
+        },
         // If true, this question set is visible to unauthenticated (guest) users
         isPublic: {
             type: Boolean,

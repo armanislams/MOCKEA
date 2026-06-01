@@ -103,6 +103,8 @@ const initialForm = () => ({
     passage: "",
     audioUrl: "",
     speakingPrompt: "",
+    speakingPart1Questions: [""],
+    speakingPart3Questions: [""],
     images: [""],
     task1Prompt: "",
     task1Image: "",
@@ -312,6 +314,8 @@ const AddQuestionForm = () => {
                 { id: "w1", type: "short-answer", question: "Task Responses:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" },
             ];
         } else if (testType === "speaking") {
+            data.speakingPart1Questions = formData.speakingPart1Questions.filter(q => q.trim() !== "");
+            data.speakingPart3Questions = formData.speakingPart3Questions.filter(q => q.trim() !== "");
             data.questions = [
                 { id: "s1", type: "short-answer", question: "Speaking Recording Response:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" },
             ];
@@ -615,15 +619,107 @@ const AddQuestionForm = () => {
 
                     {/* Speaking */}
                     {testType === "speaking" && (
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-semibold">Speaking Topic / Prompt</span></label>
-                            <textarea
-                                className="textarea textarea-bordered rounded-2xl h-32"
-                                placeholder="Describe a place you have visited recently. You should say: where it is, when you went, what you did, and why you liked it."
-                                value={formData.speakingPrompt}
-                                onChange={(e) => patch({ speakingPrompt: e.target.value })}
-                                required
-                            />
+                        <div className="space-y-6">
+                            {/* Part 1 */}
+                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                                    <span>Part 1: Introduction & Interview Questions</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => patch({ speakingPart1Questions: [...formData.speakingPart1Questions, ""] })}
+                                        className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
+                                    >
+                                        + Add Question
+                                    </button>
+                                </h3>
+                                <div className="space-y-2">
+                                    {formData.speakingPart1Questions.map((q, idx) => (
+                                        <div key={idx} className="flex gap-2 items-center">
+                                            <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
+                                            <input
+                                                type="text"
+                                                className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
+                                                placeholder="e.g. Do you work or study?"
+                                                value={q}
+                                                onChange={(e) => {
+                                                    const arr = [...formData.speakingPart1Questions];
+                                                    arr[idx] = e.target.value;
+                                                    patch({ speakingPart1Questions: arr });
+                                                }}
+                                            />
+                                            {formData.speakingPart1Questions.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => patch({ speakingPart1Questions: formData.speakingPart1Questions.filter((_, i) => i !== idx) })}
+                                                    className="btn btn-ghost btn-circle btn-sm text-error"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Part 2 Cue Card */}
+                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                                    Part 2: Long Turn (Cue Card Prompt)
+                                </h3>
+                                <div className="form-control">
+                                    <label className="label">
+                                        <span className="label-text font-semibold text-xs text-slate-600">Cue Card Topic Prompt</span>
+                                    </label>
+                                    <textarea
+                                        className="textarea textarea-bordered rounded-2xl h-28 text-sm bg-white font-medium"
+                                        placeholder="Describe a historical building you have visited. You should say..."
+                                        value={formData.speakingPrompt}
+                                        onChange={(e) => patch({ speakingPrompt: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Part 3 Discussion */}
+                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                                    <span>Part 3: Two-Way Analytical Discussion Questions</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => patch({ speakingPart3Questions: [...formData.speakingPart3Questions, ""] })}
+                                        className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
+                                    >
+                                        + Add Question
+                                    </button>
+                                </h3>
+                                <div className="space-y-2">
+                                    {formData.speakingPart3Questions.map((q, idx) => (
+                                        <div key={idx} className="flex gap-2 items-center">
+                                            <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
+                                            <input
+                                                type="text"
+                                                className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
+                                                placeholder="e.g. Why do people think protecting old buildings is important?"
+                                                value={q}
+                                                onChange={(e) => {
+                                                    const arr = [...formData.speakingPart3Questions];
+                                                    arr[idx] = e.target.value;
+                                                    patch({ speakingPart3Questions: arr });
+                                                }}
+                                            />
+                                            {formData.speakingPart3Questions.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => patch({ speakingPart3Questions: formData.speakingPart3Questions.filter((_, i) => i !== idx) })}
+                                                    className="btn btn-ghost btn-circle btn-sm text-error"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

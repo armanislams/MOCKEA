@@ -142,7 +142,10 @@ const Writing = () => {
       return;
     }
 
-    const result = await alerts.confirmExitPractice("Writing Essay Composition");
+    const hasAnswers = task1Text.trim() !== "" || task2Text.trim() !== "";
+    const result = hasAnswers
+      ? await alerts.confirmExitPractice("Writing Essay Composition")
+      : await alerts.confirmCancelPractice("Writing Essay Composition");
 
     if (result.isConfirmed) {
       if (document.fullscreenElement) {
@@ -150,7 +153,7 @@ const Writing = () => {
       }
       setIsStarted(false);
 
-      if (wordCount >= 50) {
+      if (hasAnswers && wordCount >= 50) {
         try {
           toast.info("Auto-submitting your essay response...");
           await axiosSecure.post("/submissions/submit", {
@@ -167,7 +170,7 @@ const Writing = () => {
           toast.error("Auto-submit failed");
         }
       } else {
-        toast.info("Response too short to submit. Exiting practice.");
+        toast.info(hasAnswers ? "Response too short to submit. Exiting practice." : "No response entered. Exiting practice.");
       }
 
       setSelectedSetId("");

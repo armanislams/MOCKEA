@@ -136,7 +136,17 @@ const TestEnvironment = () => {
     };
 
     const handleExitTest = async () => {
-        const result = await alerts.confirmExitMockTest();
+        const hasAnswers = Object.keys(answers).some(key => {
+            const val = answers[key];
+            if (typeof val === 'string') {
+                return val.trim() !== "";
+            }
+            return val !== undefined && val !== null;
+        });
+
+        const result = hasAnswers
+            ? await alerts.confirmExitMockTest()
+            : await alerts.confirmCancelMockTest();
 
         if (result.isConfirmed) {
             localStorage.removeItem(`test_cache_${id}`);
@@ -338,7 +348,7 @@ const TestEnvironment = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#FAF9F6] flex flex-col relative select-none" onContextMenu={e => e.preventDefault()}>
+        <div className="min-h-screen bg-[#FDFDFB] flex flex-col relative select-none" onContextMenu={e => e.preventDefault()}>
             <FullscreenWarningOverlay 
                 isOpen={showWarning}
                 onResume={() => { setShowWarning(false); enterFullscreen(); }}
@@ -399,10 +409,10 @@ const TestEnvironment = () => {
                     >
                         📝 Scratchpad
                     </button>
-                    <div className={`flex items-center gap-3 px-6 py-2.5 rounded-2xl font-mono text-2xl shadow-xl transition-all border-b-4 ${
+                    <div className={`flex items-center gap-3 px-6 py-2.5 rounded-2xl font-mono text-2xl shadow-md transition-all border ${
                         timeLeft < 300 
-                            ? "bg-error text-white border-error-dark animate-pulse" 
-                            : "bg-black text-white border-gray-800"
+                            ? "bg-red-500 text-white border-red-600 animate-pulse" 
+                            : "bg-red-50 text-red-500 border-red-500"
                     }`}>
                         <PiClock className={timeLeft < 300 ? "animate-spin" : ""} />
                         <span className="tracking-tighter font-black">{formatTime(timeLeft)}</span>

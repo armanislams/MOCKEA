@@ -163,6 +163,33 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
           )}
         </div>
 
+        {/* Gender */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Gender
+          </label>
+          <select
+            className={`w-full px-4 py-2.5 border-2 rounded-lg transition-colors focus:outline-none text-sm font-semibold ${
+              errors.gender
+                ? "border-red-500 focus:border-red-500 focus:bg-red-50"
+                : "border-gray-200 focus:border-blue-600 focus:bg-blue-50"
+            }`}
+            defaultValue=""
+            {...register("gender", { required: "Gender is required" })}
+          >
+            <option value="" disabled>Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
+          </select>
+          {errors.gender && (
+            <span className="text-red-500 text-xs mt-2 block font-semibold">
+              {errors.gender.message}
+            </span>
+          )}
+        </div>
+
         {/* Email */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-1">

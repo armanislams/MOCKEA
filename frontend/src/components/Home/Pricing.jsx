@@ -6,6 +6,31 @@ import useAxios from '../../hooks/useAxios';
 import Loader from '../Loader/Loader';
 import Error from '../Common/Error';
 
+const PricingSkeleton = () => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl mx-auto py-10">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="bg-slate-50 border border-slate-200/60 rounded-[2.25rem] p-10 flex flex-col justify-between h-[480px] animate-pulse">
+          <div className="space-y-6">
+            <div className="h-6 w-24 bg-slate-200 rounded-lg"></div>
+            <div className="h-8 w-40 bg-slate-300 rounded-lg"></div>
+            <div className="h-12 w-28 bg-slate-200 rounded-lg mt-4"></div>
+            <div className="space-y-3 pt-6">
+              {[...Array(4)].map((_, j) => (
+                <div key={j} className="flex items-center gap-3">
+                  <div className="w-5 h-5 bg-slate-200 rounded-full shrink-0"></div>
+                  <div className="h-4 w-full bg-slate-200 rounded-lg"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="h-12 w-full bg-slate-300 rounded-2xl"></div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const Pricing = () => {
   const axiosPublic = useAxios();
 
@@ -17,7 +42,7 @@ export const Pricing = () => {
     }
   });
 
-  if (isLoading) return <Loader />;
+  if (isLoading) return <PricingSkeleton />;
   if (isError) return <Error />;
 
   return (

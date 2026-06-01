@@ -1,11 +1,32 @@
 import { useState, useEffect } from "react";
 import { PiMicrophoneStage, PiClock, PiPlay, PiInfo } from "react-icons/pi";
+import Swal from "sweetalert2";
 
 const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     const [prepTime, setPrepTime] = useState(60);
     const [isPrepActive, setIsPrepActive] = useState(false);
     const [speakingTime, setSpeakingTime] = useState(120);
     const [isSpeakingActive, setIsSpeakingActive] = useState(false);
+
+    useEffect(() => {
+        if (speakingTime === 10 && isSpeakingActive) {
+            Swal.fire({
+                title: "10 Seconds Remaining!",
+                text: "Please begin wrapping up your final thoughts.",
+                icon: "warning",
+                timer: 3500,
+                showConfirmButton: false,
+                toast: true,
+                position: "top-end",
+                timerProgressBar: true,
+                background: "#FDFDFB",
+                color: "#1e293b",
+                customClass: {
+                    popup: "rounded-[2rem] shadow-2xl border border-amber-300"
+                }
+            });
+        }
+    }, [speakingTime, isSpeakingActive]);
 
     useEffect(() => {
         let interval;

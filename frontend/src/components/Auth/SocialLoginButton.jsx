@@ -4,9 +4,10 @@ import useAxios from "../../hooks/useAxios";
 import { toast } from "react-toastify";
 import { useNavigate, useLocation } from "react-router";
 import { motion } from "framer-motion";
+import Swal from "sweetalert2";
 
 const SocialLoginButton = ({ onSuccess }) => {
-  const { signInGoogle, setLoading } = useAuth();
+  const { signInGoogle, setLoading, logOut } = useAuth();
   const axiosInstance = useAxios();
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,9 +30,72 @@ const SocialLoginButton = ({ onSuccess }) => {
       }
 
       if (!userExists) {
+        let gender = result.additionalUserInfo?.profile?.gender;
+        if (!gender) {
+          try {
+            const { getAdditionalUserInfo } = await import("firebase/auth");
+            const additionalInfo = getAdditionalUserInfo(result);
+            gender = additionalInfo?.profile?.gender;
+          } catch (e) {
+            console.error("Error getting additional user info:", e);
+          }
+        }
+
+        if (gender) {
+          const lowerGender = gender.toLowerCase();
+          if (lowerGender === "male") gender = "Male";
+          else if (lowerGender === "female") gender = "Female";
+          else if (lowerGender === "other") gender = "Other";
+          else gender = "Prefer not to say";
+        }
+
+        if (!gender) {
+          const swalResult = await Swal.fire({
+            title: "Select your Gender",
+            text: "Please choose your gender to complete registration",
+            input: "select",
+            inputOptions: {
+              "Male": "Male",
+              "Female": "Female",
+              "Other": "Other",
+              "Prefer not to say": "Prefer not to say"
+            },
+            inputPlaceholder: "Select Gender",
+            showCancelButton: true,
+            confirmButtonText: "Submit",
+            cancelButtonText: "Cancel",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            inputValidator: (value) => {
+              if (!value) {
+                return "You must select a gender";
+              }
+            },
+            background: "#ffffff",
+            customClass: {
+              container: "z-[99999]",
+              popup: "rounded-[2rem] shadow-2xl border border-slate-100 p-6",
+              confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-primary text-white border-none mx-2",
+              cancelButton: "rounded-xl px-8 py-3 font-bold btn btn-ghost text-slate-500 mx-2 hover:bg-slate-50",
+              input: "rounded-xl border border-slate-200 p-3 mx-auto focus:outline-none focus:border-blue-600 focus:bg-blue-50 text-sm font-semibold max-w-xs"
+            },
+            buttonsStyling: false
+          });
+
+          if (swalResult.isDismissed || !swalResult.value) {
+            toast.error("Registration cancelled. Gender selection is required.");
+            await logOut();
+            setLoading(false);
+            setIsSubmitting(false);
+            return;
+          }
+          gender = swalResult.value;
+        }
+
         const userInfo = {
           email: result.user.email,
           name: result.user.displayName || result.user.email.split("@")[0],
+          gender: gender,
         };
         try {
           // Send registration request to MongoDB via "/user/auth/register"

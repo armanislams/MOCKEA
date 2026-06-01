@@ -221,13 +221,16 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
       return;
     }
 
-    const result = await alerts.confirmExitPractice("Listening Practice Lab");
+    const hasAnswers = Object.keys(answers).length > 0;
+    const result = hasAnswers
+      ? await alerts.confirmExitPractice("Listening Practice Lab")
+      : await alerts.confirmCancelPractice("Listening Practice Lab");
 
     if (result.isConfirmed) {
       exitFullscreen();
       setIsStarted(false);
 
-      if (Object.keys(answers).length > 0) {
+      if (hasAnswers) {
         try {
           toast.info("Auto-evaluating your answers...");
           const response = await axiosSecure.post("/questions/evaluate", {

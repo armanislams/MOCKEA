@@ -40,6 +40,8 @@ import AuthLayout from "../components/Auth/AuthLayout";
 import PricingPage from "../components/PricingPage/PricingPage";
 import FreeResourcesPage from "../components/FreeResources/FreeResourcesPage";
 import RootLayout from "../Layout/RootLayout";
+import CoursesPage from "../components/Home/CoursesPage";
+import StudentCourses from "../components/Dashboard/Student Dashboard/StudentCourses";
 
 const router = createBrowserRouter([
   {
@@ -70,6 +72,10 @@ const router = createBrowserRouter([
       {
         path: "/free-resources",
         element: <FreeResourcesPage />,
+      },
+      {
+        path: "/courses",
+        element: <CoursesPage />,
       },
     ],
   },
@@ -150,6 +156,10 @@ const router = createBrowserRouter([
       {
         path: "speaking",
         element: <Speaking />,
+      },
+      {
+        path: "courses",
+        element: <StudentCourses />,
       },
       {
         path: "admin/manage-users",

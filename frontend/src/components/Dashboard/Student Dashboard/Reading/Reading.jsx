@@ -127,13 +127,16 @@ const Reading = () => {
       return;
     }
 
-    const result = await alerts.confirmExitPractice("Reading Practice Lab");
+    const hasAnswers = Object.keys(answers).length > 0;
+    const result = hasAnswers
+      ? await alerts.confirmExitPractice("Reading Practice Lab")
+      : await alerts.confirmCancelPractice("Reading Practice Lab");
 
     if (result.isConfirmed) {
       exitFullscreen();
       setIsStarted(false);
 
-      if (Object.keys(answers).length > 0) {
+      if (hasAnswers) {
         try {
           toast.info("Auto-evaluating your answers...");
           const response = await axiosSecure.post("/questions/evaluate", {
