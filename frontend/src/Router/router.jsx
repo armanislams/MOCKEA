@@ -21,6 +21,7 @@ import ManageUsers from "../components/Dashboard/Admin Dashboard/ManageUsers";
 import AdminSettings from "../components/Dashboard/Admin Dashboard/AdminSettings";
 import FullMockTestLibrary from "../components/Dashboard/Student Dashboard/FullMockTest/FullMockTestLibrary";
 import AddQuestionForm from "../components/Dashboard/Admin Dashboard/AddQuestionForm";
+import EditQuestionForm from "../components/Dashboard/Admin Dashboard/EditQuestionForm";
 import ManageQuestions from "../components/Dashboard/Admin Dashboard/ManageQuestions";
 import CreateMockTest from "../components/Dashboard/Admin Dashboard/CreateMockTest";
 import ManageMockTests from "../components/Dashboard/Admin Dashboard/ManageMockTests";
@@ -222,6 +223,14 @@ const router = createBrowserRouter([
         element: (
           <AdminRoutes>
             <AddQuestionForm />
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "admin/edit-questions/:id",
+        element: (
+          <AdminRoutes>
+            <EditQuestionForm />
           </AdminRoutes>
         ),
       },

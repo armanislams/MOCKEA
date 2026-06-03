@@ -1,6 +1,7 @@
 import express from 'express'
 import { 
     getQuestions, 
+    getQuestionById,
     postQuestion,
     updateQuestion,
     deleteQuestion,
@@ -16,6 +17,7 @@ qRouter.use(verifyUserToken);
 
 // Reading questions is allowed for students/authenticated users
 qRouter.get('/', getQuestions);
+qRouter.get('/:id', getQuestionById);
 qRouter.post('/evaluate', evaluateQuestions);
 
 // Modifying the question bank is restricted to admins

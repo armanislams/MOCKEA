@@ -20,6 +20,7 @@ Welcome to MOCKEA, the ultimate IELTS mock test platform. This guide provides a 
    - [User Management](#user-management)
    - [Content Management](#content-management)
    - [System Settings & Analytics](#system-settings--analytics)
+   - [Google Analytics 4 Monitoring](#google-analytics-4-monitoring)
 
 ---
 
@@ -128,6 +129,17 @@ Administrators have full control over the platform's users, content, and system 
 3. **Global Settings**:
    - Maintenance Mode toggle.
    - Update platform-wide constants (e.g., Pricing, Contact Info).
+
+### Google Analytics 4 Monitoring
+Google Analytics 4 (GA4) tracks student traffic, conversions, and platform behavior client-side.
+1. **Data Collected Anonymously**:
+   - **Pageviews**: Monitor which sections (e.g., Practice, Mock Tests, Pricing) get the most visits.
+   - **User Activity**: Tracks actions such as test initiation (`test_start`), test completion (`test_submit`), and subscription checkouts (`begin_checkout`).
+   - **Anti-Cheat Logs**: Captures when tests are automatically submitted due to safety/anti-cheat tab switches.
+   - **System Stability**: Tracks unhandled client runtime crashes (`exception` events) to help you monitor site health.
+2. **Accessing Insights**:
+   - Log into your Google Analytics dashboard mapped to your Measurement ID.
+   - Use the **Realtime** report to see immediate activity or **DebugView** to verify test environments and active user session states.
 
 ---
 

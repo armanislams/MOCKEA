@@ -104,7 +104,12 @@ const ManageQuestions = () => {
                                     </div>
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button className="btn btn-ghost btn-xs btn-circle text-primary"><PiPencilSimple /></button>
+                                    <Link 
+                                        to={`/dashboard/admin/edit-questions/${q._id}`}
+                                        className="btn btn-ghost btn-xs btn-circle text-primary"
+                                    >
+                                        <PiPencilSimple />
+                                    </Link>
                                     <button 
                                         onClick={() => handleDelete(q._id)}
                                         className="btn btn-ghost btn-xs btn-circle text-error"

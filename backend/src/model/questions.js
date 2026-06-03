@@ -128,9 +128,27 @@ const QuestionsSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        version: {
+            type: Number,
+            default: 1,
+            required: true
+        },
+        isLatest: {
+            type: Boolean,
+            default: true,
+            required: true
+        },
+        parentQuestionId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Questions',
+            default: null
+        },
     },
     { timestamps: true },
 );
+
+QuestionsSchema.index({ isLatest: 1 });
+QuestionsSchema.index({ parentQuestionId: 1 });
 
 const Questions = mongoose.model('Questions', QuestionsSchema);
 export default Questions;

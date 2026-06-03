@@ -11,6 +11,7 @@ MOCKEA is a full-stack web application built on the **MERN** stack (MongoDB, Exp
 - **Database**: MongoDB (Mongoose).
 - **Authentication**: Firebase Authentication + JSON Web Tokens (JWT) for secure API access.
 - **State Management**: React Context API + TanStack Query (for server state).
+- **Analytics**: Google Analytics 4 (GA4) client-side standalone integration via `react-ga4` (independent of Firebase SDK).
 
 ---
 
@@ -111,5 +112,30 @@ This is the "Mission Control" for the exam simulator.
 
 ### Frontend
 1. `cd frontend && npm install`
-2. Configure `.env` (Vite API URL, Firebase Config).
+2. Configure `.env` (Vite API URL, Firebase Config, Google Analytics ID).
 3. `npm run dev`
+
+---
+
+## 8. Google Analytics 4 (GA4) Standalone Integration
+
+Google Analytics 4 is integrated as a standalone client-side tracking solution using the `react-ga4` package. It does not require the Firebase Analytics SDK.
+
+### **Utility Helper (`frontend/src/utils/analytics.js`)**
+All analytics functions are encapsulated in a single file to keep the codebase clean:
+- **`initGA()`**: Reads `VITE_GA_MEASUREMENT_ID` from the environment. In development mode (`import.meta.env.DEV`), it enables `debug_mode` automatically so event activity can be audited instantly in the GA4 DebugView.
+- **`logPageView(path)`**: Dispatches pageview parameters to GA4.
+- **`logGAEvent(eventName, params)`**: Triggers standard or custom events in snake_case format.
+- **`setGAUserId(userId)`**: Associates the current user session with their anonymized Firebase UID.
+
+### **Tracking Points**
+1. **Route Pageviews**: Handled inside `ScrollToTop.jsx` on every route change, automating SPA page tracking.
+2. **Authentication Flow**: Managed in `AuthProvider.jsx`. Sets the anonymized `userId` on successful login and tracks a standard `login` event. Clears the ID on logout.
+3. **Exam Environment (`TestEnvironment.jsx`)**:
+   - `test_start`: Fired when a student opens a mock test.
+   - `test_submit`: Fired when a student finishes the mock test.
+   - `test_auto_submitted_violation`: Fired on safety/anti-cheat tab switches (e.g., 3rd infraction).
+4. **Checkout Conversion (`Pricing.jsx`)**:
+   - `begin_checkout`: Dispatched when a student initiates a membership tier checkout.
+5. **System Crash Logs (`errorLogger.js`)**:
+   - `exception`: Forwards unhandled client-side runtime errors to the GA4 dashboard.
