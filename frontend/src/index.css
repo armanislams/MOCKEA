@@ -95,3 +95,17 @@ body,
 .animate-voice-bar {
   animation: voice-bar 1s ease-in-out infinite;
 }
+
+/* Ensure collapsed drawer side menu tooltips display properly and overlay correctly */
+@media (min-width: 1024px) {
+  .drawer-side.lg\:overflow-visible,
+  .drawer-side.lg\:overflow-visible > .menu {
+    overflow: visible !important;
+  }
+}
+
+/* Make sure DaisyUI tooltips are on top of other content overlays and have high z-index */
+.tooltip.z-50::before,
+.tooltip.z-50::after {
+  z-index: 99999 !important;
+}
