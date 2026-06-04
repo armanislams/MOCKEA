@@ -14,6 +14,7 @@ import {
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
+import Loader from "../../Loader/Loader";
 
 export const InstructorHome = () => {
     const axiosSecure = useAxiosSecure();
@@ -50,6 +51,10 @@ export const InstructorHome = () => {
             toast.error(error.response?.data?.message || "Failed to proceed with review");
         }
     });
+
+    if (loadingAnalytics || loadingLabs) {
+        return <Loader />;
+    }
 
     const handleProceed = (id) => {
         lockMutation.mutate(id);
@@ -240,7 +245,7 @@ export const InstructorHome = () => {
                         </div>
 
                         <button 
-                            onClick={() => navigate("/dashboard/grade-submissions")}
+                            onClick={() => navigate("/dashboard/instructor/grade-submissions")}
                             className="btn btn-ghost btn-block rounded-2xl bg-white border border-slate-200 font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-white hover:border-primary transition-all py-8"
                         >
                             View All Evaluations
