@@ -13,7 +13,9 @@ import {
     PiEye,
     PiX,
     PiCheckCircle,
-    PiInfo
+    PiInfo,
+    PiSquaresFour,
+    PiList
 } from "react-icons/pi";
 import { Link } from "react-router";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
@@ -22,6 +24,7 @@ const ManageQuestions = () => {
     const axiosSecure = useAxiosSecure();
     const queryClient = useQueryClient();
     const [selectedQuestion, setSelectedQuestion] = useState(null);
+    const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
 
     const { data: questions = [], isLoading } = useQuery({
         queryKey: ["admin-questions"],
@@ -88,62 +91,182 @@ const ManageQuestions = () => {
                     <h1 className="text-3xl font-bold">Question Bank</h1>
                     <p className="text-base-content/60">Manage all IELTS questions across different sections.</p>
                 </div>
-                <Link to="/dashboard/admin/add-questions" className="btn btn-primary rounded-2xl gap-2">
-                    <PiPlus /> Add Questions
-                </Link>
+                <div className="flex items-center gap-3">
+                    <div className="join bg-base-100 border border-base-300 rounded-2xl p-0.5 shadow-sm">
+                        <button 
+                            onClick={() => setViewMode("grid")}
+                            className={`btn btn-sm btn-ghost join-item rounded-xl gap-1.5 ${viewMode === "grid" ? "bg-primary text-white hover:bg-primary/95" : "text-base-content/70"}`}
+                        >
+                            <PiSquaresFour className="text-lg" /> Grid
+                        </button>
+                        <button 
+                            onClick={() => setViewMode("table")}
+                            className={`btn btn-sm btn-ghost join-item rounded-xl gap-1.5 ${viewMode === "table" ? "bg-primary text-white hover:bg-primary/95" : "text-base-content/70"}`}
+                        >
+                            <PiList className="text-lg" /> Table
+                        </button>
+                    </div>
+                    <Link to="/dashboard/admin/add-questions" className="btn btn-primary rounded-2xl gap-2">
+                        <PiPlus /> Add Questions
+                    </Link>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {isLoading ? (
-                    [1, 2, 3].map(i => <div key={i} className="h-48 bg-base-300 animate-pulse rounded-3xl" />)
-                ) : (
-                    questions.map((q) => (
-                        <div key={q._id} className="card bg-white border border-base-300 shadow-sm p-6 hover:shadow-md transition-shadow group">
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-3 rounded-2xl bg-base-100 text-2xl">
-                                        {getIcon(q.testType)}
+            {viewMode === "table" ? (
+                <div className="card bg-white border border-base-300 shadow-sm overflow-hidden rounded-[2rem] p-4">
+                    <div className="overflow-x-auto">
+                        <table className="table table-md w-full">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-base-200 text-slate-500 text-xs font-black uppercase tracking-wider">
+                                    <th className="py-4 pl-6 rounded-l-2xl">Question Set</th>
+                                    <th className="py-4">Section</th>
+                                    <th className="py-4">Exam</th>
+                                    <th className="py-4">Questions</th>
+                                    <th className="py-4">Plan Type</th>
+                                    <th className="py-4">Guest Access</th>
+                                    <th className="py-4">Version</th>
+                                    <th className="py-4">Created Date</th>
+                                    <th className="py-4 pr-6 text-right rounded-r-2xl">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-base-100">
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan="9" className="text-center py-8">
+                                            <span className="loading loading-spinner loading-lg text-primary" />
+                                        </td>
+                                    </tr>
+                                ) : questions.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="9" className="text-center py-8 text-base-content/40 italic">
+                                            No question sets found.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    questions.map((q) => (
+                                        <tr key={q._id} className="hover:bg-slate-50/80 transition-colors group">
+                                            <td className="py-4 pl-6 font-bold text-slate-800">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-xl bg-base-100 text-lg">
+                                                        {getIcon(q.testType)}
+                                                    </div>
+                                                    <span className="line-clamp-1 max-w-[200px]" title={q.title}>{q.title}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4">
+                                                <span className="capitalize text-xs font-bold text-slate-600">{q.testType}</span>
+                                            </td>
+                                            <td className="py-4">
+                                                <span className={`badge badge-sm font-bold border-none ${
+                                                    q.examType === 'IELTS' ? 'bg-blue-50 text-blue-700' :
+                                                    q.examType === 'PTE' ? 'bg-green-50 text-green-700' :
+                                                    'bg-amber-50 text-amber-700'
+                                                }`}>{q.examType || 'IELTS'}</span>
+                                            </td>
+                                            <td className="py-4 font-bold text-slate-600">
+                                                {q.questions?.length || 0} Qs
+                                            </td>
+                                            <td className="py-4">
+                                                <span className={`badge badge-sm font-black border-none uppercase text-[9px] px-2.5 ${
+                                                    q.forPlanType === 'premium' ? 'bg-accent/15 text-accent-content' : 'bg-base-200 text-base-content/60'
+                                                }`}>{q.forPlanType}</span>
+                                            </td>
+                                            <td className="py-4">
+                                                <span className={`badge badge-sm font-semibold border-none text-xs ${
+                                                    q.isPublic ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                                }`}>{q.isPublic ? "Allowed" : "Restricted"}</span>
+                                            </td>
+                                            <td className="py-4 font-bold text-slate-500">
+                                                V{q.version || 1}
+                                            </td>
+                                            <td className="py-4 text-xs text-base-content/50">
+                                                {new Date(q.createdAt).toLocaleDateString()}
+                                            </td>
+                                            <td className="py-4 pr-6 text-right">
+                                                <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button 
+                                                        onClick={() => setSelectedQuestion(q)}
+                                                        className="btn btn-ghost btn-xs btn-circle text-primary"
+                                                        title="See Questions"
+                                                    >
+                                                        <PiEye className="text-base" />
+                                                    </button>
+                                                    <Link 
+                                                        to={`/dashboard/admin/edit-questions/${q._id}`}
+                                                        className="btn btn-ghost btn-xs btn-circle text-info"
+                                                        title="Edit"
+                                                    >
+                                                        <PiPencilSimple className="text-base" />
+                                                    </Link>
+                                                    <button 
+                                                        onClick={() => handleDelete(q._id)}
+                                                        className="btn btn-ghost btn-xs btn-circle text-error"
+                                                        title="Delete"
+                                                    >
+                                                        <PiTrash className="text-base" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {isLoading ? (
+                        [1, 2, 3].map(i => <div key={i} className="h-48 bg-base-300 animate-pulse rounded-3xl" />)
+                    ) : (
+                        questions.map((q) => (
+                            <div key={q._id} className="card bg-white border border-base-300 shadow-sm p-6 hover:shadow-md transition-shadow group">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-3 rounded-2xl bg-base-100 text-2xl">
+                                            {getIcon(q.testType)}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold line-clamp-1">{q.title}</h3>
+                                            <p className="text-xs uppercase tracking-widest text-base-content/50 font-semibold">{q.testType}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold line-clamp-1">{q.title}</h3>
-                                        <p className="text-xs uppercase tracking-widest text-base-content/50 font-semibold">{q.testType}</p>
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Link 
+                                            to={`/dashboard/admin/edit-questions/${q._id}`}
+                                            className="btn btn-ghost btn-xs btn-circle text-primary"
+                                        >
+                                            <PiPencilSimple />
+                                        </Link>
+                                        <button 
+                                            onClick={() => handleDelete(q._id)}
+                                            className="btn btn-ghost btn-xs btn-circle text-error"
+                                        >
+                                            <PiTrash />
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Link 
-                                        to={`/dashboard/admin/edit-questions/${q._id}`}
-                                        className="btn btn-ghost btn-xs btn-circle text-primary"
-                                    >
-                                        <PiPencilSimple />
-                                    </Link>
+                                
+                                <div className="mt-6 flex items-center justify-between border-t border-base-200 pt-4">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="badge badge-outline badge-xs px-2 font-semibold">{q.questions?.length || 0} Qs</span>
+                                            <span className={`badge badge-xs px-2 font-bold ${q.forPlanType === 'premium' ? 'badge-accent' : 'badge-ghost'}`}>{q.forPlanType}</span>
+                                        </div>
+                                        <span className="text-[9px] text-base-content/40">Created {new Date(q.createdAt).toLocaleDateString()}</span>
+                                    </div>
                                     <button 
-                                        onClick={() => handleDelete(q._id)}
-                                        className="btn btn-ghost btn-xs btn-circle text-error"
+                                        onClick={() => setSelectedQuestion(q)}
+                                        className="btn btn-primary btn-sm rounded-xl gap-1.5 font-bold shadow-sm hover:shadow transition-all"
                                     >
-                                        <PiTrash />
+                                        <PiEye className="text-sm" /> See Questions
                                     </button>
                                 </div>
                             </div>
-                            
-                            <div className="mt-6 flex items-center justify-between border-t border-base-200 pt-4">
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="badge badge-outline badge-xs px-2 font-semibold">{q.questions?.length || 0} Qs</span>
-                                        <span className={`badge badge-xs px-2 font-bold ${q.forPlanType === 'premium' ? 'badge-accent' : 'badge-ghost'}`}>{q.forPlanType}</span>
-                                    </div>
-                                    <span className="text-[9px] text-base-content/40">Created {new Date(q.createdAt).toLocaleDateString()}</span>
-                                </div>
-                                <button 
-                                    onClick={() => setSelectedQuestion(q)}
-                                    className="btn btn-primary btn-sm rounded-xl gap-1.5 font-bold shadow-sm hover:shadow transition-all"
-                                >
-                                    <PiEye className="text-sm" /> See Questions
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
+                        ))
+                    )}
+                </div>
+            )}
 
             {/* Questions Preview Modal */}
             {selectedQuestion && (
