@@ -17,6 +17,14 @@ export const useTestIntegrity = (isStarted, submitted) => {
     return () => document.removeEventListener("fullscreenchange", handleFSChange);
   }, [isStarted, submitted]);
 
+  useEffect(() => {
+    return () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, []);
+
   return {
     isFullscreen,
     showWarning,

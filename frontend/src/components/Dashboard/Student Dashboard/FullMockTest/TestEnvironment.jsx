@@ -330,8 +330,16 @@ const TestEnvironment = () => {
                 answered: answers[key] === 'started' ? 1 : 0
             };
         }
-        return { total: 0, answered: 0 };
     }, [test, currentModuleIdx, answers]);
+
+    // 8. Exit fullscreen on component unmount
+    useEffect(() => {
+        return () => {
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        };
+    }, []);
 
     if (isLoading) return <Loader/>
 

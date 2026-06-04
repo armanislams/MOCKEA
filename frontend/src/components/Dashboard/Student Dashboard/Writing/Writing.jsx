@@ -543,7 +543,16 @@ const Writing = () => {
                                         Your response has been added to the instructor's queue. You will be notified once the grading is complete.
                                     </p>
                                 </div>
-                                <button onClick={() => navigate(-1)} className="btn btn-primary rounded-2xl px-10 font-black">Return to Dashboard</button>
+                                <button 
+                                    onClick={() => {
+                                        exitFullscreen();
+                                        setIsStarted(false);
+                                        navigate(-1);
+                                    }} 
+                                    className="btn btn-primary rounded-2xl px-10 font-black"
+                                >
+                                    Return to Dashboard
+                                </button>
                             </motion.div>
                         ) : (
                             <textarea 
