@@ -18,6 +18,20 @@ export const useTestIntegrity = (isStarted, submitted) => {
   }, [isStarted, submitted]);
 
   useEffect(() => {
+    if (isStarted) {
+      // Force all potential scrollable containers to the top to prevent layout shift cutoffs
+      window.scrollTo({ top: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      
+      const scrollContainers = document.querySelectorAll(".overflow-y-auto");
+      scrollContainers.forEach(container => {
+        container.scrollTop = 0;
+      });
+    }
+  }, [isStarted]);
+
+  useEffect(() => {
     return () => {
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});

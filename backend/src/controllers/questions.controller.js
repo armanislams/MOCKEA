@@ -11,13 +11,20 @@ export const getQuestions = async (req, res) => {
         let examPreference = "IELTS";
         let userRole = "student";
 
+        let userPlan = "free";
+
         if (email) {
             const userObj = await User.findOne({ email });
-            if (userObj && userObj.targetExam) {
-                examPreference = userObj.targetExam;
-            }
-            if (userObj && userObj.role) {
-                userRole = userObj.role;
+            if (userObj) {
+                if (userObj.targetExam) {
+                    examPreference = userObj.targetExam;
+                }
+                if (userObj.role) {
+                    userRole = userObj.role;
+                }
+                if (userObj.plan) {
+                    userPlan = userObj.plan;
+                }
             }
         }
 
@@ -25,24 +32,51 @@ export const getQuestions = async (req, res) => {
             ? { testType: type.toLowerCase(), isLatest: { $ne: false } } 
             : { isLatest: { $ne: false } };
         
-        // Admins see ALL questions regardless of examType
-        // Students see only questions matching their exam preference,
-        // OR questions that don't have examType set yet (legacy backwards compat)
-        if (userRole !== "admin") {
+        // Admins and Instructors see ALL questions regardless of plan & examType
+        // Students see only questions matching their exam preference & tier limits
+        if (userRole !== "admin" && userRole !== "instructor") {
+            filter.isMockOnly = { $ne: true };
+            
+            const andConditions = [];
+
+            // 1. Exam preference segment
             if (examPreference === "IELTS") {
-                filter.$or = [
-                    { examType: { $in: ["IELTS", "BOTH"] } },
-                    { examType: { $exists: false } },
-                    { examType: null }
-                ];
+                andConditions.push({
+                    $or: [
+                        { examType: { $in: ["IELTS", "BOTH"] } },
+                        { examType: { $exists: false } },
+                        { examType: null }
+                    ]
+                });
             } else if (examPreference === "PTE") {
-                filter.$or = [
-                    { examType: { $in: ["PTE", "BOTH"] } },
-                    { examType: { $exists: false } },
-                    { examType: null }
-                ];
+                andConditions.push({
+                    $or: [
+                        { examType: { $in: ["PTE", "BOTH"] } },
+                        { examType: { $exists: false } },
+                        { examType: null }
+                    ]
+                });
             }
-            // BOTH: no filter — student sees everything
+
+            // 2. Subscription Plan/Tier Gating
+            const allowedPlans = ["free"];
+            if (userPlan === "standard") {
+                allowedPlans.push("standard");
+            } else if (userPlan === "premium") {
+                allowedPlans.push("standard", "premium");
+            }
+
+            andConditions.push({
+                $or: [
+                    { forPlanType: { $in: allowedPlans } },
+                    { forPlanType: { $exists: false } },
+                    { forPlanType: null }
+                ]
+            });
+
+            if (andConditions.length > 0) {
+                filter.$and = andConditions;
+            }
         }
         
         const questions = await Questions.find(filter);

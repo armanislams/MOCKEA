@@ -128,6 +128,11 @@ const QuestionsSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        // If true, this question set is only available for mock tests and hidden from practice lists
+        isMockOnly: {
+            type: Boolean,
+            default: false,
+        },
         version: {
             type: Number,
             default: 1,

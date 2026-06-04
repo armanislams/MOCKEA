@@ -6,6 +6,7 @@ export const getPublicMockTests = async (req, res) => {
     try {
         const tests = await Questions.find({
             isPublic: true,
+            isMockOnly: { $ne: true },
             testType: { $in: ['speaking', 'listening'] }
         })
         .select('title testType instructions speakingPrompt audioUrl forPlanType')

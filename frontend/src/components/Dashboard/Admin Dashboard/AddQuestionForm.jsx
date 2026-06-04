@@ -115,6 +115,7 @@ const initialForm = () => ({
     listeningPart: 1,
     forPlanType: "free",
     isPublic: false,
+    isMockOnly: false,
     questions: [makeQuestion()],
 });
 
@@ -380,22 +381,22 @@ const AddQuestionForm = () => {
                     <h2 className="text-xl font-bold flex items-center gap-2">
                         <PiPlusCircle className="text-primary" /> General Information
                     </h2>
-                    <div className="grid md:grid-cols-3 gap-4">
-                        <div className="form-control md:col-span-1">
-                            <label className="label"><span className="label-text font-semibold">Test Title</span></label>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Test Title</label>
                             <input
                                 type="text"
-                                className="input input-bordered rounded-2xl"
+                                className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
                                 placeholder="e.g. Cambridge 18 – Test 1 – Part 1"
                                 value={formData.title}
                                 onChange={(e) => patch({ title: e.target.value })}
                                 required
                             />
                         </div>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-semibold">Exam Program</span></label>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Exam Program</label>
                             <select
-                                className="select select-bordered rounded-2xl font-bold"
+                                className="select select-bordered w-full rounded-2xl text-sm font-bold focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200"
                                 value={formData.examType}
                                 onChange={(e) => patch({ examType: e.target.value })}
                             >
@@ -404,10 +405,10 @@ const AddQuestionForm = () => {
                                 <option value="BOTH">🌐 Both (IELTS &amp; PTE)</option>
                             </select>
                         </div>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-semibold">Plan Type</span></label>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Plan Type</label>
                             <select
-                                className="select select-bordered rounded-2xl"
+                                className="select select-bordered w-full rounded-2xl text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200"
                                 value={formData.forPlanType}
                                 onChange={(e) => patch({ forPlanType: e.target.value })}
                             >
@@ -417,23 +418,34 @@ const AddQuestionForm = () => {
                             </select>
                         </div>
                     </div>
-                    <div className="form-control">
-                        <label className="label cursor-pointer gap-3 justify-start">
+                    <div className="flex flex-wrap items-center gap-6 py-2">
+                        <div className="flex items-center gap-3">
                             <input
                                 type="checkbox"
-                                className="toggle toggle-primary"
+                                className="toggle toggle-primary animate-none"
                                 checked={formData.isPublic}
                                 onChange={(e) => patch({ isPublic: e.target.checked })}
                             />
-                            <span className="label-text font-semibold">
+                            <span className="text-xs font-bold text-slate-700 tracking-wide">
                                 Make available for guest (free-practice) users
                             </span>
-                        </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                className="toggle toggle-primary animate-none"
+                                checked={formData.isMockOnly}
+                                onChange={(e) => patch({ isMockOnly: e.target.checked })}
+                            />
+                            <span className="text-xs font-bold text-slate-700 tracking-wide">
+                                Mock Test Only (Hide from standard Practice Labs)
+                            </span>
+                        </div>
                     </div>
-                    <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold">Global Instructions</span></label>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-700 tracking-wide">Global Instructions</label>
                         <textarea
-                            className="textarea textarea-bordered rounded-2xl h-20"
+                            className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[100px]"
                             placeholder="e.g. Complete the form. Write ONE WORD AND/OR A NUMBER for each answer."
                             value={formData.instructions}
                             onChange={(e) => patch({ instructions: e.target.value })}
@@ -573,40 +585,40 @@ const AddQuestionForm = () => {
 
                     {/* Writing */}
                     {testType === "writing" && (
-                        <div className="space-y-4">
-                            <div className="p-6 bg-slate-50/50 rounded-3xl border border-slate-200/60 space-y-4">
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                        <div className="space-y-6">
+                            <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-200/60 space-y-6">
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                                     Writing Task 1 — Academic Report
                                 </h3>
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-semibold text-xs">Task 1 Prompt</span></label>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-slate-700 tracking-wide">Task 1 Prompt</label>
                                     <textarea
-                                        className="textarea textarea-bordered rounded-2xl h-28 text-sm"
+                                        className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px]"
                                         placeholder="The table below shows global plastic production…"
                                         value={formData.task1Prompt}
                                         onChange={(e) => patch({ task1Prompt: e.target.value })}
                                         required
                                     />
                                 </div>
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-semibold text-xs">Task 1 Diagram Image URL (Optional)</span></label>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-slate-700 tracking-wide">Task 1 Diagram Image URL (Optional)</label>
                                     <input
                                         type="url"
-                                        className="input input-bordered rounded-2xl text-sm"
+                                        className="w-full px-4 py-3.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
                                         placeholder="https://domain.com/chart.png"
                                         value={formData.task1Image}
                                         onChange={(e) => patch({ task1Image: e.target.value })}
                                     />
                                 </div>
                             </div>
-                            <div className="p-6 bg-slate-50/50 rounded-3xl border border-slate-200/60 space-y-4">
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                            <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-200/60 space-y-6">
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                                     Writing Task 2 — Opinion Essay
                                 </h3>
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-semibold text-xs">Task 2 Prompt</span></label>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-slate-700 tracking-wide">Task 2 Prompt</label>
                                     <textarea
-                                        className="textarea textarea-bordered rounded-2xl h-28 text-sm"
+                                        className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px]"
                                         placeholder="Some people argue that university education should be free…"
                                         value={formData.task2Prompt}
                                         onChange={(e) => patch({ task2Prompt: e.target.value })}

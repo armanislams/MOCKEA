@@ -245,6 +245,19 @@ const TestEnvironment = () => {
         }
     }, [id]);
 
+    // Scroll to Top on Start
+    useEffect(() => {
+        if (isStarted) {
+            window.scrollTo({ top: 0, behavior: "instant" });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            const scrollContainers = document.querySelectorAll(".overflow-y-auto");
+            scrollContainers.forEach(container => {
+                container.scrollTop = 0;
+            });
+        }
+    }, [isStarted]);
+
     // 6. Fullscreen Change Monitor
     useEffect(() => {
         const handleFSChange = () => {
