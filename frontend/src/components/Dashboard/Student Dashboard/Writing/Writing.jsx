@@ -4,6 +4,7 @@ import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
+import Swal from "sweetalert2";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -22,6 +23,37 @@ import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import FullscreenGate from "../../../Common/FullscreenGate.jsx";
 import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
 
+const getTaskContent = (passage, tab) => {
+  if (!passage) return "";
+  
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(passage, "text/html");
+  
+  // Find the header elements containing "Task 1" or "Task 2"
+  const headings = Array.from(doc.querySelectorAll("h3"));
+  const taskHeading = headings.find(h => 
+    tab === "task1" 
+      ? h.textContent.toLowerCase().includes("task 1") 
+      : h.textContent.toLowerCase().includes("task 2")
+  );
+  
+  if (taskHeading) {
+    // The task content is inside the parent container of this heading
+    const container = taskHeading.closest(".p-6") || taskHeading.parentElement;
+    if (container) {
+      return container.outerHTML;
+    }
+  }
+  
+  // Fallback: If DOMParser didn't find it, do a basic split
+  if (tab === "task1") {
+    return passage.split(/Task 2/i)[0] || passage;
+  } else {
+    const parts = passage.split(/Task 2/i);
+    return parts.length > 1 ? "<h3>Task 2" + parts[1] : passage;
+  }
+};
+
 const Writing = () => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
@@ -39,6 +71,7 @@ const Writing = () => {
   const [activeTab, setActiveTab] = useState("task1"); // "task1" or "task2"
   const [task1Text, setTask1Text] = useState("");
   const [task2Text, setTask2Text] = useState("");
+  const [task1Submitted, setTask1Submitted] = useState(false);
 
   const text = useMemo(() => {
     return `--- TASK 1 (150 Words Requirement) ---\n${task1Text}\n\n--- TASK 2 (250 Words Requirement) ---\n${task2Text}`;
@@ -47,6 +80,8 @@ const Writing = () => {
   const resetText = () => {
     setTask1Text("");
     setTask2Text("");
+    setTask1Submitted(false);
+    setActiveTab("task1");
   };
 
   const handleTextChange = (val) => {
@@ -98,9 +133,36 @@ const Writing = () => {
     return () => clearInterval(iv);
   }, [timerActive, submitted, timeLeft]);
 
+  const handleFirstTaskSubmit = async () => {
+    if (wordCount1 < 30) {
+      toast.warning("Your Task 1 response is too short (minimum 30 words recommended).");
+      return;
+    }
+    
+    const result = await Swal.fire({
+      title: "Submit Task 1?",
+      text: "You are about to proceed to Task 2. Once submitted, you cannot edit Task 1 again.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, proceed",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#2563EB",
+      cancelButtonColor: "#64748B",
+      customClass: {
+        popup: "rounded-[2rem]"
+      }
+    });
+
+    if (result.isConfirmed) {
+      setTask1Submitted(true);
+      setActiveTab("task2");
+      toast.success("Task 1 locked! Now starting Task 2.");
+    }
+  };
+
   const handleSubmit = async () => {
-    if (wordCount < 50) {
-      toast.warning("Your response is too short for a meaningful assessment.");
+    if (wordCount2 < 50) {
+      toast.warning("Your Task 2 response is too short (minimum 50 words recommended).");
       return;
     }
 
@@ -345,13 +407,22 @@ const Writing = () => {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <button 
-                        onClick={handleSubmit} 
-                        disabled={submitting}
-                        className="btn btn-primary rounded-2xl px-6 h-12 font-black shadow-xl shadow-primary/20 border-none"
-                    >
-                        {submitting ? <span className="loading loading-spinner" /> : "Submit Draft"}
-                    </button>
+                    {activeTab === "task1" ? (
+                      <button 
+                          onClick={handleFirstTaskSubmit} 
+                          className="btn btn-primary rounded-2xl px-6 h-12 font-black shadow-xl shadow-primary/20 border-none"
+                      >
+                          Submit Task 1 &amp; Continue
+                      </button>
+                    ) : (
+                      <button 
+                          onClick={handleSubmit} 
+                          disabled={submitting}
+                          className="btn btn-primary rounded-2xl px-6 h-12 font-black shadow-xl shadow-primary/20 border-none"
+                      >
+                          {submitting ? <span className="loading loading-spinner" /> : "Submit Draft"}
+                      </button>
+                    )}
                     <button
                         onClick={handleExitTest}
                         className="btn btn-ghost border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-2xl px-6 h-12 font-black text-xs uppercase tracking-widest"
@@ -376,15 +447,16 @@ const Writing = () => {
                         </div>
                         
                         <div className="prose prose-slate max-w-none">
-                            <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-tight">
+                            <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-tight mb-4">
                                 {activeSet?.title}
                             </h2>
-                            <div className="prose prose-slate max-w-none text-slate-500 font-medium leading-relaxed">
-                                {activeSet?.content}
-                            </div>
+                            <div 
+                                className="prose prose-slate max-w-none"
+                                dangerouslySetInnerHTML={{ __html: getTaskContent(activeSet?.passage, activeTab) }}
+                            />
                         </div>
 
-                        {activeSet.images?.length > 0 && (
+                        {activeTab === "task1" && activeSet.images?.length > 0 && (
                             <div className="grid gap-4 pt-6">
                                 {activeSet.images.map((img, i) => (
                                     <div key={i} className="rounded-3xl overflow-hidden border border-base-200 bg-base-50 p-4">
@@ -411,22 +483,34 @@ const Writing = () => {
                     <div className="px-10 py-6 border-b border-slate-200 bg-base-50/50 flex items-center justify-between">
                         <div className="flex bg-slate-200/60 p-1 rounded-2xl gap-1.5 shadow-inner">
                             <button 
-                                onClick={() => setActiveTab("task1")}
+                                onClick={() => {
+                                    if (task1Submitted) {
+                                        toast.warning("Task 1 has been submitted and locked.");
+                                        return;
+                                    }
+                                    setActiveTab("task1");
+                                }}
                                 className={`py-2 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                                     activeTab === "task1" 
                                     ? "bg-white text-slate-800 shadow-sm" 
                                     : "text-slate-400 hover:text-slate-600"
-                                }`}
+                                } ${task1Submitted ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                                 Task 1
                             </button>
                             <button 
-                                onClick={() => setActiveTab("task2")}
+                                onClick={() => {
+                                    if (!task1Submitted) {
+                                        toast.info("Please submit Task 1 before proceeding to Task 2.");
+                                        return;
+                                    }
+                                    setActiveTab("task2");
+                                }}
                                 className={`py-2 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                                     activeTab === "task2" 
                                     ? "bg-white text-slate-800 shadow-sm" 
                                     : "text-slate-400 hover:text-slate-600"
-                                }`}
+                                } ${!task1Submitted ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                                 Task 2
                             </button>
@@ -471,6 +555,7 @@ const Writing = () => {
                                 }
                                 value={activeTab === "task1" ? task1Text : task2Text}
                                 onChange={(e) => handleTextChange(e.target.value)}
+                                readOnly={activeTab === "task1" && task1Submitted}
                             />
                         )}
                     </div>
