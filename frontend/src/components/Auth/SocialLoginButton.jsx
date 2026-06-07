@@ -110,8 +110,26 @@ const SocialLoginButton = ({ onSuccess }) => {
       if (onSuccess) {
         onSuccess();
       } else {
-        // Navigate to destination
-        navigate(redirectTo, { replace: true });
+        let role = null;
+        try {
+          const token = await result.user.getIdToken();
+          const roleRes = await axiosInstance.get(`/user/${result.user.email}/role`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          role = roleRes.data?.role;
+        } catch (err) {
+          console.error("Error fetching user role on social login:", err);
+        }
+
+        if (role === "admin" || role === "instructor") {
+          const target = (redirectTo === "/" || redirectTo === "/dashboard") ? "/dashboard/profile" : redirectTo;
+          navigate(target, { replace: true });
+        } else {
+          // Navigate to destination
+          navigate(redirectTo, { replace: true });
+        }
       }
 
     } catch (error) {

@@ -28,13 +28,31 @@ const Login = ({ onSuccess, isModal, onToggleAuth }) => {
         .then((res) => {
           if (res.data.success) {
             signIn(data.email, data.password)
-              .then(() => {
+              .then((result) => {
                 toast.success("Logged In Successfully");
-                setTimeout(() => {
+                setTimeout(async () => {
                   if (onSuccess) {
                     onSuccess();
                   } else {
-                    navigate(from, { replace: true });
+                    let role = null;
+                    try {
+                      const token = await result.user.getIdToken();
+                      const roleRes = await axiosIstance.get(`/user/${data.email}/role`, {
+                        headers: {
+                          Authorization: `Bearer ${token}`
+                        }
+                      });
+                      role = roleRes.data?.role;
+                    } catch (err) {
+                      console.error("Error fetching user role on login:", err);
+                    }
+
+                    if (role === "admin" || role === "instructor") {
+                      const target = (from === "/" || from === "/dashboard") ? "/dashboard/profile" : from;
+                      navigate(target, { replace: true });
+                    } else {
+                      navigate(from, { replace: true });
+                    }
                   }
                   setIsLoading(false);
                 }, 500);
