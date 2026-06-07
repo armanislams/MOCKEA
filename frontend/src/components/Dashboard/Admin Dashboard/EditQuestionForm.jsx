@@ -390,7 +390,8 @@ const EditQuestionForm = () => {
             testType === "listening" &&
             (formData.examType === "IELTS" || formData.examType === "BOTH")
         ) {
-            const exampleHTML = `
+            if (formData.listeningPart === 1) {
+                const exampleHTML = `
 <div class="mb-6 p-5 bg-indigo-50/50 border border-indigo-100 rounded-3xl">
   <div class="text-[9px] font-black uppercase tracking-widest text-primary mb-2">Example</div>
   <div class="flex items-center justify-between text-sm font-semibold text-slate-700">
@@ -398,7 +399,14 @@ const EditQuestionForm = () => {
     <span class="px-3 py-1 bg-white border border-slate-200 rounded-xl font-bold text-slate-800">${formData.exampleAnswer || "Harbour City"}</span>
   </div>
 </div>`.trim();
-            data.passage = `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">${formData.passage}</div>`;
+                data.passage = formData.passage.trim()
+                    ? `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">${formData.passage}</div>`
+                    : exampleHTML;
+            } else {
+                data.passage = formData.passage.trim()
+                    ? `<div class="ielts-listening-notes space-y-4">${formData.passage}</div>`
+                    : "";
+            }
         }
 
         mutation.mutate(data);
@@ -606,48 +614,59 @@ const EditQuestionForm = () => {
                                     <h3 className="text-xs font-black uppercase tracking-widest text-primary">
                                         IELTS — Example &amp; Notes Context
                                     </h3>
-                                    <div className="grid md:grid-cols-2 gap-4">
-                                        <div className="form-control">
-                                            <label className="label">
-                                                <span className="label-text font-semibold text-xs text-indigo-700">
-                                                    Example Question Label
-                                                </span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="input input-bordered rounded-2xl text-sm"
-                                                placeholder="e.g. Destination:"
-                                                value={formData.exampleQuestion}
-                                                onChange={(e) => patch({ exampleQuestion: e.target.value })}
-                                            />
+                                    {formData.listeningPart === 1 && (
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div className="form-control">
+                                                <label className="label">
+                                                    <span className="label-text font-semibold text-xs text-indigo-700">
+                                                        Example Question Label
+                                                    </span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="input input-bordered rounded-2xl text-sm"
+                                                    placeholder="e.g. Destination:"
+                                                    value={formData.exampleQuestion}
+                                                    onChange={(e) => patch({ exampleQuestion: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="form-control">
+                                                <label className="label">
+                                                    <span className="label-text font-semibold text-xs text-indigo-700">
+                                                        Example Answer (pre-filled for student)
+                                                    </span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="input input-bordered rounded-2xl text-sm"
+                                                    placeholder="e.g. Harbour City"
+                                                    value={formData.exampleAnswer}
+                                                    onChange={(e) => patch({ exampleAnswer: e.target.value })}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="form-control">
-                                            <label className="label">
-                                                <span className="label-text font-semibold text-xs text-indigo-700">
-                                                    Example Answer (pre-filled for student)
-                                                </span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="input input-bordered rounded-2xl text-sm"
-                                                placeholder="e.g. Harbour City"
-                                                value={formData.exampleAnswer}
-                                                onChange={(e) => patch({ exampleAnswer: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
+                                    )}
                                     <div className="form-control">
                                         <label className="label">
                                             <span className="label-text font-semibold text-xs text-indigo-700">
-                                                Gapped Notes / Passage Context (Optional)
+                                                {formData.listeningPart === 1 || formData.listeningPart === 4
+                                                    ? "Gapped Notes / Passage Context (Optional)"
+                                                    : "Passage Context (Optional)"}
                                             </span>
                                         </label>
                                         <textarea
                                             className="textarea textarea-bordered rounded-2xl h-28 text-sm font-serif"
-                                            placeholder="Transport from Bayswater..."
+                                            placeholder={formData.listeningPart === 1 || formData.listeningPart === 4
+                                                ? "Transport from Bayswater...\nThe passenger wants to travel to ___1___ on ___2___ of this month..."
+                                                : "Describe the setting or add any introductory text..."}
                                             value={formData.passage}
                                             onChange={(e) => patch({ passage: e.target.value })}
                                         />
+                                        {(formData.listeningPart === 1 || formData.listeningPart === 4) && (
+                                            <p className="text-[10px] text-slate-400 font-semibold mt-1">
+                                                Use ___1___ ___2___ etc. to mark answer gaps in the context text.
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             )}

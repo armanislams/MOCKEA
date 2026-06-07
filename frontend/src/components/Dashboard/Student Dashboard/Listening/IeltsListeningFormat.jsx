@@ -30,7 +30,7 @@ const COMPLETION_TYPES = new Set([
 // ─── Per-question-type renderers ─────────────────────────────────────────────
 
 /** Inline text input — note/form/sentence/summary/table/flow-chart completion */
-const CompletionRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChange }) => {
+const CompletionRenderer = ({ q, idx, offset = 0, submitted, evaluation, answers, onAnswerChange }) => {
     const isCorrect = evaluation?.isCorrect;
     return (
         <div className={`flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl border transition-all ${
@@ -43,7 +43,7 @@ const CompletionRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerCh
             <div className="flex items-center gap-4 flex-1">
                 {/* Number badge */}
                 <div className="w-8 h-8 rounded-xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-xs text-slate-700 flex-shrink-0">
-                    {idx + 1}
+                    {offset + idx + 1}
                 </div>
 
                 {/* Label */}
@@ -64,7 +64,7 @@ const CompletionRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerCh
                                 : "border-red-400 bg-red-50 text-red-700"
                             : "border-base-300 focus:border-primary"
                     }`}
-                    placeholder={`Answer ${idx + 1}`}
+                    placeholder={`Answer ${offset + idx + 1}`}
                     value={answers[q.id] || ""}
                     onChange={(e) => onAnswerChange(q.id, e.target.value)}
                 />
@@ -89,7 +89,7 @@ const CompletionRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerCh
 };
 
 /** Radio option cards — multiple choice / true-false / yes-no */
-const McqRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChange }) => {
+const McqRenderer = ({ q, idx, offset = 0, submitted, evaluation, answers, onAnswerChange }) => {
     const isCorrect = evaluation?.isCorrect;
     const selected  = answers[q.id] || "";
     const options   = q.options?.length ? q.options : ["True", "False", "Not Given"];
@@ -102,7 +102,7 @@ const McqRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChange })
         }`}>
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-xs text-slate-700 flex-shrink-0">
-                    {idx + 1}
+                    {offset + idx + 1}
                 </div>
                 <span className="font-semibold text-sm text-slate-700">{q.question}</span>
                 {submitted && (
@@ -157,7 +157,7 @@ const McqRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChange })
 };
 
 /** Dropdown per item — matching / heading-matching */
-const MatchingRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChange }) => {
+const MatchingRenderer = ({ q, idx, offset = 0, submitted, evaluation, answers, onAnswerChange }) => {
     const isCorrect = evaluation?.isCorrect;
     const pairs     = q.matchingPairs || [];
     const options   = q.options || pairs.map((p) => p.value).filter(Boolean);
@@ -170,7 +170,7 @@ const MatchingRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChan
         }`}>
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-xs text-slate-700 flex-shrink-0">
-                    {idx + 1}
+                    {offset + idx + 1}
                 </div>
                 <span className="font-semibold text-sm text-slate-700">{q.question}</span>
                 {submitted && (
@@ -207,7 +207,7 @@ const MatchingRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChan
 };
 
 /** Image + numbered input — map/diagram labelling */
-const MapLabellingRenderer = ({ q, idx, submitted, evaluation, answers, onAnswerChange }) => {
+const MapLabellingRenderer = ({ q, idx, offset = 0, submitted, evaluation, answers, onAnswerChange }) => {
     const isCorrect = evaluation?.isCorrect;
     return (
         <div className={`p-5 rounded-2xl border transition-all space-y-4 ${
@@ -218,13 +218,13 @@ const MapLabellingRenderer = ({ q, idx, submitted, evaluation, answers, onAnswer
             {q.imageUrl && (
                 <img
                     src={q.imageUrl}
-                    alt={`Map / Diagram for Q${idx + 1}`}
+                    alt={`Map / Diagram for Q${offset + idx + 1}`}
                     className="w-full max-h-64 object-contain rounded-2xl border border-base-200 bg-white"
                 />
             )}
             <div className="flex items-center gap-4">
                 <div className="w-8 h-8 rounded-xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-xs text-slate-700 flex-shrink-0">
-                    {idx + 1}
+                    {offset + idx + 1}
                 </div>
                 <span className="font-semibold text-sm text-slate-700 flex-shrink-0 min-w-[120px]">
                     {q.question}
@@ -237,7 +237,7 @@ const MapLabellingRenderer = ({ q, idx, submitted, evaluation, answers, onAnswer
                             ? isCorrect ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-red-400 bg-red-50 text-red-700"
                             : "border-base-300"
                     }`}
-                    placeholder={`Label ${idx + 1}`}
+                    placeholder={`Label ${offset + idx + 1}`}
                     value={answers[q.id] || ""}
                     onChange={(e) => onAnswerChange(q.id, e.target.value)}
                 />
@@ -257,9 +257,9 @@ const MapLabellingRenderer = ({ q, idx, submitted, evaluation, answers, onAnswer
 // ─── Question Router ─────────────────────────────────────────────────────────
 
 /** Picks the right renderer based on question type */
-const QuestionRenderer = ({ q, idx, submitted, result, answers, onAnswerChange }) => {
+const QuestionRenderer = ({ q, idx, offset = 0, submitted, result, answers, onAnswerChange }) => {
     const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === q.id);
-    const props      = { q, idx, submitted, evaluation, answers, onAnswerChange };
+    const props      = { q, idx, offset, submitted, evaluation, answers, onAnswerChange };
 
     if (COMPLETION_TYPES.has(q.type))           return <CompletionRenderer {...props} />;
     if (["multiple-choice","true-false","yes-no"].includes(q.type)) return <McqRenderer {...props} />;
@@ -287,6 +287,7 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
 
     const part = activeSet.listeningPart || 1;
     const meta = PART_META[part] || PART_META[1];
+    const offset = (part - 1) * 10;
 
     return (
         <div className="card bg-white p-10 rounded-[3.5rem] border border-base-300 shadow-sm relative overflow-hidden">
@@ -309,7 +310,7 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                             </h2>
                         </div>
                         <p className="text-xs font-semibold text-slate-400 pl-1">
-                            Questions 1–{activeSet.questions?.length || 0}
+                            Questions {offset + 1}–{offset + (activeSet.questions?.length || 0)}
                         </p>
                     </div>
                 </div>
@@ -323,7 +324,7 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                 </div>
 
                 {/* ── Example box (compiled from passage HTML) ────────── */}
-                {activeSet.passage && (
+                {activeSet.passage && activeSet.passage.trim() !== "" && (
                     <div
                         className="prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ __html: activeSet.passage }}
@@ -342,6 +343,7 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                             <QuestionRenderer
                                 q={q}
                                 idx={idx}
+                                offset={offset}
                                 submitted={submitted}
                                 result={result}
                                 answers={answers}

@@ -4,6 +4,7 @@ import { PiEar, PiPlayCircle, PiPauseCircle, PiClock } from "react-icons/pi";
 const ListeningSection = ({ data, answers, onAnswerChange }) => {
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const offset = ((data?.listeningPart || 1) - 1) * 10;
 
     const togglePlay = () => {
         if (isPlaying) {
@@ -80,7 +81,7 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                                             : "bg-base-200 border-base-300 hover:bg-base-300"
                                         }`}
                                     >
-                                        {i + 1}
+                                        {offset + i + 1}
                                     </button>
                                 );
                             })}
@@ -95,7 +96,7 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                     <header className="space-y-4">
                         <div className="flex items-center gap-3 text-primary">
                             <PiEar className="w-8 h-8" />
-                            <h2 className="text-2xl font-black uppercase tracking-widest">Questions 1–{data?.questions?.length || 40}</h2>
+                            <h2 className="text-2xl font-black uppercase tracking-widest">Questions {offset + 1}–{offset + (data?.questions?.length || 10)}</h2>
                         </div>
                     </header>
 
@@ -108,7 +109,7 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                             >
                                 <div className="flex items-start gap-4">
                                     <div className="flex-none w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
-                                        {idx + 1}
+                                        {offset + idx + 1}
                                     </div>
                                     <div className="flex-1 space-y-4">
                                         <p className="text-lg font-semibold leading-snug">

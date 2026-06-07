@@ -706,16 +706,21 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-base-content/30 mb-6">Unit Navigator</h3>
                     <div className="grid grid-cols-5 gap-3">
-                        {activeSet.questions.map((q, i) => (
-                            <div 
-                                key={q.id}
-                                className={`w-full aspect-square rounded-xl border flex items-center justify-center text-xs font-black transition-all ${
-                                    answers[q.id] ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-base-100 border-base-200 text-base-content/40"
-                                }`}
-                            >
-                                {i + 1}
-                            </div>
-                        ))}
+                        {activeSet.questions.map((q, i) => {
+                            const part = activeSet?.listeningPart || 1;
+                            const isIelts = activeSet?.examType === 'IELTS' || activeSet?.examType === 'BOTH';
+                            const offset = isIelts ? (part - 1) * 10 : 0;
+                            return (
+                                <div 
+                                    key={q.id}
+                                    className={`w-full aspect-square rounded-xl border flex items-center justify-center text-xs font-black transition-all ${
+                                        answers[q.id] ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-base-100 border-base-200 text-base-content/40"
+                                    }`}
+                                >
+                                    {offset + i + 1}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
