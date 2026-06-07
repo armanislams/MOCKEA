@@ -420,7 +420,7 @@ const Writing = () => {
                           disabled={submitting}
                           className="btn btn-primary rounded-2xl px-6 h-12 font-black shadow-xl shadow-primary/20 border-none"
                       >
-                          {submitting ? <span className="loading loading-spinner" /> : "Submit Draft"}
+                          {submitting ? <span className="loading loading-spinner" /> : "Submit Results"}
                       </button>
                     )}
                     <button

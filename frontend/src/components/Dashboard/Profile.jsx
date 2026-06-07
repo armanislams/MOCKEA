@@ -16,6 +16,7 @@ import {
     PiLightningFill,
     PiSparkleFill
 } from "react-icons/pi";
+import { Link } from "react-router";
 
 const PLAN_CONFIG = {
     free: {
@@ -23,12 +24,12 @@ const PLAN_CONFIG = {
         color: "bg-white/5 border-white/10 text-white/60",
         icon: null,
         benefits: [
-            "Limited Daily Mock Tests",
-            "Community Writing Support",
-            "Standard Test Access",
+            "1 Free Mock Tests",
+            "Free Writing Support",
+            "Free Listening and Reading Test Access",
             "Basic Performance Tracking"
         ],
-        buttonText: "Upgrade to Elite Tier",
+        buttonText: "Upgrade to Elite Premium",
         buttonColor: "btn-warning"
     },
     standard: {
@@ -36,16 +37,16 @@ const PLAN_CONFIG = {
         color: "bg-indigo-500/20 border-indigo-500/40 text-indigo-300",
         icon: <PiStarFill />,
         benefits: [
-            "10 Full Mock Tests Monthly",
+            "30 Full Mock Tests Monthly",
             "AI Writing Feedback",
             "Extended Test Access",
             "Advanced Analytics"
         ],
-        buttonText: "Upgrade to Premium",
+        buttonText: "Upgrade to Elite Premium",
         buttonColor: "btn-primary"
     },
     premium: {
-        name: "Premium Elite",
+        name: "Elite Premium",
         color: "bg-amber-500/20 border-amber-500/40 text-amber-300",
         icon: <PiCrownFill />,
         benefits: [
@@ -246,9 +247,9 @@ const Profile = () => {
                             ))}
                         </ul>
                         {rawPlan !== 'premium' && rawPlan !== 'admin' && (
-                            <button className={`btn ${config.buttonColor} btn-block rounded-2xl h-14 font-black shadow-xl shadow-warning/20`}>
+                            <Link to="/pricing" className={`btn ${config.buttonColor} btn-block rounded-2xl h-14 font-black shadow-xl shadow-warning/20`}>
                                 {config.buttonText}
-                            </button>
+                            </Link>
                         )}
                     </div>
                 </motion.section>
