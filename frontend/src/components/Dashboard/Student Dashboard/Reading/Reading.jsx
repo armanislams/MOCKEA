@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
@@ -192,12 +192,18 @@ const Reading = () => {
 
   // Countdown Logic
   useEffect(() => {
-    if (!selectedSetId || submitted || timeLeft <= 0) return;
+    if (!selectedSetId || submitted) return;
     const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, [selectedSetId, submitted, timeLeft]);
+  }, [selectedSetId, submitted]);
 
   const fmtTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -223,12 +229,12 @@ const Reading = () => {
     );
   }, [activeSet]);
 
-  const handleAnswerChange = (questionId, value) => {
+  const handleAnswerChange = useCallback((questionId, value) => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: value,
     }));
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

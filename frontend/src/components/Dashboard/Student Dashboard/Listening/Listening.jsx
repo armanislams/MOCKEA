@@ -96,12 +96,18 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // Countdown Logic — uses activeSet (works for both guests with preloadedSet and authenticated users)
   useEffect(() => {
-    if (!activeSet || submitted || timeLeft <= 0) return;
+    if (!activeSet || submitted) return;
     const timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+        setTimeLeft((prev) => {
+            if (prev <= 1) {
+                clearInterval(timer);
+                return 0;
+            }
+            return prev - 1;
+        });
     }, 1000);
     return () => clearInterval(timer);
-  }, [activeSet, submitted, timeLeft]);
+  }, [activeSet, submitted]);
 
   const fmtCountdown = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -169,9 +175,9 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return () => clearInterval(iv);
   }, [testStarted, submitted]);
 
-  const handleAnswerChange = (qId, val) => {
+  const handleAnswerChange = useCallback((qId, val) => {
     setAnswers(prev => ({ ...prev, [qId]: val }));
-  };
+  }, []);
 
   const handleEvaluate = async () => {
     if (Object.keys(answers).length === 0) {

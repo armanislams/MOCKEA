@@ -1,5 +1,7 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, memo } from "react";
 import { PiEar, PiPlayCircle, PiPauseCircle, PiClock } from "react-icons/pi";
+
+const EMPTY_ARRAY = [];
 
 const convertMarkdownTablesToHtml = (text) => {
     if (!text) return "";
@@ -81,7 +83,7 @@ const convertMarkdownTablesToHtml = (text) => {
     return hasWrapper ? `<div class="${wrapperClass}">${finalHtml}</div>` : finalHtml;
 };
 
-const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted, result, offset, className = "leading-relaxed text-slate-700" }) => {
+const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, className = "leading-relaxed text-slate-700" }) => {
     const containerRef = useRef(null);
 
     const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
@@ -171,11 +173,16 @@ const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted,
         }
     }, [answers, processedPassage]);
 
+    const onAnswerChangeRef = useRef(onAnswerChange);
+    useEffect(() => {
+        onAnswerChangeRef.current = onAnswerChange;
+    }, [onAnswerChange]);
+
     useEffect(() => {
         const handleInput = (e) => {
             if (e.target && e.target.hasAttribute('data-q-id')) {
                 const qId = e.target.getAttribute('data-q-id');
-                onAnswerChange(qId, e.target.value);
+                onAnswerChangeRef.current(qId, e.target.value);
             }
         };
         const container = containerRef.current;
@@ -187,16 +194,18 @@ const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted,
                 container.removeEventListener('input', handleInput);
             }
         };
-    }, [onAnswerChange]);
+    }, []);
+
+    const dangerouslySetHtml = useMemo(() => ({ __html: processedPassage }), [processedPassage]);
 
     return (
         <div 
             ref={containerRef}
             className={className}
-            dangerouslySetInnerHTML={{ __html: processedPassage }}
+            dangerouslySetInnerHTML={dangerouslySetHtml}
         />
     );
-};
+});
 
 const ListeningSection = ({ data, answers, onAnswerChange }) => {
     const audioRef = useRef(null);
@@ -329,7 +338,7 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                         <div className="p-8 rounded-[2rem] border border-base-200 bg-white shadow-xs prose prose-sm max-w-none">
                             <InlinePassage
                                 passage={data.passage}
-                                questions={data.questions || []}
+                                questions={data.questions || EMPTY_ARRAY}
                                 answers={answers}
                                 onAnswerChange={onAnswerChange}
                                 offset={offset}

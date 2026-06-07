@@ -1,5 +1,7 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, memo } from "react";
 import { motion } from "framer-motion";
+
+const EMPTY_ARRAY = [];
 import {
     PiHeadphonesFill,
     PiCheckCircleFill,
@@ -112,7 +114,7 @@ const convertMarkdownTablesToHtml = (text) => {
  * Renders the passage text and replaces ___[number]___ placeholders with React inline inputs.
  * If no placeholders are present, it renders the raw HTML.
  */
-const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted, result, offset, className = "leading-relaxed text-slate-700" }) => {
+const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, className = "leading-relaxed text-slate-700" }) => {
     const containerRef = useRef(null);
 
     const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
@@ -202,11 +204,16 @@ const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted,
         }
     }, [answers, processedPassage]);
 
+    const onAnswerChangeRef = useRef(onAnswerChange);
+    useEffect(() => {
+        onAnswerChangeRef.current = onAnswerChange;
+    }, [onAnswerChange]);
+
     useEffect(() => {
         const handleInput = (e) => {
             if (e.target && e.target.hasAttribute('data-q-id')) {
                 const qId = e.target.getAttribute('data-q-id');
-                onAnswerChange(qId, e.target.value);
+                onAnswerChangeRef.current(qId, e.target.value);
             }
         };
         const container = containerRef.current;
@@ -218,16 +225,18 @@ const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted,
                 container.removeEventListener('input', handleInput);
             }
         };
-    }, [onAnswerChange]);
+    }, []);
+
+    const dangerouslySetHtml = useMemo(() => ({ __html: processedPassage }), [processedPassage]);
 
     return (
         <div 
             ref={containerRef}
             className={className}
-            dangerouslySetInnerHTML={{ __html: processedPassage }}
+            dangerouslySetInnerHTML={dangerouslySetHtml}
         />
     );
-};
+});
 
 // ─── Per-question-type renderers ─────────────────────────────────────────────
 
@@ -559,7 +568,7 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                     <div className="prose prose-sm max-w-none">
                         <InlinePassage
                             passage={activeSet.passage}
-                            questions={activeSet.questions || []}
+                            questions={activeSet.questions || EMPTY_ARRAY}
                             answers={answers}
                             onAnswerChange={onAnswerChange}
                             submitted={submitted}

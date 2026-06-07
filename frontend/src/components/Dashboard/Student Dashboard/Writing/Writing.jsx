@@ -128,10 +128,18 @@ const Writing = () => {
   }, [axiosSecure, user?.email]);
 
   useEffect(() => {
-    if (!timerActive || submitted || timeLeft <= 0) return;
-    const iv = setInterval(() => setTimeLeft((p) => p - 1), 1000);
+    if (!timerActive || submitted) return;
+    const iv = setInterval(() => {
+      setTimeLeft((p) => {
+        if (p <= 1) {
+          clearInterval(iv);
+          return 0;
+        }
+        return p - 1;
+      });
+    }, 1000);
     return () => clearInterval(iv);
-  }, [timerActive, submitted, timeLeft]);
+  }, [timerActive, submitted]);
 
   const handleFirstTaskSubmit = async () => {
     if (wordCount1 < 30) {

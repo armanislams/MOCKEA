@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
@@ -183,12 +183,18 @@ const TestEnvironment = () => {
 
     // 3. Timer Countdown Logic
     useEffect(() => {
-        if (!isFullscreen || timeLeft <= 0 || !isStarted) return;
+        if (!isFullscreen || !isStarted) return;
         const interval = setInterval(() => {
-            setTimeLeft(prev => prev - 1);
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(interval);
+                    return 0;
+                }
+                return prev - 1;
+            });
         }, 1000);
         return () => clearInterval(interval);
-    }, [timeLeft, isFullscreen, isStarted]);
+    }, [isFullscreen, isStarted]);
 
     // 4. Cache Logic
     useEffect(() => {
@@ -308,9 +314,9 @@ const TestEnvironment = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tabSwitches, isFullscreen, resultId, axiosSecure, navigate, isStarted, id]);
 
-    const handleAnswerChange = (qId, val) => {
+    const handleAnswerChange = useCallback((qId, val) => {
         setAnswers(prev => ({ ...prev, [qId]: val }));
-    };
+    }, []);
 
     const { total: totalQuestions, answered: answeredQuestions } = useMemo(() => {
         if (!test) return { total: 0, answered: 0 };
