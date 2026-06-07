@@ -1,10 +1,91 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { PiEar, PiPlayCircle, PiPauseCircle, PiClock } from "react-icons/pi";
+
+const renderInlinePassage = (passage, questions, answers, onAnswerChange, offset) => {
+    const hasInlinePlaceholders = /___([\w-]+)___/.test(passage);
+    if (!hasInlinePlaceholders) {
+        return <div dangerouslySetInnerHTML={{ __html: passage }} />;
+    }
+
+    const parts = passage.split(/(___[\w-]+___)/g);
+    return (
+        <div className="leading-relaxed text-slate-700">
+            {parts.map((part, index) => {
+                const match = part.match(/^___([\w-]+)___$/);
+                if (match) {
+                    const matchKey = match[1].trim();
+                    const q = questions.find((item, idx) => {
+                        const questionNum = offset + idx + 1;
+                        const localIndex = idx + 1;
+                        return (
+                            item.id === matchKey ||
+                            questionNum.toString() === matchKey ||
+                            localIndex.toString() === matchKey
+                        );
+                    });
+
+                    if (!q) {
+                        return <span key={index} className="text-slate-400 font-bold">{part}</span>;
+                    }
+
+                    const userAnswer = answers[q.id] || "";
+                    const qIndexInSet = questions.indexOf(q);
+
+                    return (
+                        <span key={q.id} className="inline-flex items-center gap-1 mx-1.5 align-baseline">
+                            <input
+                                type="text"
+                                value={userAnswer}
+                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                                placeholder={`(${offset + qIndexInSet + 1})`}
+                                className="inline-block h-10 px-3 py-1 rounded-xl w-36 font-bold border border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm text-center outline-none bg-white transition-all"
+                            />
+                        </span>
+                    );
+                }
+
+                return (
+                    <span
+                        key={index}
+                        dangerouslySetInnerHTML={{ __html: part }}
+                    />
+                );
+            })}
+        </div>
+    );
+};
 
 const ListeningSection = ({ data, answers, onAnswerChange }) => {
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const offset = ((data?.listeningPart || 1) - 1) * 10;
+
+    const renderedInlineIds = useMemo(() => {
+        if (!data?.passage) return new Set();
+        const matches = data.passage.match(/___([\w-]+)___/g) || [];
+        const ids = new Set();
+        
+        matches.forEach(m => {
+            const matchKey = m.replace(/___/g, "").trim();
+            const q = data.questions?.find((item, idx) => {
+                const questionNum = offset + idx + 1;
+                const localIndex = idx + 1;
+                return (
+                    item.id === matchKey ||
+                    questionNum.toString() === matchKey ||
+                    localIndex.toString() === matchKey
+                );
+            });
+            if (q) {
+                ids.add(q.id);
+            }
+        });
+        return ids;
+    }, [data?.passage, data?.questions, offset]);
+
+    const remainingQuestions = useMemo(() => {
+        return data?.questions?.filter(q => !renderedInlineIds.has(q.id)) || [];
+    }, [data?.questions, renderedInlineIds]);
 
     const togglePlay = () => {
         if (isPlaying) {
@@ -100,57 +181,75 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                         </div>
                     </header>
 
-                    <div className="space-y-8">
-                        {data?.questions?.map((q, idx) => (
-                            <div 
-                                key={q.id || idx} 
-                                id={`question-${idx}`}
-                                className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white hover:border-primary/30 transition-colors scroll-mt-6"
-                            >
-                                <div className="flex items-start gap-4">
-                                    <div className="flex-none w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
-                                        {offset + idx + 1}
-                                    </div>
-                                    <div className="flex-1 space-y-4">
-                                        <p className="text-lg font-semibold leading-snug">
-                                            {q.question}
-                                        </p>
+                    {/* ── Passage (HTML with Inline Inputs) ── */}
+                    {data?.passage && data.passage.trim() !== "" && (
+                        <div className="p-8 rounded-[2rem] border border-base-200 bg-white shadow-xs prose prose-sm max-w-none">
+                            {renderInlinePassage(
+                                data.passage,
+                                data.questions || [],
+                                answers,
+                                onAnswerChange,
+                                offset
+                            )}
+                        </div>
+                    )}
 
-                                        {q.type === 'multiple-choice' && (
-                                            <div className="grid grid-cols-1 gap-2">
-                                                {q.options?.map((opt, optIdx) => (
-                                                    <button 
-                                                        key={optIdx}
-                                                        onClick={() => onAnswerChange(q.id, opt)}
-                                                        className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
-                                                            answers[q.id] === opt 
-                                                            ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 
-                                                            : "bg-base-50 border-transparent hover:border-primary/20"
-                                                        }`}
-                                                    >
-                                                        <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-black">
-                                                            {String.fromCharCode(65 + optIdx)}
-                                                        </span>
-                                                        {opt}
-                                                    </button>
-                                                ))}
+                    {remainingQuestions.length > 0 && (
+                        <div className="space-y-8">
+                            {remainingQuestions.map((q) => {
+                                const idx = data.questions.findIndex(item => item.id === q.id);
+                                return (
+                                    <div 
+                                        key={q.id || idx} 
+                                        id={`question-${idx}`}
+                                        className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white hover:border-primary/30 transition-colors scroll-mt-6"
+                                    >
+                                        <div className="flex items-start gap-4">
+                                            <div className="flex-none w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                                                {offset + idx + 1}
                                             </div>
-                                        )}
+                                            <div className="flex-1 space-y-4">
+                                                <p className="text-lg font-semibold leading-snug">
+                                                    {q.question}
+                                                </p>
 
-                                        {(q.type === 'short-answer' || q.type === 'sentence-completion') && (
-                                            <input 
-                                                type="text"
-                                                value={answers[q.id] || ""}
-                                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
-                                                placeholder="Type your answer here..."
-                                                className="input input-bordered w-full rounded-2xl h-14 bg-base-50 border-transparent focus:border-primary font-bold"
-                                            />
-                                        )}
+                                                {q.type === 'multiple-choice' && (
+                                                    <div className="grid grid-cols-1 gap-2">
+                                                        {q.options?.map((opt, optIdx) => (
+                                                            <button 
+                                                                key={optIdx}
+                                                                onClick={() => onAnswerChange(q.id, opt)}
+                                                                className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
+                                                                    answers[q.id] === opt 
+                                                                    ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 
+                                                                    : "bg-base-50 border-transparent hover:border-primary/20"
+                                                                }`}
+                                                            >
+                                                                <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-black">
+                                                                    {String.fromCharCode(65 + optIdx)}
+                                                                </span>
+                                                                {opt}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {(q.type === 'short-answer' || q.type === 'sentence-completion') && (
+                                                    <input 
+                                                        type="text"
+                                                        value={answers[q.id] || ""}
+                                                        onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                                                        placeholder="Type your answer here..."
+                                                        className="input input-bordered w-full rounded-2xl h-14 bg-base-50 border-transparent focus:border-primary font-bold"
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

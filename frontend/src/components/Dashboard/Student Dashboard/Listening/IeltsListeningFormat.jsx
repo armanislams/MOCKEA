@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     PiHeadphonesFill,
@@ -26,6 +27,88 @@ const COMPLETION_TYPES = new Set([
     "table-completion",
     "flow-chart-completion",
 ]);
+
+/**
+ * Renders the passage text and replaces ___[number]___ placeholders with React inline inputs.
+ * If no placeholders are present, it renders the raw HTML.
+ */
+const renderInlinePassage = (passage, questions, answers, onAnswerChange, submitted, result, offset) => {
+    const hasInlinePlaceholders = /___([\w-]+)___/.test(passage);
+    if (!hasInlinePlaceholders) {
+        return <div dangerouslySetInnerHTML={{ __html: passage }} />;
+    }
+
+    const parts = passage.split(/(___[\w-]+___)/g);
+    return (
+        <div className="leading-relaxed">
+            {parts.map((part, index) => {
+                const match = part.match(/^___([\w-]+)___$/);
+                if (match) {
+                    const matchKey = match[1].trim();
+                    const q = questions.find((item, idx) => {
+                        const questionNum = offset + idx + 1;
+                        const localIndex = idx + 1;
+                        return (
+                            item.id === matchKey ||
+                            questionNum.toString() === matchKey ||
+                            localIndex.toString() === matchKey
+                        );
+                    });
+
+                    if (!q) {
+                        return <span key={index} className="text-slate-400 font-bold">{part}</span>;
+                    }
+
+                    const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === q.id);
+                    const isCorrect = evaluation?.isCorrect;
+                    const userAnswer = answers[q.id] || "";
+                    const qIndexInSet = questions.indexOf(q);
+
+                    return (
+                        <span key={q.id} className="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
+                            <input
+                                type="text"
+                                disabled={submitted}
+                                value={userAnswer}
+                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                                placeholder={`(${offset + qIndexInSet + 1})`}
+                                className={`inline-block px-3 py-1 text-sm font-bold bg-white border-2 rounded-lg outline-none transition-all text-center focus:ring-2 focus:ring-primary/20 ${
+                                    submitted
+                                        ? isCorrect
+                                            ? "border-emerald-400 bg-emerald-50 text-emerald-700 w-36"
+                                            : "border-red-400 bg-red-50 text-red-700 w-36"
+                                        : "border-slate-300 focus:border-primary hover:border-slate-400 w-36"
+                                }`}
+                                title={submitted && !isCorrect ? `Correct Answer: ${q.correctAnswer}` : ""}
+                            />
+                            {submitted && (
+                                <span className="flex-shrink-0">
+                                    {isCorrect ? (
+                                        <span className="badge badge-success text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 flex items-center justify-center">✓</span>
+                                    ) : (
+                                        <span className="badge badge-error text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 flex items-center justify-center">✗</span>
+                                    )}
+                                </span>
+                            )}
+                            {submitted && !isCorrect && (
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg z-50 whitespace-nowrap">
+                                    ✓ {q.correctAnswer}
+                                </span>
+                            )}
+                        </span>
+                    );
+                }
+
+                return (
+                    <span
+                        key={index}
+                        dangerouslySetInnerHTML={{ __html: part }}
+                    />
+                );
+            })}
+        </div>
+    );
+};
 
 // ─── Per-question-type renderers ─────────────────────────────────────────────
 
@@ -291,6 +374,33 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
     const meta = PART_META[part] || PART_META[1];
     const offset = (part - 1) * 10;
 
+    const renderedInlineIds = useMemo(() => {
+        if (!activeSet.passage) return new Set();
+        const matches = activeSet.passage.match(/___([\w-]+)___/g) || [];
+        const ids = new Set();
+        
+        matches.forEach(m => {
+            const matchKey = m.replace(/___/g, "").trim();
+            const q = activeSet.questions?.find((item, idx) => {
+                const questionNum = offset + idx + 1;
+                const localIndex = idx + 1;
+                return (
+                    item.id === matchKey ||
+                    questionNum.toString() === matchKey ||
+                    localIndex.toString() === matchKey
+                );
+            });
+            if (q) {
+                ids.add(q.id);
+            }
+        });
+        return ids;
+    }, [activeSet.passage, activeSet.questions, offset]);
+
+    const remainingQuestions = useMemo(() => {
+        return activeSet.questions?.filter(q => !renderedInlineIds.has(q.id)) || [];
+    }, [activeSet.questions, renderedInlineIds]);
+
     return (
         <div className="card bg-white p-10 rounded-[3.5rem] border border-base-300 shadow-sm relative overflow-hidden">
             {/* Watermark */}
@@ -327,33 +437,45 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
 
                 {/* ── Example box (compiled from passage HTML) ────────── */}
                 {activeSet.passage && activeSet.passage.trim() !== "" && (
-                    <div
-                        className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: activeSet.passage }}
-                    />
+                    <div className="prose prose-sm max-w-none">
+                        {renderInlinePassage(
+                            activeSet.passage,
+                            activeSet.questions || [],
+                            answers,
+                            onAnswerChange,
+                            submitted,
+                            result,
+                            offset
+                        )}
+                    </div>
                 )}
 
                 {/* ── Questions ───────────────────────────────────────── */}
-                <div className="space-y-4">
-                    {activeSet.questions?.map((q, idx) => (
-                        <motion.div
-                            key={q.id}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.04 }}
-                        >
-                            <QuestionRenderer
-                                q={q}
-                                idx={idx}
-                                offset={offset}
-                                submitted={submitted}
-                                result={result}
-                                answers={answers}
-                                onAnswerChange={onAnswerChange}
-                            />
-                        </motion.div>
-                    ))}
-                </div>
+                {remainingQuestions.length > 0 && (
+                    <div className="space-y-4">
+                        {remainingQuestions.map((q) => {
+                            const idx = activeSet.questions.findIndex(item => item.id === q.id);
+                            return (
+                                <motion.div
+                                    key={q.id}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.04 }}
+                                >
+                                    <QuestionRenderer
+                                        q={q}
+                                        idx={idx}
+                                        offset={offset}
+                                        submitted={submitted}
+                                        result={result}
+                                        answers={answers}
+                                        onAnswerChange={onAnswerChange}
+                                    />
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </div>
     );

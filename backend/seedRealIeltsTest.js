@@ -16,6 +16,10 @@ const seed = async () => {
     await mongoose.connect(MONGODB_URI);
     console.log("Connected successfully!");
 
+    console.log("Cleaning up existing seed data...");
+    await Questions.deleteMany({ title: /Academic IELTS/ });
+    await MockTest.deleteMany({ title: 'IELTS Academic Real-World Mock Test 1' });
+
     // 1. Create Listening Questions (40 questions)
     console.log("Creating Listening questions...");
     const listeningQuestions = await Questions.create({
@@ -25,6 +29,25 @@ const seed = async () => {
       instructions: 'Listen to the audio and answer the questions below. For gap-fill questions, use NO MORE THAN TWO WORDS and/or a number.',
       forPlanType: 'free',
       isPublic: true,
+      passage: `
+Novel: (21) ___21___
+Protagonists: Mary Lennox; Colin Craven
+Time period: Early in (22) ___22___
+Mary moves to UK – meets Colin who thinks he'll never be able to (23) ___23___. They become friends.
+Point of view: "Omniscient" - narrator knows all about characters' feelings, opinions and (24) ___24___.
+Audience: Good for children - story simple to follow
+Symbols (physical items that represent (25) ___25___):
+* the robin redbreast
+* (26) ___26___
+* the portrait of Mistress Craven
+Motifs (patterns in the story):
+* the Garden of Eden
+* secrecy - transition from (27) ___27___
+Themes:
+* the connection between (28) ___28___ and outlook
+* the connection between (29) ___29___ and well-being
+* individuals and the need for (30) ___30___
+      `,
       questions: [
         // Section 1: Form Completion (1-10)
         { id: 'l1', type: 'short-answer', question: 'Customer Name:', correctAnswer: 'Sarah Jenkins' },
@@ -68,35 +91,17 @@ const seed = async () => {
         { id: 'l19', type: 'short-answer', question: 'Free vehicle parking is located directly behind the municipal _______.', correctAnswer: 'library' },
         { id: 'l20', type: 'short-answer', question: 'Standard photography is permitted except inside the temporary _______ room.', correctAnswer: 'exhibition' },
 
-        // Section 3: Student Discussion on Solar Energy (21-30)
-        { 
-          id: 'l21', 
-          type: 'multiple-choice', 
-          question: 'What is the primary focus of Jack and Chloes presentation?', 
-          options: ['The historical timeline of solar cells', 'The efficiency rate of modern solar panels', 'The cost of installation in public schools'], 
-          correctAnswer: 'The efficiency rate of modern solar panels' 
-        },
-        { 
-          id: 'l22', 
-          type: 'multiple-choice', 
-          question: 'What does Jack believe is the main obstacle to solar adoption?', 
-          options: ['unaffordable initial cost', 'lack of public awareness', 'climate and weather dependency'], 
-          correctAnswer: 'unaffordable initial cost' 
-        },
-        { 
-          id: 'l23', 
-          type: 'multiple-choice', 
-          question: 'Chloe was surprised by the total volume of solar energy generated in which country?', 
-          options: ['Germany', 'Spain', 'The United Kingdom'], 
-          correctAnswer: 'Germany' 
-        },
-        { id: 'l24', type: 'short-answer', question: 'They agreed to use a _______ to visualize their statistical data.', correctAnswer: 'bar chart' },
-        { id: 'l25', type: 'short-answer', question: 'Their professor recommended reading an academic textbook by Dr. _______.', correctAnswer: 'Green' },
-        { id: 'l26', type: 'short-answer', question: 'Their presentation is scheduled to take place on next _______.', correctAnswer: 'Thursday' },
-        { id: 'l27', type: 'short-answer', question: 'They are required to submit their final digital slides by _______ PM.', correctAnswer: '5' },
-        { id: 'l28', type: 'short-answer', question: 'Jack will handle presenting the portion regarding the _______ impact.', correctAnswer: 'environmental' },
-        { id: 'l29', type: 'short-answer', question: 'Chloe will explain the step-by-step solar cell manufacturing _______.', correctAnswer: 'process' },
-        { id: 'l30', type: 'short-answer', question: 'The maximum duration allowed for their complete talk is _______ minutes.', correctAnswer: '15' },
+        // Section 3: Student Discussion on The Secret Garden (21-30)
+        { id: 'l21', type: 'short-answer', question: 'Novel:', correctAnswer: 'The Secret Garden' },
+        { id: 'l22', type: 'short-answer', question: 'Time period:', correctAnswer: 'twentieth century' },
+        { id: 'l23', type: 'short-answer', question: 'Plot:', correctAnswer: 'walk' },
+        { id: 'l24', type: 'short-answer', question: 'Point of view:', correctAnswer: 'motivations' },
+        { id: 'l25', type: 'short-answer', question: 'Symbols:', correctAnswer: 'abstract ideas' },
+        { id: 'l26', type: 'short-answer', question: 'Symbols detail:', correctAnswer: 'roses' },
+        { id: 'l27', type: 'short-answer', question: 'Motifs detail:', correctAnswer: 'darkness to lightness' },
+        { id: 'l28', type: 'short-answer', question: 'Themes detail 1:', correctAnswer: 'health' },
+        { id: 'l29', type: 'short-answer', question: 'Themes detail 2:', correctAnswer: 'environment' },
+        { id: 'l30', type: 'short-answer', question: 'Themes detail 3:', correctAnswer: 'human companionship' },
 
         // Section 4: Academic Lecture on Wildlife Migration (31-40)
         { id: 'l31', type: 'short-answer', question: 'Birds navigate over long distances using the Earths _______ field.', correctAnswer: 'magnetic' },

@@ -507,10 +507,10 @@ const AddQuestionForm = () => {
 
                     {/* Reading */}
                     {testType === "reading" && (
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-semibold">Reading Passage</span></label>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Reading Passage</label>
                             <textarea
-                                className="textarea textarea-bordered rounded-2xl h-64 font-serif"
+                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[250px] font-serif"
                                 placeholder="Paste the full reading passage here..."
                                 value={formData.passage}
                                 onChange={(e) => patch({ passage: e.target.value })}
@@ -522,11 +522,11 @@ const AddQuestionForm = () => {
                     {/* Listening */}
                     {testType === "listening" && (
                         <div className="space-y-5">
-                            <div className="form-control">
-                                <label className="label"><span className="label-text font-semibold">Audio URL</span></label>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-bold text-slate-700 tracking-wide">Audio URL</label>
                                 <input
                                     type="url"
-                                    className="input input-bordered rounded-2xl"
+                                    className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
                                     placeholder="Direct link to audio file (Dropbox, S3, Cloudinary…)"
                                     value={formData.audioUrl}
                                     onChange={(e) => patch({ audioUrl: e.target.value })}
@@ -540,31 +540,86 @@ const AddQuestionForm = () => {
                                     <h3 className="text-xs font-black uppercase tracking-widest text-primary">
                                         IELTS — Example &amp; Notes Context
                                     </h3>
+
+                                    {/* Info box for Listening Part 3 */}
+                                    {formData.listeningPart === 3 && (
+                                        <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl space-y-4 shadow-sm animate-fadeSlideDown">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2.5 bg-blue-500/10 text-blue-600 rounded-2xl">
+                                                    <PiBookOpen className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-800">
+                                                        How to Create IELTS Listening Part 3 (Note / Sentence Completion)
+                                                    </h4>
+                                                    <p className="text-xs text-slate-500">
+                                                        Follow these steps to set up inline question gaps for academic discussions.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid md:grid-cols-3 gap-4 text-xs">
+                                                <div className="p-4 bg-white/85 rounded-2xl border border-blue-50/50 space-y-2">
+                                                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px]">
+                                                        1
+                                                    </div>
+                                                    <h5 className="font-bold text-slate-700">Add Questions Below</h5>
+                                                    <p className="text-slate-500 leading-relaxed">
+                                                        Click <strong className="text-slate-700">+ Add Question</strong> in the Questions Builder. Choose <strong className="text-slate-700">Short Answer / Note Completion</strong> as the type.
+                                                    </p>
+                                                </div>
+
+                                                <div className="p-4 bg-white/85 rounded-2xl border border-blue-50/50 space-y-2">
+                                                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px]">
+                                                        2
+                                                    </div>
+                                                    <h5 className="font-bold text-slate-700">Insert Placeholders</h5>
+                                                    <p className="text-slate-500 leading-relaxed">
+                                                        In the <strong className="text-slate-700">Gapped Notes</strong> box, type the discussion passage. Mark the blanks with <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-[11px] text-blue-600 font-bold">___21___</code> corresponding to the question number.
+                                                    </p>
+                                                </div>
+
+                                                <div className="p-4 bg-white/85 rounded-2xl border border-blue-50/50 space-y-2">
+                                                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px]">
+                                                        3
+                                                    </div>
+                                                    <h5 className="font-bold text-slate-700">Inline Student View</h5>
+                                                    <p className="text-slate-500 leading-relaxed">
+                                                        The student UI automatically renders clean text boxes directly inside the passage for those numbered gaps, hiding them from the list below.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-3 bg-blue-500/5 rounded-2xl border border-blue-50 text-[11px] text-blue-700 flex items-start gap-2">
+                                                <span className="mt-0.5">ℹ️</span>
+                                                <span className="leading-relaxed">
+                                                    <strong>Important:</strong> Make sure the question numbers in your placeholders (e.g., <code>___21___</code>) match the order and numbering of the questions you add in the builder below.
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {formData.listeningPart === 1 && (
                                         <div className="grid md:grid-cols-2 gap-4">
-                                            <div className="form-control">
-                                                <label className="label">
-                                                    <span className="label-text font-semibold text-xs text-indigo-700">
-                                                        Example Question Label
-                                                    </span>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-xs font-bold text-indigo-700 tracking-wide">
+                                                    Example Question Label
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    className="input input-bordered rounded-2xl text-sm"
+                                                    className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
                                                     placeholder="e.g. Destination:"
                                                     value={formData.exampleQuestion}
                                                     onChange={(e) => patch({ exampleQuestion: e.target.value })}
                                                 />
                                             </div>
-                                            <div className="form-control">
-                                                <label className="label">
-                                                    <span className="label-text font-semibold text-xs text-indigo-700">
-                                                        Example Answer (pre-filled for student)
-                                                    </span>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-xs font-bold text-indigo-700 tracking-wide">
+                                                    Example Answer (pre-filled for student)
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    className="input input-bordered rounded-2xl text-sm"
+                                                    className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
                                                     placeholder="e.g. Harbour City"
                                                     value={formData.exampleAnswer}
                                                     onChange={(e) => patch({ exampleAnswer: e.target.value })}
@@ -572,27 +627,28 @@ const AddQuestionForm = () => {
                                             </div>
                                         </div>
                                     )}
-                                    <div className="form-control">
-                                        <label className="label">
-                                            <span className="label-text font-semibold text-xs text-indigo-700">
-                                                {formData.listeningPart === 1 || formData.listeningPart === 4
-                                                    ? "Gapped Notes / Passage Context (Optional)"
-                                                    : "Passage Context (Optional)"}
-                                            </span>
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-xs font-bold text-indigo-700 tracking-wide flex justify-between items-center">
+                                            <span>Gapped Notes / Passage Context (Optional)</span>
+                                            {formData.listeningPart === 3 && (
+                                                <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">
+                                                    Part 3 Format Enabled
+                                                </span>
+                                            )}
                                         </label>
                                         <textarea
-                                            className="textarea textarea-bordered rounded-2xl h-28 text-sm font-serif"
-                                            placeholder={formData.listeningPart === 1 || formData.listeningPart === 4
-                                                ? "Transport from Bayswater...\nThe passenger wants to travel to ___1___ on ___2___ of this month..."
-                                                : "Describe the setting or add any introductory text..."}
+                                            className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px] font-mono text-slate-800 leading-relaxed"
+                                            placeholder={
+                                                formData.listeningPart === 3
+                                                    ? "Novel: (21) ___21___\nProtagonists: Mary Lennox; Colin Craven\nTime period: Early in (22) ___22___..."
+                                                    : "Transport from Bayswater...\nThe passenger wants to travel to ___1___ on ___2___ of this month..."
+                                            }
                                             value={formData.passage}
                                             onChange={(e) => patch({ passage: e.target.value })}
                                         />
-                                        {(formData.listeningPart === 1 || formData.listeningPart === 4) && (
-                                            <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                                                Use ___1___ ___2___ etc. to mark answer gaps in the context text.
-                                            </p>
-                                        )}
+                                        <p className="text-[11px] text-slate-500 font-semibold mt-1 flex items-center gap-1.5">
+                                            <span>💡</span> Use <code>___21___</code>, <code>___22___</code> etc. to mark answer gaps in the context text.
+                                        </p>
                                     </div>
                                 </div>
                             )}
