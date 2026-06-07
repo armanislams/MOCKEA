@@ -541,8 +541,8 @@ const AddQuestionForm = () => {
                                         IELTS — Example &amp; Notes Context
                                     </h3>
 
-                                    {/* Info box for Listening Part 3 */}
-                                    {formData.listeningPart === 3 && (
+                                    {/* Info box for Listening Part 3 / Part 4 */}
+                                    {(formData.listeningPart === 3 || formData.listeningPart === 4) && (
                                         <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl space-y-4 shadow-sm animate-fadeSlideDown">
                                             <div className="flex items-center gap-3">
                                                 <div className="p-2.5 bg-blue-500/10 text-blue-600 rounded-2xl">
@@ -550,22 +550,22 @@ const AddQuestionForm = () => {
                                                 </div>
                                                 <div>
                                                     <h4 className="text-sm font-bold text-slate-800">
-                                                        How to Create IELTS Listening Part 3 (Note / Sentence Completion)
+                                                        How to Create IELTS Listening Part {formData.listeningPart} (Inline &amp; Table Completion)
                                                     </h4>
                                                     <p className="text-xs text-slate-500">
-                                                        Follow these steps to set up inline question gaps for academic discussions.
+                                                        Follow these steps to set up inline question gaps or markdown tables for the passage.
                                                     </p>
                                                 </div>
                                             </div>
 
-                                            <div className="grid md:grid-cols-3 gap-4 text-xs">
+                                            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                                                 <div className="p-4 bg-white/85 rounded-2xl border border-blue-50/50 space-y-2">
                                                     <div className="w-6 h-6 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px]">
                                                         1
                                                     </div>
                                                     <h5 className="font-bold text-slate-700">Add Questions Below</h5>
-                                                    <p className="text-slate-500 leading-relaxed">
-                                                        Click <strong className="text-slate-700">+ Add Question</strong> in the Questions Builder. Choose <strong className="text-slate-700">Short Answer / Note Completion</strong> as the type.
+                                                    <p className="text-slate-500 leading-relaxed text-[11px]">
+                                                        Click <strong className="text-slate-700">+ Add Question</strong> below. Choose <strong className="text-slate-700">Short Answer / Note Completion</strong> as the type.
                                                     </p>
                                                 </div>
 
@@ -574,8 +574,8 @@ const AddQuestionForm = () => {
                                                         2
                                                     </div>
                                                     <h5 className="font-bold text-slate-700">Insert Placeholders</h5>
-                                                    <p className="text-slate-500 leading-relaxed">
-                                                        In the <strong className="text-slate-700">Gapped Notes</strong> box, type the discussion passage. Mark the blanks with <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-[11px] text-blue-600 font-bold">___21___</code> corresponding to the question number.
+                                                    <p className="text-slate-500 leading-relaxed text-[11px]">
+                                                        In the text box below, write your passage. Mark input blanks with <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[10px] text-blue-600 font-bold">___31___</code> matching the question number.
                                                     </p>
                                                 </div>
 
@@ -583,17 +583,40 @@ const AddQuestionForm = () => {
                                                     <div className="w-6 h-6 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px]">
                                                         3
                                                     </div>
-                                                    <h5 className="font-bold text-slate-700">Inline Student View</h5>
-                                                    <p className="text-slate-500 leading-relaxed">
-                                                        The student UI automatically renders clean text boxes directly inside the passage for those numbered gaps, hiding them from the list below.
+                                                    <h5 className="font-bold text-slate-700">Add Tables (Markdown)</h5>
+                                                    <p className="text-slate-500 leading-relaxed text-[11px]">
+                                                        Admins can add tables by typing columns separated by <code>|</code> characters. The student UI renders them beautifully.
                                                     </p>
+                                                </div>
+
+                                                <div className="p-4 bg-white/85 rounded-2xl border border-blue-50/50 space-y-2">
+                                                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px]">
+                                                        4
+                                                    </div>
+                                                    <h5 className="font-bold text-slate-700">Inline Student View</h5>
+                                                    <p className="text-slate-500 leading-relaxed text-[11px]">
+                                                        The student UI automatically renders text boxes directly inside the passage text and table cells.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-[11px] space-y-2 overflow-x-auto border border-slate-800">
+                                                <div className="text-slate-400 border-b border-slate-800 pb-1.5 font-sans font-bold flex justify-between items-center">
+                                                    <span>💡 Quick Copy Markdown Table Template</span>
+                                                    <span className="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded font-mono font-normal">No coding needed!</span>
+                                                </div>
+                                                <div className="whitespace-pre">
+{`| Column Header 1 | Column Header 2 | Column Header 3 |
+|---|---|---|
+| Present | Avoid pain | ___31___ |
+| Future | Plan future | ___32___ |`}
                                                 </div>
                                             </div>
 
                                             <div className="p-3 bg-blue-500/5 rounded-2xl border border-blue-50 text-[11px] text-blue-700 flex items-start gap-2">
                                                 <span className="mt-0.5">ℹ️</span>
                                                 <span className="leading-relaxed">
-                                                    <strong>Important:</strong> Make sure the question numbers in your placeholders (e.g., <code>___21___</code>) match the order and numbering of the questions you add in the builder below.
+                                                    <strong>Important:</strong> Make sure the question numbers in your placeholders (e.g., <code>___31___</code>) match the order and numbering of the questions you add in the builder below.
                                                 </span>
                                             </div>
                                         </div>
@@ -630,9 +653,9 @@ const AddQuestionForm = () => {
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-xs font-bold text-indigo-700 tracking-wide flex justify-between items-center">
                                             <span>Gapped Notes / Passage Context (Optional)</span>
-                                            {formData.listeningPart === 3 && (
+                                            {(formData.listeningPart === 3 || formData.listeningPart === 4) && (
                                                 <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">
-                                                    Part 3 Format Enabled
+                                                    Part {formData.listeningPart} Inline Format Enabled
                                                 </span>
                                             )}
                                         </label>
@@ -641,13 +664,16 @@ const AddQuestionForm = () => {
                                             placeholder={
                                                 formData.listeningPart === 3
                                                     ? "Novel: (21) ___21___\nProtagonists: Mary Lennox; Colin Craven\nTime period: Early in (22) ___22___..."
+                                                    : formData.listeningPart === 4
+                                                    ? "| Column Header 1 | Column Header 2 |\n|---|---|\n| Avoid pain | ___31___ |\n| Plan future | ___32___ |"
                                                     : "Transport from Bayswater...\nThe passenger wants to travel to ___1___ on ___2___ of this month..."
                                             }
                                             value={formData.passage}
                                             onChange={(e) => patch({ passage: e.target.value })}
                                         />
-                                        <p className="text-[11px] text-slate-500 font-semibold mt-1 flex items-center gap-1.5">
-                                            <span>💡</span> Use <code>___21___</code>, <code>___22___</code> etc. to mark answer gaps in the context text.
+                                        <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1">
+                                            <span>💡 Use <code>___21___</code>, <code>___22___</code> etc. to mark answer gaps.</span>
+                                            <span>📊 To create a table, use vertical bars (<code>|</code>) at the start and end of rows (see guide template above).</span>
                                         </p>
                                     </div>
                                 </div>

@@ -30,6 +30,7 @@ const seed = async () => {
       forPlanType: 'free',
       isPublic: true,
       passage: `
+<h3>Section 3: Student Discussion on The Secret Garden</h3>
 Novel: (21) ___21___
 Protagonists: Mary Lennox; Colin Craven
 Time period: Early in (22) ___22___
@@ -47,6 +48,19 @@ Themes:
 * the connection between (28) ___28___ and outlook
 * the connection between (29) ___29___ and well-being
 * individuals and the need for (30) ___30___
+
+<hr class="my-8 border-slate-200" />
+
+<h3>Section 4: Academic Lecture on Time Perspectives</h3>
+
+| Time Zone | Outlook | Features & Consequences |
+|---|---|---|
+| Past | Positive | Remember good times, e.g. birthdays. Keep family records, photo albums, etc. |
+| | (31) ___31___ | Focus on disappointments, failures, bad decisions. |
+| Present | Hedonistic | Live for (32) ___32___; seek sensation; avoid pain. |
+| | Fatalistic | Life is governed by (33) ___33___, religious beliefs, social conditions. Life’s path can’t be changed. |
+| Future | (34) ___34___ | Prefer work to play. Don’t give in to temptation. |
+| | Fatalistic | Have a strong belief in life after death and importance of (35) ___35___ in life. |
       `,
       questions: [
         // Section 1: Form Completion (1-10)
@@ -103,17 +117,55 @@ Themes:
         { id: 'l29', type: 'short-answer', question: 'Themes detail 2:', correctAnswer: 'environment' },
         { id: 'l30', type: 'short-answer', question: 'Themes detail 3:', correctAnswer: 'human companionship' },
 
-        // Section 4: Academic Lecture on Wildlife Migration (31-40)
-        { id: 'l31', type: 'short-answer', question: 'Birds navigate over long distances using the Earths _______ field.', correctAnswer: 'magnetic' },
-        { id: 'l32', type: 'short-answer', question: 'Monarch butterflies travel thousands of miles to overwinter in _______.', correctAnswer: 'Mexico' },
-        { id: 'l33', type: 'short-answer', question: 'Large wild beasts migrate seasonally to find fresh water and _______.', correctAnswer: 'grass' },
-        { id: 'l34', type: 'short-answer', question: 'The primary environmental threat to migrating sea turtles is ocean _______.', correctAnswer: 'pollution' },
-        { id: 'l35', type: 'short-answer', question: 'Modern tracking allows scientists to _______ individual animals accurately.', correctAnswer: 'track' },
-        { id: 'l36', type: 'short-answer', question: 'Animal migration is crucial to sustain genetic _______ in populations.', correctAnswer: 'diversity' },
-        { id: 'l37', type: 'short-answer', question: 'Shifts in average global _______ are forcing earlier migration cycles.', correctAnswer: 'temperatures' },
-        { id: 'l38', type: 'short-answer', question: 'The construction of artificial river _______ has blocked salmon routes.', correctAnswer: 'dams' },
-        { id: 'l39', type: 'short-answer', question: 'Migratory blue whales feed on abundant blooms of polar _______.', correctAnswer: 'krill' },
-        { id: 'l40', type: 'short-answer', question: 'Wildlife preservation requires international _______ to succeed.', correctAnswer: 'cooperation' }
+        // Section 4: Academic Lecture on Time Perspectives (31-40)
+        { id: 'l31', type: 'short-answer', question: 'Past Outlook (Negative):', correctAnswer: 'negative' },
+        { id: 'l32', type: 'short-answer', question: 'Present Hedonistic (Live for...):', correctAnswer: 'pleasure' },
+        { id: 'l33', type: 'short-answer', question: 'Present Fatalistic (Governed by...):', correctAnswer: 'poverty' },
+        { id: 'l34', type: 'short-answer', question: 'Future Outlook (Active):', correctAnswer: 'active' },
+        { id: 'l35', type: 'short-answer', question: 'Future Fatalistic (Importance of...):', correctAnswer: 'virtue' },
+        { 
+          id: 'l36', 
+          type: 'multiple-choice', 
+          question: 'We are all present hedonists...', 
+          options: ['at school', 'at birth', 'while eating and drinking'], 
+          correctAnswer: 'at birth' 
+        },
+        { 
+          id: 'l37', 
+          type: 'multiple-choice', 
+          question: 'American boys drop out of school at a higher rate than girls because:', 
+          options: [
+            'they need to be in control of the way they learn', 
+            'they play video games instead of doing school work', 
+            'they are not as intelligent as girls'
+          ], 
+          correctAnswer: 'they need to be in control of the way they learn' 
+        },
+        { 
+          id: 'l38', 
+          type: 'multiple-choice', 
+          question: 'Present-orientated children:', 
+          options: [
+            'do not realise present actions can have negative future effects', 
+            'are unable to learn lessons from past mistakes', 
+            'know what could happen if they do something bad, but do it anyway'
+          ], 
+          correctAnswer: 'know what could happen if they do something bad, but do it anyway' 
+        },
+        { 
+          id: 'l39', 
+          type: 'multiple-choice', 
+          question: 'If Americans had an extra day per week, they would spend it:', 
+          options: ['working harder', 'building relationships', 'sharing family meals'], 
+          correctAnswer: 'working harder' 
+        },
+        { 
+          id: 'l40', 
+          type: 'multiple-choice', 
+          question: 'Understanding how people think about time can help us:', 
+          options: ['become more virtuous', 'work together better', 'identify careless or ambitious people'], 
+          correctAnswer: 'work together better' 
+        }
       ]
     });
 

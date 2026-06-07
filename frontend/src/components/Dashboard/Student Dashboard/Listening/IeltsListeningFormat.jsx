@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
     PiHeadphonesFill,
@@ -28,85 +28,187 @@ const COMPLETION_TYPES = new Set([
     "flow-chart-completion",
 ]);
 
+const convertMarkdownTablesToHtml = (text) => {
+    if (!text) return "";
+    const lines = text.split("\n");
+    let inTable = false;
+    let tableHtml = "";
+    const result = [];
+    let rowCount = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith("|") && line.endsWith("|")) {
+            if (!inTable) {
+                inTable = true;
+                tableHtml = '<div class="overflow-x-auto my-6"><table class="table-auto w-full text-left border-collapse border border-slate-200 text-sm">';
+                rowCount = 0;
+            }
+            const cells = line.split("|").slice(1, -1).map(c => c.trim());
+            const isSeparator = cells.every(c => /^:?-+:?$/.test(c));
+            if (isSeparator) {
+                if (tableHtml.includes("<thead>") && !tableHtml.includes("</thead>")) {
+                    tableHtml += "</thead><tbody class=\"text-slate-700\">";
+                }
+                continue;
+            }
+            if (!tableHtml.includes("<thead>")) {
+                tableHtml += "<thead><tr class=\"bg-slate-100 text-slate-800 font-bold\">";
+                cells.forEach(c => {
+                    tableHtml += `<th class="border border-slate-200 p-3">${c}</th>`;
+                });
+                tableHtml += "</tr>";
+            } else {
+                const rowClass = rowCount % 2 === 1 ? "bg-slate-50/30" : "";
+                tableHtml += `<tr class="${rowClass}">`;
+                cells.forEach(c => {
+                    tableHtml += `<td class="border border-slate-200 p-3">${c}</td>`;
+                });
+                tableHtml += "</tr>";
+                rowCount++;
+            }
+        } else {
+            if (inTable) {
+                inTable = false;
+                if (tableHtml.includes("<tbody>") && !tableHtml.includes("</tbody>")) {
+                    tableHtml += "</tbody>";
+                } else if (tableHtml.includes("<thead>") && !tableHtml.includes("</thead>")) {
+                    tableHtml += "</thead>";
+                }
+                tableHtml += "</table></div>";
+                result.push(tableHtml);
+                tableHtml = "";
+            }
+            result.push(lines[i]);
+        }
+    }
+    if (inTable) {
+        if (tableHtml.includes("<tbody>") && !tableHtml.includes("</tbody>")) {
+            tableHtml += "</tbody>";
+        } else if (tableHtml.includes("<thead>") && !tableHtml.includes("</thead>")) {
+            tableHtml += "</thead>";
+        }
+        tableHtml += "</table></div>";
+        result.push(tableHtml);
+    }
+    return result.join("\n");
+};
+
 /**
  * Renders the passage text and replaces ___[number]___ placeholders with React inline inputs.
  * If no placeholders are present, it renders the raw HTML.
  */
-const renderInlinePassage = (passage, questions, answers, onAnswerChange, submitted, result, offset) => {
-    const hasInlinePlaceholders = /___([\w-]+)___/.test(passage);
-    if (!hasInlinePlaceholders) {
-        return <div dangerouslySetInnerHTML={{ __html: passage }} />;
-    }
+const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted, result, offset, className = "leading-relaxed text-slate-700" }) => {
+    const containerRef = useRef(null);
 
-    const parts = passage.split(/(___[\w-]+___)/g);
-    return (
-        <div className="leading-relaxed">
-            {parts.map((part, index) => {
-                const match = part.match(/^___([\w-]+)___$/);
-                if (match) {
-                    const matchKey = match[1].trim();
-                    const q = questions.find((item, idx) => {
-                        const questionNum = offset + idx + 1;
-                        const localIndex = idx + 1;
-                        return (
-                            item.id === matchKey ||
-                            questionNum.toString() === matchKey ||
-                            localIndex.toString() === matchKey
-                        );
-                    });
+    const processedPassage = useMemo(() => {
+        const text = convertMarkdownTablesToHtml(passage);
+        const hasInlinePlaceholders = /___([\w-]+)___/.test(text);
+        if (!hasInlinePlaceholders) {
+            return text;
+        }
 
-                    if (!q) {
-                        return <span key={index} className="text-slate-400 font-bold">{part}</span>;
-                    }
-
-                    const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === q.id);
-                    const isCorrect = evaluation?.isCorrect;
-                    const userAnswer = answers[q.id] || "";
-                    const qIndexInSet = questions.indexOf(q);
-
-                    return (
-                        <span key={q.id} className="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
-                            <input
-                                type="text"
-                                disabled={submitted}
-                                value={userAnswer}
-                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
-                                placeholder={`(${offset + qIndexInSet + 1})`}
-                                className={`inline-block px-3 py-1 text-sm font-bold bg-white border-2 rounded-lg outline-none transition-all text-center focus:ring-2 focus:ring-primary/20 ${
-                                    submitted
-                                        ? isCorrect
-                                            ? "border-emerald-400 bg-emerald-50 text-emerald-700 w-36"
-                                            : "border-red-400 bg-red-50 text-red-700 w-36"
-                                        : "border-slate-300 focus:border-primary hover:border-slate-400 w-36"
-                                }`}
-                                title={submitted && !isCorrect ? `Correct Answer: ${q.correctAnswer}` : ""}
-                            />
-                            {submitted && (
-                                <span className="flex-shrink-0">
-                                    {isCorrect ? (
-                                        <span className="badge badge-success text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 flex items-center justify-center">✓</span>
-                                    ) : (
-                                        <span className="badge badge-error text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 flex items-center justify-center">✗</span>
-                                    )}
-                                </span>
-                            )}
-                            {submitted && !isCorrect && (
-                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg z-50 whitespace-nowrap">
-                                    ✓ {q.correctAnswer}
-                                </span>
-                            )}
-                        </span>
-                    );
-                }
-
+        return text.replace(/___([\w-]+)___/g, (match, matchKey) => {
+            const q = questions.find((item, idx) => {
+                const questionNum = offset + idx + 1;
+                const localIndex = idx + 1;
                 return (
-                    <span
-                        key={index}
-                        dangerouslySetInnerHTML={{ __html: part }}
-                    />
+                    item.id === matchKey ||
+                    questionNum.toString() === matchKey ||
+                    localIndex.toString() === matchKey
                 );
-            })}
-        </div>
+            });
+            if (!q) return match;
+
+            const qIndexInSet = questions.indexOf(q);
+            const labelNum = offset + qIndexInSet + 1;
+
+            const qId = q.id;
+            const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === qId);
+            const isCorrect = evaluation?.isCorrect;
+            
+            const isMockTest = submitted === undefined;
+            
+            let inputClass = "inline-block px-3 py-1 text-sm font-bold bg-white border-2 rounded-lg outline-none transition-all text-center focus:ring-2 focus:ring-primary/20 w-36";
+            if (isMockTest) {
+                inputClass = "inline-block h-10 px-3 py-1 rounded-xl w-36 font-bold border border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm text-center outline-none bg-white transition-all";
+            } else if (submitted) {
+                inputClass += isCorrect
+                    ? " border-emerald-400 bg-emerald-50 text-emerald-700"
+                    : " border-red-400 bg-red-50 text-red-700";
+            } else {
+                inputClass += " border-slate-300 focus:border-primary hover:border-slate-400";
+            }
+
+            let badgeHtml = "";
+            if (!isMockTest && submitted) {
+                badgeHtml = isCorrect
+                    ? `<span class="badge badge-success text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 inline-flex items-center justify-center ml-1">✓</span>`
+                    : `<span class="badge badge-error text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 inline-flex items-center justify-center ml-1">✗</span>`;
+            }
+
+            let tooltipHtml = "";
+            if (!isMockTest && submitted && !isCorrect) {
+                tooltipHtml = `<span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg z-50 whitespace-nowrap">✓ ${q.correctAnswer}</span>`;
+            }
+
+            const titleAttr = (!isMockTest && submitted && !isCorrect) ? `Correct Answer: ${q.correctAnswer}` : "";
+
+            return `
+                <span class="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
+                    <input
+                        type="text"
+                        data-q-id="${qId}"
+                        ${(!isMockTest && submitted) ? "disabled" : ""}
+                        placeholder="(${labelNum})"
+                        value=""
+                        class="${inputClass}"
+                        title="${titleAttr}"
+                    />
+                    ${badgeHtml}
+                    ${tooltipHtml}
+                </span>
+            `.trim();
+        });
+    }, [passage, questions, submitted, result, offset]);
+
+    useEffect(() => {
+        if (containerRef.current) {
+            const inputs = containerRef.current.querySelectorAll('input[data-q-id]');
+            inputs.forEach(input => {
+                const qId = input.getAttribute('data-q-id');
+                const value = answers[qId] || "";
+                if (input.value !== value) {
+                    input.value = value;
+                }
+            });
+        }
+    }, [answers, processedPassage]);
+
+    useEffect(() => {
+        const handleInput = (e) => {
+            if (e.target && e.target.hasAttribute('data-q-id')) {
+                const qId = e.target.getAttribute('data-q-id');
+                onAnswerChange(qId, e.target.value);
+            }
+        };
+        const container = containerRef.current;
+        if (container) {
+            container.addEventListener('input', handleInput);
+        }
+        return () => {
+            if (container) {
+                container.removeEventListener('input', handleInput);
+            }
+        };
+    }, [onAnswerChange]);
+
+    return (
+        <div 
+            ref={containerRef}
+            className={className}
+            dangerouslySetInnerHTML={{ __html: processedPassage }}
+        />
     );
 };
 
@@ -438,15 +540,15 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                 {/* ── Example box (compiled from passage HTML) ────────── */}
                 {activeSet.passage && activeSet.passage.trim() !== "" && (
                     <div className="prose prose-sm max-w-none">
-                        {renderInlinePassage(
-                            activeSet.passage,
-                            activeSet.questions || [],
-                            answers,
-                            onAnswerChange,
-                            submitted,
-                            result,
-                            offset
-                        )}
+                        <InlinePassage
+                            passage={activeSet.passage}
+                            questions={activeSet.questions || []}
+                            answers={answers}
+                            onAnswerChange={onAnswerChange}
+                            submitted={submitted}
+                            result={result}
+                            offset={offset}
+                        />
                     </div>
                 )}
 
