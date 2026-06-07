@@ -160,7 +160,9 @@ const McqRenderer = ({ q, idx, offset = 0, submitted, evaluation, answers, onAns
 const MatchingRenderer = ({ q, idx, offset = 0, submitted, evaluation, answers, onAnswerChange }) => {
     const isCorrect = evaluation?.isCorrect;
     const pairs     = q.matchingPairs || [];
-    const options   = q.options || pairs.map((p) => p.value).filter(Boolean);
+    const options   = (q.options?.length && q.options.some(opt => opt && opt.trim() !== ""))
+        ? q.options.filter(opt => opt && opt.trim() !== "")
+        : pairs.map((p) => p.value).filter(Boolean);
 
     return (
         <div className={`p-5 rounded-2xl border transition-all space-y-3 ${

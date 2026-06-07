@@ -18,6 +18,7 @@ export const useTestIntegrity = (isStarted, submitted) => {
   }, [isStarted, submitted]);
 
   useEffect(() => {
+    setShowWarning(false);
     if (isStarted) {
       // Force all potential scrollable containers to the top to prevent layout shift cutoffs
       window.scrollTo({ top: 0, behavior: "instant" });

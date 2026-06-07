@@ -57,9 +57,9 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div className={`drawer ${isFullscreen ? "" : "lg:drawer-open"}`}>
+    <div className={`drawer h-screen overflow-hidden ${isFullscreen ? "" : "lg:drawer-open"}`}>
       <input id="dashboard-drawer" type="checkbox" className="drawer-toggle" checked={isDrawerOpen} onChange={(e) => setIsDrawerOpen(e.target.checked)} />
-      <div className="drawer-content flex flex-col items-center justify-start bg-base-200">
+      <div className="drawer-content flex flex-col h-full overflow-hidden bg-base-200">
         {/* Page content here */}
         {/* <div className="w-full navbar bg-base-100 lg:hidden shadow-sm">
           <div className="flex-none">
@@ -93,7 +93,7 @@ const DashboardLayout = () => {
       {!isFullscreen && (
         <div className={`drawer-side z-50 transition-all duration-300 ${isDrawerOpen ? "" : "lg:w-20 lg:overflow-visible"}`}>
           <label htmlFor="dashboard-drawer" className="drawer-overlay"></label>
-          <ul className={`menu p-4 min-h-full bg-base-100 text-base-content border-r border-base-200 transition-all duration-300 ${
+          <ul className={`menu p-4 min-h-full bg-base-100 text-base-content border-r border-base-200 transition-all duration-300 overflow-y-auto ${
             isDrawerOpen ? "w-80" : "w-80 lg:w-20 lg:overflow-visible"
           }`}>
             {/* Sidebar content here */}

@@ -13,8 +13,7 @@ import {
     PiArrowLeftBold,
     PiArrowClockwiseBold,
     PiInfoFill,
-    PiChartLineUpFill,
-    PiMonitor
+    PiChartLineUpFill
 } from "react-icons/pi";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
@@ -54,7 +53,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
-  const { showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
+  const { isFullscreen, showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
 
   /* --- Audio State --- */
   const howlRef = useRef(null);
@@ -392,7 +391,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
+    <div className={`min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none ${isFullscreen ? "h-screen overflow-y-auto" : ""}`} onContextMenu={e => e.preventDefault()}>
       <FullscreenWarningOverlay 
         isOpen={showWarning}
         onResume={() => { setShowWarning(false); enterFullscreen(); }}
