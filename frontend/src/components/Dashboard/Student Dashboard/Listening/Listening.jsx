@@ -85,6 +85,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
         const fetched = response?.data?.questions || [];
         setListeningSets(fetched);
         setLoading(false);
+      // eslint-disable-next-line no-unused-vars
       } catch (error) {
         toast.error("Failed to load listening materials");
         setLoading(false);
@@ -140,12 +141,12 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     };
   }, [activeSet?.audioUrl, volume]);
 
-  const tick = useCallback(() => {
+  const tick = useCallback(function tickFn() {
     if (howlRef.current?.playing()) {
       const seek = howlRef.current.seek() || 0;
       setCurrentTime(seek);
       setProgress(howlRef.current.duration() ? (seek / howlRef.current.duration()) * 100 : 0);
-      rafRef.current = requestAnimationFrame(tick);
+      rafRef.current = requestAnimationFrame(tickFn);
     }
   }, []);
 
@@ -198,6 +199,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
         toast.success("Assessment completed!");
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Evaluation failed");
     } finally {
@@ -302,7 +304,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                     className="max-w-xl mx-auto"
                 >
                     <div className="card bg-white border-2 border-dashed border-base-300 p-16 rounded-[3rem] text-center space-y-6">
-                        <div className="w-20 h-20 rounded-[2rem] bg-amber-50 border border-amber-100 flex items-center justify-center text-4xl mx-auto">
+                        <div className="w-20 h-20 rounded-4xl bg-amber-50 border border-amber-100 flex items-center justify-center text-4xl mx-auto">
                             🎧
                         </div>
                         <div className="space-y-2">
