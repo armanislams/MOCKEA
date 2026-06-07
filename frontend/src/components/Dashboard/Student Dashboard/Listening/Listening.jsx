@@ -27,6 +27,7 @@ import useTestIntegrity from "../../../../hooks/useTestIntegrity";
 import FullscreenGate from "../../../Common/FullscreenGate";
 import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay";
 import IeltsListeningFormat from "./IeltsListeningFormat";
+import useEvaluate from "../../../../hooks/useEvaluate";
 
 const fmt = (s) => {
   if (!s || isNaN(s)) return "00:00";
@@ -46,9 +47,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [listeningSets, setListeningSets] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");
   const [loading, setLoading] = useState(!preloadedSet); // skip loader if data already provided
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [result, setResult] = useState(null);
+  const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
   const [answers, setAnswers] = useState({});
 
   // Fullscreen & Gating States
@@ -180,37 +179,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   }, []);
 
   const handleEvaluate = async () => {
-    if (Object.keys(answers).length === 0) {
-        toast.warning("Please answer at least one question.");
-        return;
-    }
-
-    // Guest mode — hand off to parent handler (only if not yet logged in)
-    if (onSubmitGuest && !user?.email) {
-      onSubmitGuest(answers);
-      return;
-    }
-
-    try {
-      if (!activeSet) return;
-      setSubmitting(true);
-      const response = await axiosSecure.post("/questions/evaluate", {
-        questionSetId: activeSet._id,
-        answers,
-      });
-
-      if (response.data.success) {
-        setResult(response.data);
-        setSubmitted(true);
-        toast.success("Assessment completed!");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      // eslint-disable-next-line no-unused-vars
-    } catch (error) {
-      toast.error("Evaluation failed");
-    } finally {
-      setSubmitting(false);
-    }
+    await evaluate(activeSet, answers, onSubmitGuest);
   };
 
   const handleExitTest = async () => {

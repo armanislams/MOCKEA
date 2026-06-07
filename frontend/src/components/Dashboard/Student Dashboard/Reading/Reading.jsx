@@ -19,6 +19,7 @@ import {
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import FullscreenGate from "../../../Common/FullscreenGate.jsx";
 import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
+import useEvaluate from "../../../../hooks/useEvaluate";
 
 const Reading = () => {
   const axiosSecure = useAxiosSecure();
@@ -29,11 +30,9 @@ const Reading = () => {
   const [readingSets, setReadingSets] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");
   const [answers, setAnswers] = useState({});
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
+  const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
 
   const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
   const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
@@ -238,31 +237,7 @@ const Reading = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (Object.keys(answers).length === 0) {
-      toast.warning("Please answer at least one question.");
-      return;
-    }
-
-    try {
-      if (!activeSet) return;
-      setSubmitting(true);
-      const response = await axiosSecure.post("/questions/evaluate", {
-        questionSetId: activeSet._id,
-        answers,
-      });
-
-      if (response.data.success) {
-        setResult(response.data);
-        setSubmitted(true);
-        toast.success("Assessment completed!");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to evaluate answers");
-    } finally {
-      setSubmitting(false);
-    }
+    await evaluate(activeSet, answers);
   };
 
   const handleExitTest = async () => {
