@@ -115,6 +115,9 @@ const convertMarkdownTablesToHtml = (text) => {
 const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted, result, offset, className = "leading-relaxed text-slate-700" }) => {
     const containerRef = useRef(null);
 
+    const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
+    const resultKey = useMemo(() => result ? JSON.stringify(result.evaluatedAnswers?.map(a => `${a.questionId}:${a.isCorrect}`)) : "", [result]);
+
     const processedPassage = useMemo(() => {
         const text = convertMarkdownTablesToHtml(passage);
         const hasInlinePlaceholders = /___([\w-]+)___/.test(text);
@@ -184,7 +187,7 @@ const InlinePassage = ({ passage, questions, answers, onAnswerChange, submitted,
                 </span>
             `.trim();
         });
-    }, [passage, questions, submitted, result, offset]);
+    }, [passage, questionsKey, submitted, resultKey, offset]);
 
     useEffect(() => {
         if (containerRef.current) {
