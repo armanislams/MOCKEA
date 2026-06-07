@@ -30,7 +30,19 @@ const COMPLETION_TYPES = new Set([
 
 const convertMarkdownTablesToHtml = (text) => {
     if (!text) return "";
-    const lines = text.split("\n");
+    
+    let hasWrapper = false;
+    let wrapperClass = "ielts-listening-notes space-y-4";
+    let cleanedText = text.trim();
+    
+    const wrapperMatch = cleanedText.match(/^<div class=["'](ielts-listening-notes[^"']*)["']>/);
+    if (wrapperMatch && cleanedText.endsWith("</div>")) {
+        hasWrapper = true;
+        wrapperClass = wrapperMatch[1];
+        cleanedText = cleanedText.substring(wrapperMatch[0].length, cleanedText.length - 6).trim();
+    }
+
+    const lines = cleanedText.split("\n");
     let inTable = false;
     let tableHtml = "";
     const result = [];
@@ -91,7 +103,9 @@ const convertMarkdownTablesToHtml = (text) => {
         tableHtml += "</table></div>";
         result.push(tableHtml);
     }
-    return result.join("\n");
+    
+    const finalHtml = result.join("\n");
+    return hasWrapper ? `<div class="${wrapperClass}">${finalHtml}</div>` : finalHtml;
 };
 
 /**
