@@ -222,30 +222,29 @@ const Reading = () => {
     [readingSets, selectedSetId],
   );
 
-  const passageElement = useMemo(() => {
-    if (!activeSet) return null;
-    const hasMultiplePassages = activeSet.passages && activeSet.passages.length > 0;
-    const contentHTML = hasMultiplePassages
-      ? convertMarkdownContentToHtml(activeSet.passages[activePassageTab]?.content || "")
-      : convertMarkdownContentToHtml(activeSet.passage || "");
-
-    return (
-      <div 
-        data-passage-container="true"
-        onMouseUp={handleTextSelection}
-        onPointerUp={handleTextSelection}
-        dangerouslySetInnerHTML={{ __html: contentHTML }} 
-        className="text-lg leading-relaxed text-slate-600 text-justify select-text"
-      />
-    );
-  }, [activeSet, activePassageTab]);
-
   const handleAnswerChange = useCallback((questionId, value) => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: value,
     }));
   }, []);
+
+  const passageElement = useMemo(() => {
+    if (!activeSet) return null;
+    const contentHTML = (activeSet.passages && activeSet.passages.length > 0)
+      ? convertMarkdownContentToHtml(activeSet.passages[activePassageTab]?.content || "")
+      : convertMarkdownContentToHtml(activeSet.passage || "");
+
+    return (
+      <div
+        data-passage-container="true"
+        onMouseUp={handleTextSelection}
+        onPointerUp={handleTextSelection}
+        dangerouslySetInnerHTML={{ __html: contentHTML }}
+        className="text-lg leading-relaxed text-slate-600 text-justify select-text"
+      />
+    );
+  }, [activeSet, activePassageTab]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

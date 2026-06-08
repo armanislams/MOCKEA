@@ -139,8 +139,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
 
     const passageElement = useMemo(() => {
         if (!data) return null;
-        const hasMultiplePassages = data.passages && data.passages.length > 0;
-        const contentHTML = hasMultiplePassages
+        const contentHTML = (data.passages && data.passages.length > 0)
             ? convertMarkdownContentToHtml(data.passages[activePassageTab]?.content || "")
             : convertMarkdownContentToHtml(data.passage || data.sections?.[0]?.content || "No passage content available.");
 
