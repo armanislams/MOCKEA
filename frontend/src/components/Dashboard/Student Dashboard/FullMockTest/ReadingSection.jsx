@@ -156,10 +156,9 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
     }, [data, activePassageTab]);
 
     const activeQuestionsIdxs = data?.questions
-        ?.map((q, idx) => ({ q, idx, passageIndex: getQuestionPassageIndex(q, data?.questionGroups, idx) }))
-        .filter(item => item.passageIndex === activePassageTab) || [];
-    const minQuestionNum = activeQuestionsIdxs.length > 0 ? activeQuestionsIdxs[0].idx + 1 : 1;
-    const maxQuestionNum = activeQuestionsIdxs.length > 0 ? activeQuestionsIdxs[activeQuestionsIdxs.length - 1].idx + 1 : 13;
+        ?.map((q, idx) => ({ q, idx, passageIndex: getQuestionPassageIndex(q, data?.questionGroups, idx) })) || [];
+    const minQuestionNum = activeQuestionsIdxs.length > 0 ? 1 : 1;
+    const maxQuestionNum = activeQuestionsIdxs.length > 0 ? activeQuestionsIdxs.length : 1;
 
     return (
         <div className="flex h-full overflow-hidden bg-white">
@@ -261,9 +260,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
 
                     <div className="space-y-8">
                         {data?.questions?.map((q, idx) => {
-                            const hasMultiplePassages = data.passages && data.passages.length > 0;
                             const qPassageIndex = getQuestionPassageIndex(q, data?.questionGroups, idx);
-                            if (hasMultiplePassages && qPassageIndex !== activePassageTab) return null;
 
                             const globalQNum = idx + 1;
                             const groupHeader = (data?.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);

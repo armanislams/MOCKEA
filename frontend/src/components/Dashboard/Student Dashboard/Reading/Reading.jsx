@@ -536,9 +536,7 @@ const Reading = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-10">
                         {activeSet.questions.map((q, idx) => {
-                            const hasMultiplePassages = activeSet.passages && activeSet.passages.length > 0;
                             const qPassageIndex = getQuestionPassageIndex(q, activeSet.questionGroups, idx);
-                            if (hasMultiplePassages && qPassageIndex !== activePassageTab) return null;
 
                             // Find any group that starts at this question's 1-based global index
                             const globalQNum = idx + 1;
