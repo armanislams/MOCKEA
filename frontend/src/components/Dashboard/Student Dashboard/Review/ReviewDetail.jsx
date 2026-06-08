@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
+import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { 
     PiArrowLeftBold, 
     PiCheckCircleFill, 
@@ -122,8 +123,8 @@ const ReviewDetail = () => {
                                 {activeTab === 'reading' && (() => {
                                     const hasMultiplePassages = currentSectionData?.passages && currentSectionData.passages.length > 0;
                                     const contentHTML = hasMultiplePassages
-                                        ? currentSectionData.passages[activePassageTab]?.content || ""
-                                        : currentSectionData?.passage || currentSectionData?.content || "No content available.";
+                                        ? convertMarkdownContentToHtml(currentSectionData.passages[activePassageTab]?.content || "")
+                                        : convertMarkdownContentToHtml(currentSectionData?.passage || currentSectionData?.content || "No content available.");
                                     const titleText = hasMultiplePassages
                                         ? currentSectionData.passages[activePassageTab]?.title || ""
                                         : currentSectionData?.title || "";

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { PiNotePencil } from "react-icons/pi";
 
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
@@ -139,8 +140,8 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
         if (!data) return null;
         const hasMultiplePassages = data.passages && data.passages.length > 0;
         const contentHTML = hasMultiplePassages
-            ? data.passages[activePassageTab]?.content || ""
-            : data.passage || data.sections?.[0]?.content || "No passage content available.";
+            ? convertMarkdownContentToHtml(data.passages[activePassageTab]?.content || "")
+            : convertMarkdownContentToHtml(data.passage || data.sections?.[0]?.content || "No passage content available.");
 
         return (
             <div 

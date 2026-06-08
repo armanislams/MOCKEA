@@ -1,0 +1,89 @@
+const convertMarkdownLinks = (text) => {
+  return text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, label, url) => {
+    return `<a href="${url}" target="_blank" rel="noreferrer noopener" class="underline decoration-primary/50 text-primary hover:text-primary-focus">${label}</a>`;
+  });
+};
+
+const convertPlainUrlsToLinks = (text) => {
+  return text.replace(/(?<!href=["'])(https?:\/\/[^\s<>'"`]+)/g, (match) => {
+    return `<a href="${match}" target="_blank" rel="noreferrer noopener" class="underline decoration-primary/50 text-primary hover:text-primary-focus">${match}</a>`;
+  });
+};
+
+const convertMarkdownTableBlock = (lines) => {
+  if (!lines.length) return "";
+
+  const rows = lines.map((line) => line.trim().replace(/\s*\|\s*$/u, "").replace(/^\s*\|\s*/u, "")).filter((line) => line !== "");
+  if (!rows.length) return "";
+
+  const cells = (row) => row.split("|").map((cell) => cell.trim());
+  const isSeparatorRow = (row) => cells(row).every((cell) => /^:?-+:?$/.test(cell));
+
+  let html = '<div class="overflow-x-auto my-6"><table class="table-auto w-full text-left border-collapse border border-slate-200 text-sm">';
+  const headerCells = cells(rows[0]);
+  html += '<thead><tr class="bg-slate-100 text-slate-800 font-bold">';
+  headerCells.forEach((cell) => {
+    html += `<th class="border border-slate-200 p-3 align-top">${convertPlainUrlsToLinks(convertMarkdownLinks(cell))}</th>`;
+  });
+  html += '</tr></thead>';
+
+  let bodyRows = rows.slice(1);
+  if (bodyRows.length > 0 && isSeparatorRow(bodyRows[0])) {
+    bodyRows = bodyRows.slice(1);
+  }
+
+  html += '<tbody class="text-slate-700">';
+  bodyRows.forEach((row, rowIndex) => {
+    const rowClass = rowIndex % 2 === 1 ? 'bg-slate-50/30' : '';
+    const rowCells = cells(row);
+    html += `<tr class="${rowClass}">`;
+    rowCells.forEach((cell) => {
+      html += `<td class="border border-slate-200 p-3 align-top">${convertPlainUrlsToLinks(convertMarkdownLinks(cell))}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  return html;
+};
+
+export const convertMarkdownContentToHtml = (rawText) => {
+  const text = rawText == null ? "" : String(rawText).trim();
+  if (!text) return "";
+
+  const hasHtmlTags = /<\/?[a-z][\s\S]*?>/i.test(text);
+  if (hasHtmlTags) {
+    return text;
+  }
+
+  const lines = text.split(/\r?\n/);
+  const htmlParts = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    if (lines[index].trim() === "") {
+      index += 1;
+      continue;
+    }
+
+    if (lines[index].trim().startsWith("|") && lines[index].trim().endsWith("|")) {
+      const tableLines = [];
+      while (index < lines.length && lines[index].trim().startsWith("|") && lines[index].trim().endsWith("|")) {
+        tableLines.push(lines[index]);
+        index += 1;
+      }
+      htmlParts.push(convertMarkdownTableBlock(tableLines));
+      continue;
+    }
+
+    const paragraphLines = [];
+    while (index < lines.length && lines[index].trim() !== "" && !(lines[index].trim().startsWith("|") && lines[index].trim().endsWith("|"))) {
+      paragraphLines.push(lines[index].trim());
+      index += 1;
+    }
+    const paragraphText = paragraphLines.join("<br/>");
+    htmlParts.push(`<p class="leading-relaxed">${convertPlainUrlsToLinks(convertMarkdownLinks(paragraphText))}</p>`);
+  }
+
+  return htmlParts.join("\n");
+};

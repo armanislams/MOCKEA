@@ -4,6 +4,7 @@ import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
+import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion } from "framer-motion";
 import { 
@@ -224,8 +225,8 @@ const Reading = () => {
     if (!activeSet) return null;
     const hasMultiplePassages = activeSet.passages && activeSet.passages.length > 0;
     const contentHTML = hasMultiplePassages
-      ? activeSet.passages[activePassageTab]?.content || ""
-      : activeSet.passage || "";
+      ? convertMarkdownContentToHtml(activeSet.passages[activePassageTab]?.content || "")
+      : convertMarkdownContentToHtml(activeSet.passage || "");
 
     return (
       <div 

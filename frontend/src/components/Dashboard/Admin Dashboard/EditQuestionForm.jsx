@@ -19,6 +19,7 @@ import {
     PiArrowLeft,
 } from "react-icons/pi";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import { convertMarkdownContentToHtml } from "../../../utils/markdownUtils.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -403,7 +404,7 @@ const EditQuestionForm = () => {
             data.passage = activePassages.map((p, idx) => `
 <section class="p-8 bg-primary/5 rounded-[2rem] border border-primary/10 mb-8">
   <h2 class="text-3xl font-black text-primary mb-4">Reading Passage ${idx + 1}: ${p.title}</h2>
-  <div class="space-y-4 text-slate-600">${p.content}</div>
+  <div class="space-y-4 text-slate-600">${convertMarkdownContentToHtml(p.content)}</div>
 </section>
             `.trim()).join('\n\n');
         } else if (testType === "writing") {
@@ -677,6 +678,9 @@ const EditQuestionForm = () => {
                                                 }}
                                                 required
                                             />
+                                            <p className="text-[11px] text-slate-500 font-semibold mt-1">
+                                                Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>. Empty lines create paragraph breaks.
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
