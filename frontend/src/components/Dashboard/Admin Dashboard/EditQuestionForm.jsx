@@ -88,12 +88,14 @@ const makeQuestion = () => ({
     options: ["", ""],
     matchingPairs: [{ key: "", value: "" }],
     imageUrl: "",
+    passageIndex: 0,
 });
 
 const initialForm = () => ({
     title: "",
     instructions: "",
     passage: "",
+    passages: [{ title: "", content: "" }],
     audioUrl: "",
     speakingPrompt: "",
     speakingPart1Questions: [""],
@@ -278,10 +280,18 @@ const EditQuestionForm = () => {
                 cleanPassage = tempPassage.trim();
             }
 
+            let passages = [{ title: "", content: "" }];
+            if (fetchedQuestion.passages && fetchedQuestion.passages.length > 0) {
+                passages = fetchedQuestion.passages.map(p => ({ title: p.title || "", content: p.content || "" }));
+            } else if (fetchedQuestion.testType === "reading") {
+                passages = [{ title: fetchedQuestion.title || "Passage 1", content: fetchedQuestion.passage || "" }];
+            }
+
             setFormData({
                 title: fetchedQuestion.title || "",
                 instructions: fetchedQuestion.instructions || "",
                 passage: cleanPassage,
+                passages,
                 audioUrl: fetchedQuestion.audioUrl || "",
                 speakingPrompt: fetchedQuestion.speakingPrompt || "",
                 speakingPart1Questions: fetchedQuestion.speakingPart1Questions?.length ? fetchedQuestion.speakingPart1Questions : [""],
@@ -304,7 +314,8 @@ const EditQuestionForm = () => {
                     correctAnswer: q.correctAnswer || "",
                     options: q.options || ["", ""],
                     matchingPairs: q.matchingPairs || [{ key: "", value: "" }],
-                    imageUrl: q.imageUrl || ""
+                    imageUrl: q.imageUrl || "",
+                    passageIndex: q.passageIndex || 0
                 })) : [makeQuestion()],
             });
         }
@@ -374,7 +385,16 @@ const EditQuestionForm = () => {
         e.preventDefault();
         const data = { ...formData, testType };
 
-        if (testType === "writing") {
+        if (testType === "reading") {
+            const activePassages = (formData.passages || []).filter(p => p.title.trim() !== "" || p.content.trim() !== "");
+            data.passages = activePassages;
+            data.passage = activePassages.map((p, idx) => `
+<section class="p-8 bg-primary/5 rounded-[2rem] border border-primary/10 mb-8">
+  <h2 class="text-3xl font-black text-primary mb-4">Reading Passage ${idx + 1}: ${p.title}</h2>
+  <div class="space-y-4 text-slate-600">${p.content}</div>
+</section>
+            `.trim()).join('\n\n');
+        } else if (testType === "writing") {
             const task1HTML = `
 <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200">
   <h3 class="text-xl font-bold text-slate-800 mb-2">Task 1: Academic Report (Recommended: 20 minutes, minimum 150 words)</h3>
@@ -589,17 +609,66 @@ const EditQuestionForm = () => {
                         <PiCloudArrowUp className="text-primary" /> Test Content
                     </h2>
 
-                    {/* Reading */}
+                    {/* Reading Passages Manager */}
                     {testType === "reading" && (
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold text-slate-700 tracking-wide">Reading Passage</label>
-                            <textarea
-                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[250px] font-serif"
-                                placeholder="Paste the full reading passage here..."
-                                value={formData.passage}
-                                onChange={(e) => patch({ passage: e.target.value })}
-                                required
-                            />
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-slate-700 tracking-wide">Reading Passages ({formData.passages?.length || 0})</label>
+                                <button
+                                    type="button"
+                                    onClick={() => patch({ passages: [...(formData.passages || []), { title: "", content: "" }] })}
+                                    className="btn btn-primary btn-sm rounded-xl gap-1"
+                                >
+                                    <PiPlus /> Add Passage
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                {(formData.passages || []).map((passage, pIdx) => (
+                                    <div key={pIdx} className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4 relative">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black uppercase tracking-widest text-primary">Passage {pIdx + 1}</span>
+                                            {formData.passages.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => patch({ passages: formData.passages.filter((_, idx) => idx !== pIdx) })}
+                                                    className="btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg gap-1"
+                                                >
+                                                    <PiTrash /> Remove Passage
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-slate-700">Passage Title</label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none"
+                                                placeholder={`e.g. Reading Passage ${pIdx + 1}: Electroreception`}
+                                                value={passage.title}
+                                                onChange={(e) => {
+                                                    const updated = [...formData.passages];
+                                                    updated[pIdx].title = e.target.value;
+                                                    patch({ passages: updated });
+                                                }}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-slate-700">Passage Content</label>
+                                            <textarea
+                                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none resize-y min-h-[150px] font-serif"
+                                                placeholder="Paste passage paragraphs here..."
+                                                value={passage.content}
+                                                onChange={(e) => {
+                                                    const updated = [...formData.passages];
+                                                    updated[pIdx].content = e.target.value;
+                                                    patch({ passages: updated });
+                                                }}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
@@ -955,22 +1024,41 @@ const EditQuestionForm = () => {
 
                                 <div className="grid md:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="label"><span className="label-text font-semibold">Type</span></label>
+                                        <label className="label"><span className="label-text font-semibold text-xs">Type</span></label>
                                         <QuestionTypeSelect
                                             value={q.type}
                                             onChange={(val) => updateQuestionField(q.id, "type", val)}
                                         />
                                     </div>
-                                    <div className="md:col-span-2">
-                                        <label className="label"><span className="label-text font-semibold">Question / Label</span></label>
+                                    <div className={testType === "reading" ? "md:col-span-1" : "md:col-span-2"}>
+                                        <label className="label"><span className="label-text font-semibold text-xs">Question / Label</span></label>
                                         <input
                                             type="text"
-                                            className="input input-bordered w-full rounded-2xl"
+                                            className="input input-bordered w-full rounded-2xl text-sm"
                                             value={q.question}
                                             onChange={(e) => updateQuestionField(q.id, "question", e.target.value)}
                                             required
                                         />
                                     </div>
+                                    {/* Reading: Passage index picker */}
+                                    {testType === "reading" && (
+                                        <div>
+                                            <label className="label">
+                                                <span className="label-text font-semibold text-xs">Target Passage</span>
+                                            </label>
+                                            <select
+                                                className="select select-bordered w-full rounded-2xl text-sm font-semibold"
+                                                value={q.passageIndex || 0}
+                                                onChange={(e) => updateQuestionField(q.id, "passageIndex", parseInt(e.target.value))}
+                                            >
+                                                {(formData.passages || []).map((p, pIdx) => (
+                                                    <option key={pIdx} value={pIdx}>
+                                                        Passage {pIdx + 1}: {p.title || "(Untitled)"}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <QuestionTypeExtras

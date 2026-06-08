@@ -4,7 +4,12 @@ import { PiNotePencil } from "react-icons/pi";
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
        const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
     const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
+    const [activePassageTab, setActivePassageTab] = useState(0);
     const lastShownRef = useRef(0);
+
+    useEffect(() => {
+        setActivePassageTab(0);
+    }, [data]);
 
     useEffect(() => {
         const handleGlobalClick = (e) => {
@@ -131,16 +136,22 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
     };
 
     const passageElement = useMemo(() => {
+        if (!data) return null;
+        const hasMultiplePassages = data.passages && data.passages.length > 0;
+        const contentHTML = hasMultiplePassages
+            ? data.passages[activePassageTab]?.content || ""
+            : data.passage || data.sections?.[0]?.content || "No passage content available.";
+
         return (
             <div 
                 data-passage-container="true"
                 onMouseUp={handleTextSelection}
                 onPointerUp={handleTextSelection}
                 className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
-                dangerouslySetInnerHTML={{ __html: data?.passage || data?.sections?.[0]?.content || "No passage content available." }}
+                dangerouslySetInnerHTML={{ __html: contentHTML }}
             />
         );
-    }, [data]);
+    }, [data, activePassageTab]);
 
     return (
         <div className="flex h-full overflow-hidden bg-white">
@@ -148,13 +159,39 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
             <div className="w-1/2 flex flex-col h-full border-r border-base-200">
                 <div className="flex-1 overflow-y-auto p-12">
                     <div className="max-w-2xl mx-auto space-y-8">
-                        <header className="space-y-2">
+                        <header className="space-y-2 font-sans">
                             <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Part 1</p>
                             <h1 className="text-4xl font-extrabold tracking-tight">{data?.passageTitle || data?.title}</h1>
                             <p className="text-base-content/60 italic leading-relaxed text-lg">
                                 An exploration of the ancient origins and development of map-making, highlighting key innovations and their impact on navigation, exploration, and understanding of the world.
                             </p>
                         </header>
+
+                        {data?.passages && data.passages.length > 0 && (
+                            <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto select-none">
+                                {data.passages.map((p, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                            setActivePassageTab(idx);
+                                        }}
+                                        className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
+                                            activePassageTab === idx
+                                                ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
+                                                : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                        }`}
+                                    >
+                                        Passage {idx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {data?.passages && data.passages.length > 0 && data.passages[activePassageTab] && (
+                            <h3 className="text-2xl font-black tracking-tight mb-6 text-slate-700 font-sans">
+                                {data.passages[activePassageTab].title}
+                            </h3>
+                        )}
 
                         {passageElement}
                     </div>
@@ -171,9 +208,20 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                     <button 
                                         key={q.id || i} 
                                         onClick={() => {
-                                            const element = document.getElementById(`question-${i}`);
-                                            if (element) {
-                                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            const qPassageIndex = q.passageIndex || 0;
+                                            if (data?.passages && data.passages.length > 0 && activePassageTab !== qPassageIndex) {
+                                                setActivePassageTab(qPassageIndex);
+                                                setTimeout(() => {
+                                                    const element = document.getElementById(`question-${i}`);
+                                                    if (element) {
+                                                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                    }
+                                                }, 100);
+                                            } else {
+                                                const element = document.getElementById(`question-${i}`);
+                                                if (element) {
+                                                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                }
                                             }
                                         }}
                                         className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
@@ -214,57 +262,77 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                     </header>
 
                     <div className="space-y-8">
-                        {data?.questions?.map((q, idx) => (
-                            <div key={q.id || idx} id={`question-${idx}`} className="space-y-4 scroll-mt-6">
-                                <div className="flex items-start gap-4">
-                                    <div className="flex-none w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black">
-                                        {idx + 1}
+                        {data?.questions?.map((q, idx) => {
+                            const hasMultiplePassages = data.passages && data.passages.length > 0;
+                            if (hasMultiplePassages) {
+                                const qPassageIndex = q.passageIndex || 0;
+                                if (qPassageIndex !== activePassageTab) return null;
+                            }
+
+                            return (
+                                <div key={q.id || idx} id={`question-${idx}`} className="space-y-4 scroll-mt-6">
+                                    <div className="flex items-start gap-4">
+                                        <div className="flex-none w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black">
+                                            {idx + 1}
+                                        </div>
+                                        <p className="text-lg font-medium pt-1">
+                                            {q.question}
+                                        </p>
                                     </div>
-                                    <p className="text-lg font-medium pt-1">
-                                        {q.question}
-                                    </p>
+
+                                    {q.type === 'true-false' && (
+                                        <div className="flex flex-wrap gap-2 ml-14">
+                                            {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
+                                                <button 
+                                                    key={opt}
+                                                    onClick={() => onAnswerChange(q.id, opt)}
+                                                    className={`px-6 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                                                        answers[q.id] === opt 
+                                                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
+                                                        : "bg-white border-base-200 hover:border-primary/40"
+                                                    }`}
+                                                >
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {q.type === 'multiple-choice' && (
+                                        <div className="space-y-2 ml-14">
+                                            {q.options?.filter(opt => opt && opt.trim() !== "").map((opt, optIdx) => (
+                                                <button 
+                                                    key={optIdx}
+                                                    onClick={() => onAnswerChange(q.id, opt)}
+                                                    className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
+                                                        answers[q.id] === opt 
+                                                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
+                                                        : "bg-white border-base-200 hover:border-primary/40"
+                                                    }`}
+                                                >
+                                                    <span className="w-8 h-8 rounded-lg bg-base-200 text-base-content/40 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                        {String.fromCharCode(65 + optIdx)}
+                                                    </span>
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {q.type !== 'true-false' && q.type !== 'multiple-choice' && (
+                                        <div className="ml-14">
+                                            <input 
+                                                type="text" 
+                                                className="input input-bordered w-full rounded-2xl font-bold bg-white focus:border-primary text-sm h-12 text-slate-800"
+                                                placeholder="Type your answer here..."
+                                                value={answers[q.id] || ""}
+                                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-
-                                {q.type === 'true-false' && (
-                                    <div className="flex flex-wrap gap-2 ml-14">
-                                        {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
-                                            <button 
-                                                key={opt}
-                                                onClick={() => onAnswerChange(q.id, opt)}
-                                                className={`px-6 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
-                                                    answers[q.id] === opt 
-                                                    ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
-                                                    : "bg-white border-base-200 hover:border-primary/40"
-                                                }`}
-                                            >
-                                                {opt}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {q.type === 'multiple-choice' && (
-                                    <div className="space-y-2 ml-14">
-                                        {q.options?.filter(opt => opt && opt.trim() !== "").map((opt, optIdx) => (
-                                            <button 
-                                                key={optIdx}
-                                                onClick={() => onAnswerChange(q.id, opt)}
-                                                className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
-                                                    answers[q.id] === opt 
-                                                    ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
-                                                    : "bg-white border-base-200 hover:border-primary/40"
-                                                }`}
-                                            >
-                                                <span className="w-8 h-8 rounded-lg bg-base-200 text-base-content/40 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                    {String.fromCharCode(65 + optIdx)}
-                                                </span>
-                                                {opt}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </div>

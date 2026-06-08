@@ -33,6 +33,11 @@ const Reading = () => {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
+  const [activePassageTab, setActivePassageTab] = useState(0);
+
+  useEffect(() => {
+    setActivePassageTab(0);
+  }, [selectedSetId]);
 
   const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
   const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
@@ -217,16 +222,21 @@ const Reading = () => {
 
   const passageElement = useMemo(() => {
     if (!activeSet) return null;
+    const hasMultiplePassages = activeSet.passages && activeSet.passages.length > 0;
+    const contentHTML = hasMultiplePassages
+      ? activeSet.passages[activePassageTab]?.content || ""
+      : activeSet.passage || "";
+
     return (
       <div 
         data-passage-container="true"
         onMouseUp={handleTextSelection}
         onPointerUp={handleTextSelection}
-        dangerouslySetInnerHTML={{ __html: activeSet.passage }} 
+        dangerouslySetInnerHTML={{ __html: contentHTML }} 
         className="text-lg leading-relaxed text-slate-600 text-justify select-text"
       />
     );
-  }, [activeSet]);
+  }, [activeSet, activePassageTab]);
 
   const handleAnswerChange = useCallback((questionId, value) => {
     setAnswers((prev) => ({
@@ -484,6 +494,31 @@ const Reading = () => {
                 <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
                     <div className="prose prose-slate max-w-none">
                         <h2 className="text-3xl font-black tracking-tight mb-8 text-slate-800">{activeSet.title}</h2>
+                        {activeSet.passages && activeSet.passages.length > 0 && (
+                            <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto">
+                                {activeSet.passages.map((p, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                            setActivePassageTab(idx);
+                                        }}
+                                        className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
+                                            activePassageTab === idx
+                                                ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
+                                                : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                        }`}
+                                    >
+                                        Passage {idx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {activeSet.passages && activeSet.passages.length > 0 && activeSet.passages[activePassageTab] && (
+                            <h3 className="text-2xl font-black tracking-tight mb-6 text-slate-700">
+                                {activeSet.passages[activePassageTab].title}
+                            </h3>
+                        )}
                         {passageElement}
                     </div>
                 </div>
@@ -499,6 +534,12 @@ const Reading = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-10">
                         {activeSet.questions.map((q, idx) => {
+                            const hasMultiplePassages = activeSet.passages && activeSet.passages.length > 0;
+                            if (hasMultiplePassages) {
+                                const qPassageIndex = q.passageIndex || 0;
+                                if (qPassageIndex !== activePassageTab) return null;
+                            }
+
                             const isCorrect = submitted && result?.evaluatedAnswers.find(a => a.questionId === q.id)?.isCorrect;
                             
                             return (

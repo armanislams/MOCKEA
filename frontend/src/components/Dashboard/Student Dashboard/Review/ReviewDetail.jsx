@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { 
     PiArrowLeftBold, 
@@ -19,6 +19,11 @@ const ReviewDetail = () => {
     const navigate = useNavigate();
     const axiosSecure = useAxiosSecure();
     const [activeTab, setActiveTab] = useState("reading");
+    const [activePassageTab, setActivePassageTab] = useState(0);
+
+    useEffect(() => {
+        setActivePassageTab(0);
+    }, [activeTab]);
 
     const { data: result, isLoading } = useQuery({
         queryKey: ["mock-result-detail", id],
@@ -114,12 +119,47 @@ const ReviewDetail = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                             {/* Left: Passage / Content */}
                             <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm sticky top-28 h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
-                                {activeTab === 'reading' && (
-                                    <div className="prose prose-slate max-w-none">
-                                        <h2 className="text-3xl font-black tracking-tight mb-6">{currentSectionData?.title}</h2>
-                                        <div dangerouslySetInnerHTML={{ __html: currentSectionData?.content }} className="text-lg leading-relaxed text-base-content/80" />
-                                    </div>
-                                )}
+                                {activeTab === 'reading' && (() => {
+                                    const hasMultiplePassages = currentSectionData?.passages && currentSectionData.passages.length > 0;
+                                    const contentHTML = hasMultiplePassages
+                                        ? currentSectionData.passages[activePassageTab]?.content || ""
+                                        : currentSectionData?.passage || currentSectionData?.content || "No content available.";
+                                    const titleText = hasMultiplePassages
+                                        ? currentSectionData.passages[activePassageTab]?.title || ""
+                                        : currentSectionData?.title || "";
+
+                                    return (
+                                        <div className="prose prose-slate max-w-none">
+                                            <h2 className="text-3xl font-black tracking-tight mb-6">{currentSectionData?.title || "Reading Section"}</h2>
+                                            
+                                            {/* Passage selection tabs */}
+                                            {hasMultiplePassages && (
+                                                <div className="flex border-b border-base-200 mb-8 gap-2 overflow-x-auto">
+                                                    {currentSectionData.passages.map((p, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            type="button"
+                                                            onClick={() => setActivePassageTab(idx)}
+                                                            className={`px-5 py-2.5 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
+                                                                activePassageTab === idx
+                                                                    ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
+                                                                    : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                                            }`}
+                                                        >
+                                                            Passage {idx + 1}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {hasMultiplePassages && (
+                                                <h3 className="text-2xl font-black tracking-tight mb-6 text-slate-700">{titleText}</h3>
+                                            )}
+
+                                            <div dangerouslySetInnerHTML={{ __html: contentHTML }} className="text-lg leading-relaxed text-base-content/80 text-justify select-text" />
+                                        </div>
+                                    );
+                                })()}
                                 {activeTab === 'listening' && (
                                     <div className="flex flex-col items-center justify-center h-full space-y-8">
                                         <div className="w-32 h-32 rounded-full bg-purple-100 flex items-center justify-center text-5xl text-purple-600 animate-pulse">
@@ -150,8 +190,15 @@ const ReviewDetail = () => {
                             {/* Right: Answer Comparison */}
                             <div className="space-y-6">
                                 {['reading', 'listening'].includes(activeTab) ? (
-                                    currentSectionResult.answers.map((ans, idx) => (
-                                        <div key={idx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
+                                    currentSectionResult.answers.map((ans, idx) => {
+                                        if (activeTab === 'reading' && currentSectionData?.passages && currentSectionData.passages.length > 0) {
+                                            const originalQ = currentSectionData.questions?.find(q => q.id === ans.questionId);
+                                            const qPassageIndex = originalQ?.passageIndex || 0;
+                                            if (qPassageIndex !== activePassageTab) return null;
+                                        }
+
+                                        return (
+                                            <div key={idx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
                                             ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
                                         }`}>
                                             <div className="flex items-start justify-between gap-4">
@@ -179,7 +226,8 @@ const ReviewDetail = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))
+                                    );
+                                })
                                 ) : (
                                     <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm space-y-6">
                                         <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">

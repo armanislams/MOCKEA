@@ -53,6 +53,10 @@ const QuestionItemSchema = new mongoose.Schema(
         imageUrl: {
             type: String,
             default: ""
+        },
+        passageIndex: {
+            type: Number,
+            default: 0
         }
     },
     { _id: false },
@@ -85,6 +89,12 @@ const QuestionsSchema = new mongoose.Schema(
         passage: {
             type: String,
         },
+        passages: [
+            {
+                title: { type: String, required: true },
+                content: { type: String, required: true }
+            }
+        ],
         // For Listening
         audioUrl: {
             type: String,
