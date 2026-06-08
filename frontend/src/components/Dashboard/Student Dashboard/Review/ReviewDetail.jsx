@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
+import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { 
     PiArrowLeftBold, 
     PiCheckCircleFill, 
@@ -201,7 +202,8 @@ const ReviewDetail = () => {
                                         {currentSectionResult.answers.map((ans, idx) => {
                                             if (activeTab === 'reading' && currentSectionData?.passages && currentSectionData.passages.length > 0) {
                                                 const originalQ = currentSectionData.questions?.find(q => q.id === ans.questionId);
-                                                const qPassageIndex = originalQ?.passageIndex || 0;
+                                                const answerIndex = currentSectionData.questions?.findIndex(q => q.id === ans.questionId);
+                                                const qPassageIndex = getQuestionPassageIndex(originalQ, currentSectionData?.questionGroups, answerIndex);
                                                 if (qPassageIndex !== activePassageTab) return null;
                                             }
 

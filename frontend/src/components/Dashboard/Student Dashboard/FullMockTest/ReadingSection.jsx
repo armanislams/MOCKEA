@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
+import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { PiNotePencil } from "react-icons/pi";
 
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
@@ -155,8 +156,8 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
     }, [data, activePassageTab]);
 
     const activeQuestionsIdxs = data?.questions
-        ?.map((q, idx) => ({ q, idx }))
-        .filter(item => (item.q.passageIndex || 0) === activePassageTab) || [];
+        ?.map((q, idx) => ({ q, idx, passageIndex: getQuestionPassageIndex(q, data?.questionGroups, idx) }))
+        .filter(item => item.passageIndex === activePassageTab) || [];
     const minQuestionNum = activeQuestionsIdxs.length > 0 ? activeQuestionsIdxs[0].idx + 1 : 1;
     const maxQuestionNum = activeQuestionsIdxs.length > 0 ? activeQuestionsIdxs[activeQuestionsIdxs.length - 1].idx + 1 : 13;
 
@@ -211,11 +212,11 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                         <div className="flex flex-wrap gap-2">
                             {data?.questions?.map((q, i) => {
                                 const isAnswered = !!answers[q.id];
+                                const qPassageIndex = getQuestionPassageIndex(q, data?.questionGroups, i);
                                 return (
                                     <button 
                                         key={q.id || i} 
                                         onClick={() => {
-                                            const qPassageIndex = q.passageIndex || 0;
                                             if (data?.passages && data.passages.length > 0 && activePassageTab !== qPassageIndex) {
                                                 setActivePassageTab(qPassageIndex);
                                                 setTimeout(() => {
@@ -261,13 +262,11 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                     <div className="space-y-8">
                         {data?.questions?.map((q, idx) => {
                             const hasMultiplePassages = data.passages && data.passages.length > 0;
-                            if (hasMultiplePassages) {
-                                const qPassageIndex = q.passageIndex || 0;
-                                if (qPassageIndex !== activePassageTab) return null;
-                            }
+                            const qPassageIndex = getQuestionPassageIndex(q, data?.questionGroups, idx);
+                            if (hasMultiplePassages && qPassageIndex !== activePassageTab) return null;
 
                             const globalQNum = idx + 1;
-                            const groupHeader = (data?.questionGroups || []).find(g => g.fromQuestion === globalQNum);
+                            const groupHeader = (data?.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
 
                             return (
                                 <div key={q.id || idx} id={`question-${idx}`} className="space-y-4 scroll-mt-6">

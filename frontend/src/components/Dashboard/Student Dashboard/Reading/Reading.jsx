@@ -5,6 +5,7 @@ import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
+import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion } from "framer-motion";
 import { 
@@ -536,14 +537,12 @@ const Reading = () => {
                     <form onSubmit={handleSubmit} className="space-y-10">
                         {activeSet.questions.map((q, idx) => {
                             const hasMultiplePassages = activeSet.passages && activeSet.passages.length > 0;
-                            if (hasMultiplePassages) {
-                                const qPassageIndex = q.passageIndex || 0;
-                                if (qPassageIndex !== activePassageTab) return null;
-                            }
+                            const qPassageIndex = getQuestionPassageIndex(q, activeSet.questionGroups, idx);
+                            if (hasMultiplePassages && qPassageIndex !== activePassageTab) return null;
 
                             // Find any group that starts at this question's 1-based global index
                             const globalQNum = idx + 1;
-                            const groupHeader = (activeSet.questionGroups || []).find(g => g.fromQuestion === globalQNum);
+                            const groupHeader = (activeSet.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
 
                             const isCorrect = submitted && result?.evaluatedAnswers.find(a => a.questionId === q.id)?.isCorrect;
                             
