@@ -540,14 +540,38 @@ const Reading = () => {
                                 if (qPassageIndex !== activePassageTab) return null;
                             }
 
+                            // Find any group that starts at this question's 1-based global index
+                            const globalQNum = idx + 1;
+                            const groupHeader = (activeSet.questionGroups || []).find(g => g.fromQuestion === globalQNum);
+
                             const isCorrect = submitted && result?.evaluatedAnswers.find(a => a.questionId === q.id)?.isCorrect;
                             
                             return (
-                                <div key={q.id} className={`space-y-4 p-6 rounded-3xl transition-all ${
-                                    submitted 
-                                    ? (isCorrect ? "bg-success/5 border border-success/20" : "bg-error/5 border border-error/20")
-                                    : "bg-base-50/50 border border-base-200"
-                                }`}>
+                                <div key={q.id} className="space-y-4">
+                                    {/* Group header if this question starts a group */}
+                                    {groupHeader && (
+                                        <div className="space-y-2 pt-2">
+                                            <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
+                                                <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                                    Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
+                                                </span>
+                                                {groupHeader.title && (
+                                                    <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
+                                                )}
+                                            </div>
+                                            {groupHeader.instructions && (
+                                                <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
+                                                    {groupHeader.instructions}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className={`space-y-4 p-6 rounded-3xl transition-all ${
+                                        submitted 
+                                        ? (isCorrect ? "bg-success/5 border border-success/20" : "bg-error/5 border border-error/20")
+                                        : "bg-base-50/50 border border-base-200"
+                                    }`}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
@@ -603,8 +627,9 @@ const Reading = () => {
                                             )}
                                         </div>
                                     )}
-                                </div>
-                            );
+                                        </div>
+                                    </div>
+                                );
                         })}
 
                         {!submitted && (

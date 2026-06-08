@@ -153,6 +153,12 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
         );
     }, [data, activePassageTab]);
 
+    const activeQuestionsIdxs = data?.questions
+        ?.map((q, idx) => ({ q, idx }))
+        .filter(item => (item.q.passageIndex || 0) === activePassageTab) || [];
+    const minQuestionNum = activeQuestionsIdxs.length > 0 ? activeQuestionsIdxs[0].idx + 1 : 1;
+    const maxQuestionNum = activeQuestionsIdxs.length > 0 ? activeQuestionsIdxs[activeQuestionsIdxs.length - 1].idx + 1 : 13;
+
     return (
         <div className="flex h-full overflow-hidden bg-white">
             {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
@@ -245,20 +251,10 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                     <header className="space-y-4">
                         <div className="flex items-center gap-2 text-primary">
                             <PiNotePencil className="w-6 h-6" />
-                            <h2 className="text-xl font-black uppercase tracking-widest">Questions 1–{data?.questions?.length || 13}</h2>
+                            <h2 className="text-xl font-black uppercase tracking-widest">Questions {minQuestionNum}–{maxQuestionNum}</h2>
                         </div>
-                        <div className="p-6 rounded-2xl bg-white border border-base-200 shadow-sm">
-                            <h3 className="font-bold mb-2">Instructions:</h3>
-                            <p className="text-sm text-base-content/70">
-                                Do the following statements agree with the information given in Reading Passage 1? In boxes 1–{data?.questions?.length || 13} on your answer sheet, write:
-                                <br/><br/>
-                                <span className="font-bold">TRUE</span> if the statement agrees with the information
-                                <br/>
-                                <span className="font-bold">FALSE</span> if the statement contradicts the information
-                                <br/>
-                                <span className="font-bold">NOT GIVEN</span> if there is no information on this
-                            </p>
-                        </div>
+                        {/* No global instructions header anymore - handled per group below */}
+
                     </header>
 
                     <div className="space-y-8">
@@ -269,8 +265,30 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                 if (qPassageIndex !== activePassageTab) return null;
                             }
 
+                            const globalQNum = idx + 1;
+                            const groupHeader = (data?.questionGroups || []).find(g => g.fromQuestion === globalQNum);
+
                             return (
                                 <div key={q.id || idx} id={`question-${idx}`} className="space-y-4 scroll-mt-6">
+                                    {/* Group header if this question starts a group */}
+                                    {groupHeader && (
+                                        <div className="space-y-2">
+                                            <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
+                                                <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                                    Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
+                                                </span>
+                                                {groupHeader.title && (
+                                                    <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
+                                                )}
+                                            </div>
+                                            {groupHeader.instructions && (
+                                                <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
+                                                    {groupHeader.instructions}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <div className="flex items-start gap-4">
                                         <div className="flex-none w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black">
                                             {idx + 1}

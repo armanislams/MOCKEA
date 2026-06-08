@@ -92,7 +92,17 @@ const QuestionsSchema = new mongoose.Schema(
         passages: [
             {
                 title: { type: String, required: true },
-                content: { type: String, required: true }
+                content: { type: String, required: true },
+            }
+        ],
+        // Question groups: admin-defined ranges with headers & instructions
+        questionGroups: [
+            {
+                title:        { type: String },
+                instructions: { type: String },
+                fromQuestion: { type: Number },
+                toQuestion:   { type: Number },
+                passageIndex: { type: Number, default: 0 },
             }
         ],
         // For Listening

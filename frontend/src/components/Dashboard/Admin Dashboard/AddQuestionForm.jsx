@@ -103,6 +103,7 @@ const initialForm = () => ({
     instructions: "",
     passage: "",
     passages: [{ title: "", content: "" }],
+    questionGroups: [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0 }],
     audioUrl: "",
     speakingPrompt: "",
     speakingPart1Questions: [""],
@@ -301,7 +302,7 @@ const AddQuestionForm = () => {
         const data = { ...formData, testType };
 
         if (testType === "reading") {
-            const activePassages = (formData.passages || []).filter(p => p.title.trim() !== "" || p.content.trim() !== "");
+            const activePassages = (formData.passages || []).filter(p => p.title.trim() !== "" || p.content.trim() !== "" || (p.instructions && p.instructions.trim() !== ""));
             data.passages = activePassages;
             data.passage = activePassages.map((p, idx) => `
 <section class="p-8 bg-primary/5 rounded-[2rem] border border-primary/10 mb-8">
@@ -571,6 +572,121 @@ const AddQuestionForm = () => {
                                                     patch({ passages: updated });
                                                 }}
                                                 required
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Question Groups Manager ──────────────────────────── */}
+                    {testType === "reading" && (
+                        <div className="space-y-4 pt-2">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <label className="text-xs font-black text-slate-700 tracking-wide uppercase">Question Groups</label>
+                                    <p className="text-[10px] text-slate-400 mt-0.5">Define ranges, headers & instructions shown above each block of questions.</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => patch({ questionGroups: [...(formData.questionGroups || []), { title: "", instructions: "", fromQuestion: 1, toQuestion: 1, passageIndex: 0 }] })}
+                                    className="btn btn-outline btn-primary btn-sm rounded-xl gap-1"
+                                >
+                                    <PiPlus /> Add Group
+                                </button>
+                            </div>
+                            <div className="space-y-3">
+                                {(formData.questionGroups || []).map((group, gIdx) => (
+                                    <div key={gIdx} className="p-5 bg-gradient-to-br from-primary/5 to-transparent border border-primary/15 rounded-3xl space-y-4 relative">
+                                        {/* Delete */}
+                                        {(formData.questionGroups || []).length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => patch({ questionGroups: (formData.questionGroups || []).filter((_, i) => i !== gIdx) })}
+                                                className="btn btn-ghost btn-xs btn-circle absolute top-3 right-3 text-error"
+                                            >✕</button>
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                            <PiBookOpen className="text-primary w-4 h-4" />
+                                            <span className="text-xs font-black uppercase tracking-widest text-primary">Group {gIdx + 1}</span>
+                                        </div>
+                                        <div className="grid md:grid-cols-4 gap-3">
+                                            {/* From Q# */}
+                                            <div>
+                                                <label className="label"><span className="label-text font-semibold text-xs">From Q#</span></label>
+                                                <input
+                                                    type="number" min={1}
+                                                    className="input input-bordered w-full rounded-2xl text-sm"
+                                                    value={group.fromQuestion || 1}
+                                                    onChange={(e) => {
+                                                        const upd = [...(formData.questionGroups || [])];
+                                                        upd[gIdx] = { ...upd[gIdx], fromQuestion: parseInt(e.target.value) || 1 };
+                                                        patch({ questionGroups: upd });
+                                                    }}
+                                                />
+                                            </div>
+                                            {/* To Q# */}
+                                            <div>
+                                                <label className="label"><span className="label-text font-semibold text-xs">To Q#</span></label>
+                                                <input
+                                                    type="number" min={1}
+                                                    className="input input-bordered w-full rounded-2xl text-sm"
+                                                    value={group.toQuestion || 1}
+                                                    onChange={(e) => {
+                                                        const upd = [...(formData.questionGroups || [])];
+                                                        upd[gIdx] = { ...upd[gIdx], toQuestion: parseInt(e.target.value) || 1 };
+                                                        patch({ questionGroups: upd });
+                                                    }}
+                                                />
+                                            </div>
+                                            {/* Target Passage */}
+                                            <div>
+                                                <label className="label"><span className="label-text font-semibold text-xs">Target Passage</span></label>
+                                                <select
+                                                    className="select select-bordered w-full rounded-2xl text-sm font-semibold"
+                                                    value={group.passageIndex || 0}
+                                                    onChange={(e) => {
+                                                        const upd = [...(formData.questionGroups || [])];
+                                                        upd[gIdx] = { ...upd[gIdx], passageIndex: parseInt(e.target.value) };
+                                                        patch({ questionGroups: upd });
+                                                    }}
+                                                >
+                                                    {(formData.passages || []).map((p, pIdx) => (
+                                                        <option key={pIdx} value={pIdx}>
+                                                            Passage {pIdx + 1}: {p.title || "(Untitled)"}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            {/* Group Title */}
+                                            <div>
+                                                <label className="label"><span className="label-text font-semibold text-xs">Group Title (optional)</span></label>
+                                                <input
+                                                    type="text"
+                                                    className="input input-bordered w-full rounded-2xl text-sm"
+                                                    placeholder="e.g. True / False / Not Given"
+                                                    value={group.title || ""}
+                                                    onChange={(e) => {
+                                                        const upd = [...(formData.questionGroups || [])];
+                                                        upd[gIdx] = { ...upd[gIdx], title: e.target.value };
+                                                        patch({ questionGroups: upd });
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        {/* Instructions */}
+                                        <div>
+                                            <label className="label"><span className="label-text font-semibold text-xs">Instructions for this group</span></label>
+                                            <textarea
+                                                className="textarea textarea-bordered w-full rounded-xl text-sm bg-white min-h-[3.5rem]"
+                                                placeholder="e.g. Do the following statements agree with the information given in the passage? Write TRUE, FALSE or NOT GIVEN."
+                                                value={group.instructions || ""}
+                                                onChange={(e) => {
+                                                    const upd = [...(formData.questionGroups || [])];
+                                                    upd[gIdx] = { ...upd[gIdx], instructions: e.target.value };
+                                                    patch({ questionGroups: upd });
+                                                }}
                                             />
                                         </div>
                                     </div>
@@ -913,96 +1029,128 @@ const AddQuestionForm = () => {
                             </button>
                         </div>
 
-                        {formData.questions.map((q, index) => (
-                            <div
-                                key={q.id}
-                                className="card bg-white border border-base-300 shadow-sm p-6 space-y-4 relative group"
-                            >
-                                {/* Delete button */}
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveQuestion(q.id)}
-                                    className="btn btn-ghost btn-xs btn-circle absolute top-4 right-4 text-error opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <PiTrash className="w-4 h-4" />
-                                </button>
+                        {formData.questions.map((q, index) => {
+                            const questionNum = index + 1;
+                            const group = testType === "reading"
+                                ? (formData.questionGroups || []).find(g => g.fromQuestion === questionNum)
+                                : null;
 
-                                {/* Question number chip */}
-                                <div className="flex items-center gap-2">
-                                    <span className="w-7 h-7 rounded-xl bg-primary/10 text-primary font-black text-xs flex items-center justify-center">
-                                        {index + 1}
-                                    </span>
-                                    <span className="text-xs font-black uppercase tracking-widest text-base-content/40">
-                                        Question {index + 1}
-                                    </span>
-                                </div>
-
-                                <div className="grid md:grid-cols-3 gap-4">
-                                    {/* Type picker */}
-                                    <div>
-                                        <label className="label"><span className="label-text font-semibold text-xs">Type</span></label>
-                                        <QuestionTypeSelect
-                                            value={q.type}
-                                            onChange={(val) => updateQuestion(q.id, "type", val)}
-                                        />
-                                    </div>
-                                    {/* Question text */}
-                                    <div className={testType === "reading" ? "md:col-span-1" : "md:col-span-2"}>
-                                        <label className="label"><span className="label-text font-semibold text-xs">Question / Label</span></label>
-                                        <input
-                                            type="text"
-                                            className="input input-bordered w-full rounded-2xl text-sm"
-                                            placeholder="e.g. Name of the hotel:"
-                                            value={q.question}
-                                            onChange={(e) => updateQuestion(q.id, "question", e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    {/* Reading: Passage index picker */}
-                                    {testType === "reading" && (
-                                        <div>
-                                            <label className="label">
-                                                <span className="label-text font-semibold text-xs">Target Passage</span>
-                                            </label>
-                                            <select
-                                                className="select select-bordered w-full rounded-2xl text-sm font-semibold"
-                                                value={q.passageIndex || 0}
-                                                onChange={(e) => updateQuestion(q.id, "passageIndex", parseInt(e.target.value))}
-                                            >
-                                                {(formData.passages || []).map((p, pIdx) => (
-                                                    <option key={pIdx} value={pIdx}>
-                                                        Passage {pIdx + 1}: {p.title || "(Untitled)"}
-                                                    </option>
-                                                ))}
-                                            </select>
+                            return (
+                                <div key={q.id} className="space-y-4">
+                                    {group && (
+                                        <div className="space-y-2 mt-8">
+                                            {/* Group header banner */}
+                                            <div className="flex flex-wrap items-center gap-3 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-3 rounded-r-xl">
+                                                <PiBookOpen className="text-primary w-5 h-5 flex-shrink-0" />
+                                                <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                                    Questions {group.fromQuestion}–{group.toQuestion}
+                                                </span>
+                                                {group.title && (
+                                                    <span className="font-extrabold text-sm text-slate-800">
+                                                        · {group.title}
+                                                    </span>
+                                                )}
+                                                <span className="ml-auto text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                                    📖 Passage {(group.passageIndex || 0) + 1}: {formData.passages?.[group.passageIndex || 0]?.title || "(Untitled)"}
+                                                </span>
+                                            </div>
+                                            {/* Instructions preview */}
+                                            {group.instructions && (
+                                                <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 italic leading-snug">
+                                                    {group.instructions}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-                                </div>
 
-                                {/* Type-specific extra inputs */}
-                                <QuestionTypeExtras
-                                    q={q}
-                                    onUpdate={updateQuestion}
-                                    onAddOption={handleAddOption}
-                                    onUpdateOption={updateOption}
-                                    onAddPair={handleAddPair}
-                                    onUpdatePair={updatePair}
-                                />
+                                    <div className="card bg-white border border-base-300 shadow-sm p-6 space-y-4 relative group">
+                                        {/* Delete button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveQuestion(q.id)}
+                                            className="btn btn-ghost btn-xs btn-circle absolute top-4 right-4 text-error opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <PiTrash className="w-4 h-4" />
+                                        </button>
 
-                                {/* Correct answer */}
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-semibold">Correct Answer</span></label>
-                                    <input
-                                        type="text"
-                                        className="input input-bordered rounded-2xl border-success/30 bg-success/5"
-                                        placeholder="Enter the exact correct answer"
-                                        value={q.correctAnswer}
-                                        onChange={(e) => updateQuestion(q.id, "correctAnswer", e.target.value)}
-                                        required
-                                    />
+                                        {/* Question number chip */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-7 h-7 rounded-xl bg-primary/10 text-primary font-black text-xs flex items-center justify-center">
+                                                {index + 1}
+                                            </span>
+                                            <span className="text-xs font-black uppercase tracking-widest text-base-content/40">
+                                                Question {index + 1}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid md:grid-cols-3 gap-4">
+                                            {/* Type picker */}
+                                            <div>
+                                                <label className="label"><span className="label-text font-semibold text-xs">Type</span></label>
+                                                <QuestionTypeSelect
+                                                    value={q.type}
+                                                    onChange={(val) => updateQuestion(q.id, "type", val)}
+                                                />
+                                            </div>
+                                            {/* Question text */}
+                                            <div className={testType === "reading" ? "md:col-span-1" : "md:col-span-2"}>
+                                                <label className="label"><span className="label-text font-semibold text-xs">Question / Label</span></label>
+                                                <input
+                                                    type="text"
+                                                    className="input input-bordered w-full rounded-2xl text-sm"
+                                                    placeholder="e.g. Name of the hotel:"
+                                                    value={q.question}
+                                                    onChange={(e) => updateQuestion(q.id, "question", e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            {/* Reading: Passage index picker */}
+                                            {testType === "reading" && (
+                                                <div>
+                                                    <label className="label">
+                                                        <span className="label-text font-semibold text-xs">Target Passage</span>
+                                                    </label>
+                                                    <select
+                                                        className="select select-bordered w-full rounded-2xl text-sm font-semibold"
+                                                        value={q.passageIndex || 0}
+                                                        onChange={(e) => updateQuestion(q.id, "passageIndex", parseInt(e.target.value))}
+                                                    >
+                                                        {(formData.passages || []).map((p, pIdx) => (
+                                                            <option key={pIdx} value={pIdx}>
+                                                                Passage {pIdx + 1}: {p.title || "(Untitled)"}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Type-specific extra inputs */}
+                                        <QuestionTypeExtras
+                                            q={q}
+                                            onUpdate={updateQuestion}
+                                            onAddOption={handleAddOption}
+                                            onUpdateOption={updateOption}
+                                            onAddPair={handleAddPair}
+                                            onUpdatePair={updatePair}
+                                        />
+
+                                        {/* Correct answer */}
+                                        <div className="form-control">
+                                            <label className="label"><span className="label-text font-semibold">Correct Answer</span></label>
+                                            <input
+                                                type="text"
+                                                className="input input-bordered rounded-2xl border-success/30 bg-success/5"
+                                                placeholder="Enter the exact correct answer"
+                                                value={q.correctAnswer}
+                                                onChange={(e) => updateQuestion(q.id, "correctAnswer", e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 

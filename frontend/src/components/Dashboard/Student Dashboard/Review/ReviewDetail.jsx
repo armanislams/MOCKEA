@@ -190,44 +190,52 @@ const ReviewDetail = () => {
                             {/* Right: Answer Comparison */}
                             <div className="space-y-6">
                                 {['reading', 'listening'].includes(activeTab) ? (
-                                    currentSectionResult.answers.map((ans, idx) => {
-                                        if (activeTab === 'reading' && currentSectionData?.passages && currentSectionData.passages.length > 0) {
-                                            const originalQ = currentSectionData.questions?.find(q => q.id === ans.questionId);
-                                            const qPassageIndex = originalQ?.passageIndex || 0;
-                                            if (qPassageIndex !== activePassageTab) return null;
-                                        }
+                                    <>
+                                        {activeTab === 'reading' && currentSectionData?.passages?.[activePassageTab]?.instructions && (
+                                            <div className="p-6 bg-primary/5 border border-primary/10 rounded-3xl text-sm font-semibold text-slate-700 leading-relaxed border-l-4 border-primary mb-4">
+                                                <h3 className="font-bold text-xs uppercase tracking-widest text-primary mb-1">Instructions:</h3>
+                                                <p className="whitespace-pre-line">{currentSectionData.passages[activePassageTab].instructions}</p>
+                                            </div>
+                                        )}
+                                        {currentSectionResult.answers.map((ans, idx) => {
+                                            if (activeTab === 'reading' && currentSectionData?.passages && currentSectionData.passages.length > 0) {
+                                                const originalQ = currentSectionData.questions?.find(q => q.id === ans.questionId);
+                                                const qPassageIndex = originalQ?.passageIndex || 0;
+                                                if (qPassageIndex !== activePassageTab) return null;
+                                            }
 
-                                        return (
-                                            <div key={idx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
-                                            ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
-                                        }`}>
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="flex-1 space-y-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
-                                                        <span className="text-xs font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
-                                                    </div>
-                                                    
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div className="space-y-1">
-                                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
-                                                            <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
-                                                                {ans.userAnswer || "No Answer"}
-                                                            </p>
+                                            return (
+                                                <div key={idx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
+                                                ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
+                                            }`}>
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1 space-y-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
+                                                            <span className="text-xs font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
                                                         </div>
-                                                        <div className="space-y-1">
-                                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
-                                                            <p className="font-black text-lg text-success">{ans.correctAnswer}</p>
+                                                        
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
+                                                                <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
+                                                                    {ans.userAnswer || "No Answer"}
+                                                                </p>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
+                                                                <p className="font-black text-lg text-success">{ans.correctAnswer}</p>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="text-3xl">
-                                                    {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
+                                                    <div className="text-3xl">
+                                                        {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })
+                                        );
+                                    })}
+                                    </>
                                 ) : (
                                     <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm space-y-6">
                                         <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
