@@ -47,229 +47,229 @@ import StudentCourses from "../components/Dashboard/Student Dashboard/StudentCou
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <Error />,
     children: [
       {
         path: "/",
         element: <HomeLayout />,
-    hydrateFallbackElement: <Loader />,
-    errorElement: <Error />,
-    children: [
-      {
-        index: true,
-        element: <Home />,
+        hydrateFallbackElement: <Loader />,
+        children: [
+          {
+            index: true,
+            element: <Home />,
+          },
+          {
+            path: "/practice",
+            element: (
+              <PrivateRoute>
+                <Practice />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: "/pricing",
+            element: <PricingPage />,
+          },
+          {
+            path: "/free-resources",
+            element: <FreeResourcesPage />,
+          },
+          {
+            path: "/courses",
+            element: <CoursesPage />,
+          },
+        ],
       },
       {
-        path: "/practice",
+        path: "/auth",
+        element: <AuthLayout />,
+        children: [
+          {
+            path: "login",
+            element: <Login />,
+          },
+          {
+            path: "register",
+            element: <Register />,
+          },
+        ],
+      },
+      {
+        path: "/test/:id",
         element: (
           <PrivateRoute>
-            <Practice />
+            <TestEnvironment />
           </PrivateRoute>
         ),
       },
       {
-        path: "/pricing",
-        element: <PricingPage />,
+        path: "/dashboard",
+        element: (
+          <PrivateRoute>
+            <DashboardLayout />
+          </PrivateRoute>
+        ),
+        children: [
+          {
+            index: true,
+            element: <DashboardIndex />,
+          },
+          {
+            path: "practice",
+            element: <TakeTest />,
+          },
+          {
+            path: "full-mock-test",
+            element: <FullMockTestLibrary />,
+          },
+          {
+            path: "review",
+            element: <Review />,
+          },
+          {
+            path: "review/:id",
+            element: <ReviewDetail />,
+          },
+          {
+            path: "analytics",
+            element: <Analytics />,
+          },
+          {
+            path: "profile",
+            element: <Profile />,
+          },
+          {
+            path: "trainer",
+            element: <TrainerLibrary />,
+          },
+          {
+            path: "reading",
+            element: <Reading />,
+          },
+          {
+            path: "listening",
+            element: <Listening />,
+          },
+          {
+            path: "writing",
+            element: <Writing />,
+          },
+          {
+            path: "speaking",
+            element: <Speaking />,
+          },
+          {
+            path: "courses",
+            element: <StudentCourses />,
+          },
+          {
+            path: "admin/manage-users",
+            element: (
+              <AdminRoutes>
+                <ManageUsers />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/manage-questions",
+            element: (
+              <AdminRoutes>
+                <ManageQuestions />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/manage-mock-tests",
+            element: (
+              <AdminRoutes>
+                <ManageMockTests />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/manage-pricing",
+            element: (
+              <AdminRoutes>
+                <ManagePricing />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/manage-resources",
+            element: (
+              <AdminRoutes>
+                <ManageResources />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/manage-trainers",
+            element: (
+              <AdminRoutes>
+                <ManageTrainers />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/create-mock-test",
+            element: (
+              <AdminRoutes>
+                <CreateMockTest />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/add-questions",
+            element: (
+              <AdminRoutes>
+                <AddQuestionForm />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/edit-questions/:id",
+            element: (
+              <AdminRoutes>
+                <EditQuestionForm />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "instructor/grade-submissions",
+            element: (
+              <InstructorRoutes>
+                <GradeSubmissions />
+              </InstructorRoutes>
+            ),
+          },
+          {
+            path: "instructor/manage-resources",
+            element: (
+              <InstructorRoutes>
+                <ManageResources />
+              </InstructorRoutes>
+            ),
+          },
+          {
+            path: "admin/settings",
+            element: (
+              <AdminRoutes>
+                <AdminSettings />
+              </AdminRoutes>
+            ),
+          },
+        ],
       },
       {
-        path: "/free-resources",
-        element: <FreeResourcesPage />,
-      },
-      {
-        path: "/courses",
-        element: <CoursesPage />,
+        path: "free-practice",
+        element: <FreePracticeLayout />, // public area
+        children: [
+          { index: true, element: <GuestTestLibrary /> },
+          { path: "tests/:id", element: <GuestTestEnvironment /> },
+        ],
       },
     ],
   },
-  {
-    path: '/auth',
-    element: <AuthLayout />,
-    children: [
-      {
-        path: "login",
-        element: <Login />,
-      },
-      {
-        path: "register",
-        element: <Register />,
-      },
-    ]
-  },
-  {
-    path: "/test/:id",
-    element: (
-      <PrivateRoute>
-        <TestEnvironment />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/dashboard",
-    element: (
-      <PrivateRoute>
-        <DashboardLayout />
-      </PrivateRoute>
-    ),
-    children: [
-      {
-        index: true,
-        element: <DashboardIndex />,
-      },
-      {
-        path: "practice",
-        element: <TakeTest />,
-      },
-      {
-        path: "full-mock-test",
-        element: <FullMockTestLibrary />,
-      },
-      {
-        path: "review",
-        element: <Review />,
-      },
-      {
-        path: "review/:id",
-        element: <ReviewDetail />,
-      },
-      {
-        path: "analytics",
-        element: <Analytics />,
-      },
-      {
-        path: "profile",
-        element: <Profile />,
-      },
-      {
-        path: "trainer",
-        element: <TrainerLibrary />,
-      },
-      {
-        path: "reading",
-        element: <Reading />,
-      },
-      {
-        path: "listening",
-        element: <Listening />,
-      },
-      {
-        path: "writing",
-        element: <Writing />,
-      },
-      {
-        path: "speaking",
-        element: <Speaking />,
-      },
-      {
-        path: "courses",
-        element: <StudentCourses />,
-      },
-      {
-        path: "admin/manage-users",
-        element: (
-          <AdminRoutes>
-            <ManageUsers />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "admin/manage-questions",
-        element: (
-          <AdminRoutes>
-            <ManageQuestions />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "admin/manage-mock-tests",
-        element: (
-          <AdminRoutes>
-            <ManageMockTests />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "admin/manage-pricing",
-        element: (
-          <AdminRoutes>
-            <ManagePricing />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "admin/manage-resources",
-        element: (
-          <AdminRoutes>
-            <ManageResources />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "admin/manage-trainers",
-        element: (
-          <AdminRoutes>
-            <ManageTrainers />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "admin/create-mock-test",
-        element: (
-          <AdminRoutes>
-            <CreateMockTest />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "admin/add-questions",
-        element: (
-          <AdminRoutes>
-            <AddQuestionForm />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "admin/edit-questions/:id",
-        element: (
-          <AdminRoutes>
-            <EditQuestionForm />
-          </AdminRoutes>
-        ),
-      },
-      {
-        path: "instructor/grade-submissions",
-        element: (
-          <InstructorRoutes>
-            <GradeSubmissions />
-          </InstructorRoutes>
-        ),
-      },
-      {
-        path: "instructor/manage-resources",
-        element: (
-          <InstructorRoutes>
-            <ManageResources />
-          </InstructorRoutes>
-        ),
-      },
-      {
-        path: "admin/settings",
-        element: (
-          <AdminRoutes>
-            <AdminSettings />
-          </AdminRoutes>
-        ),
-      },
-    ],
-  },
-  {
-    path: "free-practice",
-    element: <FreePracticeLayout />, // public area
-    children: [
-      { index: true, element: <GuestTestLibrary /> },
-      { path: "tests/:id", element: <GuestTestEnvironment /> }
-    ]
-  }
-    ]
-  }
 ]);
 
 export default router;
