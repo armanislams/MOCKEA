@@ -370,7 +370,12 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                                                         {q.options?.map((opt, optIdx) => (
                                                             <button 
                                                                 key={optIdx}
-                                                                onClick={() => onAnswerChange(q.id, opt)}
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    onAnswerChange(q.id, opt);
+                                                                }}
                                                                 className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
                                                                     answers[q.id] === opt 
                                                                     ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 

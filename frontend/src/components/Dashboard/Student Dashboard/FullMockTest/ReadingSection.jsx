@@ -299,7 +299,12 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                             {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
                                                 <button 
                                                     key={opt}
-                                                    onClick={() => onAnswerChange(q.id, opt)}
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        onAnswerChange(q.id, opt);
+                                                    }}
                                                     className={`px-6 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
                                                         answers[q.id] === opt 
                                                         ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
@@ -317,7 +322,12 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                             {q.options?.filter(opt => opt && opt.trim() !== "").map((opt, optIdx) => (
                                                 <button 
                                                     key={optIdx}
-                                                    onClick={() => onAnswerChange(q.id, opt)}
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        onAnswerChange(q.id, opt);
+                                                    }}
                                                     className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
                                                         answers[q.id] === opt 
                                                         ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 

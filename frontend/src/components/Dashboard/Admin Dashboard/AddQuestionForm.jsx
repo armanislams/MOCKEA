@@ -256,7 +256,20 @@ const AddQuestionForm = () => {
     const handleRemoveQuestion = (id) =>
         patch({ questions: formData.questions.filter((q) => q.id !== id) });
 
-    const updateQuestion  = (id, field, value) => patchQuestion(id, { [field]: value });
+    const updateQuestion  = (id, field, value) => {
+        // Auto-populate default options when type changes to true-false or yes-no
+        if (field === "type") {
+            let updates = { [field]: value };
+            if (value === "true-false") {
+                updates.options = ["True", "False", "Not Given"];
+            } else if (value === "yes-no") {
+                updates.options = ["Yes", "No", "Not Given"];
+            }
+            patchQuestion(id, updates);
+        } else {
+            patchQuestion(id, { [field]: value });
+        }
+    };
 
     const handleAddOption = (qId) =>
         patchQuestion(qId, {
