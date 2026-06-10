@@ -59,9 +59,62 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // 3-Part Speaking States
   const [speakingStep, setSpeakingStep] = useState(1); // 1, 2, or 3
-  const [part1Blob, setPart1Blob] = useState(null);
+  const [part1Blobs, setPart1Blobs] = useState([]);
   const [part2Blob, setPart2Blob] = useState(null);
-  const [part3Blob, setPart3Blob] = useState(null);
+  const [part3Blobs, setPart3Blobs] = useState([]);
+
+  const [part1QuestionIdx, setPart1QuestionIdx] = useState(0);
+  const [part3QuestionIdx, setPart3QuestionIdx] = useState(0);
+
+  const part1QuestionIdxRef = useRef(0);
+  const part3QuestionIdxRef = useRef(0);
+
+  useEffect(() => {
+    part1QuestionIdxRef.current = part1QuestionIdx;
+  }, [part1QuestionIdx]);
+
+  useEffect(() => {
+    part3QuestionIdxRef.current = part3QuestionIdx;
+  }, [part3QuestionIdx]);
+
+  // Refs to hold the latest values of blobs to avoid stale closures in timeouts/callbacks
+  const part1BlobsRef = useRef([]);
+  const part2BlobRef = useRef(null);
+  const part3BlobsRef = useRef([]);
+  const audioBlobRef = useRef(null);
+
+  const setPart1BlobsWithRef = (valOrFn) => {
+    if (typeof valOrFn === "function") {
+      setPart1Blobs((prev) => {
+        const next = valOrFn(prev);
+        part1BlobsRef.current = next;
+        return next;
+      });
+    } else {
+      part1BlobsRef.current = valOrFn;
+      setPart1Blobs(valOrFn);
+    }
+  };
+  const setPart2BlobWithRef = (blob) => {
+    part2BlobRef.current = blob;
+    setPart2Blob(blob);
+  };
+  const setPart3BlobsWithRef = (valOrFn) => {
+    if (typeof valOrFn === "function") {
+      setPart3Blobs((prev) => {
+        const next = valOrFn(prev);
+        part3BlobsRef.current = next;
+        return next;
+      });
+    } else {
+      part3BlobsRef.current = valOrFn;
+      setPart3Blobs(valOrFn);
+    }
+  };
+  const setAudioBlobWithRef = (blob) => {
+    audioBlobRef.current = blob;
+    setAudioBlob(blob);
+  };
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
@@ -82,17 +135,35 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     [preloadedSet, speakingSets, selectedSetId],
   );
 
+  const part1Questions = useMemo(() => {
+    return activeSet?.speakingPart1Questions && activeSet.speakingPart1Questions.length > 0
+      ? activeSet.speakingPart1Questions
+      : defaultPart1Questions;
+  }, [activeSet]);
+
+  const part3Questions = useMemo(() => {
+    return activeSet?.speakingPart3Questions && activeSet.speakingPart3Questions.length > 0
+      ? activeSet.speakingPart3Questions
+      : defaultPart3Questions;
+  }, [activeSet]);
+
   const activeBlob = useMemo(() => {
-    if (speakingStep === 1) return part1Blob;
+    if (speakingStep === 1) return part1Blobs[part1QuestionIdx] || null;
     if (speakingStep === 2) return part2Blob;
-    if (speakingStep === 3) return part3Blob;
+    if (speakingStep === 3) return part3Blobs[part3QuestionIdx] || null;
     return null;
-  }, [speakingStep, part1Blob, part2Blob, part3Blob]);
+  }, [speakingStep, part1Blobs, part1QuestionIdx, part2Blob, part3Blobs, part3QuestionIdx]);
 
   const activeAudioUrl = useMemo(() => {
     if (!activeBlob) return null;
     return URL.createObjectURL(activeBlob);
   }, [activeBlob]);
+
+  const studioSubtitle = useMemo(() => {
+    if (speakingStep === 1) return `Part 1 of 3 • Question ${part1QuestionIdx + 1} of ${part1Questions.length}`;
+    if (speakingStep === 3) return `Part 3 of 3 • Question ${part3QuestionIdx + 1} of ${part3Questions.length}`;
+    return "Part 2 of 3 • Cue Card Response";
+  }, [speakingStep, part1QuestionIdx, part1Questions, part3QuestionIdx, part3Questions]);
 
   // Real-time Canvas Soundwave Visualizer callback ref
   const canvasCallback = useCallback(
@@ -181,13 +252,16 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     };
   }, []);
 
-  // Reset recording state when switching parts to avoid leakage and auto-stop races
+  // Reset recording state when switching parts or questions to avoid leakage and auto-stop races
   useEffect(() => {
-    setRecordingTime(0);
-    setAudioBlob(null);
-    setIsRecording(false);
-    setIsSaving(false);
-  }, [speakingStep]);
+    const timer = setTimeout(() => {
+      setRecordingTime(0);
+      setAudioBlobWithRef(null);
+      setIsRecording(false);
+      setIsSaving(false);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [speakingStep, part1QuestionIdx, part3QuestionIdx]);
 
   useEffect(() => {
     if (preloadedSet) return; // guest: data already provided, loading already false via useState(!preloadedSet)
@@ -207,7 +281,24 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     if (user?.email) fetchSpeaking();
   }, [axiosSecure, user?.email, preloadedSet]);
 
+
+  useEffect(() => {
+    if (activeSet) {
+      const p1Len = part1Questions.length;
+      setPart1Blobs(new Array(p1Len).fill(null));
+      part1BlobsRef.current = new Array(p1Len).fill(null);
+
+      const p3Len = part3Questions.length;
+      setPart3Blobs(new Array(p3Len).fill(null));
+      part3BlobsRef.current = new Array(p3Len).fill(null);
+
+      setPart1QuestionIdx(0);
+      setPart3QuestionIdx(0);
+    }
+  }, [activeSet, part1Questions, part3Questions]);
+
   const startRecording = useCallback(async () => {
+    if (isRecording || isSaving) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setMediaStream(stream);
@@ -223,10 +314,22 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       mediaRecorderRef.current.onstop = () => {
         if (recordingTimeRef.current > 0) {
           const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-          if (speakingStep === 1) setPart1Blob(blob);
-          else if (speakingStep === 2) setPart2Blob(blob);
-          else if (speakingStep === 3) setPart3Blob(blob);
-          setAudioBlob(blob);
+          if (speakingStep === 1) {
+            setPart1BlobsWithRef((prev) => {
+              const updated = [...prev];
+              updated[part1QuestionIdxRef.current] = blob;
+              return updated;
+            });
+          } else if (speakingStep === 2) {
+            setPart2BlobWithRef(blob);
+          } else if (speakingStep === 3) {
+            setPart3BlobsWithRef((prev) => {
+              const updated = [...prev];
+              updated[part3QuestionIdxRef.current] = blob;
+              return updated;
+            });
+          }
+          setAudioBlobWithRef(blob);
         }
         stream.getTracks().forEach((track) => track.stop());
         setMediaStream(null);
@@ -243,19 +346,25 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     } catch (err) {
       toast.error("Microphone access denied. Please enable it to record.");
     }
-  }, [speakingStep]);
+  }, [speakingStep, isRecording, isSaving]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      setIsSaving(true);
-      setIsRecording(false);
-      mediaRecorderRef.current.stop();
-      if (recordingTimeRef.current > 0) {
-        toast.info(
-          "Recording captured. Ready for submission. Please submit your response.",
-        );
-      } else {
-        toast.warn("Recording was too short to be saved.");
+    if (mediaRecorderRef.current && isRecording && mediaRecorderRef.current.state !== "inactive") {
+      try {
+        setIsSaving(true);
+        setIsRecording(false);
+        mediaRecorderRef.current.stop();
+        if (recordingTimeRef.current > 0) {
+          toast.info(
+            "Recording captured. Ready for submission. Please submit your response.",
+          );
+        } else {
+          toast.warn("Recording was too short to be saved.");
+        }
+      } catch (err) {
+        console.error("Failed to stop media recorder:", err);
+        setIsSaving(false);
+        setIsRecording(false);
       }
     }
   }, [isRecording]);
@@ -286,8 +395,11 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   // Transition to recording when preparation phase finishes
   useEffect(() => {
     if (isPrepPhase && prepTime === 0) {
-      setIsPrepPhase(false);
-      startRecording();
+      const timer = setTimeout(() => {
+        setIsPrepPhase(false);
+        startRecording();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isPrepPhase, prepTime, startRecording]);
 
@@ -298,16 +410,22 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return () => clearInterval(iv);
   }, [isRecording]);
 
+  const maxRecordingTime = useMemo(() => {
+    if (speakingStep === 1) return 40;
+    if (speakingStep === 3) return 50;
+    return 120; // Part 2
+  }, [speakingStep]);
+
   // Auto-Stop for Speaking Parts
   useEffect(() => {
-    if (isRecording && speakingStep === 2 && recordingTime >= 120) {
-      stopRecording();
-      toast.info("Maximum speaking time (2 minutes) reached. Recording stopped.");
-    } else if (isRecording && (speakingStep === 3 || speakingStep === 1) && recordingTime >= 300) {
-      stopRecording();
-      toast.info("Maximum speaking time (5 minutes) reached. Recording stopped.");
+    if (isRecording && recordingTime >= maxRecordingTime) {
+      const timer = setTimeout(() => {
+        stopRecording();
+        toast.info(`Maximum speaking time (${maxRecordingTime} seconds) reached. Recording stopped.`);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [recordingTime, isRecording, speakingStep, stopRecording]);
+  }, [recordingTime, isRecording, maxRecordingTime, stopRecording]);
 
   // 10s Warning Modal for Preparation countdown (Part 2)
   useEffect(() => {
@@ -330,9 +448,9 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     }
   }, [prepTime, isPrepPhase]);
 
-  const uploadToCloudinary = async (blob) => {
+  const uploadToCloudinary = async (blob, filename) => {
     const formData = new FormData();
-    formData.append("file", blob);
+    formData.append("file", blob, filename);
     formData.append("upload_preset", import.meta.env.VITE_UPLOAD_PRESET);
     formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME);
     formData.append("resource_type", "video");
@@ -346,7 +464,15 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   };
 
   const handleSubmitSpeaking = async () => {
-    const hasRecording = part1Blob || part2Blob || part3Blob || audioBlob;
+    const p1s = part1BlobsRef.current;
+    const p2 = part2BlobRef.current;
+    const p3s = part3BlobsRef.current;
+    const ab = audioBlobRef.current;
+
+    const hasPart1Recording = p1s.some(blob => blob !== null && blob !== undefined);
+    const hasPart3Recording = p3s.some(blob => blob !== null && blob !== undefined);
+    const hasRecording = hasPart1Recording || p2 || hasPart3Recording || ab;
+
     if (!hasRecording) {
       toast.info("No audio recording captured. Please Submit your response.");
       return;
@@ -354,27 +480,54 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
     try {
       setIsUploading(true);
-      toast.info("Auto-submitting your 3-part speaking responses...");
+      toast.info("Auto-submitting your speaking responses...");
 
       const urls = [];
-      if (part1Blob) {
-        toast.info("Uploading Part 1 response...");
-        const url1 = await uploadToCloudinary(part1Blob);
-        urls.push(`Part 1 Interview: ${url1}`);
+      const username = user?.displayName || "guest";
+      const sanitizedUser = username.replace(/[^a-zA-Z0-9]/g, "_");
+      const dateStr = new Date().toISOString().split("T")[0];
+      const testId = activeSet._id;
+
+      if (hasPart1Recording) {
+        toast.info("Uploading Part 1 responses...");
+        urls.push("--- Part 1 Interview ---");
+        for (let i = 0; i < part1Questions.length; i++) {
+          const blob = p1s[i];
+          if (blob) {
+            toast.info(`Uploading Part 1 Q${i + 1} response...`);
+            const filename = `${sanitizedUser}_${dateStr}_${testId}_part1_q${i + 1}.webm`;
+            const url = await uploadToCloudinary(blob, filename);
+            urls.push(`Q${i + 1}: ${part1Questions[i]}\nAnswer: ${url}`);
+          }
+        }
       }
-      if (part2Blob) {
+
+      if (p2) {
         toast.info("Uploading Part 2 response...");
-        const url2 = await uploadToCloudinary(part2Blob);
-        urls.push(`Part 2 Cue Card: ${url2}`);
-      } else if (audioBlob && !part2Blob && !part1Blob && !part3Blob) {
+        urls.push("--- Part 2 Cue Card ---");
+        const filename = `${sanitizedUser}_${dateStr}_${testId}_part2.webm`;
+        const url2 = await uploadToCloudinary(p2, filename);
+        urls.push(`Cue Card: ${activeSet.speakingPrompt || activeSet.passage || activeSet.content}\nAnswer: ${url2}`);
+      } else if (ab && !p2 && !hasPart1Recording && !hasPart3Recording) {
         toast.info("Uploading Cue Card response...");
-        const url2 = await uploadToCloudinary(audioBlob);
-        urls.push(`Part 2 Cue Card: ${url2}`);
+        urls.push("--- Part 2 Cue Card ---");
+        const filename = `${sanitizedUser}_${dateStr}_${testId}_part2.webm`;
+        const url2 = await uploadToCloudinary(ab, filename);
+        urls.push(`Answer: ${url2}`);
       }
-      if (part3Blob) {
-        toast.info("Uploading Part 3 response...");
-        const url3 = await uploadToCloudinary(part3Blob);
-        urls.push(`Part 3 Discussion: ${url3}`);
+
+      if (hasPart3Recording) {
+        toast.info("Uploading Part 3 responses...");
+        urls.push("--- Part 3 Discussion ---");
+        for (let i = 0; i < part3Questions.length; i++) {
+          const blob = p3s[i];
+          if (blob) {
+            toast.info(`Uploading Part 3 Q${i + 1} response...`);
+            const filename = `${sanitizedUser}_${dateStr}_${testId}_part3_q${i + 1}.webm`;
+            const url = await uploadToCloudinary(blob, filename);
+            urls.push(`Q${i + 1}: ${part3Questions[i]}\nAnswer: ${url}`);
+          }
+        }
       }
 
       const combinedContent = urls.join("\n\n");
@@ -419,18 +572,24 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       return;
     }
 
-    const hasRecording = part1Blob || part2Blob || part3Blob || audioBlob || (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive");
+    const hasPart1Recording = part1BlobsRef.current.some(blob => blob !== null && blob !== undefined);
+    const hasPart3Recording = part3BlobsRef.current.some(blob => blob !== null && blob !== undefined);
+    const hasRecording = hasPart1Recording || part2BlobRef.current || hasPart3Recording || audioBlobRef.current || (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive");
+    
     const result = hasRecording
       ? await alerts.confirmExitPractice("Speaking Practice Interview")
       : await alerts.confirmCancelPractice("Speaking Practice Interview");
 
     if (result.isConfirmed) {
-      exitFullscreen();
-      setIsStarted(false);
-
       if (hasRecording) {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-          mediaRecorderRef.current.stop();
+          try {
+            setIsSaving(true);
+            mediaRecorderRef.current.stop();
+          } catch (err) {
+            console.error("Failed to stop media recorder on exit:", err);
+            setIsSaving(false);
+          }
           setTimeout(async () => {
             await handleSubmitSpeaking();
           }, 600);
@@ -438,6 +597,8 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
           await handleSubmitSpeaking();
         }
       } else {
+        exitFullscreen();
+        setIsStarted(false);
         toast.info("No recording captured. Exiting practice.");
         navigate(-1);
       }
@@ -446,13 +607,17 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       setIsStarted(false);
 
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (err) {
+          console.error("Failed to stop media recorder on cancel:", err);
+        }
       }
 
-      setPart1Blob(null);
-      setPart2Blob(null);
-      setPart3Blob(null);
-      setAudioBlob(null);
+      setPart1BlobsWithRef([]);
+      setPart2BlobWithRef(null);
+      setPart3BlobsWithRef([]);
+      setAudioBlobWithRef(null);
 
       Object.keys(localStorage).forEach((key) => {
         if (key.includes("test_cache") || key.includes("test_scratchpad") || key.includes("speaking")) {
@@ -499,6 +664,21 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                   toast.warning("Please stop recording before switching sections");
                   return;
                 }
+                if (step > speakingStep) {
+                  if (speakingStep === 1) {
+                    const allRecorded = part1Questions.every((_, idx) => part1Blobs[idx]);
+                    if (!allRecorded) {
+                      toast.warning("Please record all questions in Part 1 before proceeding.");
+                      return;
+                    }
+                  }
+                  if (speakingStep === 2 && step === 3) {
+                    if (!part2Blob) {
+                      toast.warning("Please record your Part 2 response before proceeding.");
+                      return;
+                    }
+                  }
+                }
                 setSpeakingStep(step);
               }}
               className={`w-10 h-10 rounded-full font-black text-sm transition-all flex items-center justify-center ${
@@ -520,6 +700,18 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 toast.warning("Please stop recording before switching sections");
                 return;
               }
+              if (speakingStep === 1) {
+                const allRecorded = part1Questions.every((_, idx) => part1Blobs[idx]);
+                if (!allRecorded) {
+                  toast.warning("Please record all questions in Part 1 before proceeding.");
+                  return;
+                }
+              } else if (speakingStep === 2) {
+                if (!part2Blob) {
+                  toast.warning("Please record your Part 2 response before proceeding.");
+                  return;
+                }
+              }
               setSpeakingStep((p) => Math.min(3, p + 1));
             }}
             className="btn btn-primary rounded-2xl px-6 h-12 font-black text-xs uppercase tracking-widest flex items-center gap-2 w-full md:w-auto"
@@ -530,7 +722,14 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
           <button
             type="button"
             disabled={isUploading}
-            onClick={handleSubmitSpeaking}
+            onClick={() => {
+              const allRecorded = part3Questions.every((_, idx) => part3Blobs[idx]);
+              if (!allRecorded) {
+                toast.warning("Please record all questions in Part 3 before submitting.");
+                return;
+              }
+              handleSubmitSpeaking();
+            }}
             className="btn btn-success text-white border-none shadow-xl shadow-success/20 rounded-2xl px-6 h-12 font-black text-xs uppercase tracking-widest flex items-center gap-2 w-full md:w-auto"
           >
             {isUploading ? (
@@ -543,6 +742,23 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       </div>
     );
   };
+
+  if (isUploading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-6">
+        <div className="w-20 h-20 rounded-[2rem] bg-primary/10 text-primary flex items-center justify-center text-4xl animate-bounce">
+          📤
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-2xl font-black text-slate-800">Uploading Responses...</h3>
+          <p className="text-slate-500 font-medium max-w-sm px-6">
+            Saving your speaking recordings to the server. Please do not close this window.
+          </p>
+        </div>
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    );
+  }
 
   if (loading) return <Loader />;
 
@@ -695,7 +911,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                   Live Recording
                 </span>
                 <span className="text-lg font-mono font-black ml-2 text-slate-800">
-                  {fmt(recordingTime)}
+                  {fmt(Math.max(0, maxRecordingTime - recordingTime))}
                 </span>
               </div>
             )}
@@ -761,33 +977,74 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       <div className="flex items-center gap-2 text-slate-400">
                         <PiClockFill />
                         <span className="text-xs font-bold uppercase">
-                          4-5 Minutes
+                          40s Per Question
                         </span>
                       </div>
                     </div>
 
                     <div className="prose prose-slate max-w-none">
-                      <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
-                        {activeSet.title}
-                      </h2>
-                      <p className="text-slate-500 font-semibold text-sm">
-                        Answer the following general questions about yourself, your life, and your interests.
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
+                          {activeSet.title}
+                        </h2>
+                        <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl uppercase tracking-widest shrink-0">
+                          Q {part1QuestionIdx + 1} of {part1Questions.length}
+                        </span>
+                      </div>
+                      <p className="text-slate-500 font-semibold text-sm mt-3">
+                        Answer the following question about yourself, your life, and your interests. Speak for up to 40 seconds. Once recorded, you cannot re-record.
                       </p>
                       
-                      <div className="mt-8 space-y-4">
-                        {(activeSet.speakingPart1Questions && activeSet.speakingPart1Questions.length > 0
-                          ? activeSet.speakingPart1Questions
-                          : defaultPart1Questions
-                        ).map((q, index) => (
-                          <div key={index} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex gap-4 items-start shadow-sm hover:shadow-md transition-shadow">
-                            <span className="w-8 h-8 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center shrink-0 mt-0.5">
-                              {index + 1}
-                            </span>
-                            <p className="text-lg font-bold text-slate-700 leading-relaxed pt-0.5">
-                              {q}
-                            </p>
-                          </div>
-                        ))}
+                      <div className="mt-8">
+                        <div className="p-8 bg-slate-50 border-2 border-primary/20 rounded-[2rem] flex gap-5 items-start shadow-md">
+                          <span className="w-10 h-10 rounded-2xl bg-primary text-white font-black flex items-center justify-center shrink-0 text-lg shadow-md shadow-primary/20">
+                            {part1QuestionIdx + 1}
+                          </span>
+                          <p className="text-2xl font-bold text-slate-800 leading-relaxed pt-0.5">
+                            {part1Questions[part1QuestionIdx]}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Question Navigation Dots & Back/Next */}
+                      <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">
+                        <button
+                          type="button"
+                          disabled={part1QuestionIdx === 0}
+                          onClick={() => setPart1QuestionIdx((prev) => prev - 1)}
+                          className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                        >
+                          ← Back
+                        </button>
+                        <div className="flex items-center gap-2">
+                          {part1Questions.map((_, index) => {
+                            const isRecorded = !!part1Blobs[index];
+                            const isActive = index === part1QuestionIdx;
+                            return (
+                              <button
+                                key={index /* eslint-disable-line react/no-array-index-key */}
+                                type="button"
+                                onClick={() => setPart1QuestionIdx(index)}
+                                className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+                                  isActive
+                                    ? "bg-primary scale-125 ring-4 ring-primary/20"
+                                    : isRecorded
+                                    ? "bg-success"
+                                    : "bg-slate-200 hover:bg-slate-300"
+                                }`}
+                                title={`Question ${index + 1}`}
+                              />
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={part1QuestionIdx === part1Questions.length - 1}
+                          onClick={() => setPart1QuestionIdx((prev) => prev + 1)}
+                          className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                        >
+                          Next →
+                        </button>
                       </div>
                     </div>
 
@@ -876,33 +1133,74 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       <div className="flex items-center gap-2 text-slate-400">
                         <PiClockFill />
                         <span className="text-xs font-bold uppercase">
-                          4-5 Minutes
+                          50s Per Question
                         </span>
                       </div>
                     </div>
 
                     <div className="prose prose-slate max-w-none">
-                      <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
-                        {activeSet.title}
-                      </h2>
-                      <p className="text-slate-500 font-semibold text-sm">
-                        Discuss abstract issues and concepts related to the topic of Part 2.
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
+                          {activeSet.title}
+                        </h2>
+                        <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl uppercase tracking-widest shrink-0">
+                          Q {part3QuestionIdx + 1} of {part3Questions.length}
+                        </span>
+                      </div>
+                      <p className="text-slate-500 font-semibold text-sm mt-3">
+                        Discuss abstract issues and concepts related to the topic of Part 2. Speak for up to 50 seconds. Once recorded, you cannot re-record.
                       </p>
                       
-                      <div className="mt-8 space-y-4">
-                        {(activeSet.speakingPart3Questions && activeSet.speakingPart3Questions.length > 0
-                          ? activeSet.speakingPart3Questions
-                          : defaultPart3Questions
-                        ).map((q, index) => (
-                          <div key={index} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex gap-4 items-start shadow-sm hover:shadow-md transition-shadow">
-                            <span className="w-8 h-8 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center shrink-0 mt-0.5">
-                              {index + 1}
-                            </span>
-                            <p className="text-lg font-bold text-slate-700 leading-relaxed pt-0.5">
-                              {q}
-                            </p>
-                          </div>
-                        ))}
+                      <div className="mt-8">
+                        <div className="p-8 bg-slate-50 border-2 border-primary/20 rounded-[2rem] flex gap-5 items-start shadow-md">
+                          <span className="w-10 h-10 rounded-2xl bg-primary text-white font-black flex items-center justify-center shrink-0 text-lg shadow-md shadow-primary/20">
+                            {part3QuestionIdx + 1}
+                          </span>
+                          <p className="text-2xl font-bold text-slate-800 leading-relaxed pt-0.5">
+                            {part3Questions[part3QuestionIdx]}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Question Navigation Dots & Back/Next */}
+                      <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">
+                        <button
+                          type="button"
+                          disabled={part3QuestionIdx === 0}
+                          onClick={() => setPart3QuestionIdx((prev) => prev - 1)}
+                          className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                        >
+                          ← Back
+                        </button>
+                        <div className="flex items-center gap-2">
+                          {part3Questions.map((_, index) => {
+                            const isRecorded = !!part3Blobs[index];
+                            const isActive = index === part3QuestionIdx;
+                            return (
+                              <button
+                                key={index /* eslint-disable-line react/no-array-index-key */}
+                                type="button"
+                                onClick={() => setPart3QuestionIdx(index)}
+                                className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+                                  isActive
+                                    ? "bg-primary scale-125 ring-4 ring-primary/20"
+                                    : isRecorded
+                                    ? "bg-success"
+                                    : "bg-slate-200 hover:bg-slate-300"
+                                }`}
+                                title={`Question ${index + 1}`}
+                              />
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={part3QuestionIdx === part3Questions.length - 1}
+                          onClick={() => setPart3QuestionIdx((prev) => prev + 1)}
+                          className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                        >
+                          Next →
+                        </button>
                       </div>
                     </div>
 
@@ -923,7 +1221,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       Audio Studio
                     </h3>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                      Part {speakingStep} of 3
+                      {studioSubtitle}
                     </p>
                   </div>
                   <PiWaveformFill className={`text-2xl text-primary ${isRecording ? "animate-pulse" : ""}`} />
@@ -1000,7 +1298,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                           />
                         </div>
                         <div className="text-5xl font-mono font-black text-slate-800">
-                          {fmt(recordingTime)}
+                          {fmt(Math.max(0, maxRecordingTime - recordingTime))}
                         </div>
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">
                           System Capturing Audio...
@@ -1046,15 +1344,17 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         <PiCheckCircleFill />
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-xl font-black text-slate-800">Part {speakingStep} Response Captured</h4>
+                        <h4 className="text-xl font-black text-slate-800">
+                          {speakingStep === 2 ? "Cue Card Response Captured" : `Question ${speakingStep === 1 ? part1QuestionIdx + 1 : part3QuestionIdx + 1} Response Captured`}
+                        </h4>
                         <p className="text-xs font-bold text-slate-500 leading-relaxed">
-                          Your response has been saved. Review your recording below or re-record to improve.
+                          Your response has been saved. Review your recording below.
                         </p>
                       </div>
 
                       {activeAudioUrl && (
                         <div className="w-full py-2">
-                          <audio src={activeAudioUrl} controls className="w-full rounded-2xl border border-slate-200 shadow-sm" />
+                          <audio src={activeAudioUrl} controls className="w-full rounded-2xl border border-slate-200 shadow-sm" key={activeAudioUrl} />
                         </div>
                       )}
 
@@ -1077,13 +1377,11 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             </button>
                           </>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={startRecording}
-                            className="btn btn-primary rounded-2xl h-16 font-black text-sm uppercase tracking-widest"
-                          >
-                            Re-record Response
-                          </button>
+                          <div className="text-center py-2">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+                              Recording Finalized
+                            </span>
+                          </div>
                         )}
                       </div>
                     </motion.div>
@@ -1098,11 +1396,13 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         <PiMicrophoneFill />
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-xl font-black text-slate-800">Ready to Record Part {speakingStep}?</h4>
+                        <h4 className="text-xl font-black text-slate-800">
+                          {speakingStep === 2 ? "Ready to Record Cue Card?" : `Ready to Record Question ${speakingStep === 1 ? part1QuestionIdx + 1 : part3QuestionIdx + 1}?`}
+                        </h4>
                         <p className="text-xs font-bold text-slate-500 leading-relaxed">
                           {speakingStep === 2
                             ? "Prepare for 60 seconds or start speaking immediately."
-                            : "Record your answers to the interview questions."}
+                            : `Speak for up to ${speakingStep === 1 ? 40 : 50} seconds to answer the question.`}
                         </p>
                       </div>
                       <div className="grid grid-cols-1 w-full gap-4">
