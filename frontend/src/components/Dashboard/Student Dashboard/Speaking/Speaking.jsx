@@ -19,7 +19,6 @@ import {
   PiClockFill,
   PiWaveformFill,
   PiUserCircleFill,
-  PiMonitor,
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import FullscreenGate from "../../../Common/FullscreenGate.jsx";
@@ -165,6 +164,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
         const fetched = response?.data?.questions || [];
         setSpeakingSets(fetched);
         setLoading(false);
+      // eslint-disable-next-line no-unused-vars
       } catch (error) {
         toast.error("Failed to load speaking prompts");
         setLoading(false);
@@ -203,6 +203,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       setIsPrepPhase(false);
       setRecordingTime(0);
       toast.success("Recording Started! Speak clearly.");
+    // eslint-disable-next-line no-unused-vars
     } catch (err) {
       toast.error("Microphone access denied. Please enable it to record.");
     }
@@ -254,11 +255,14 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // Auto-Stop for Speaking Part 2
   useEffect(() => {
-    if (isRecording && speakingStep === 2 && recordingTime >= 120) {
+    if (isRecording && speakingStep === 2 && !isPrepPhase && recordingTime >= 120) {
       stopRecording();
       toast.info("Maximum speaking time (2 minutes) reached. Recording stopped.");
+    } else if (isRecording && speakingStep === 3 || speakingStep === 1 && !isPrepPhase && recordingTime >= 300) {
+      stopRecording();
+      toast.info("Maximum speaking time (5 minutes) reached. Recording stopped.");
     }
-  }, [recordingTime, isRecording, speakingStep, stopRecording]);
+  }, [recordingTime, isRecording, speakingStep, stopRecording , isPrepPhase]);
 
   // 10s Warning Modal for Preparation countdown (Part 2)
   useEffect(() => {
@@ -299,10 +303,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const handleSubmitSpeaking = async () => {
     const hasRecording = part1Blob || part2Blob || part3Blob || audioBlob;
     if (!hasRecording) {
-      toast.info("No audio recording captured. Exiting practice.");
-      exitFullscreen();
-      setIsStarted(false);
-      navigate(-1);
+      toast.info("No audio recording captured. Please Submit your response.");
       return;
     }
 
@@ -679,6 +680,20 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Left Side: 3-Part Cue Card & Questions Display */}
           <div className="lg:col-span-7 space-y-8">
+            <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10 flex items-start gap-5">
+                      <PiInfoFill className="text-primary text-3xl shrink-0" />
+                      <div>
+                        <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-2">
+                          Examiner Instructions
+                        </h4>
+                        <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
+                          "
+                          {activeSet.instructions ||
+                            "You should speak for 1 to 2 minutes on this topic. You have one minute to prepare what you are going to say."}
+                          "
+                        </p>
+                      </div>
+                    </div>
             <AnimatePresence mode="wait">
               {speakingStep === 1 && (
                 <motion.div
@@ -788,20 +803,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       </div>
                     )}
 
-                    <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10 flex items-start gap-5">
-                      <PiInfoFill className="text-primary text-3xl shrink-0" />
-                      <div>
-                        <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-2">
-                          Examiner Instructions
-                        </h4>
-                        <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
-                          "
-                          {activeSet.instructions ||
-                            "You should speak for 1 to 2 minutes on this topic. You have one minute to prepare what you are going to say."}
-                          "
-                        </p>
-                      </div>
-                    </div>
+                    
 
                     {renderNavigationWizard()}
                   </div>

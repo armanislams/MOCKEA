@@ -454,13 +454,6 @@ const EditQuestionFormContent = ({ fetchedQuestion, id }) => {
         mutation.mutate(data);
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <span className="loading loading-spinner loading-lg text-primary" />
-            </div>
-        );
-    }
 
     const isIeltsListening =
         testType === "listening" &&
