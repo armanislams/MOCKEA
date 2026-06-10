@@ -298,59 +298,90 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   }, [activeSet, part1Questions, part3Questions]);
 
   const startRecording = useCallback(async () => {
-    if (isRecording || isSaving) return;
+    console.log("[SpeakingDebug] startRecording called. isRecording:", isRecording, "isSaving:", isSaving, "speakingStep:", speakingStep, "part1QuestionIdx:", part1QuestionIdxRef.current);
+    if (isRecording || isSaving) {
+      console.warn("[SpeakingDebug] startRecording early return because isRecording or isSaving is active.");
+      return;
+    }
+    toast.info("Recording is starting... Please wait.");
     try {
+      console.log("[SpeakingDebug] startRecording - requesting getUserMedia...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log("[SpeakingDebug] startRecording - mic stream acquired successfully:", stream.id);
       setMediaStream(stream);
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
+        console.log("[SpeakingDebug] ondataavailable fired. chunk size:", event.data?.size);
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
-        if (recordingTimeRef.current > 0) {
-          const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-          if (speakingStep === 1) {
-            setPart1BlobsWithRef((prev) => {
-              const updated = [...prev];
-              updated[part1QuestionIdxRef.current] = blob;
-              return updated;
-            });
-          } else if (speakingStep === 2) {
-            setPart2BlobWithRef(blob);
-          } else if (speakingStep === 3) {
-            setPart3BlobsWithRef((prev) => {
-              const updated = [...prev];
-              updated[part3QuestionIdxRef.current] = blob;
-              return updated;
+        console.log("[SpeakingDebug] MediaRecorder onstop callback fired. recordingTimeRef.current:", recordingTimeRef.current, "chunks length:", audioChunksRef.current.length);
+        try {
+          if (recordingTimeRef.current > 0) {
+            const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+            console.log("[SpeakingDebug] MediaRecorder onstop - created blob of size:", blob.size);
+            if (speakingStep === 1) {
+              console.log("[SpeakingDebug] MediaRecorder onstop - setting Part 1 blob at index:", part1QuestionIdxRef.current);
+              setPart1BlobsWithRef((prev) => {
+                const updated = prev ? [...prev] : [];
+                updated[part1QuestionIdxRef.current] = blob;
+                return updated;
+              });
+            } else if (speakingStep === 2) {
+              console.log("[SpeakingDebug] MediaRecorder onstop - setting Part 2 blob");
+              setPart2BlobWithRef(blob);
+            } else if (speakingStep === 3) {
+              console.log("[SpeakingDebug] MediaRecorder onstop - setting Part 3 blob at index:", part3QuestionIdxRef.current);
+              setPart3BlobsWithRef((prev) => {
+                const updated = prev ? [...prev] : [];
+                updated[part3QuestionIdxRef.current] = blob;
+                return updated;
+              });
+            }
+            setAudioBlobWithRef(blob);
+          } else {
+            console.warn("[SpeakingDebug] MediaRecorder onstop - recording duration was 0, not saving blob.");
+          }
+        } catch (err) {
+          console.error("[SpeakingDebug] Error in MediaRecorder.onstop execution:", err);
+          toast.error("Failed to capture recording. Please try again.");
+        } finally {
+          console.log("[SpeakingDebug] MediaRecorder onstop finally block - cleaning up track stream and resetting state.");
+          if (stream) {
+            stream.getTracks().forEach((track) => {
+              console.log("[SpeakingDebug] Stopping stream track:", track.label);
+              track.stop();
             });
           }
-          setAudioBlobWithRef(blob);
+          setMediaStream(null);
+          setIsRecording(false);
+          setIsSaving(false);
+          console.log("[SpeakingDebug] MediaRecorder onstop finally block - states reset successfully.");
         }
-        stream.getTracks().forEach((track) => track.stop());
-        setMediaStream(null);
-        setIsRecording(false);
-        setIsSaving(false);
       };
 
+      console.log("[SpeakingDebug] startRecording - calling mediaRecorder.start()");
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setIsPrepPhase(false);
       setRecordingTime(0);
       toast.success("Recording Started! Speak clearly.");
-    // eslint-disable-next-line no-unused-vars
     } catch (err) {
+      console.error("[SpeakingDebug] startRecording failed inside try/catch:", err);
       toast.error("Microphone access denied. Please enable it to record.");
     }
   }, [speakingStep, isRecording, isSaving]);
 
   const stopRecording = useCallback(() => {
+    console.log("[SpeakingDebug] stopRecording called. mediaRecorder status:", mediaRecorderRef.current ? mediaRecorderRef.current.state : "null", "isRecording:", isRecording);
     if (mediaRecorderRef.current && isRecording && mediaRecorderRef.current.state !== "inactive") {
       try {
+        console.log("[SpeakingDebug] stopRecording - Setting isSaving to true and isRecording to false, triggering mediaRecorder.stop()");
         setIsSaving(true);
         setIsRecording(false);
         mediaRecorderRef.current.stop();
@@ -362,10 +393,12 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
           toast.warn("Recording was too short to be saved.");
         }
       } catch (err) {
-        console.error("Failed to stop media recorder:", err);
+        console.error("[SpeakingDebug] Failed to stop media recorder in stopRecording catch block:", err);
         setIsSaving(false);
         setIsRecording(false);
       }
+    } else {
+      console.warn("[SpeakingDebug] stopRecording - condition not met. mediaRecorder:", !!mediaRecorderRef.current, "isRecording:", isRecording, "state:", mediaRecorderRef.current?.state);
     }
   }, [isRecording]);
 
@@ -743,6 +776,17 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     );
   };
 
+  console.log("[SpeakingDebug] State check on render:", {
+    speakingStep,
+    part1QuestionIdx,
+    part1BlobsLength: part1Blobs.length,
+    part1BlobAtIdx: !!part1Blobs[part1QuestionIdx],
+    activeBlob: !!activeBlob,
+    isPrepPhase,
+    isRecording,
+    isSaving
+  });
+
   if (isUploading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-6">
@@ -1010,7 +1054,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">
                         <button
                           type="button"
-                          disabled={part1QuestionIdx === 0}
+                          disabled={part1QuestionIdx === 0 || isRecording || isSaving}
                           onClick={() => setPart1QuestionIdx((prev) => prev - 1)}
                           className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
                         >
@@ -1024,6 +1068,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                               <button
                                 key={index /* eslint-disable-line react/no-array-index-key */}
                                 type="button"
+                                disabled={isRecording || isSaving}
                                 onClick={() => setPart1QuestionIdx(index)}
                                 className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
                                   isActive
@@ -1039,7 +1084,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         </div>
                         <button
                           type="button"
-                          disabled={part1QuestionIdx === part1Questions.length - 1}
+                          disabled={part1QuestionIdx === part1Questions.length - 1 || isRecording || isSaving}
                           onClick={() => setPart1QuestionIdx((prev) => prev + 1)}
                           className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
                         >
@@ -1166,7 +1211,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">
                         <button
                           type="button"
-                          disabled={part3QuestionIdx === 0}
+                          disabled={part3QuestionIdx === 0 || isRecording || isSaving}
                           onClick={() => setPart3QuestionIdx((prev) => prev - 1)}
                           className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
                         >
@@ -1180,6 +1225,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                               <button
                                 key={index /* eslint-disable-line react/no-array-index-key */}
                                 type="button"
+                                disabled={isRecording || isSaving}
                                 onClick={() => setPart3QuestionIdx(index)}
                                 className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
                                   isActive
@@ -1195,7 +1241,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                         </div>
                         <button
                           type="button"
-                          disabled={part3QuestionIdx === part3Questions.length - 1}
+                          disabled={part3QuestionIdx === part3Questions.length - 1 || isRecording || isSaving}
                           onClick={() => setPart3QuestionIdx((prev) => prev + 1)}
                           className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
                         >
@@ -1227,7 +1273,6 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                   <PiWaveformFill className={`text-2xl text-primary ${isRecording ? "animate-pulse" : ""}`} />
                 </div>
 
-                <AnimatePresence mode="wait">
                   {isPrepPhase ? (
                     <motion.div
                       key="prep"
@@ -1435,7 +1480,6 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       </div>
                     </motion.div>
                   )}
-                </AnimatePresence>
               </div>
             </div>
 

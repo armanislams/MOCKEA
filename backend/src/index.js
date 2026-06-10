@@ -72,7 +72,7 @@ const startServer = async ()=>{
     try {
         await connectDb();
         app.listen(Port, () => {
-            console.log(`Eco Stream Server is running on port ${Port}`);
+            console.log(`MOCKEA Server is running on port ${Port}`);
         })
     } catch (error) {
         console.error("Error connecting to MongoDB:", error);
