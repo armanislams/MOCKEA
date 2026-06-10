@@ -103,9 +103,9 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
                                     )}
                                 </div>
 
-                                {data?.images?.length > 0 && (
+                                {data?.images?.filter(img => img && img.trim() !== "").length > 0 && (
                                     <div className="mt-8 grid gap-4">
-                                        {data.images.map((img, i) => (
+                                        {data.images.filter(img => img && img.trim() !== "").map((img, i) => (
                                             <div key={i} className="rounded-3xl overflow-hidden border border-slate-100 p-2 bg-slate-50">
                                                 <img 
                                                     src={img} 

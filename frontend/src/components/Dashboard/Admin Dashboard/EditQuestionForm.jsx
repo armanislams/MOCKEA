@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -68,8 +68,6 @@ const QUESTION_TYPE_GROUPS = [
         ],
     },
 ];
-
-const ALL_QUESTION_TYPES = QUESTION_TYPE_GROUPS.flatMap((g) => g.types);
 const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no"];
 const NEEDS_PAIRS = ["matching", "heading-matching"];
 const NEEDS_IMAGE = ["map-labelling", "diagram-labelling"];
@@ -90,30 +88,6 @@ const makeQuestion = () => ({
     matchingPairs: [{ key: "", value: "" }],
     imageUrl: "",
     passageIndex: 0,
-});
-
-const initialForm = () => ({
-    title: "",
-    instructions: "",
-    passage: "",
-    passages: [{ title: "", content: "" }],
-    questionGroups: [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0 }],
-    audioUrl: "",
-    speakingPrompt: "",
-    speakingPart1Questions: [""],
-    speakingPart3Questions: [""],
-    images: [""],
-    task1Prompt: "",
-    task1Image: "",
-    task2Prompt: "",
-    exampleQuestion: "Destination:",
-    exampleAnswer: "Harbour City",
-    examType: "IELTS",
-    listeningPart: 1,
-    forPlanType: "free",
-    isPublic: false,
-    isMockOnly: false,
-    questions: [makeQuestion()],
 });
 
 const QuestionTypeSelect = ({ value, onChange }) => (
@@ -223,12 +197,7 @@ const QuestionTypeExtras = ({ q, onUpdate, onAddOption, onUpdateOption, onAddPai
 
 const EditQuestionForm = () => {
     const { id } = useParams();
-    const navigate = useNavigate();
-    const queryClient = useQueryClient();
     const axiosSecure = useAxiosSecure();
-
-    const [testType, setTestType] = useState("reading");
-    const [formData, setFormData] = useState(initialForm());
 
     // ── Load Question Data ────────────────────────────────────────────────────
     const { data: fetchedQuestion, isLoading } = useQuery({
@@ -239,103 +208,116 @@ const EditQuestionForm = () => {
         }
     });
 
-    useEffect(() => {
-        if (fetchedQuestion) {
-            setTestType(fetchedQuestion.testType);
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <span className="loading loading-spinner loading-lg text-primary" />
+            </div>
+        );
+    }
 
-            // Parse content parameters back into form state
-            let task1Prompt = "";
-            let task1Image = "";
-            let task2Prompt = "";
+    if (!fetchedQuestion) {
+        return <div className="text-center p-8">Question set not found.</div>;
+    }
+
+    return <EditQuestionFormContent key={id} fetchedQuestion={fetchedQuestion} id={id} />;
+};
+
+const EditQuestionFormContent = ({ fetchedQuestion, id }) => {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const axiosSecure = useAxiosSecure();
+    const testType = fetchedQuestion.testType;
+    const [formData, setFormData] = useState(() => {
+        // Parse content parameters back into form state
+        let task1Prompt = "";
+        let task1Image = "";
+        let task2Prompt = "";
+        
+        if (fetchedQuestion.testType === "writing" && fetchedQuestion.passage) {
+            // Try to extract Task 1 & Task 2 prompts from the HTML
+            const task1Match = fetchedQuestion.passage.match(/Task 1: Academic Report.*?<\/h3>\s*<p.*?>(.*?)<\/p>/s);
+            const task2Match = fetchedQuestion.passage.match(/Task 2: Opinion Essay.*?<\/h3>\s*<p.*?>(.*?)<\/p>/s);
             
-            if (fetchedQuestion.testType === "writing" && fetchedQuestion.passage) {
-                // Try to extract Task 1 & Task 2 prompts from the HTML
-                const task1Match = fetchedQuestion.passage.match(/Task 1: Academic Report.*?<\/h3>\s*<p.*?>(.*?)<\/p>/s);
-                const task2Match = fetchedQuestion.passage.match(/Task 2: Opinion Essay.*?<\/h3>\s*<p.*?>(.*?)<\/p>/s);
-                
-                task1Prompt = task1Match ? task1Match[1].replace(/<br\s*\/?>/g, "\n") : "";
-                task2Prompt = task2Match ? task2Match[1].replace(/<br\s*\/?>/g, "\n") : "";
-                task1Image = fetchedQuestion.images?.[0] || "";
-            }
-
-            let exampleQuestion = "Destination:";
-            let exampleAnswer = "Harbour City";
-            let cleanPassage = fetchedQuestion.passage || "";
-
-            if (fetchedQuestion.testType === "listening" && fetchedQuestion.passage) {
-                let tempPassage = fetchedQuestion.passage;
-
-                // Extract example label and answer if present
-                const eqMatch = tempPassage.match(/<span>([^<]+)<\/span>\s*<span[^>]*>\s*([^<]+)\s*<\/span>/s);
-                exampleQuestion = eqMatch ? eqMatch[1].trim() : "Destination:";
-                exampleAnswer = eqMatch ? eqMatch[2].trim() : "Harbour City";
-
-                // Strip the example wrapper if present
-                tempPassage = tempPassage.replace(/<div class=["']mb-6[\s\S]*?<\/div>\s*<\/div>/, "").trim();
-
-                // Strip the ielts-listening-notes div wrapper if present
-                tempPassage = tempPassage.replace(/<div class=["']ielts-listening-notes[^"']*["'][^>]*>/, "");
-                
-                // Strip the trailing closing div if it exists
-                tempPassage = tempPassage.replace(/<\/div>\s*$/, "");
-
-                cleanPassage = tempPassage.trim();
-            }
-
-            let passages = [{ title: "", content: "" }];
-            if (fetchedQuestion.passages && fetchedQuestion.passages.length > 0) {
-                passages = fetchedQuestion.passages.map(p => ({ title: p.title || "", content: p.content || "" }));
-            } else if (fetchedQuestion.testType === "reading") {
-                passages = [{ title: fetchedQuestion.title || "Passage 1", content: fetchedQuestion.passage || "" }];
-            }
-
-            const questionGroups = (fetchedQuestion.questionGroups && fetchedQuestion.questionGroups.length > 0)
-                ? fetchedQuestion.questionGroups.map(g => ({
-                    title: g.title || "",
-                    instructions: g.instructions || "",
-                    fromQuestion: g.fromQuestion || 1,
-                    toQuestion: g.toQuestion || 1,
-                    passageIndex: g.passageIndex || 0,
-                }))
-                : [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0 }];
-
-            setFormData({
-                title: fetchedQuestion.title || "",
-                instructions: fetchedQuestion.instructions || "",
-                passage: cleanPassage,
-                passages,
-                questionGroups,
-                audioUrl: fetchedQuestion.audioUrl || "",
-                speakingPrompt: fetchedQuestion.speakingPrompt || "",
-                speakingPart1Questions: fetchedQuestion.speakingPart1Questions?.length ? fetchedQuestion.speakingPart1Questions : [""],
-                speakingPart3Questions: fetchedQuestion.speakingPart3Questions?.length ? fetchedQuestion.speakingPart3Questions : [""],
-                images: fetchedQuestion.images?.length ? fetchedQuestion.images : [""],
-                task1Prompt,
-                task1Image,
-                task2Prompt,
-                exampleQuestion,
-                exampleAnswer,
-                examType: fetchedQuestion.examType || "IELTS",
-                listeningPart: fetchedQuestion.listeningPart || 1,
-                forPlanType: fetchedQuestion.forPlanType || "free",
-                isPublic: fetchedQuestion.isPublic || false,
-                isMockOnly: fetchedQuestion.isMockOnly || false,
-                questions: fetchedQuestion.questions?.length ? fetchedQuestion.questions.map(q => ({
-                    id: q.id || (Date.now().toString() + Math.random().toString(36).slice(2)),
-                    type: q.type || "short-answer",
-                    question: q.question || "",
-                    correctAnswer: q.correctAnswer || "",
-                    options: q.options || ["", ""],
-                    matchingPairs: q.matchingPairs || [{ key: "", value: "" }],
-                    imageUrl: q.imageUrl || "",
-                    passageIndex: q.passageIndex || 0
-                })) : [makeQuestion()],
-            });
+            task1Prompt = task1Match ? task1Match[1].replace(/<br\s*\/?>/g, "\n") : "";
+            task2Prompt = task2Match ? task2Match[1].replace(/<br\s*\/?>/g, "\n") : "";
+            task1Image = fetchedQuestion.images?.[0] || "";
         }
-    }, [fetchedQuestion]);
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+        let exampleQuestion = "Destination:";
+        let exampleAnswer = "Harbour City";
+        let cleanPassage = fetchedQuestion.passage || "";
 
+        if (fetchedQuestion.testType === "listening" && fetchedQuestion.passage) {
+            let tempPassage = fetchedQuestion.passage;
+
+            // Extract example label and answer if present
+            const eqMatch = tempPassage.match(/<span>([^<]+)<\/span>\s*<span[^>]*>\s*([^<]+)\s*<\/span>/s);
+            exampleQuestion = eqMatch ? eqMatch[1].trim() : "Destination:";
+            exampleAnswer = eqMatch ? eqMatch[2].trim() : "Harbour City";
+
+            // Strip the example wrapper if present
+            tempPassage = tempPassage.replace(/<div class=["']mb-6[\s\S]*?<\/div>\s*<\/div>/, "").trim();
+
+            // Strip the ielts-listening-notes div wrapper if present
+            tempPassage = tempPassage.replace(/<div class=["']ielts-listening-notes[^"']*["'][^>]*>/, "");
+            
+            // Strip the trailing closing div if it exists
+            tempPassage = tempPassage.replace(/<\/div>\s*$/, "");
+
+            cleanPassage = tempPassage.trim();
+        }
+
+        let passages = [{ title: "", content: "" }];
+        if (fetchedQuestion.passages && fetchedQuestion.passages.length > 0) {
+            passages = fetchedQuestion.passages.map(p => ({ title: p.title || "", content: p.content || "" }));
+        } else if (fetchedQuestion.testType === "reading") {
+            passages = [{ title: fetchedQuestion.title || "Passage 1", content: fetchedQuestion.passage || "" }];
+        }
+
+        const questionGroups = (fetchedQuestion.questionGroups && fetchedQuestion.questionGroups.length > 0)
+            ? fetchedQuestion.questionGroups.map(g => ({
+                title: g.title || "",
+                instructions: g.instructions || "",
+                fromQuestion: g.fromQuestion || 1,
+                toQuestion: g.toQuestion || 1,
+                passageIndex: g.passageIndex || 0,
+            }))
+            : [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0 }];
+
+        return {
+            title: fetchedQuestion.title || "",
+            instructions: fetchedQuestion.instructions || "",
+            passage: cleanPassage,
+            passages,
+            questionGroups,
+            audioUrl: fetchedQuestion.audioUrl || "",
+            speakingPrompt: fetchedQuestion.speakingPrompt || "",
+            speakingPart1Questions: fetchedQuestion.speakingPart1Questions?.length ? fetchedQuestion.speakingPart1Questions : [""],
+            speakingPart3Questions: fetchedQuestion.speakingPart3Questions?.length ? fetchedQuestion.speakingPart3Questions : [""],
+            images: fetchedQuestion.images?.filter(img => img && img.trim() !== "") || [],
+            task1Prompt,
+            task1Image,
+            task2Prompt,
+            exampleQuestion,
+            exampleAnswer,
+            examType: fetchedQuestion.examType || "IELTS",
+            listeningPart: fetchedQuestion.listeningPart || 1,
+            forPlanType: fetchedQuestion.forPlanType || "free",
+            isPublic: fetchedQuestion.isPublic || false,
+            isMockOnly: fetchedQuestion.isMockOnly || false,
+            questions: fetchedQuestion.questions?.length ? fetchedQuestion.questions.map(q => ({
+                id: q.id || (Date.now().toString() + Math.random().toString(36).slice(2)),
+                type: q.type || "short-answer",
+                question: q.question || "",
+                correctAnswer: q.correctAnswer || "",
+                options: q.options || ["", ""],
+                matchingPairs: q.matchingPairs || [{ key: "", value: "" }],
+                imageUrl: q.imageUrl || "",
+                passageIndex: q.passageIndex || 0
+            })) : [makeQuestion()],
+        };
+    });
     const patch = (updates) => setFormData((prev) => ({ ...prev, ...updates }));
 
     const patchQuestion = (qId, updates) =>
@@ -463,6 +445,10 @@ const EditQuestionForm = () => {
                     ? `<div class="ielts-listening-notes space-y-4">${formData.passage}</div>`
                     : "";
             }
+        }
+
+        if (data.images) {
+            data.images = data.images.filter(img => img && img.trim() !== "");
         }
 
         mutation.mutate(data);

@@ -68,8 +68,6 @@ const QUESTION_TYPE_GROUPS = [
     },
 ];
 
-// Flat list for utility lookups
-const ALL_QUESTION_TYPES = QUESTION_TYPE_GROUPS.flatMap((g) => g.types);
 
 // Which types need options array
 const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no"];
@@ -109,7 +107,7 @@ const initialForm = () => ({
     speakingPrompt: "",
     speakingPart1Questions: [""],
     speakingPart3Questions: [""],
-    images: [""],
+    images: [],
     task1Prompt: "",
     task1Image: "",
     task2Prompt: "",
@@ -340,12 +338,16 @@ const AddQuestionForm = () => {
             data.questions = [
                 { id: "w1", type: "short-answer", question: "Task Responses:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" },
             ];
+            // Clear reading-specific passages — they have a required title field in the schema
+            data.passages = [];
         } else if (testType === "speaking") {
             data.speakingPart1Questions = formData.speakingPart1Questions.filter(q => q.trim() !== "");
             data.speakingPart3Questions = formData.speakingPart3Questions.filter(q => q.trim() !== "");
             data.questions = [
                 { id: "s1", type: "short-answer", question: "Speaking Recording Response:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" },
             ];
+            // Clear reading-specific passages — they have a required title field in the schema
+            data.passages = [];
         } else if (
             testType === "listening" &&
             (formData.examType === "IELTS" || formData.examType === "BOTH")
@@ -368,6 +370,22 @@ const AddQuestionForm = () => {
                     ? `<div class="ielts-listening-notes space-y-4">${formData.passage}</div>`
                     : "";
             }
+            // Clear reading-specific passages — they have a required title field in the schema
+            data.passages = [];
+        } else if (testType === "listening") {
+            // PTE listening (examType is PTE) — no passages needed
+            data.passages = [];
+        }
+
+        // Strip frontend-only fields that are not part of the DB schema
+        delete data.task1Prompt;
+        delete data.task1Image;
+        delete data.task2Prompt;
+        delete data.exampleQuestion;
+        delete data.exampleAnswer;
+
+        if (data.images) {
+            data.images = data.images.filter(img => img && img.trim() !== "");
         }
 
         mutation.mutate(data);

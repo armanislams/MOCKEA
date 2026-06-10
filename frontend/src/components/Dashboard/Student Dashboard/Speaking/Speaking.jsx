@@ -771,9 +771,9 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       </div>
                     </div>
 
-                    {activeSet.images?.length > 0 && (
+                    {activeSet.images?.filter(img => img && img.trim() !== "").length > 0 && (
                       <div className="grid gap-6 pt-6">
-                        {activeSet.images.map((img, i) => (
+                        {activeSet.images.filter(img => img && img.trim() !== "").map((img, i) => (
                           <div
                             key={i}
                             className="rounded-[2.5rem] overflow-hidden border-8 border-slate-50 shadow-inner"

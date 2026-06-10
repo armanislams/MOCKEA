@@ -464,9 +464,9 @@ const Writing = () => {
                             />
                         </div>
 
-                        {activeTab === "task1" && activeSet.images?.length > 0 && (
+                        {activeTab === "task1" && activeSet.images?.filter(img => img && img.trim() !== "").length > 0 && (
                             <div className="grid gap-4 pt-6">
-                                {activeSet.images.map((img, i) => (
+                                {activeSet.images.filter(img => img && img.trim() !== "").map((img, i) => (
                                     <div key={i} className="rounded-3xl overflow-hidden border border-base-200 bg-base-50 p-4">
                                         <img src={img} alt="Prompt Diagram" className="w-full h-auto" />
                                     </div>
