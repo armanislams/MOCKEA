@@ -70,6 +70,12 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const canvasRef = useRef(null);
+  const recordingTimeRef = useRef(0);
+
+  // Sync recordingTime to ref to avoid stale closure in callbacks
+  useEffect(() => {
+    recordingTimeRef.current = recordingTime;
+  }, [recordingTime]);
 
   const activeSet = useMemo(
     () => preloadedSet || speakingSets.find((set) => set._id === selectedSetId) || null,
@@ -187,11 +193,13 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        if (speakingStep === 1) setPart1Blob(blob);
-        else if (speakingStep === 2) setPart2Blob(blob);
-        else if (speakingStep === 3) setPart3Blob(blob);
-        setAudioBlob(blob);
+        if (recordingTimeRef.current > 0) {
+          const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          if (speakingStep === 1) setPart1Blob(blob);
+          else if (speakingStep === 2) setPart2Blob(blob);
+          else if (speakingStep === 3) setPart3Blob(blob);
+          setAudioBlob(blob);
+        }
         stream.getTracks().forEach((track) => track.stop());
         setMediaStream(null);
         setIsRecording(false);
@@ -214,9 +222,13 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       setIsSaving(true);
       setIsRecording(false);
       mediaRecorderRef.current.stop();
-      toast.info(
-        "Recording captured. Ready for submission. Please submit your response.",
-      );
+      if (recordingTimeRef.current > 0) {
+        toast.info(
+          "Recording captured. Ready for submission. Please submit your response.",
+        );
+      } else {
+        toast.warn("Recording was too short to be saved.");
+      }
     }
   }, [isRecording]);
 
