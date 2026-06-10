@@ -255,14 +255,14 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // Auto-Stop for Speaking Part 2
   useEffect(() => {
-    if (isRecording && speakingStep === 2 && !isPrepPhase && recordingTime >= 120) {
+    if (isRecording && speakingStep === 2 && recordingTime >= 120) {
       stopRecording();
       toast.info("Maximum speaking time (2 minutes) reached. Recording stopped.");
-    } else if (isRecording && speakingStep === 3 || speakingStep === 1 && !isPrepPhase && recordingTime >= 300) {
+    } else if (isRecording && speakingStep === 3 || speakingStep === 1 && recordingTime >= 300) {
       stopRecording();
       toast.info("Maximum speaking time (5 minutes) reached. Recording stopped.");
     }
-  }, [recordingTime, isRecording, speakingStep, stopRecording , isPrepPhase]);
+  }, [recordingTime, isRecording, speakingStep, stopRecording ]);
 
   // 10s Warning Modal for Preparation countdown (Part 2)
   useEffect(() => {
