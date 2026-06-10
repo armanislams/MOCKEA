@@ -181,6 +181,14 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     };
   }, []);
 
+  // Reset recording state when switching parts to avoid leakage and auto-stop races
+  useEffect(() => {
+    setRecordingTime(0);
+    setAudioBlob(null);
+    setIsRecording(false);
+    setIsSaving(false);
+  }, [speakingStep]);
+
   useEffect(() => {
     if (preloadedSet) return; // guest: data already provided, loading already false via useState(!preloadedSet)
     const fetchSpeaking = async () => {
@@ -266,9 +274,6 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       setPrepTime((prev) => {
         if (prev <= 1) {
           clearInterval(iv);
-          // Transition to recording phase
-          setIsPrepPhase(false);
-          startRecording();
           return 0;
         }
         return prev - 1;
@@ -276,7 +281,15 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     }, 1000);
 
     return () => clearInterval(iv);
-  }, [isPrepPhase, startRecording]);
+  }, [isPrepPhase]);
+
+  // Transition to recording when preparation phase finishes
+  useEffect(() => {
+    if (isPrepPhase && prepTime === 0) {
+      setIsPrepPhase(false);
+      startRecording();
+    }
+  }, [isPrepPhase, prepTime, startRecording]);
 
   // Recording Timer
   useEffect(() => {
@@ -285,16 +298,16 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return () => clearInterval(iv);
   }, [isRecording]);
 
-  // Auto-Stop for Speaking Part 2
+  // Auto-Stop for Speaking Parts
   useEffect(() => {
     if (isRecording && speakingStep === 2 && recordingTime >= 120) {
       stopRecording();
       toast.info("Maximum speaking time (2 minutes) reached. Recording stopped.");
-    } else if (isRecording && speakingStep === 3 || speakingStep === 1 && recordingTime >= 300) {
+    } else if (isRecording && (speakingStep === 3 || speakingStep === 1) && recordingTime >= 300) {
       stopRecording();
       toast.info("Maximum speaking time (5 minutes) reached. Recording stopped.");
     }
-  }, [recordingTime, isRecording, speakingStep, stopRecording ]);
+  }, [recordingTime, isRecording, speakingStep, stopRecording]);
 
   // 10s Warning Modal for Preparation countdown (Part 2)
   useEffect(() => {
