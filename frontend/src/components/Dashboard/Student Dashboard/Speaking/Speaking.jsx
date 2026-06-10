@@ -69,7 +69,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const canvasRef = useRef(null);
+  const visualizerCleanupRef = useRef(null);
   const recordingTimeRef = useRef(0);
 
   // Sync recordingTime to ref to avoid stale closure in callbacks
@@ -94,72 +94,92 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return URL.createObjectURL(activeBlob);
   }, [activeBlob]);
 
-  // Real-time Canvas Soundwave Visualizer
+  // Real-time Canvas Soundwave Visualizer callback ref
+  const canvasCallback = useCallback(
+    (canvas) => {
+      if (visualizerCleanupRef.current) {
+        visualizerCleanupRef.current();
+        visualizerCleanupRef.current = null;
+      }
+
+      if (!canvas || !mediaStream) return;
+
+      let audioCtx;
+      let analyser;
+      let source;
+      let animationFrameId;
+
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 128; // high performance, clean bars
+
+        source = audioCtx.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        const ctx = canvas.getContext("2d");
+
+        const draw = () => {
+          animationFrameId = requestAnimationFrame(draw);
+          analyser.getByteFrequencyData(dataArray);
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          const barWidth = (canvas.width / bufferLength) * 1.6;
+          let barHeight;
+          let x = 0;
+
+          for (let i = 0; i < bufferLength; i++) {
+            // Normalize height to canvas dimension
+            barHeight = (dataArray[i] / 255) * canvas.height * 0.75;
+            if (barHeight < 4) barHeight = 4; // minimum height bar for aesthetic consistency
+
+            // Violet to Pink linear gradient
+            const gradient = ctx.createLinearGradient(
+              0,
+              (canvas.height - barHeight) / 2,
+              0,
+              (canvas.height + barHeight) / 2,
+            );
+            gradient.addColorStop(0, "#c084fc"); // purple-400
+            gradient.addColorStop(0.5, "#ec4899"); // pink-500
+            gradient.addColorStop(1, "#c084fc"); // purple-400
+
+            ctx.fillStyle = gradient;
+
+            const y = (canvas.height - barHeight) / 2;
+            const radius = 3;
+
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth - 2, barHeight, radius);
+            ctx.fill();
+
+            x += barWidth;
+          }
+        };
+
+        draw();
+
+        visualizerCleanupRef.current = () => {
+          if (animationFrameId) cancelAnimationFrame(animationFrameId);
+          if (audioCtx && audioCtx.state !== "closed") audioCtx.close();
+        };
+      } catch (e) {
+        console.error("Audio visualizer failed:", e);
+      }
+    },
+    [mediaStream],
+  );
+
   useEffect(() => {
-    if (!mediaStream || !canvasRef.current) return;
-
-    let audioCtx;
-    let analyser;
-    let source;
-    let animationFrameId;
-
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 128; // high performance, clean bars
-      
-      source = audioCtx.createMediaStreamSource(mediaStream);
-      source.connect(analyser);
-
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-
-      const draw = () => {
-        animationFrameId = requestAnimationFrame(draw);
-        analyser.getByteFrequencyData(dataArray);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const barWidth = (canvas.width / bufferLength) * 1.6;
-        let barHeight;
-        let x = 0;
-
-        for (let i = 0; i < bufferLength; i++) {
-          // Normalize height to canvas dimension
-          barHeight = (dataArray[i] / 255) * canvas.height * 0.75;
-          if (barHeight < 4) barHeight = 4; // minimum height bar for aesthetic consistency
-
-          // Violet to Pink linear gradient
-          const gradient = ctx.createLinearGradient(0, (canvas.height - barHeight) / 2, 0, (canvas.height + barHeight) / 2);
-          gradient.addColorStop(0, "#c084fc"); // purple-400
-          gradient.addColorStop(0.5, "#ec4899"); // pink-500
-          gradient.addColorStop(1, "#c084fc"); // purple-400
-
-          ctx.fillStyle = gradient;
-
-          const y = (canvas.height - barHeight) / 2;
-          const radius = 3;
-
-          ctx.beginPath();
-          ctx.roundRect(x, y, barWidth - 2, barHeight, radius);
-          ctx.fill();
-
-          x += barWidth;
-        }
-      };
-
-      draw();
-    } catch (e) {
-      console.error("Audio visualizer failed:", e);
-    }
-
     return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      if (audioCtx && audioCtx.state !== "closed") audioCtx.close();
+      if (visualizerCleanupRef.current) {
+        visualizerCleanupRef.current();
+      }
     };
-  }, [mediaStream]);
+  }, []);
 
   useEffect(() => {
     if (preloadedSet) return; // guest: data already provided, loading already false via useState(!preloadedSet)
@@ -959,8 +979,8 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
                       <div className="space-y-4 w-full">
                         <div className="w-full flex justify-center py-2">
-                          <canvas
-                            ref={canvasRef}
+                           <canvas
+                            ref={canvasCallback}
                             width={320}
                             height={80}
                             className="bg-slate-50 rounded-3xl border border-slate-200 shadow-inner"
