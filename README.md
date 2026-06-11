@@ -1,163 +1,232 @@
-# MOCKEA - Comprehensive IELTS Preparation Platform
+# MOCKEA — Comprehensive IELTS Preparation Platform
 
-Welcome to the **MOCKEA** project repository! MOCKEA is a full-stack web application designed to help users prepare for the IELTS exam through interactive practice tests and performance analytics.
+Welcome to **MOCKEA**, a full-stack, monorepo web application designed to help users prepare for all modules of the IELTS exam (Reading, Listening, Writing, Speaking) through interactive mock environments, custom practice labs, automated grading, performance analytics, and a premium AI-powered tutor chatbot.
+
+---
 
 ## 🚀 Project Overview
 
-MOCKEA provides a robust platform for IELTS test-takers to practice all four modules of the exam: Reading, Listening, Writing, and Speaking. The application offers a user-friendly dashboard to track progress, review past tests, and analyze performance metrics over time.
-
-This project is built using the **MERN** stack (MongoDB, Express.js, React, Node.js) with **Firebase** integration for secure authentication and a modern UI powered by **TailwindCSS**, **DaisyUI**, **Framer Motion**, and **GSAP**.
+MOCKEA bridges the gap between simulated testing conditions and educational feedback. Built with the **MERN** stack, it provides:
+- **Interactive Practice Labs** for modular practice.
+- **Full-Length Mock Tests** simulating actual IELTS conditions.
+- **Anti-Cheat Mechanics** enforcing test integrity (fullscreen locked, tab monitoring).
+- **Instructor Review Flow** allowing trainers to lock submissions, assign band scores (0-9), and provide descriptive pedagogical feedback.
+- **Google Analytics 4 (GA4)** client-side telemetry to monitor site performance, conversion rates, and exam violations.
+- **AI Study Buddy & IELTS Tutor** providing voice-enabled interactive tutoring sessions powered by Gemini.
 
 ---
 
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **Framework:** React 19 (via Vite)
-- **Routing:** React Router 7
-- **Styling:** TailwindCSS 4, DaisyUI
-- **Animations:** Framer Motion, GSAP
-- **Audio/Media:** Howler.js (for Listening tests)
-- **Form Management:** React Hook Form
-- **State/Notifications:** React Toastify
-- **Authentication:** Firebase Auth
+- **Framework & Tooling:** React 19, Vite, React Router 7
+- **Styling & Theme:** Tailwind CSS 4, DaisyUI 5 (providing sleek components and theme selectors)
+- **Animations:** Framer Motion, GSAP (GreenSock) for micro-animations and smooth page transitions
+- **Audio Engines:** Howler.js (for Listening audio control)
+- **State Management:** React Context API & TanStack Query (React Query 5) for clean, cached server-state retrieval
+- **Forms & Validation:** React Hook Form, SweetAlert2, React Toastify
+- **Services:** Firebase Auth (Client SDK) for user accounts, Google Analytics 4 (`react-ga4` standalone utility)
 
 ### Backend
-- **Environment:** Node.js, Express.js
-- **Database:** MongoDB, Mongoose
-- **Security & Auth:** Firebase Admin SDK, CORS
-- **Environment Management:** Dotenv
-- **Deployment & Hosting:** Vercel
+- **Environment:** Node.js, Express 5
+- **Database:** MongoDB & Mongoose (Object Document Mapper)
+- **Authentication & Security:** Firebase Admin SDK, CORS, custom input sanitizers (XSS protection)
+- **Media Hosting:** Cloudinary SDK (for questions' audio files)
+- **AI Engine:** Gemini 2.5 Flash API (via `@google/genai` or similar integration)
+- **Deployment:** Pre-configured with `vercel.json` for serverless API scaling on Vercel
 
 ---
 
 ## 📂 Project Architecture
 
-The repository is structured as a monorepo containing both the client and server codebases:
+MOCKEA is structured as a monorepo containing both the frontend client and the backend server:
 
 ```text
 MOCKEA/
-├── frontend/             # React/Vite Frontend Application
-│   ├── public/           # Static assets
+├── frontend/                      # React / Vite Client Application
+│   ├── public/                    # Static Assets (Logos, SVGs, etc.)
 │   ├── src/
-│   │   ├── components/   # Reusable UI components
-│   │   ├── Layout/       # Page layout structures
-│   │   ├── Router/       # Application routing logic
-│   │   ├── context/      # React context (e.g., Auth, PrivateRoutes)
-│   │   ├── hooks/        # Custom React hooks
-│   │   └── index.css     # Global Tailwind styles
+│   │   ├── components/            # UI components
+│   │   │   ├── Common/            # Reusable widgets (StatCard, TableShell, StudyBuddyChatbot, etc.)
+│   │   │   └── Dashboard/         # Student & Admin dashboards, Settings Panels
+│   │   ├── Layout/                # General and Dashboard layout templates
+│   │   ├── Router/                # App route definitions & guards (PrivateRoutes)
+│   │   ├── context/               # React contexts (e.g., Auth, Theme)
+│   │   ├── hooks/                 # Custom shared hooks (useCountdown, useAnswers, useAdminQuery)
+│   │   ├── utils/                 # Utility files (analytics helpers, alert configurations)
+│   │   ├── index.css              # Global styles & Tailwind V4 directives
+│   │   └── main.jsx               # Application entry point
 │   ├── package.json
 │   └── vite.config.js
 │
-└── backend/              # Node/Express Backend API
+└── backend/                       # Node.js / Express Server API
     ├── src/
-    │   ├── controllers/  # Route logic and request handling
-    │   ├── lib/          # Database connection and utilities
-    │   ├── middlewares/  # Error handlers, auth verification
-    │   ├── model/        # Mongoose database schemas
-    │   ├── routes/       # Express route definitions
-    │   └── index.js      # Server entry point
+    │   ├── controllers/           # API controllers containing core business logic
+    │   ├── lib/                   # Integrations (database connections, AI services)
+    │   ├── middlewares/           # Authentication guards, CORS, global error handler
+    │   ├── model/                 # Mongoose schemas (User, Questions, MockTest, results, AI settings)
+    │   ├── routes/                # Express API endpoint definitions
+    │   ├── utils/                 # Utilities (input sanitizers, logs)
+    │   └── index.js               # Entry script launching the server
     ├── package.json
-    └── vercel.json       # Vercel deployment configuration
+    └── vercel.json                # Vercel Serverless routing deployment config
 ```
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features & Integrations
 
-1. **User Authentication:** Secure login and registration using Firebase Authentication.
-2. **Interactive Dashboard:** A centralized hub for users to view their progress, access tests, and manage their profiles.
-3. **IELTS Practice Modules:**
-   - **Reading:** Text-based comprehension tests.
-   - **Listening:** Audio playback tests integrated seamlessly with `howler.js`.
-   - **Writing:** Text submission and review features.
-   - **Speaking:** Practice modules for oral expression.
-4. **Analytics & Review:** Track test scores, analyze performance data, and review past notes and test submissions.
-5. **Modern UI/UX:** Smooth page transitions and dynamic animations using Framer Motion and GSAP.
+### 1. Advanced Full Mock Test Simulator & Anti-Cheat Engine
+- **Timed Exam Sequencing:** Guides the student sequentially through all four modules: Reading, Listening, Writing, Speaking.
+- **Integrity Shields:** Enforces fullscreen mode. Employs `visibilitychange` and `fullscreenchange` event listeners to record violations.
+- **Auto-Submission Trigger:** If the student exits fullscreen or changes tabs more than twice, the simulator triggers an automatic final submit.
+- **State Crash Recovery:** Periodically updates `localStorage` (`test_cache_${testId}`) with current responses and remaining time. If the student suffers a crash or disconnects, the test restores instantly back to the exact second and question where they left off.
+
+### 2. Premium AI Study Buddy & IELTS Tutor
+- **Persona Toggling:** A floating, glassmorphic widget allowing students to choose between:
+  - **IELTS Tutor:** Friendly, educational guidance, and hints.
+  - **IELTS Examiner:** Strict evaluations using IELTS Band Score descriptors.
+  - **Site Guide:** A conversational assistant helping navigate platform features.
+- **Speech Synthesis & Recognition:** Utilizes Web Speech API for voice transcriptions (STT) and vocal readings of tutor responses (TTS).
+- **Session Exporter:** Generates downloadable markdown files containing the dialogue exchange.
+- **Security Sanitizer:** Integrates a strict `sanitizeInput.js` utility, filtering script injections (`<script>`), event triggers (`onerror=`), scripting URIs (`javascript:`), and syntax matching major programming codes to prevent prompt injections or execution escapes.
+- **Daily Quotas:** Limits message frequencies according to subscription tiers (Free, Standard, Premium) or client IP addresses (Guests). Admin dashboards can toggle states, adjust default greetings, and modify query limits dynamically.
+
+### 3. Google Analytics 4 (GA4) Standalone Tracking
+- Stands independent of the Firebase SDK on the client side, using the standard `react-ga4` package.
+- **Automated Pageview Tracking:** Logs SPA route navigation hooks in the client layout.
+- **Exam Audits:** Fires telemetry for `test_start`, `test_submit`, and `test_auto_submitted_violation`.
+- **Commerce Funnels:** Measures checkout actions (`begin_checkout`) on membership pricing pages.
+- **Site Stability:** Logs client runtime errors to GA4 dashboard via the global exceptions handler (`errorLogger.js`).
+
+### 4. Cloudinary Audio Lifecycles
+- Listening exam segments host high-fidelity sound recordings on Cloudinary.
+- Includes a backend hook to automatically remove assets from Cloudinary when an Admin deletes a question record from MongoDB, maintaining clean storage states.
+
+---
+
+## 📡 Core API Endpoints
+
+The backend routes are prefix-scoped to `/api`. Key endpoints include:
+
+| Route Endpoint | HTTP Method | Functionality |
+| :--- | :--- | :--- |
+| `/api/user/:email/role` | `GET` | Decides current dashboard and navigation layouts based on user roles |
+| `/api/user/sync` | `POST` | Syncs current Firebase user metadata into local MongoDB |
+| `/api/mock-tests` | `GET` | Fetches lists of available full-length mock exams |
+| `/api/mock-tests/:id` | `GET` | Retrieves full mock test metadata and nested section questions |
+| `/api/mock-tests/start` | `POST` | Sets up a `MockTestResult` session, starts timer, and locks the anti-cheat monitor |
+| `/api/mock-tests/finalize` | `POST` | Auto-grades Listening & Reading, flags Writing & Speaking sections for instructor reviews |
+| `/api/submissions` | `GET` | Retrieves ungraded writing/speaking submissions for instructors |
+| `/api/submissions/:id/grade` | `POST` | Submits band scores (0-9) and qualitative comments |
+| `/api/chatbot/query` | `POST` | Submits messages to the Gemini 2.5 Flash chatbot |
+| `/api/chatbot/settings` | `GET` / `PUT` | Manages global controls, active states, custom greetings, and tier quotas |
 
 ---
 
 ## ⚙️ Environment Configuration
 
-To run the project locally, you need to configure the environment variables for both the frontend and backend.
+Set up local `.env` configuration files to wire up external services:
 
-### Backend (`backend/.env`)
-Create a `.env` file in the `backend` directory with the following keys:
+### Backend Configuration (`backend/.env`)
 ```env
 PORT=3000
 MONGODB_URI=your_mongodb_connection_string
-FIREBASE_KEY=your_firebase_admin_service_account_json_string
+FIREBASE_KEY=your_firebase_admin_sdk_json_string
+
+# Cloudinary (Optional, for automatic listening audio cleanups)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Gemini API (For AI Chatbot & IELTS Tutor)
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-### Frontend (`frontend/.env`)
-Create a `.env` file in the `frontend` directory with the following keys:
+### Frontend Configuration (`frontend/.env`)
 ```env
 VITE_local_url=http://localhost:3000/api/
-VITE_live_url=https://your-production-backend-url.com/api/
+VITE_live_url=https://your-production-backend.com/api/
+
+# Firebase configuration
 VITE_apiKey=your_firebase_api_key
 VITE_authDomain=your_firebase_auth_domain
 VITE_projectId=your_firebase_project_id
 VITE_storageBucket=your_firebase_storage_bucket
 VITE_messagingSenderId=your_firebase_messaging_sender_id
 VITE_appId=your_firebase_app_id
+
+# Google Analytics 4 Measurement ID
+VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
 ---
 
-## 🚀 Setup & Installation
+## 🚀 Setup & Local Installation
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- [MongoDB](https://www.mongodb.com/) (Local or Atlas)
-- A [Firebase](https://firebase.google.com/) Project
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- [MongoDB](https://www.mongodb.com/) (Atlas cluster or a running local instance)
+- A [Firebase Project](https://console.firebase.google.com/) with Authentication active
 
-### 1. Clone the repository
+### Step 1: Clone the repository
 ```bash
 git clone https://github.com/armanislams/MOCKEA.git
 cd MOCKEA
 ```
 
-### 2. Backend Setup
-```bash
-cd backend
-npm install
-# Ensure your .env file is created and populated
-npm run dev
-```
-The server will start on `http://localhost:3000`.
+### Step 2: Set up the Backend
+1. Open a terminal and navigate to the backend workspace:
+   ```bash
+   cd backend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create and populate your `.env` file based on the environment configurations section above.
+4. Launch the API server in development mode:
+   ```bash
+   npm run dev
+   ```
+   The backend will start listening on `http://localhost:3000`.
 
-### 3. Frontend Setup
-Open a new terminal window:
-```bash
-cd frontend
-npm install
-# Ensure your .env file is created and populated
-npm run dev
-```
-The client will start on `http://localhost:5173`.
-
----
-
-## 📡 API Endpoints Summary
-
-The backend exposes several RESTful endpoints under the `/api` prefix:
-
-- **`/api/user`**: User creation, profile retrieval, and authentication state syncing.
-- **`/api/note`**: CRUD operations for user study notes.
-- **`/api/reading`**: Fetching reading passages and submitting answers.
-- **`/api/questions`**: Managing test questions and formats.
-- **`/api/analytics`**: Retrieving user performance data and test statistics.
-
-*Detailed API documentation (Swagger/Postman collection) should be referenced separately.*
-
----
-
-## 🛠️ Maintenance & Deployment
-
-- **Frontend Deployment:** The frontend is configured for deployment on standard static hosting platforms or Vercel. Use `npm run build` to generate the production `dist` folder.
-- **Backend Deployment:** The backend includes a `vercel.json` configuration file, indicating it is set up for serverless deployment on Vercel. Ensure environment variables are securely added to the Vercel project settings.
-- **Error Handling:** The backend features a centralized `errorHandler.js` middleware. Refer to `backend/ERROR_HANDLER_GUIDE.md` for details on extending error management.
+### Step 3: Set up the Frontend
+1. Open a new terminal window and navigate to the frontend workspace:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create and populate your local `.env` file based on the environment configurations section above.
+4. Spin up the Vite dev server:
+   ```bash
+   npm run dev
+   ```
+   Open your browser to the local address displayed (usually `http://localhost:5173`).
 
 ---
 
-*For any technical issues or onboarding questions, please reach out to the engineering team lead.*
+## 🛡️ User Roles & Platform Navigation
+
+### Student Journey
+1. **Sign Up:** Register an account using Firebase authentication.
+2. **Modular Practice:** Access **Practice Labs** to practice individual Reading, Listening, Writing, or Speaking sections. 
+3. **Full Simulation:** Enter the **Mock Test Environment**, lock fullscreen, and complete a full 4-section timed test under anti-cheat supervision.
+4. **Review Analytics:** Track scores, view correct/incorrect answers for auto-graded parts, examine band score progress trends, and view detailed tutor reviews.
+
+### Instructor Review Center
+1. **Role Access:** Log in using credentials with certified `instructor` roles.
+2. **Locking Mechanism:** Lock specific student submissions to prevent multiple instructors from grading the same submission simultaneously.
+3. **Review & Evaluate:** Listen to speaking recordings, read essay assignments, assign band scores, and leave text feedback.
+
+### Admin Controls
+1. **User Management:** Manage, query, ban/unban users, and update account permissions or pricing tiers.
+2. **Content Management:** Create and edit practice sections using the unified components form builder. Combine multiple sections into full mock tests.
+3. **Chatbot Config:** Adjust daily quotas, change welcome dialogues, and toggle chatbot state parameters globally.
+
+---
+
+*For issues, bug reports, or details on production builds, contact the development lead or email support@mockea.com.*
