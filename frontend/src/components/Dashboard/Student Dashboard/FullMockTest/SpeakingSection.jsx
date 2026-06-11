@@ -215,18 +215,11 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
         let interval;
         if (isRecording) {
             interval = setInterval(() => {
-                setRecordingTime(prev => {
-                    if (prev >= maxRecordingTime - 1) {
-                        setIsRecording(false);
-                        // Let effect trigger the stop
-                        return maxRecordingTime;
-                    }
-                    return prev + 1;
-                });
+                setRecordingTime(prev => prev + 1);
             }, 1000);
         }
         return () => clearInterval(interval);
-    }, [isRecording, maxRecordingTime]);
+    }, [isRecording]);
 
     // Auto-Stop when max recording duration reached
     useEffect(() => {
