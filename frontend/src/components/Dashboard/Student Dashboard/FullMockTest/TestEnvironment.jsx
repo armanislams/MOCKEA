@@ -172,6 +172,18 @@ const TestEnvironment = () => {
 
     // --- Effects ---
 
+    // 0. Clear previous test caches on fresh test session startup
+    useEffect(() => {
+        const hasCache = !!localStorage.getItem(`test_cache_${id}`);
+        if (!hasCache) {
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('speaking_cache_') || key.startsWith('test_scratchpad_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+    }, [id]);
+
     // 1. Fetch Test Data
     const { data: test, isLoading } = useQuery({
         queryKey: ["test-session", id],

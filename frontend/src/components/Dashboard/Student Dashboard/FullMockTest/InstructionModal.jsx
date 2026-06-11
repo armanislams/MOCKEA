@@ -22,6 +22,22 @@ const InstructionModal = ({ test, onClose }) => {
     ];
 
     const handleStart = () => {
+        // Clear previous caches to start fresh
+        localStorage.removeItem(`test_cache_${test._id}`);
+        localStorage.removeItem(`test_scratchpad_${test._id}`);
+        if (test.sections?.speaking) {
+            test.sections.speaking.forEach(sec => {
+                if (sec?._id) {
+                    localStorage.removeItem(`speaking_cache_${sec._id}`);
+                }
+            });
+        }
+        // General cleanup of any lingering caches
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('test_cache_') || key.startsWith('test_scratchpad_') || key.startsWith('speaking_cache_')) {
+                localStorage.removeItem(key);
+            }
+        });
         navigate(`/test/${test._id}`);
     };
 
