@@ -68,6 +68,26 @@ export const alerts = {
     });
   },
 
+  confirmTerminateMockTest: () => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "warning",
+      title: "Terminate Mock Test Early?",
+      text: "Are you sure you want to terminate the test now? Your current answers will be submitted for grading, and any unanswered questions will be marked as blank.",
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: "Yes, Terminate and Submit",
+      denyButtonText: "Cancel & Exit",
+      cancelButtonText: "Resume Test",
+      customClass: {
+        ...BASE_SWAL_CONFIG.customClass,
+        denyButton: "rounded-xl px-6 py-3 font-bold btn btn-error text-white border-none mx-2",
+        confirmButton: "rounded-xl px-6 py-3 font-bold btn btn-primary text-white border-none mx-2",
+        cancelButton: "rounded-xl px-6 py-3 font-bold btn btn-ghost text-slate-500 mx-2 hover:bg-slate-50"
+      }
+    });
+  },
+
   confirmCancelPractice: (testType = "practice test") => {
     return Swal.fire({
       ...BASE_SWAL_CONFIG,

@@ -165,6 +165,18 @@ const TestEnvironment = () => {
         }
     };
 
+    const handleTerminateTestClick = async () => {
+        const result = await alerts.confirmTerminateMockTest();
+        if (result.isConfirmed) {
+            await handleSaveProgress();
+            await handleFinalSubmit();
+        } else if (result.isDenied) {
+            localStorage.removeItem(`test_cache_${id}`);
+            if (document.fullscreenElement) document.exitFullscreen();
+            navigate("/dashboard/full-mock-test");
+        }
+    };
+
     const handleShowTitleIfClipped = (e, title) => {
         const el = e.currentTarget;
         if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
@@ -591,10 +603,16 @@ const TestEnvironment = () => {
 
                 <div className="flex items-center gap-8">
                     <button 
-                        onClick={handleNextModule}
-                        className="btn btn-primary btn-lg rounded-2xl px-10 h-14 text-sm font-black shadow-xl shadow-primary/30 flex items-center gap-3 group"
+                        onClick={answeredQuestions < totalQuestions ? handleTerminateTestClick : handleNextModule}
+                        className={`btn btn-lg rounded-2xl px-10 h-14 text-sm font-black shadow-xl flex items-center gap-3 group ${
+                            answeredQuestions < totalQuestions 
+                            ? "btn-error text-white shadow-error/20" 
+                            : "btn-primary shadow-primary/30"
+                        }`}
                     >
-                        {currentModuleIdx === 3 ? "FINISH TEST" : "CONTINUE TO NEXT SECTION"}
+                        {currentModuleIdx === 3 && answeredQuestions === totalQuestions 
+                            ? "FINISH TEST" 
+                            : (answeredQuestions < totalQuestions ? "TERMINATE TEST" : "CONTINUE TO NEXT SECTION")}
                         <PiCaretRightBold className="group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
