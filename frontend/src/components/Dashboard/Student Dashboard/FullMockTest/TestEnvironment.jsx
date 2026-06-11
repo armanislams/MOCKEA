@@ -122,8 +122,12 @@ const TestEnvironment = () => {
 
     const handleNextModule = async () => {
         if (answeredQuestions < totalQuestions) {
-            const remaining = totalQuestions - answeredQuestions;
-            toast.error(`Please answer all ${totalQuestions} questions before continuing (${remaining} remaining).`);
+            if (currentModuleIdx === 2) {
+                toast.error("Please answer both Writing Task 1 and Writing Task 2 before continuing.");
+            } else {
+                const remaining = totalQuestions - answeredQuestions;
+                toast.error(`Please answer all ${totalQuestions} questions before continuing (${remaining} remaining).`);
+            }
             return;
         }
         await handleSaveProgress();
@@ -345,9 +349,32 @@ const TestEnvironment = () => {
         }
         if (currentModuleIdx === 2) {
             const writingData = test.sections?.writing?.[0];
+            if (!writingData) return { total: 0, answered: 0 };
+            
+            const rawText = answers[writingData._id] || "";
+            let hasT1 = false;
+            let hasT2 = false;
+            
+            if (rawText.includes("--- TASK 2")) {
+                const match = rawText.match(/--- TASK 1.*---\n([\s\S]*?)\n\n--- TASK 2.*---\n([\s\S]*)/);
+                if (match) {
+                    hasT1 = match[1]?.trim() !== "";
+                    hasT2 = match[2]?.trim() !== "";
+                } else {
+                    const parts = rawText.split(/--- TASK 2.*---\n?/);
+                    const t1 = parts[0].replace(/--- TASK 1.*---\n?/, "").trim();
+                    const t2 = parts[1] ? parts[1].trim() : "";
+                    hasT1 = t1 !== "";
+                    hasT2 = t2 !== "";
+                }
+            } else {
+                hasT1 = rawText.trim() !== "";
+                hasT2 = false;
+            }
+            
             return {
-                total: writingData ? 1 : 0,
-                answered: writingData && answers[writingData._id]?.trim() ? 1 : 0
+                total: 2,
+                answered: (hasT1 ? 1 : 0) + (hasT2 ? 1 : 0)
             };
         }
         if (currentModuleIdx === 3) {
