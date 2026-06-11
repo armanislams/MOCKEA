@@ -13,14 +13,20 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
 
     const rawText = answers[data?._id] || "";
 
-    // Parse the combined text into task1 and task2 in a robust, reactive manner
     const { task1Text, task2Text } = useMemo(() => {
         let t1 = "";
         let t2 = "";
         if (rawText.includes("--- TASK 2")) {
-            const parts = rawText.split(/--- TASK 2.*---\n?/);
-            t1 = parts[0].replace(/--- TASK 1.*---\n?/, "").trim();
-            t2 = parts[1] ? parts[1].trim() : "";
+            const match = rawText.match(/--- TASK 1.*---\n([\s\S]*?)\n\n--- TASK 2.*---\n([\s\S]*)/);
+            if (match) {
+                t1 = match[1];
+                t2 = match[2];
+            } else {
+                const parts = rawText.split(/--- TASK 2.*---\n?/);
+                t1 = parts[0].replace(/--- TASK 1.*---\n?/, "");
+                if (t1.endsWith("\n\n")) t1 = t1.slice(0, -2);
+                t2 = parts[1] || "";
+            }
         } else {
             t1 = rawText;
         }
