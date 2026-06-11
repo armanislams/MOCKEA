@@ -41,6 +41,7 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     const audioChunksRef = useRef([]);
     const visualizerCleanupRef = useRef(null);
     const recordingTimeRef = useRef(0);
+    const hasInitializedRef = useRef({});
     const [mediaStream, setMediaStream] = useState(null);
 
     // Format speaking questions
@@ -93,6 +94,7 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     // Load URL cache from localStorage or parent answers on mount
     useEffect(() => {
         if (!data?._id) return;
+        if (hasInitializedRef.current[data._id]) return;
 
         let loaded = false;
         const cached = localStorage.getItem(`speaking_cache_${data._id}`);
@@ -147,6 +149,8 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                 if (parsedPart3.some(u => !!u)) setPart3Urls(parsedPart3);
             }
         }
+
+        hasInitializedRef.current[data._id] = true;
     }, [data?._id, part1Questions.length, part3Questions.length, answers]);
 
     // Save URL cache to localStorage when URLs change
