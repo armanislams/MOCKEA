@@ -101,7 +101,7 @@ const TestEnvironment = () => {
         try {
             await axiosSecure.post("/mock-tests/submit-section", {
                 resultId,
-                sectionType: ['reading', 'listening', 'writing', 'speaking'][currentModuleIdx],
+                sectionType: ['listening', 'reading', 'writing', 'speaking'][currentModuleIdx],
                 answers,
                 timeTaken: (test.totalDuration * 60) - timeLeft
             });
@@ -139,7 +139,7 @@ const TestEnvironment = () => {
         await handleSaveProgress();
         if (currentModuleIdx < 3) {
             setCurrentModuleIdx(prev => prev + 1);
-            toast.success(`Moving to ${['Listening', 'Writing', 'Speaking'][currentModuleIdx]} section`);
+            toast.success(`Moving to ${['Reading', 'Writing', 'Speaking'][currentModuleIdx]} section`);
         } else {
             handleFinalSubmit();
         }
@@ -411,14 +411,14 @@ const TestEnvironment = () => {
     const { total: totalQuestions, answered: answeredQuestions } = useMemo(() => {
         if (!test) return { total: 0, answered: 0 };
         if (currentModuleIdx === 0) {
-            const questions = test.sections?.reading?.[0]?.questions || [];
+            const questions = test.sections?.listening?.[0]?.questions || [];
             return {
                 total: questions.length,
                 answered: questions.filter(q => !!answers[q.id || q._id]).length
             };
         }
         if (currentModuleIdx === 1) {
-            const questions = test.sections?.listening?.[0]?.questions || [];
+            const questions = test.sections?.reading?.[0]?.questions || [];
             return {
                 total: questions.length,
                 answered: questions.filter(q => !!answers[q.id || q._id]).length
@@ -536,7 +536,7 @@ const TestEnvironment = () => {
                         {currentModuleIdx + 1}
                     </div>
                     <span className="text-xs font-black uppercase tracking-widest text-primary">
-                        {['Reading', 'Listening', 'Writing', 'Speaking'][currentModuleIdx]} Section
+                        {['Listening', 'Reading', 'Writing', 'Speaking'][currentModuleIdx]} Section
                     </span>
                 </div>
 
@@ -563,16 +563,16 @@ const TestEnvironment = () => {
             </header>
 
             <main className="flex-1 overflow-hidden relative">
-                {currentModuleIdx === 0 && test?.sections?.reading?.[0] && (
-                    <ReadingSection 
-                        data={test.sections.reading[0]} 
+                {currentModuleIdx === 0 && test?.sections?.listening?.[0] && (
+                    <ListeningSection 
+                        data={test.sections.listening[0]} 
                         answers={answers} 
                         onAnswerChange={handleAnswerChange} 
                     />
                 )}
-                {currentModuleIdx === 1 && test?.sections?.listening?.[0] && (
-                    <ListeningSection 
-                        data={test.sections.listening[0]} 
+                {currentModuleIdx === 1 && test?.sections?.reading?.[0] && (
+                    <ReadingSection 
+                        data={test.sections.reading[0]} 
                         answers={answers} 
                         onAnswerChange={handleAnswerChange} 
                     />

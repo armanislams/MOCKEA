@@ -15,8 +15,8 @@ const InstructionModal = ({ test, onClose }) => {
     const navigate = useNavigate();
 
     const modules = [
-        { label: "Reading", duration: "60 minutes", details: "3 passages · 40 questions", icon: <PiBookOpen /> },
         { label: "Listening", duration: "30 minutes", details: "4 parts · 40 questions", icon: <PiEar /> },
+        { label: "Reading", duration: "60 minutes", details: "3 passages · 40 questions", icon: <PiBookOpen /> },
         { label: "Writing", duration: "60 minutes", details: "2 tasks", icon: <PiPencilLine /> },
         { label: "Speaking", duration: "15 minutes", details: "3 parts", icon: <PiMicrophoneStage /> },
     ];
@@ -91,7 +91,7 @@ const InstructionModal = ({ test, onClose }) => {
                         </h3>
                         <ul className="space-y-3">
                             {[
-                                "The test will proceed in order: Reading → Listening → Writing",
+                                "The test will proceed in order: Listening → Reading → Writing → Speaking",
                                 "Each module has its own timer. You cannot go back to a previous module.",
                                 "Your answers are auto-saved as you progress",
                                 "Do not refresh or leave the page during the test",
