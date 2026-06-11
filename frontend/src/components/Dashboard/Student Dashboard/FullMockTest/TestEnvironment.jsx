@@ -24,6 +24,9 @@ const TestEnvironment = () => {
 
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isStarted, setIsStarted] = useState(() => !!localStorage.getItem(`test_cache_${id}`));
+    const [isTerminating, setIsTerminating] = useState(() => {
+        return !!localStorage.getItem(`test_cache_${id}`);
+    });
     
     // Lazy initializers for crash recovery
     const [answers, setAnswers] = useState(() => {
@@ -172,17 +175,54 @@ const TestEnvironment = () => {
 
     // --- Effects ---
 
-    // 0. Clear previous test caches on fresh test session startup
+    // 0. Clear previous test caches on fresh test session startup OR terminate reload
     useEffect(() => {
-        const hasCache = !!localStorage.getItem(`test_cache_${id}`);
-        if (!hasCache) {
+        const cachedData = localStorage.getItem(`test_cache_${id}`);
+        if (cachedData) {
+            if (isTerminating) {
+                try {
+                    const parsed = JSON.parse(cachedData);
+                    const resId = parsed.resultId;
+                    
+                    toast.error("Test terminated: Page reload is not allowed during the exam.");
+                    
+                    const performTermination = async () => {
+                        if (resId) {
+                            try {
+                                await axiosSecure.post("/mock-tests/finalize", { resultId: resId });
+                            } catch (err) {
+                                console.error("Failed to finalize test on reload:", err);
+                            }
+                        }
+                        
+                        // Clear all caches
+                        localStorage.removeItem(`test_cache_${id}`);
+                        localStorage.removeItem(`test_scratchpad_${id}`);
+                        Object.keys(localStorage).forEach(key => {
+                            if (key.startsWith('speaking_cache_')) {
+                                localStorage.removeItem(key);
+                            }
+                        });
+                        
+                        navigate("/dashboard/full-mock-test");
+                    };
+                    
+                    performTermination();
+                } catch (e) {
+                    console.error("Error handling reload termination:", e);
+                    localStorage.removeItem(`test_cache_${id}`);
+                    navigate("/dashboard/full-mock-test");
+                }
+            }
+        } else {
+            // New test session startup
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('speaking_cache_') || key.startsWith('test_scratchpad_')) {
                     localStorage.removeItem(key);
                 }
             });
         }
-    }, [id]);
+    }, [id, isTerminating, axiosSecure, navigate]);
 
     // 1. Fetch Test Data
     const { data: test, isLoading } = useQuery({
@@ -412,6 +452,8 @@ const TestEnvironment = () => {
             }
         };
     }, []);
+
+    if (isTerminating) return <Loader />;
 
     if (isLoading) return <Loader/>
 
