@@ -16,6 +16,40 @@ import {
     PiMicrophoneStageFill
 } from "react-icons/pi";
 
+const parseSpeakingSubmission = (content) => {
+    if (!content) return [];
+    const parts = content.split(/(?=--- Part \d+)/);
+    const parsed = [];
+    
+    parts.forEach(partText => {
+        const titleMatch = partText.match(/--- (Part \d+:[^\n]+) ---/);
+        const title = titleMatch ? titleMatch[1] : "Speaking Part";
+        
+        const items = [];
+        const lines = partText.split("\n");
+        let currentItem = null;
+        
+        lines.forEach(line => {
+            const cleanLine = line.trim();
+            if ((cleanLine.startsWith("Q") && cleanLine.includes(":")) || cleanLine.startsWith("Cue Card:")) {
+                if (currentItem) items.push(currentItem);
+                const label = cleanLine.startsWith("Cue Card:") ? "Cue Card" : cleanLine.split(":")[0];
+                const questionText = cleanLine.substring(cleanLine.indexOf(":") + 1).trim();
+                currentItem = { label, question: questionText, audioUrl: "" };
+            } else if (cleanLine.startsWith("Answer:")) {
+                if (currentItem) {
+                    currentItem.audioUrl = cleanLine.replace("Answer:", "").trim();
+                }
+            }
+        });
+        if (currentItem) items.push(currentItem);
+        if (items.length > 0) {
+            parsed.push({ title, items });
+        }
+    });
+    return parsed;
+};
+
 const ReviewDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -179,11 +213,11 @@ const ReviewDetail = () => {
                                 )}
                                 {activeTab === 'speaking' && (
                                     <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
-                                        <PiMicrophoneStageFill className="text-6xl text-green-500" />
+                                        <PiMicrophoneStageFill className="text-6xl text-green-500 animate-bounce" />
                                         <h3 className="text-2xl font-black">Speaking Evaluation</h3>
-                                        <p className="text-base-content/50">Instructor-led speaking assessments are conducted live. Review the recording below if available.</p>
+                                        <p className="text-base-content/50">Your verbal answers are loaded on the right. You can play them sequentially.</p>
                                         <div className="w-full h-1 bg-base-200 rounded-full overflow-hidden">
-                                            <div className="w-1/3 h-full bg-success" />
+                                            <div className="w-full h-full bg-success" />
                                         </div>
                                     </div>
                                 )}
@@ -209,35 +243,35 @@ const ReviewDetail = () => {
 
                                             return (
                                                 <div key={idx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
-                                                ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
-                                            }`}>
-                                                <div className="flex items-start justify-between gap-4">
-                                                    <div className="flex-1 space-y-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
-                                                            <span className="text-xs font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
-                                                        </div>
-                                                        
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div className="space-y-1">
-                                                                <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
-                                                                <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
-                                                                    {ans.userAnswer || "No Answer"}
-                                                                </p>
+                                                    ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
+                                                }`}>
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div className="flex-1 space-y-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
+                                                                <span className="text-xs font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
                                                             </div>
-                                                            <div className="space-y-1">
-                                                                <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
-                                                                <p className="font-black text-lg text-success">{ans.correctAnswer}</p>
+                                                            
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div className="space-y-1">
+                                                                    <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
+                                                                    <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
+                                                                        {ans.userAnswer || "No Answer"}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
+                                                                    <p className="font-black text-lg text-success">{ans.correctAnswer}</p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="text-3xl">
-                                                        {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
+                                                        <div className="text-3xl">
+                                                            {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })}
                                     </>
                                 ) : (
                                     <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm space-y-6">
@@ -245,9 +279,35 @@ const ReviewDetail = () => {
                                             <PiPencilLineFill className="text-primary" />
                                             Your Submission
                                         </h3>
-                                        <div className="bg-base-100 p-8 rounded-[2rem] border border-base-300 shadow-inner min-h-[300px] leading-relaxed whitespace-pre-wrap font-medium text-base-content/80">
-                                            {currentSectionResult.answers[0]?.userAnswer || "No response recorded."}
-                                        </div>
+                                        {activeTab === 'speaking' ? (
+                                            <div className="space-y-8 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                                {parseSpeakingSubmission(currentSectionResult.answers[0]?.userAnswer).map((part, partIdx) => (
+                                                    <div key={partIdx} className="space-y-4">
+                                                        <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b pb-1">{part.title}</h4>
+                                                        <div className="space-y-4">
+                                                            {part.items.map((item, itemIdx) => (
+                                                                <div key={itemIdx} className="p-5 bg-base-50 border border-base-200 rounded-2xl space-y-3">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className="badge badge-primary font-black text-[9px] uppercase tracking-wider">{item.label}</span>
+                                                                    </div>
+                                                                    <p className="text-sm font-bold text-slate-700">{item.question}</p>
+                                                                    {item.audioUrl && (
+                                                                        <audio src={item.audioUrl} controls className="w-full rounded-xl border border-slate-200 shadow-sm" />
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {parseSpeakingSubmission(currentSectionResult.answers[0]?.userAnswer).length === 0 && (
+                                                    <p className="text-sm font-semibold text-slate-400 italic">No responses recorded.</p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="bg-base-100 p-8 rounded-[2rem] border border-base-300 shadow-inner min-h-[300px] leading-relaxed whitespace-pre-wrap font-medium text-base-content/80">
+                                                {currentSectionResult.answers[0]?.userAnswer || "No response recorded."}
+                                            </div>
+                                        )}
                                         <div className="alert alert-info rounded-2xl shadow-sm border-none bg-primary/10 text-primary">
                                             <PiInfoFill className="w-5 h-5" />
                                             <span className="text-xs font-bold uppercase tracking-widest">Evaluation in progress. Band descriptors will be visible once graded.</span>

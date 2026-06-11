@@ -20,6 +20,39 @@ import {
     PiMagnifyingGlassFill,
     PiClockFill
 } from "react-icons/pi";
+const parseSpeakingSubmission = (content) => {
+    if (!content) return [];
+    const parts = content.split(/(?=--- Part \d+)/);
+    const parsed = [];
+    
+    parts.forEach(partText => {
+        const titleMatch = partText.match(/--- (Part \d+:[^\n]+) ---/);
+        const title = titleMatch ? titleMatch[1] : "Speaking Part";
+        
+        const items = [];
+        const lines = partText.split("\n");
+        let currentItem = null;
+        
+        lines.forEach(line => {
+            const cleanLine = line.trim();
+            if ((cleanLine.startsWith("Q") && cleanLine.includes(":")) || cleanLine.startsWith("Cue Card:")) {
+                if (currentItem) items.push(currentItem);
+                const label = cleanLine.startsWith("Cue Card:") ? "Cue Card" : cleanLine.split(":")[0];
+                const questionText = cleanLine.substring(cleanLine.indexOf(":") + 1).trim();
+                currentItem = { label, question: questionText, audioUrl: "" };
+            } else if (cleanLine.startsWith("Answer:")) {
+                if (currentItem) {
+                    currentItem.audioUrl = cleanLine.replace("Answer:", "").trim();
+                }
+            }
+        });
+        if (currentItem) items.push(currentItem);
+        if (items.length > 0) {
+            parsed.push({ title, items });
+        }
+    });
+    return parsed;
+};
 
 const GradeSubmissions = () => {
     const axiosSecure = useAxiosSecure();
@@ -29,6 +62,7 @@ const GradeSubmissions = () => {
     
     /* --- Full Mock Test State --- */
     const [scores, setScores] = useState({});
+    const [expandedMockResult, setExpandedMockResult] = useState(null);
     const { data: results = [], isLoading: loadingMock } = useQuery({
         queryKey: ["all-mock-results"],
         queryFn: async () => {
@@ -175,7 +209,24 @@ const GradeSubmissions = () => {
                                                         <div className="flex flex-col min-w-[120px]">
                                                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{type}</span>
                                                             {section.isGraded ? (
-                                                                <span className="text-lg font-black text-emerald-600">{section.score}</span>
+                                                                <div className="flex items-center gap-3 mt-1">
+                                                                    <span className="text-lg font-black text-emerald-600">{section.score}</span>
+                                                                    <button
+                                                                        onClick={() => setExpandedMockResult(prev => 
+                                                                            prev && prev.resultId === result._id && prev.type === type 
+                                                                                ? null 
+                                                                                : { resultId: result._id, type }
+                                                                        )}
+                                                                        className={`btn btn-xs btn-circle ${
+                                                                            expandedMockResult && expandedMockResult.resultId === result._id && expandedMockResult.type === type
+                                                                                ? "btn-secondary text-white"
+                                                                                : "btn-ghost text-slate-400 hover:text-primary hover:bg-slate-100"
+                                                                        }`}
+                                                                        title="View Submission"
+                                                                    >
+                                                                        👁
+                                                                    </button>
+                                                                </div>
                                                             ) : (
                                                                 <div className="flex items-center gap-2 mt-1">
                                                                     <input 
@@ -196,6 +247,21 @@ const GradeSubmissions = () => {
                                                                     >
                                                                         <PiCheckBold />
                                                                     </button>
+                                                                    <button
+                                                                        onClick={() => setExpandedMockResult(prev => 
+                                                                            prev && prev.resultId === result._id && prev.type === type 
+                                                                                ? null 
+                                                                                : { resultId: result._id, type }
+                                                                        )}
+                                                                        className={`btn btn-sm btn-square rounded-lg ${
+                                                                            expandedMockResult && expandedMockResult.resultId === result._id && expandedMockResult.type === type
+                                                                                ? "btn-secondary text-white"
+                                                                                : "btn-ghost border border-base-300 bg-white hover:bg-base-100 text-slate-500"
+                                                                        }`}
+                                                                        title="View Submission"
+                                                                    >
+                                                                        👁
+                                                                    </button>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -204,6 +270,54 @@ const GradeSubmissions = () => {
                                             })}
                                         </div>
                                     </div>
+                                    {/* Expanded Submission Detail Panel */}
+                                    {expandedMockResult && expandedMockResult.resultId === result._id && (() => {
+                                        const type = expandedMockResult.type;
+                                        const section = result.sectionResults.find(s => s.sectionType === type);
+                                        if (!section) return null;
+                                        return (
+                                            <div className="px-8 pb-8 border-t border-slate-100 pt-6 bg-slate-50/50">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                                                        {type === 'writing' ? 'Writing Task Submission' : 'Speaking Session Recordings'}
+                                                    </h4>
+                                                    <button 
+                                                        onClick={() => setExpandedMockResult(null)}
+                                                        className="btn btn-ghost btn-xs rounded-lg font-black uppercase text-[10px]"
+                                                    >
+                                                        Close
+                                                    </button>
+                                                </div>
+                                                {type === 'writing' ? (
+                                                    <div className="bg-white p-6 rounded-2xl border border-slate-200 text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-700 shadow-inner max-h-[400px] overflow-y-auto custom-scrollbar">
+                                                        {section.answers[0]?.userAnswer || "No writing response recorded."}
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                                        {parseSpeakingSubmission(section.answers[0]?.userAnswer).map((part, partIdx) => (
+                                                            <div key={partIdx} className="space-y-3 col-span-full">
+                                                                <h5 className="text-[10px] font-black uppercase tracking-widest text-primary border-b pb-1 mt-2">{part.title}</h5>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    {part.items.map((item, itemIdx) => (
+                                                                        <div key={itemIdx} className="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                                                                            <span className="badge badge-primary font-black text-[8px] uppercase tracking-wider">{item.label}</span>
+                                                                            <p className="text-xs font-bold text-slate-700 leading-tight">{item.question}</p>
+                                                                            {item.audioUrl && (
+                                                                                <audio src={item.audioUrl} controls className="w-full rounded-lg" />
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {parseSpeakingSubmission(section.answers[0]?.userAnswer).length === 0 && (
+                                                            <p className="text-xs font-bold text-slate-400 italic">No recordings recorded.</p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             ))
                         )}

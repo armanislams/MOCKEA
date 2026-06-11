@@ -124,6 +124,8 @@ const TestEnvironment = () => {
         if (answeredQuestions < totalQuestions) {
             if (currentModuleIdx === 2) {
                 toast.error("Please answer both Writing Task 1 and Writing Task 2 before continuing.");
+            } else if (currentModuleIdx === 3) {
+                toast.error("Please complete all 3 parts of the Speaking section before finishing the test.");
             } else {
                 const remaining = totalQuestions - answeredQuestions;
                 toast.error(`Please answer all ${totalQuestions} questions before continuing (${remaining} remaining).`);
@@ -379,10 +381,13 @@ const TestEnvironment = () => {
         }
         if (currentModuleIdx === 3) {
             const speakingData = test.sections?.speaking?.[0];
-            const key = speakingData?._id || 'speaking_attempt';
+            if (!speakingData) return { total: 0, answered: 0 };
+            const p1 = answers[speakingData._id + '_part1_completed'] === 'completed' ? 1 : 0;
+            const p2 = answers[speakingData._id + '_part2_completed'] === 'completed' ? 1 : 0;
+            const p3 = answers[speakingData._id + '_part3_completed'] === 'completed' ? 1 : 0;
             return {
-                total: speakingData ? 1 : 0,
-                answered: answers[key] === 'started' ? 1 : 0
+                total: 3,
+                answered: p1 + p2 + p3
             };
         }
     }, [test, currentModuleIdx, answers]);

@@ -1,13 +1,177 @@
-import { useState, useEffect } from "react";
-import { PiMicrophoneStage, PiClock, PiPlay, PiInfo } from "react-icons/pi";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { 
+    PiMicrophoneFill, 
+    PiMicrophoneStageFill, 
+    PiStopCircleFill, 
+    PiCheckCircleFill, 
+    PiInfoFill, 
+    PiClockFill, 
+    PiWaveformFill, 
+    PiUserCircleFill, 
+    PiArrowLeftBold,
+    PiPlay,
+    PiClock,
+    PiMicrophoneStage,
+    PiInfo
+} from "react-icons/pi";
 import Swal from "sweetalert2";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
+    // Timers & Active states
     const [prepTime, setPrepTime] = useState(60);
     const [isPrepActive, setIsPrepActive] = useState(false);
-    const [speakingTime, setSpeakingTime] = useState(120);
-    const [isSpeakingActive, setIsSpeakingActive] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [isRecording, setIsRecording] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
+    // Active Navigation
+    const [activePart, setActivePart] = useState(1);
+    const [part1QuestionIdx, setPart1QuestionIdx] = useState(0);
+    const [part3QuestionIdx, setPart3QuestionIdx] = useState(0);
+
+    // Audio State Cache
+    const [part1Urls, setPart1Urls] = useState([]);
+    const [part2Url, setPart2Url] = useState("");
+    const [part3Urls, setPart3Urls] = useState([]);
+
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+    const visualizerCleanupRef = useRef(null);
+    const recordingTimeRef = useRef(0);
+    const [mediaStream, setMediaStream] = useState(null);
+
+    // Format speaking questions
+    const part1Questions = useMemo(() => {
+        return data?.speakingPart1Questions?.length > 0 
+            ? data.speakingPart1Questions 
+            : [
+                "Do you work or study?",
+                "What do you like most about your home town?",
+                "How do you usually spend your weekends?",
+                "What is your favorite type of music or movie?"
+              ];
+    }, [data]);
+
+    const part3Questions = useMemo(() => {
+        return data?.speakingPart3Questions?.length > 0 
+            ? data.speakingPart3Questions 
+            : [
+                "Why do you think protecting historic structures or old buildings is important?",
+                "How do buildings of the past differ from modern architectural designs?",
+                "What kind of buildings or homes do you think people will live in in the future?"
+              ];
+    }, [data]);
+
+    // Active Audio URL for review player
+    const activeAudioUrl = useMemo(() => {
+        if (activePart === 1) return part1Urls[part1QuestionIdx] || null;
+        if (activePart === 2) return part2Url || null;
+        if (activePart === 3) return part3Urls[part3QuestionIdx] || null;
+        return null;
+    }, [activePart, part1QuestionIdx, part3QuestionIdx, part1Urls, part2Url, part3Urls]);
+
+    const studioSubtitle = useMemo(() => {
+        if (activePart === 1) return `Part 1 of 3 • Question ${part1QuestionIdx + 1} of ${part1Questions.length}`;
+        if (activePart === 3) return `Part 3 of 3 • Question ${part3QuestionIdx + 1} of ${part3Questions.length}`;
+        return "Part 2 of 3 • Cue Card Response";
+    }, [activePart, part1QuestionIdx, part1Questions, part3QuestionIdx, part3Questions]);
+
+    const maxRecordingTime = useMemo(() => {
+        if (activePart === 1) return 40;
+        if (activePart === 3) return 50;
+        return 120; // Part 2 Cue Card
+    }, [activePart]);
+
+    // Track recording time via Ref to avoid closure stale bugs
+    useEffect(() => {
+        recordingTimeRef.current = recordingTime;
+    }, [recordingTime]);
+
+    // Load URL cache from localStorage on mount
+    useEffect(() => {
+        if (data?._id) {
+            const cached = localStorage.getItem(`speaking_cache_${data._id}`);
+            if (cached) {
+                try {
+                    const parsed = JSON.parse(cached);
+                    if (parsed.part1Urls?.length === part1Questions.length) setPart1Urls(parsed.part1Urls);
+                    if (parsed.part2Url) setPart2Url(parsed.part2Url);
+                    if (parsed.part3Urls?.length === part3Questions.length) setPart3Urls(parsed.part3Urls);
+                } catch (e) {
+                    console.error("Failed to restore speaking cache:", e);
+                }
+            }
+        }
+    }, [data?._id, part1Questions.length, part3Questions.length]);
+
+    // Save URL cache to localStorage when URLs change
+    useEffect(() => {
+        if (data?._id && (part1Urls.length > 0 || part2Url || part3Urls.length > 0)) {
+            localStorage.setItem(`speaking_cache_${data._id}`, JSON.stringify({
+                part1Urls,
+                part2Url,
+                part3Urls
+            }));
+        }
+    }, [part1Urls, part2Url, part3Urls, data?._id]);
+
+    // Initialize/sync URL arrays when questions change
+    useEffect(() => {
+        if (data) {
+            setPart1Urls(prev => prev.length === part1Questions.length ? prev : new Array(part1Questions.length).fill(""));
+            setPart3Urls(prev => prev.length === part3Questions.length ? prev : new Array(part3Questions.length).fill(""));
+        }
+    }, [data, part1Questions.length, part3Questions.length]);
+
+    // Format & submit the speaking responses string to master answers
+    useEffect(() => {
+        if (!data?._id) return;
+
+        const hasPart1 = part1Urls.some(u => !!u);
+        const hasPart2 = !!part2Url;
+        const hasPart3 = part3Urls.some(u => !!u);
+
+        if (!hasPart1 && !hasPart2 && !hasPart3) return;
+
+        const lines = [];
+        if (hasPart1) {
+            lines.push("--- Part 1 Interview ---");
+            part1Questions.forEach((q, idx) => {
+                if (part1Urls[idx]) {
+                    lines.push(`Q${idx + 1}: ${q}\nAnswer: ${part1Urls[idx]}`);
+                }
+            });
+        }
+        if (hasPart2) {
+            lines.push("--- Part 2 Cue Card ---");
+            lines.push(`Cue Card: ${data.speakingPrompt || data.question || "Describe a historical building you have visited."}\nAnswer: ${part2Url}`);
+        }
+        if (hasPart3) {
+            lines.push("--- Part 3 Discussion ---");
+            part3Questions.forEach((q, idx) => {
+                if (part3Urls[idx]) {
+                    lines.push(`Q${idx + 1}: ${q}\nAnswer: ${part3Urls[idx]}`);
+                }
+            });
+        }
+
+        const combined = lines.join("\n\n");
+        onAnswerChange(data._id, combined);
+
+        // Compute completion keys
+        const p1Complete = part1Urls.length > 0 && part1Urls.every(u => !!u);
+        const p2Complete = !!part2Url;
+        const p3Complete = part3Urls.length > 0 && part3Urls.every(u => !!u);
+
+        onAnswerChange(data._id + '_part1_completed', p1Complete ? 'completed' : '');
+        onAnswerChange(data._id + '_part2_completed', p2Complete ? 'completed' : '');
+        onAnswerChange(data._id + '_part3_completed', p3Complete ? 'completed' : '');
+    }, [part1Urls, part2Url, part3Urls, data, part1Questions, part3Questions, onAnswerChange]);
+
+    // 10s Prep Timer Warn popup
     useEffect(() => {
         if (prepTime === 10 && isPrepActive) {
             Swal.fire({
@@ -28,6 +192,7 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
         }
     }, [prepTime, isPrepActive]);
 
+    // Prep Countdown Timer
     useEffect(() => {
         let interval;
         if (isPrepActive) {
@@ -35,7 +200,7 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                 setPrepTime(prev => {
                     if (prev <= 1) {
                         setIsPrepActive(false);
-                        setIsSpeakingActive(true);
+                        startRecording();
                         return 0;
                     }
                     return prev - 1;
@@ -45,140 +210,659 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
         return () => clearInterval(interval);
     }, [isPrepActive]);
 
+    // Recording Time Progress Timer
     useEffect(() => {
         let interval;
-        if (isSpeakingActive) {
+        if (isRecording) {
             interval = setInterval(() => {
-                setSpeakingTime(prev => {
-                    if (prev <= 1) {
-                        setIsSpeakingActive(false);
-                        return 0;
+                setRecordingTime(prev => {
+                    if (prev >= maxRecordingTime - 1) {
+                        setIsRecording(false);
+                        // Let effect trigger the stop
+                        return maxRecordingTime;
                     }
-                    return prev - 1;
+                    return prev + 1;
                 });
             }, 1000);
         }
         return () => clearInterval(interval);
-    }, [isSpeakingActive]);
+    }, [isRecording, maxRecordingTime]);
 
-    const isAttempted = answers[data?._id || 'speaking_attempt'] === 'started';
+    // Auto-Stop when max recording duration reached
+    useEffect(() => {
+        if (isRecording && recordingTime >= maxRecordingTime) {
+            stopRecording();
+            toast.info(`Maximum speaking time (${maxRecordingTime} seconds) reached. Recording stopped.`);
+        }
+    }, [recordingTime, isRecording, maxRecordingTime]);
+
+    // Reset recording timer on sub-question switch
+    useEffect(() => {
+        setRecordingTime(0);
+        setIsPrepActive(false);
+    }, [part1QuestionIdx, part3QuestionIdx, activePart]);
+
+    // Web Audio Soundwave Canvas Visualizer
+    const canvasCallback = useCallback(
+        (canvas) => {
+            if (visualizerCleanupRef.current) {
+                visualizerCleanupRef.current();
+                visualizerCleanupRef.current = null;
+            }
+
+            if (!canvas || !mediaStream) return;
+
+            let audioCtx;
+            let analyser;
+            let source;
+            let animationFrameId;
+
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 128;
+
+                source = audioCtx.createMediaStreamSource(mediaStream);
+                source.connect(analyser);
+
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                const ctx = canvas.getContext("2d");
+
+                const draw = () => {
+                    animationFrameId = requestAnimationFrame(draw);
+                    analyser.getByteFrequencyData(dataArray);
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const barWidth = (canvas.width / bufferLength) * 1.6;
+                    let barHeight;
+                    let x = 0;
+
+                    for (let i = 0; i < bufferLength; i++) {
+                        barHeight = (dataArray[i] / 255) * canvas.height * 0.75;
+                        if (barHeight < 4) barHeight = 4;
+
+                        const gradient = ctx.createLinearGradient(
+                            0,
+                            (canvas.height - barHeight) / 2,
+                            0,
+                            (canvas.height + barHeight) / 2,
+                        );
+                        gradient.addColorStop(0, "#c084fc");
+                        gradient.addColorStop(0.5, "#ec4899");
+                        gradient.addColorStop(1, "#c084fc");
+
+                        ctx.fillStyle = gradient;
+
+                        const y = (canvas.height - barHeight) / 2;
+                        const radius = 3;
+
+                        ctx.beginPath();
+                        ctx.roundRect(x, y, barWidth - 2, barHeight, radius);
+                        ctx.fill();
+
+                        x += barWidth;
+                    }
+                };
+
+                draw();
+
+                visualizerCleanupRef.current = () => {
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    if (audioCtx && audioCtx.state !== "closed") audioCtx.close();
+                };
+            } catch (e) {
+                console.error("Audio visualizer failed:", e);
+            }
+        },
+        [mediaStream]
+    );
+
+    // Audio capture functions
+    const startRecording = async () => {
+        if (isRecording || isSaving || isUploading) return;
+        toast.info("Recording is starting... Please wait.");
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            setMediaStream(stream);
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorderRef.current.onstop = async () => {
+                try {
+                    if (recordingTimeRef.current > 0) {
+                        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+                        await uploadToCloudinary(blob);
+                    } else {
+                        toast.warn("Recording was too short to be saved.");
+                    }
+                } catch (err) {
+                    console.error("Error in MediaRecorder.onstop:", err);
+                    toast.error("Failed to capture recording. Please try again.");
+                } finally {
+                    if (stream) {
+                        stream.getTracks().forEach((track) => track.stop());
+                    }
+                    setMediaStream(null);
+                    setIsRecording(false);
+                    setIsSaving(false);
+                }
+            };
+
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+            setIsPrepActive(false);
+            setRecordingTime(0);
+            toast.success("Recording Started! Speak clearly.");
+        } catch (err) {
+            console.error("Microphone access failed:", err);
+            toast.error("Microphone access denied. Please enable it to record.");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording && mediaRecorderRef.current.state !== "inactive") {
+            try {
+                setIsSaving(true);
+                setIsRecording(false);
+                mediaRecorderRef.current.stop();
+            } catch (err) {
+                console.error("Failed to stop media recorder:", err);
+                setIsSaving(false);
+                setIsRecording(false);
+            }
+        }
+    };
+
+    const startPrep = () => {
+        setIsPrepActive(true);
+        setPrepTime(60);
+        toast.info("1-Minute Preparation Time Started");
+    };
+
+    // Upload to Cloudinary helper
+    const uploadToCloudinary = async (blob) => {
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", blob, "speaking_mock_recording.webm");
+            formData.append("upload_preset", import.meta.env.VITE_UPLOAD_PRESET);
+            formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME);
+            formData.append("resource_type", "video");
+
+            const response = await axios.post(
+                `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/video/upload`,
+                formData
+            );
+
+            const secureUrl = response.data.secure_url;
+
+            if (activePart === 1) {
+                setPart1Urls(prev => {
+                    const next = [...prev];
+                    next[part1QuestionIdx] = secureUrl;
+                    return next;
+                });
+            } else if (activePart === 2) {
+                setPart2Url(secureUrl);
+            } else if (activePart === 3) {
+                setPart3Urls(prev => {
+                    const next = [...prev];
+                    next[part3QuestionIdx] = secureUrl;
+                    return next;
+                });
+            }
+            toast.success("Recording uploaded and saved successfully!");
+        } catch (err) {
+            console.error("Upload failed:", err);
+            toast.error("Failed to upload recording to server. Please try again.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const formatTime = (s) => {
+        const min = Math.floor(s / 60);
+        const sec = s % 60;
+        return `${min}:${sec.toString().padStart(2, "0")}`;
+    };
 
     return (
         <div className="flex h-full bg-base-100 overflow-hidden">
-            {/* Left Sidebar: Instructions with Sticky Question Palette at the Bottom */}
-            <div className="w-1/3 flex flex-col h-full bg-white border-r border-base-200">
+            {/* Left Sidebar: Navigation & Instructions with Sticky Palette */}
+            <div className="w-1/3 flex flex-col h-full bg-white border-r border-base-200 shrink-0">
                 <div className="flex-1 overflow-y-auto p-12 space-y-8">
                     <header className="space-y-2">
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Speaking Part 2</p>
-                        <h1 className="text-3xl font-black">The Cue Card</h1>
+                        <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">IELTS Speaking</p>
+                        <h1 className="text-3xl font-black">Practice Session</h1>
                     </header>
 
+                    {/* Step wizard switcher */}
+                    <div className="flex flex-col gap-2 bg-slate-50 p-2.5 rounded-3xl border border-slate-100">
+                        {[1, 2, 3].map((part) => (
+                            <button
+                                key={part}
+                                type="button"
+                                disabled={isRecording || isSaving || isUploading}
+                                onClick={() => setActivePart(part)}
+                                className={`w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
+                                    activePart === part
+                                    ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                    : "text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                                }`}
+                            >
+                                <span>Part {part}</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-md ${activePart === part ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}>
+                                    {part === 1 ? "Interview" : part === 2 ? "Cue Card" : "Discussion"}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Dynamic Guidelines based on activePart */}
                     <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 space-y-4">
                         <div className="flex items-center gap-2 text-primary font-bold">
                             <PiInfo className="w-6 h-6" />
-                            <span>Rules of the Task</span>
+                            <span>Rules of Part {activePart}</span>
                         </div>
                         <ul className="space-y-3 text-sm text-base-content/70 leading-relaxed">
-                            <li>• You have 1 minute to prepare your notes.</li>
-                            <li>• You should speak for 1 to 2 minutes.</li>
-                            <li>• The timer will guide you through each stage.</li>
+                            {activePart === 1 && (
+                                <>
+                                    <li>• Introduction and short general questions.</li>
+                                    <li>• Answer immediately as the examiner asks them.</li>
+                                    <li>• Speak naturally for about 40 seconds per question.</li>
+                                </>
+                            )}
+                            {activePart === 2 && (
+                                <>
+                                    <li>• You have 1 minute to prepare your notes.</li>
+                                    <li>• You should speak for 1 to 2 minutes.</li>
+                                    <li>• The timer will guide you through each stage.</li>
+                                </>
+                            )}
+                            {activePart === 3 && (
+                                <>
+                                    <li>• Abstract and deeper discussion questions.</li>
+                                    <li>• Answer in detail, giving opinions and examples.</li>
+                                    <li>• Speak naturally for about 50 seconds per question.</li>
+                                </>
+                            )}
                         </ul>
                     </div>
-
-                    {!isPrepActive && !isSpeakingActive && (
-                        <button 
-                            onClick={() => {
-                                setIsPrepActive(true);
-                                if (onAnswerChange) {
-                                    onAnswerChange(data?._id || 'speaking_attempt', 'started');
-                                }
-                            }}
-                            className="btn btn-primary btn-lg w-full rounded-2xl h-16 shadow-lg shadow-primary/20 gap-3"
-                        >
-                            <PiPlay className="w-6 h-6" />
-                            Start Preparation
-                        </button>
-                    )}
                 </div>
 
                 {/* Sticky Question Palette */}
                 <div className="p-6 border-t border-base-200 bg-white">
                     <div className="max-w-2xl mx-auto flex flex-col gap-3">
-                        <span className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Question Palette</span>
-                        <div className="flex flex-wrap gap-2">
-                            <button 
-                                className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
-                                    isAttempted 
-                                    ? "bg-primary text-white border-primary-dark shadow-lg shadow-primary/20" 
-                                    : "bg-base-200 border-base-300 hover:bg-base-300"
-                                }`}
-                            >
-                                1
-                            </button>
+                        <span className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Section Steps</span>
+                        <div className="flex items-center gap-2">
+                            {[1, 2, 3].map((part) => (
+                                <button 
+                                    key={part}
+                                    disabled={isRecording || isSaving || isUploading}
+                                    onClick={() => setActivePart(part)}
+                                    className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
+                                        activePart === part 
+                                        ? "bg-primary text-white border-primary-dark shadow-lg shadow-primary/20" 
+                                        : "bg-base-200 border-base-300 hover:bg-base-300 disabled:opacity-50"
+                                    }`}
+                                >
+                                    {part}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Right Pane: Main Task */}
-            <div className="flex-1 flex flex-col p-12 overflow-y-auto">
-                <div className="max-w-2xl mx-auto w-full space-y-12">
-                    {/* Status Bar */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex gap-4">
-                            <div className={`px-6 py-3 rounded-2xl border-2 flex items-center gap-3 transition-all ${isPrepActive ? "border-primary bg-primary/5 text-primary scale-105 shadow-md" : "border-base-200 opacity-40"}`}>
-                                <PiClock className={isPrepActive ? "animate-spin" : ""} />
-                                <div>
-                                    <p className="text-[10px] font-black uppercase">Preparation</p>
-                                    <p className="text-xl font-mono font-black">{Math.floor(prepTime / 60)}:{ (prepTime % 60).toString().padStart(2, '0') }</p>
-                                </div>
+            <div className="flex-1 flex flex-col lg:flex-row p-12 overflow-y-auto gap-8">
+                {/* Left side of right pane: Questions */}
+                <div className="flex-1 max-w-2xl w-full space-y-8">
+                    {activePart === 1 && (
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between border-b pb-4">
+                                <h2 className="text-2xl font-black text-slate-800">Part 1: Introduction & Interview</h2>
+                                <span className="text-xs font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl uppercase tracking-widest shrink-0">
+                                    Q {part1QuestionIdx + 1} of {part1Questions.length}
+                                </span>
                             </div>
-                            <div className={`px-6 py-3 rounded-2xl border-2 flex items-center gap-3 transition-all ${isSpeakingActive ? "border-emerald-500 bg-emerald-50 text-emerald-600 scale-105 shadow-md" : "border-base-200 opacity-40"}`}>
-                                <PiMicrophoneStage className={isSpeakingActive ? "animate-bounce" : ""} />
-                                <div>
-                                    <p className="text-[10px] font-black uppercase">Speaking</p>
-                                    <p className="text-xl font-mono font-black">{Math.floor(speakingTime / 60)}:{ (speakingTime % 60).toString().padStart(2, '0') }</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Cue Card Display */}
-                    <div className={`card bg-white border-2 p-12 rounded-[3rem] shadow-xl transition-all duration-700 ${isPrepActive || isSpeakingActive ? "opacity-100 translate-y-0" : "opacity-20 translate-y-10 blur-sm pointer-events-none"}`}>
-                        <div className="space-y-8">
-                            <h2 className="text-2xl font-bold border-b border-base-200 pb-6">
-                                {data?.question || "Describe a historical building you have visited."}
-                            </h2>
-                            <div className="space-y-4">
-                                <p className="font-bold text-base-content/40 uppercase tracking-widest text-xs">You should say:</p>
-                                <div className="prose prose-lg text-base-content/80 font-medium whitespace-pre-line">
-                                    {data?.passage || "• Where the building is\n• What it looks like\n• Why it is famous\n• And explain why you chose to visit it."}
-                                </div>
+                            <div className="p-8 bg-slate-50 border-2 border-primary/20 rounded-[2rem] flex gap-5 items-start shadow-md">
+                                <span className="w-10 h-10 rounded-2xl bg-primary text-white font-black flex items-center justify-center shrink-0 text-lg shadow-md shadow-primary/20">
+                                    {part1QuestionIdx + 1}
+                                </span>
+                                <p className="text-xl font-bold text-slate-800 leading-relaxed pt-0.5">
+                                    {part1Questions[part1QuestionIdx]}
+                                </p>
                             </div>
-                        </div>
-                    </div>
 
-                    {isSpeakingActive && (
-                        <div className="flex flex-col items-center justify-center gap-4 py-8 bg-slate-950 rounded-4xl border border-white/5 shadow-2xl relative overflow-hidden max-w-md mx-auto w-full mt-6">
-                            <div className="flex items-center gap-1.5 h-16">
-                                {Array.from({ length: 15 }).map((_, i) => (
-                                    <div 
-                                        key={i} 
-                                        className="w-1.5 bg-gradient-to-t from-indigo-500 via-indigo-400 to-emerald-400 rounded-full animate-voice-bar animate-pulse"
-                                        style={{
-                                            height: '20%',
-                                            animationDelay: `${i * 0.08}s`,
-                                            animationDuration: `${0.6 + Math.random() * 0.4}s`
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 rounded-full bg-error animate-ping" />
-                                <span className="font-black text-error text-[10px] uppercase tracking-[0.25em]">Live Speaking Session</span>
+                            {/* Question Nav Dots & Arrows */}
+                            <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    disabled={part1QuestionIdx === 0 || isRecording || isSaving || isUploading}
+                                    onClick={() => setPart1QuestionIdx(prev => prev - 1)}
+                                    className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                                >
+                                    ← Back
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    {part1Questions.map((_, idx) => {
+                                        const isRecorded = !!part1Urls[idx];
+                                        const isActive = idx === part1QuestionIdx;
+                                        return (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                disabled={isRecording || isSaving || isUploading}
+                                                onClick={() => setPart1QuestionIdx(idx)}
+                                                className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+                                                    isActive
+                                                        ? "bg-primary scale-125 ring-4 ring-primary/20"
+                                                        : isRecorded
+                                                        ? "bg-success"
+                                                        : "bg-slate-200 hover:bg-slate-300"
+                                                }`}
+                                                title={`Question ${idx + 1}`}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                                <button
+                                    type="button"
+                                    disabled={part1QuestionIdx === part1Questions.length - 1 || isRecording || isSaving || isUploading}
+                                    onClick={() => setPart1QuestionIdx(prev => prev + 1)}
+                                    className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                                >
+                                    Next →
+                                </button>
                             </div>
                         </div>
                     )}
+
+                    {activePart === 2 && (
+                        <div className="space-y-6">
+                            <div className="border-b pb-4">
+                                <h2 className="text-2xl font-black text-slate-800">Part 2: Long Turn (Cue Card)</h2>
+                            </div>
+
+                            {/* Cue Card Display */}
+                            <div className="card bg-white border-2 p-10 rounded-[3rem] shadow-xl">
+                                <div className="space-y-6">
+                                    <h3 className="text-xl font-bold border-b border-base-200 pb-4 text-slate-800">
+                                        {data?.speakingPrompt || data?.question || "Describe a historical building you have visited."}
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <p className="font-bold text-base-content/40 uppercase tracking-widest text-xs">You should say:</p>
+                                        <div className="prose prose-lg text-slate-600 font-medium whitespace-pre-line leading-relaxed">
+                                            {data?.passage || "• Where the building is\n• What it looks like\n• Why it is famous\n• And explain why you chose to visit it."}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activePart === 3 && (
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between border-b pb-4">
+                                <h2 className="text-2xl font-black text-slate-800">Part 3: Two-way Discussion</h2>
+                                <span className="text-xs font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl uppercase tracking-widest shrink-0">
+                                    Q {part3QuestionIdx + 1} of {part3Questions.length}
+                                </span>
+                            </div>
+
+                            <div className="p-8 bg-slate-50 border-2 border-primary/20 rounded-[2rem] flex gap-5 items-start shadow-md">
+                                <span className="w-10 h-10 rounded-2xl bg-primary text-white font-black flex items-center justify-center shrink-0 text-lg shadow-md shadow-primary/20">
+                                    {part3QuestionIdx + 1}
+                                </span>
+                                <p className="text-xl font-bold text-slate-800 leading-relaxed pt-0.5">
+                                    {part3Questions[part3QuestionIdx]}
+                                </p>
+                            </div>
+
+                            {/* Question Nav Dots & Arrows */}
+                            <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    disabled={part3QuestionIdx === 0 || isRecording || isSaving || isUploading}
+                                    onClick={() => setPart3QuestionIdx(prev => prev - 1)}
+                                    className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                                >
+                                    ← Back
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    {part3Questions.map((_, idx) => {
+                                        const isRecorded = !!part3Urls[idx];
+                                        const isActive = idx === part3QuestionIdx;
+                                        return (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                disabled={isRecording || isSaving || isUploading}
+                                                onClick={() => setPart3QuestionIdx(idx)}
+                                                className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+                                                    isActive
+                                                        ? "bg-primary scale-125 ring-4 ring-primary/20"
+                                                        : isRecorded
+                                                        ? "bg-success"
+                                                        : "bg-slate-200 hover:bg-slate-300"
+                                                }`}
+                                                title={`Question ${idx + 1}`}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                                <button
+                                    type="button"
+                                    disabled={part3QuestionIdx === part3Questions.length - 1 || isRecording || isSaving || isUploading}
+                                    onClick={() => setPart3QuestionIdx(prev => prev + 1)}
+                                    className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right side of right pane: Audio Studio */}
+                <div className="w-full lg:w-80 shrink-0 space-y-6">
+                    <div className="card bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-xl text-slate-800">
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between border-b pb-4">
+                                <div>
+                                    <h3 className="text-lg font-black tracking-tight text-slate-800">Audio Studio</h3>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                        {studioSubtitle}
+                                    </p>
+                                </div>
+                                <PiWaveformFill className={`text-2xl text-primary ${isRecording ? "animate-pulse" : ""}`} />
+                            </div>
+
+                            {/* State renders */}
+                            {isPrepActive ? (
+                                <div className="flex flex-col items-center text-center space-y-6 py-6">
+                                    <div className="w-28 h-28 rounded-full border-4 border-red-500 border-t-transparent animate-spin flex items-center justify-center p-1.5">
+                                        <div className="w-full h-full rounded-full bg-red-500/10 flex items-center justify-center">
+                                            <span className="text-2xl font-black font-mono text-red-500">
+                                                {prepTime}s
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-lg font-black text-slate-800">Preparation Phase</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Organize your thoughts</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={startRecording}
+                                        className="btn btn-primary rounded-xl px-6 h-12 font-black w-full"
+                                    >
+                                        Skip Prep & Record
+                                    </button>
+                                </div>
+                            ) : isRecording ? (
+                                <div className="flex flex-col items-center text-center space-y-6 py-6">
+                                    <div className="relative">
+                                        <div className="w-32 h-32 rounded-full bg-red-500/10 flex items-center justify-center">
+                                            <div className="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center text-white text-4xl shadow-lg shadow-red-500/20">
+                                                <PiMicrophoneFill />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3 w-full">
+                                        <div className="w-full flex justify-center py-1">
+                                            <canvas
+                                                ref={canvasCallback}
+                                                width={240}
+                                                height={60}
+                                                className="bg-slate-50 rounded-2xl border border-slate-200 shadow-inner"
+                                            />
+                                        </div>
+                                        <div className="text-4xl font-mono font-black text-slate-800">
+                                            {formatTime(Math.max(0, maxRecordingTime - recordingTime))}
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-red-500 animate-pulse">
+                                            Capturing Voice...
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={stopRecording}
+                                        className="btn btn-error btn-outline rounded-xl px-6 h-14 font-black w-full border-2"
+                                    >
+                                        <PiStopCircleFill className="text-lg" /> Stop Recording
+                                    </button>
+                                </div>
+                            ) : isSaving || isUploading ? (
+                                <div className="flex flex-col items-center text-center space-y-4 py-12 w-full">
+                                    <span className="loading loading-spinner loading-lg text-primary" />
+                                    <div className="space-y-1">
+                                        <h4 className="text-lg font-black text-slate-800">Uploading Audio...</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">
+                                            Processing & Saving to cloud
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : activeAudioUrl ? (
+                                <div className="flex flex-col items-center text-center space-y-6 py-6">
+                                    <div className="w-24 h-24 rounded-full bg-success/10 border border-success/20 flex items-center justify-center text-4xl text-success shadow-md shadow-success/10">
+                                        <PiCheckCircleFill />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-lg font-black text-slate-800">Response Captured</h4>
+                                        <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                                            Review your recording below.
+                                        </p>
+                                    </div>
+
+                                    <div className="w-full">
+                                        <audio src={activeAudioUrl} controls className="w-full rounded-xl border border-slate-200 shadow-sm" key={activeAudioUrl} />
+                                    </div>
+
+                                    {activePart === 2 && (
+                                        <div className="grid grid-cols-1 w-full gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={startPrep}
+                                                className="btn btn-ghost border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl h-12 font-black text-xs uppercase"
+                                            >
+                                                Re-record with Prep
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={startRecording}
+                                                className="btn btn-primary rounded-xl h-12 font-black text-xs uppercase"
+                                            >
+                                                Re-record Immediately
+                                            </button>
+                                        </div>
+                                    )}
+                                    {(activePart === 1 || activePart === 3) && (
+                                        <div className="text-center">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+                                                Recording Finalized
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center text-center space-y-6 py-6">
+                                    <div className="w-24 h-24 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-4xl text-slate-400">
+                                        <PiMicrophoneFill />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-lg font-black text-slate-800">
+                                            {activePart === 2 ? "Record Cue Card" : "Record Response"}
+                                        </h4>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-relaxed">
+                                            {activePart === 2
+                                                ? "Prepare for 60s or start speaking."
+                                                : `Speak for up to ${activePart === 1 ? 40 : 50} seconds.`}
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-1 w-full gap-3">
+                                        {activePart === 2 ? (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={startPrep}
+                                                    className="btn btn-primary rounded-xl h-14 font-black text-xs uppercase"
+                                                >
+                                                    Start Prep Time
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={startRecording}
+                                                    className="btn btn-ghost rounded-xl h-12 font-black text-xs uppercase border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                >
+                                                    Record Immediately
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={startRecording}
+                                                className="btn btn-primary rounded-xl h-14 font-black text-xs uppercase"
+                                            >
+                                                Start Recording
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Examiner Widget */}
+                    <div className="card bg-primary p-6 rounded-[2rem] text-white flex flex-row items-center gap-4 shadow-xl shadow-primary/10">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-2xl backdrop-blur-md shrink-0">
+                            <PiUserCircleFill />
+                        </div>
+                        <div>
+                            <h4 className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-0.5">
+                                Examiner Hint
+                            </h4>
+                            <p className="text-xs font-black leading-tight italic">
+                                {activePart === 1
+                                    ? '"Speak naturally and give detailed answers. Avoid single-word responses."'
+                                    : activePart === 2
+                                    ? '"Try to talk for the full two minutes. Cover every bullet point on the card."'
+                                    : '"Showcase your advanced vocabulary and expand on complex topics in detail."'}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
