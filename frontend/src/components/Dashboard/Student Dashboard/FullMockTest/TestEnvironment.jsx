@@ -406,37 +406,29 @@ const TestEnvironment = () => {
 
             {/* Test Header */}
             <header className="bg-white border-b border-base-300 h-20 px-8 flex items-center justify-between shadow-sm sticky top-0 z-40">
-                <div className="flex items-center gap-12">
-                    <div className="flex flex-col -space-y-1">
-                        <span className="text-2xl font-black tracking-tighter text-primary">MOCKEA</span>
-                        <span className="text-[10px] font-bold text-base-content/30 uppercase tracking-widest">IELTS Exam Dashboard</span>
-                    </div>
-
-                    <div className="flex items-center gap-4 border-l border-base-300 pl-8">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase text-base-content/30 tracking-widest leading-none">Test Active</span>
-                            <span 
-                                className="font-bold text-sm truncate max-w-[150px]"
-                                onMouseEnter={(e) => handleShowTitleIfClipped(e, test?.title)}
-                            >
-                                {test?.title}
-                            </span>
-                        </div>
+                <div className="flex items-center gap-8">
+                    <div className="flex flex-col justify-center gap-0.5 cursor-pointer select-none" onClick={handleExitTest}>
+                        <img
+                            src="/mockea-logo.png"
+                            alt="MOCKEA Logo"
+                            className="h-9 w-auto object-contain self-start"
+                        />
+                        <span 
+                            className="text-[10px] font-bold text-base-content/40 uppercase tracking-wider truncate max-w-[150px]"
+                            onMouseEnter={(e) => handleShowTitleIfClipped(e, test?.title)}
+                        >
+                            {test?.title}
+                        </span>
                     </div>
                 </div>
 
-                <div className="hidden lg:flex items-center gap-6">
-                    {['Reading', 'Listening', 'Writing', 'Speaking'].map((m, i) => (
-                        <div key={m} className={`flex items-center gap-3 transition-all ${i === currentModuleIdx ? "scale-110" : "opacity-40 grayscale"}`}>
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm ${
-                                i === currentModuleIdx ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-base-200"
-                            }`}>
-                                {i + 1}
-                            </div>
-                            <span className={`text-xs font-black uppercase tracking-widest ${i === currentModuleIdx ? "text-primary" : ""}`}>{m}</span>
-                            {i < 3 && <div className="w-8 h-px bg-base-300" />}
-                        </div>
-                    ))}
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-primary text-white shadow-lg shadow-primary/20 flex items-center justify-center font-bold text-sm">
+                        {currentModuleIdx + 1}
+                    </div>
+                    <span className="text-xs font-black uppercase tracking-widest text-primary">
+                        {['Reading', 'Listening', 'Writing', 'Speaking'][currentModuleIdx]} Section
+                    </span>
                 </div>
 
                 <div className="flex items-center gap-4">
