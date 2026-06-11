@@ -117,15 +117,15 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             
             const isMockTest = submitted === undefined;
             
-            let inputClass = "inline-block px-3 py-1 text-sm font-bold bg-white border-2 rounded-lg outline-none transition-all text-center focus:ring-2 focus:ring-primary/20 w-36";
+            let inputClass = "inline-block px-3 py-1 text-sm font-bold bg-white border-2 border-slate-400 rounded-lg outline-none transition-all text-center focus:ring-2 focus:ring-primary/20 w-36";
             if (isMockTest) {
-                inputClass = "inline-block h-10 px-3 py-1 rounded-xl w-36 font-bold border border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm text-center outline-none bg-white transition-all";
+                inputClass = "inline-block h-10 px-3 py-1 rounded-xl w-36 font-bold border border-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm text-center outline-none bg-white transition-all";
             } else if (submitted) {
                 inputClass += isCorrect
                     ? " border-emerald-400 bg-emerald-50 text-emerald-700"
                     : " border-red-400 bg-red-50 text-red-700";
             } else {
-                inputClass += " border-slate-300 focus:border-primary hover:border-slate-400";
+                inputClass += " border-slate-400 focus:border-primary hover:border-slate-500";
             }
 
             let badgeHtml = "";
@@ -397,7 +397,7 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                                                         value={answers[q.id] || ""}
                                                         onChange={(e) => onAnswerChange(q.id, e.target.value)}
                                                         placeholder="Type your answer here..."
-                                                        className="input input-bordered w-full rounded-2xl h-14 bg-base-50 border-transparent focus:border-primary font-bold"
+                                                        className="input input-bordered w-full rounded-2xl h-14 bg-white border-slate-400 focus:border-primary font-bold"
                                                     />
                                                 )}
                                             </div>

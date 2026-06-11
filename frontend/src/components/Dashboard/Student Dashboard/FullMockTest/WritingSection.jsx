@@ -198,7 +198,7 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
                     {/* Canvas Area */}
                     <div className="flex-1 flex flex-col relative">
                         <textarea 
-                            className="flex-1 w-full p-10 rounded-[2.5rem] border-2 border-slate-100 focus:border-primary/30 focus:ring-0 outline-none text-lg leading-relaxed font-serif resize-none shadow-sm bg-slate-50/10 placeholder:text-slate-300"
+                            className="flex-1 w-full p-10 rounded-[2.5rem] border-2 border-slate-400 focus:border-primary/30 focus:ring-0 outline-none text-lg leading-relaxed font-serif resize-none shadow-sm bg-slate-50/10 placeholder:text-slate-300"
                             placeholder={
                                 activeTab === "task1" 
                                 ? "Write your Task 1 academic report here (minimum 150 words)..." 

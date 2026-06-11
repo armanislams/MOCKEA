@@ -347,7 +347,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                         <div className="ml-14">
                                             <input 
                                                 type="text" 
-                                                className="input input-bordered w-full rounded-2xl font-bold bg-white focus:border-primary text-sm h-12 text-slate-800"
+                                                className="input input-bordered border-slate-400 w-full rounded-2xl font-bold bg-white focus:border-primary text-sm h-12 text-slate-800"
                                                 placeholder="Type your answer here..."
                                                 value={answers[q.id] || ""}
                                                 onChange={(e) => onAnswerChange(q.id, e.target.value)}

@@ -384,7 +384,7 @@ const TestEnvironment = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#FDFDFB] flex flex-col relative select-none" onContextMenu={e => e.preventDefault()}>
+        <div className="h-screen overflow-hidden bg-[#FDFDFB] flex flex-col relative select-none" onContextMenu={e => e.preventDefault()}>
             <FullscreenWarningOverlay 
                 isOpen={showWarning}
                 onResume={() => { setShowWarning(false); enterFullscreen(); }}
