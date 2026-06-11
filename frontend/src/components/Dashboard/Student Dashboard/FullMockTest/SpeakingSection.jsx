@@ -90,22 +90,64 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
         recordingTimeRef.current = recordingTime;
     }, [recordingTime]);
 
-    // Load URL cache from localStorage on mount
+    // Load URL cache from localStorage or parent answers on mount
     useEffect(() => {
-        if (data?._id) {
-            const cached = localStorage.getItem(`speaking_cache_${data._id}`);
-            if (cached) {
-                try {
-                    const parsed = JSON.parse(cached);
-                    if (parsed.part1Urls?.length === part1Questions.length) setPart1Urls(parsed.part1Urls);
-                    if (parsed.part2Url) setPart2Url(parsed.part2Url);
-                    if (parsed.part3Urls?.length === part3Questions.length) setPart3Urls(parsed.part3Urls);
-                } catch (e) {
-                    console.error("Failed to restore speaking cache:", e);
-                }
+        if (!data?._id) return;
+
+        let loaded = false;
+        const cached = localStorage.getItem(`speaking_cache_${data._id}`);
+        if (cached) {
+            try {
+                const parsed = JSON.parse(cached);
+                if (parsed.part1Urls?.length === part1Questions.length) setPart1Urls(parsed.part1Urls);
+                if (parsed.part2Url) setPart2Url(parsed.part2Url);
+                if (parsed.part3Urls?.length === part3Questions.length) setPart3Urls(parsed.part3Urls);
+                loaded = true;
+            } catch (e) {
+                console.error("Failed to restore speaking cache:", e);
             }
         }
-    }, [data?._id, part1Questions.length, part3Questions.length]);
+
+        if (!loaded) {
+            const combined = answers[data._id];
+            if (combined && typeof combined === 'string') {
+                const parsedPart1 = new Array(part1Questions.length).fill("");
+                let parsedPart2 = "";
+                const parsedPart3 = new Array(part3Questions.length).fill("");
+
+                const p3Index = combined.indexOf("--- Part 3 Discussion ---");
+                const part1And2Text = p3Index !== -1 ? combined.slice(0, p3Index) : combined;
+                const part3Text = p3Index !== -1 ? combined.slice(p3Index) : "";
+
+                const p1Regex = /Q(\d+):[\s\S]*?\nAnswer:\s*(https?:\/\/[^\s\n]+)/g;
+                let match;
+                while ((match = p1Regex.exec(part1And2Text)) !== null) {
+                    const idx = parseInt(match[1], 10) - 1;
+                    if (idx >= 0 && idx < parsedPart1.length) {
+                        parsedPart1[idx] = match[2];
+                    }
+                }
+
+                const p2Regex = /Cue Card:[\s\S]*?\nAnswer:\s*(https?:\/\/[^\s\n]+)/;
+                const p2Match = part1And2Text.match(p2Regex);
+                if (p2Match) {
+                    parsedPart2 = p2Match[1];
+                }
+
+                const p3Regex = /Q(\d+):[\s\S]*?\nAnswer:\s*(https?:\/\/[^\s\n]+)/g;
+                while ((match = p3Regex.exec(part3Text)) !== null) {
+                    const idx = parseInt(match[1], 10) - 1;
+                    if (idx >= 0 && idx < parsedPart3.length) {
+                        parsedPart3[idx] = match[2];
+                    }
+                }
+
+                if (parsedPart1.some(u => !!u)) setPart1Urls(parsedPart1);
+                if (parsedPart2) setPart2Url(parsedPart2);
+                if (parsedPart3.some(u => !!u)) setPart3Urls(parsedPart3);
+            }
+        }
+    }, [data?._id, part1Questions.length, part3Questions.length, answers]);
 
     // Save URL cache to localStorage when URLs change
     useEffect(() => {
@@ -315,6 +357,38 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     // Audio capture functions
     const startRecording = async () => {
         if (isRecording || isSaving || isUploading) return;
+
+        // Strict Check: Prevent recording if a response already exists
+        if (activePart === 1 && part1Urls[part1QuestionIdx]) {
+            toast.error("You have already recorded a response for this question.");
+            return;
+        }
+        if (activePart === 2 && part2Url) {
+            toast.error("You have already recorded a response for this part.");
+            return;
+        }
+        if (activePart === 3 && part3Urls[part3QuestionIdx]) {
+            toast.error("You have already recorded a response for this question.");
+            return;
+        }
+        
+        // Clear previous url for the active part to ensure UI is reset and clean
+        if (activePart === 1) {
+            setPart1Urls(prev => {
+                const next = [...prev];
+                next[part1QuestionIdx] = "";
+                return next;
+            });
+        } else if (activePart === 2) {
+            setPart2Url("");
+        } else if (activePart === 3) {
+            setPart3Urls(prev => {
+                const next = [...prev];
+                next[part3QuestionIdx] = "";
+                return next;
+            });
+        }
+
         toast.info("Recording is starting... Please wait.");
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -375,6 +449,9 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     };
 
     const startPrep = () => {
+        if (activePart === 2) {
+            setPart2Url("");
+        }
         setIsPrepActive(true);
         setPrepTime(60);
         toast.info("1-Minute Preparation Time Started");
@@ -527,6 +604,9 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                                     Q {part1QuestionIdx + 1} of {part1Questions.length}
                                 </span>
                             </div>
+                            <p className="text-xs text-slate-500 font-bold mt-2">
+                                Answer the question naturally. Speak for up to 40 seconds. Once recorded, you cannot re-record.
+                            </p>
 
                             <div className="p-8 bg-slate-50 border-2 border-primary/20 rounded-[2rem] flex gap-5 items-start shadow-md">
                                 <span className="w-10 h-10 rounded-2xl bg-primary text-white font-black flex items-center justify-center shrink-0 text-lg shadow-md shadow-primary/20">
@@ -586,6 +666,9 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                             <div className="border-b pb-4">
                                 <h2 className="text-2xl font-black text-slate-800">Part 2: Long Turn (Cue Card)</h2>
                             </div>
+                            <p className="text-xs text-slate-500 font-bold mt-2">
+                                Speak for 1 to 2 minutes on the cue card topic. Once recorded, you cannot re-record.
+                            </p>
 
                             {/* Cue Card Display */}
                             <div className="card bg-white border-2 p-10 rounded-[3rem] shadow-xl">
@@ -612,6 +695,9 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                                     Q {part3QuestionIdx + 1} of {part3Questions.length}
                                 </span>
                             </div>
+                            <p className="text-xs text-slate-500 font-bold mt-2">
+                                Answer the question in detail. Speak for up to 50 seconds. Once recorded, you cannot re-record.
+                            </p>
 
                             <div className="p-8 bg-slate-50 border-2 border-primary/20 rounded-[2rem] flex gap-5 items-start shadow-md">
                                 <span className="w-10 h-10 rounded-2xl bg-primary text-white font-black flex items-center justify-center shrink-0 text-lg shadow-md shadow-primary/20">
@@ -764,31 +850,11 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                                         <audio src={activeAudioUrl} controls className="w-full rounded-xl border border-slate-200 shadow-sm" key={activeAudioUrl} />
                                     </div>
 
-                                    {activePart === 2 && (
-                                        <div className="grid grid-cols-1 w-full gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={startPrep}
-                                                className="btn btn-ghost border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl h-12 font-black text-xs uppercase"
-                                            >
-                                                Re-record with Prep
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={startRecording}
-                                                className="btn btn-primary rounded-xl h-12 font-black text-xs uppercase"
-                                            >
-                                                Re-record Immediately
-                                            </button>
-                                        </div>
-                                    )}
-                                    {(activePart === 1 || activePart === 3) && (
-                                        <div className="text-center">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
-                                                Recording Finalized
-                                            </span>
-                                        </div>
-                                    )}
+                                    <div className="text-center">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+                                            Recording Finalized
+                                        </span>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center text-center space-y-6 py-6">

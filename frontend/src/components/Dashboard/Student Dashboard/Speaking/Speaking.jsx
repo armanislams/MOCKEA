@@ -303,6 +303,21 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       console.warn("[SpeakingDebug] startRecording early return because isRecording or isSaving is active.");
       return;
     }
+
+    // Strict Check: Prevent recording if a response already exists
+    if (speakingStep === 1 && part1BlobsRef.current[part1QuestionIdxRef.current]) {
+      toast.error("You have already recorded a response for this question.");
+      return;
+    }
+    if (speakingStep === 2 && part2BlobRef.current) {
+      toast.error("You have already recorded a response for this part.");
+      return;
+    }
+    if (speakingStep === 3 && part3BlobsRef.current[part3QuestionIdxRef.current]) {
+      toast.error("You have already recorded a response for this question.");
+      return;
+    }
+
     toast.info("Recording is starting... Please wait.");
     try {
       console.log("[SpeakingDebug] startRecording - requesting getUserMedia...");
@@ -1128,6 +1143,9 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       <h2 className="text-4xl font-black tracking-tighter text-slate-800 leading-tight">
                         {activeSet.title}
                       </h2>
+                      <p className="text-slate-500 font-semibold text-sm mt-3">
+                        Speak for 1 to 2 minutes on the cue card topic. Once recorded, you cannot re-record.
+                      </p>
                       <div className="text-xl leading-relaxed text-slate-600 space-y-6 pt-4 font-medium italic">
                         {activeSet.speakingPrompt || activeSet.passage || activeSet.content}
                       </div>
@@ -1404,30 +1422,11 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                       )}
 
                       <div className="grid grid-cols-1 w-full gap-4">
-                        {speakingStep === 2 ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={startPrep}
-                              className="btn btn-ghost border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-2xl h-16 font-black text-xs uppercase tracking-widest"
-                            >
-                              Re-record with Prep Time
-                            </button>
-                            <button
-                              type="button"
-                              onClick={startRecording}
-                              className="btn btn-primary rounded-2xl h-16 font-black text-sm uppercase tracking-widest"
-                            >
-                              Re-record Immediately
-                            </button>
-                          </>
-                        ) : (
-                          <div className="text-center py-2">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
-                              Recording Finalized
-                            </span>
-                          </div>
-                        )}
+                        <div className="text-center py-2">
+                          <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+                            Recording Finalized
+                          </span>
+                        </div>
                       </div>
                     </motion.div>
                   ) : (
