@@ -239,6 +239,36 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
         return data?.questions?.filter(q => !renderedInlineIds.has(q.id)) || [];
     }, [data?.questions, renderedInlineIds]);
 
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    const handleTimeUpdate = () => {
+        if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime);
+        }
+    };
+
+    const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+            setDuration(audioRef.current.duration);
+        }
+    };
+
+    const handleProgressChange = (e) => {
+        const newTime = parseFloat(e.target.value);
+        setCurrentTime(newTime);
+        if (audioRef.current) {
+            audioRef.current.currentTime = newTime;
+        }
+    };
+
+    const formatAudioTime = (time) => {
+        if (isNaN(time)) return "0:00";
+        const mins = Math.floor(time / 60);
+        const secs = Math.floor(time % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
     const togglePlay = () => {
         if (isPlaying) {
             audioRef.current.pause();
@@ -264,19 +294,37 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                             <div className="flex items-center gap-4">
                                 <button 
                                     onClick={togglePlay}
-                                    className="btn btn-primary btn-circle btn-lg shadow-lg shadow-primary/20"
+                                    className="btn btn-primary btn-circle btn-lg shadow-lg shadow-primary/20 flex-shrink-0"
                                 >
                                     {isPlaying ? <PiPauseCircle className="w-8 h-8" /> : <PiPlayCircle className="w-8 h-8" />}
                                 </button>
-                                <div>
+                                <div className="flex-1 min-w-0">
                                     <h2 className="font-bold text-lg">Control Board</h2>
                                     <p className="text-xs text-base-content/50 font-medium">Click play to begin. You will hear the recording only ONCE.</p>
+                                </div>
+                            </div>
+
+                            {/* Progress Bar & Time */}
+                            <div className="space-y-2 pt-2">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max={duration || 100}
+                                    value={currentTime}
+                                    onChange={handleProgressChange}
+                                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                                <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-500">
+                                    <span>{formatAudioTime(currentTime)}</span>
+                                    <span>{formatAudioTime(duration)}</span>
                                 </div>
                             </div>
                             
                             <audio 
                                 ref={audioRef} 
                                 src={data?.audioUrl} 
+                                onTimeUpdate={handleTimeUpdate}
+                                onLoadedMetadata={handleLoadedMetadata}
                                 onEnded={() => setIsPlaying(false)}
                                 className="hidden" 
                             />
