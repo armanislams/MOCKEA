@@ -58,6 +58,7 @@ const TestEnvironment = () => {
     const [scratchpadText, setScratchpadText] = useState(() => localStorage.getItem(`test_scratchpad_${id}`) || "");
     const [scratchpadPos, setScratchpadPos] = useState({ x: 100, y: 120 });
     const dragStartRef = useRef(null);
+    const terminationFiredRef = useRef(false);
 
     const handleDragStart = (e) => {
         dragStartRef.current = {
@@ -180,6 +181,8 @@ const TestEnvironment = () => {
         const cachedData = localStorage.getItem(`test_cache_${id}`);
         if (cachedData) {
             if (isTerminating) {
+                if (terminationFiredRef.current) return;
+                terminationFiredRef.current = true;
                 try {
                     const parsed = JSON.parse(cachedData);
                     const resId = parsed.resultId;
@@ -235,6 +238,7 @@ const TestEnvironment = () => {
 
     // 2. Initialize Test Session
     useEffect(() => {
+        if (isTerminating) return;
         if (test && !resultId && isStarted) {
             axiosSecure.post("/mock-tests/start", { testId: id })
                 .then(res => {
@@ -246,10 +250,11 @@ const TestEnvironment = () => {
                     toast.error("Failed to initialize test session");
                 });
         }
-    }, [test, id, isStarted, axiosSecure, resultId]);
+    }, [test, id, isStarted, axiosSecure, resultId, isTerminating]);
 
     // 3. Timer Countdown Logic
     useEffect(() => {
+        if (isTerminating) return;
         if (!isFullscreen || !isStarted) return;
         const interval = setInterval(() => {
             setTimeLeft(prev => {
@@ -261,10 +266,11 @@ const TestEnvironment = () => {
             });
         }, 1000);
         return () => clearInterval(interval);
-    }, [isFullscreen, isStarted]);
+    }, [isFullscreen, isStarted, isTerminating]);
 
     // 4. Cache Logic
     useEffect(() => {
+        if (isTerminating) return;
         if (resultId && isStarted) {
             localStorage.setItem(`test_cache_${id}`, JSON.stringify({
                 answers,
@@ -275,17 +281,19 @@ const TestEnvironment = () => {
                 timestamp: Date.now()
             }));
         }
-    }, [answers, currentModuleIdx, timeLeft, tabSwitches, id, resultId, isStarted]);
+    }, [answers, currentModuleIdx, timeLeft, tabSwitches, id, resultId, isStarted, isTerminating]);
 
     // 4.1 Scratchpad Persistence Logic
     useEffect(() => {
+        if (isTerminating) return;
         if (isStarted) {
             localStorage.setItem(`test_scratchpad_${id}`, scratchpadText);
         }
-    }, [scratchpadText, id, isStarted]);
+    }, [scratchpadText, id, isStarted, isTerminating]);
 
     // 4.5 Keyboard Interceptor (Anti-Cheat & DevTools protection)
     useEffect(() => {
+        if (isTerminating) return;
         if (!isStarted) return;
         const handleKeyDown = (e) => {
             const isMeta = e.ctrlKey || e.metaKey;
@@ -308,15 +316,16 @@ const TestEnvironment = () => {
         
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isStarted]);
+    }, [isStarted, isTerminating]);
 
     // 5. Restore Session Effect
     useEffect(() => {
+        if (isTerminating) return;
         if (localStorage.getItem(`test_cache_${id}`)) {
             toast.info("Your previous progress has been restored.");
             enterFullscreen();
         }
-    }, [id]);
+    }, [id, isTerminating]);
 
     // Scroll to Top on Start
     useEffect(() => {
@@ -333,6 +342,7 @@ const TestEnvironment = () => {
 
     // 6. Fullscreen Change Monitor
     useEffect(() => {
+        if (isTerminating) return;
         const handleFSChange = () => {
             const isFS = !!document.fullscreenElement;
             setIsFullscreen(isFS);
@@ -343,10 +353,11 @@ const TestEnvironment = () => {
         };
         document.addEventListener("fullscreenchange", handleFSChange);
         return () => document.removeEventListener("fullscreenchange", handleFSChange);
-    }, [isStarted]);
+    }, [isStarted, isTerminating]);
 
     // 7. Tab Switch Monitor (Anti-cheat)
     useEffect(() => {
+        if (isTerminating) return;
         const handleVisibilityChange = async () => {
             if (document.hidden && isFullscreen && isStarted) {
                 const newCount = tabSwitches + 1;
@@ -379,7 +390,7 @@ const TestEnvironment = () => {
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tabSwitches, isFullscreen, resultId, axiosSecure, navigate, isStarted, id]);
+    }, [tabSwitches, isFullscreen, resultId, axiosSecure, navigate, isStarted, id, isTerminating]);
 
     const handleAnswerChange = useCallback((qId, val) => {
         setAnswers(prev => ({ ...prev, [qId]: val }));
