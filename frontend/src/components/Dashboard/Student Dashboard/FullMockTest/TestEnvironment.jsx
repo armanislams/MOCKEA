@@ -155,6 +155,15 @@ const TestEnvironment = () => {
         }
     };
 
+    const handleShowTitleIfClipped = (e, title) => {
+        const el = e.currentTarget;
+        if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
+            el.setAttribute("title", title);
+        } else {
+            el.removeAttribute("title");
+        }
+    };
+
     // --- Effects ---
 
     // 1. Fetch Test Data
@@ -406,7 +415,12 @@ const TestEnvironment = () => {
                     <div className="flex items-center gap-4 border-l border-base-300 pl-8">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black uppercase text-base-content/30 tracking-widest leading-none">Test Active</span>
-                            <span className="font-bold text-sm truncate max-w-[150px]">{test?.title}</span>
+                            <span 
+                                className="font-bold text-sm truncate max-w-[150px]"
+                                onMouseEnter={(e) => handleShowTitleIfClipped(e, test?.title)}
+                            >
+                                {test?.title}
+                            </span>
                         </div>
                     </div>
                 </div>

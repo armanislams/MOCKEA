@@ -516,7 +516,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       toast.info("Auto-submitting your speaking responses...");
 
       const urls = [];
-      const username = user?.displayName || "guest";
+      const username = userData?.name || user?.displayName || user?.email?.split('@')[0] || "guest";
       const sanitizedUser = username.replace(/[^a-zA-Z0-9]/g, "_");
       const dateStr = new Date().toISOString().split("T")[0];
       const testId = activeSet._id;
@@ -580,7 +580,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
         testType: "speaking",
         title: activeSet.title,
         content: combinedContent,
-        userName: user?.displayName || "Student",
+        userName: userData?.name || user?.displayName || user?.email?.split('@')[0] || "Student",
         userEmail: user?.email,
       });
 

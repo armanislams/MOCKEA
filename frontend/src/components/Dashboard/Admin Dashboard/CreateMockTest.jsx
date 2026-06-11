@@ -87,6 +87,15 @@ const CreateMockTest = () => {
         });
     };
 
+    const handleShowTitleIfClipped = (e, title) => {
+        const el = e.currentTarget;
+        if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
+            el.setAttribute("title", title);
+        } else {
+            el.removeAttribute("title");
+        }
+    };
+
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
             <header className="flex flex-col gap-2">
@@ -201,7 +210,12 @@ const CreateMockTest = () => {
                                             }`}
                                         >
                                             <div className="flex items-center justify-between">
-                                                <span className="font-semibold text-sm line-clamp-1 flex-1 pr-2">{q.title}</span>
+                                                <span 
+                                                    className="font-semibold text-sm line-clamp-1 flex-1 pr-2"
+                                                    onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
+                                                >
+                                                    {q.title}
+                                                </span>
                                                 {formData.sections[type].includes(q._id) && <PiCheckCircle className="text-primary flex-shrink-0" />}
                                             </div>
                                             <div className="flex items-center gap-2 mt-2">

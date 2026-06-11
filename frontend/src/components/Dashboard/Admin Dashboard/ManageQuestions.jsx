@@ -84,6 +84,15 @@ const ManageQuestions = () => {
         }
     };
 
+    const handleShowTitleIfClipped = (e, title) => {
+        const el = e.currentTarget;
+        if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
+            el.setAttribute("title", title);
+        } else {
+            el.removeAttribute("title");
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -150,7 +159,12 @@ const ManageQuestions = () => {
                                                     <div className="p-2 rounded-xl bg-base-100 text-lg">
                                                         {getIcon(q.testType)}
                                                     </div>
-                                                    <span className="line-clamp-1 max-w-[200px]" title={q.title}>{q.title}</span>
+                                                    <span 
+                                                        className="line-clamp-1 max-w-[200px]" 
+                                                        onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
+                                                    >
+                                                        {q.title}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="py-4">
@@ -227,7 +241,12 @@ const ManageQuestions = () => {
                                             {getIcon(q.testType)}
                                         </div>
                                         <div>
-                                            <h3 className="font-bold line-clamp-1">{q.title}</h3>
+                                            <h3 
+                                                className="font-bold line-clamp-1"
+                                                onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
+                                            >
+                                                {q.title}
+                                            </h3>
                                             <p className="text-xs uppercase tracking-widest text-base-content/50 font-semibold">{q.testType}</p>
                                         </div>
                                     </div>

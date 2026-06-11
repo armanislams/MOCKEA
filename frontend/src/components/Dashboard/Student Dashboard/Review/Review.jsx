@@ -59,6 +59,15 @@ const Review = () => {
         }
     };
 
+    const handleShowTitleIfClipped = (e, title) => {
+        const el = e.currentTarget;
+        if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
+            el.setAttribute("title", title);
+        } else {
+            el.removeAttribute("title");
+        }
+    };
+
     return (
         <div className="space-y-10 p-2">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
@@ -181,7 +190,12 @@ const Review = () => {
                                                     <span className={`text-[10px] font-black uppercase tracking-widest ${lab.status === 'reviewed' ? 'text-emerald-600' : 'text-warning'}`}>
                                                         {lab.status === 'reviewed' ? 'Evaluation Ready' : 'Pending Review'}
                                                     </span>
-                                                    <h3 className="text-xl font-black text-slate-800 line-clamp-1">{lab.title}</h3>
+                                                    <h3 
+                                                        className="text-xl font-black text-slate-800 line-clamp-1"
+                                                        onMouseEnter={(e) => handleShowTitleIfClipped(e, lab.title)}
+                                                    >
+                                                        {lab.title}
+                                                    </h3>
                                                 </div>
                                             </div>
                                             <div className="text-right">

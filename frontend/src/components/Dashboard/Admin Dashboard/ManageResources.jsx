@@ -168,6 +168,15 @@ const ManageResources = () => {
     }
   };
 
+  const handleShowTitleIfClipped = (e, title) => {
+    const el = e.currentTarget;
+    if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
+      el.setAttribute("title", title);
+    } else {
+      el.removeAttribute("title");
+    }
+  };
+
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
       {/* Header Panel */}
@@ -218,7 +227,12 @@ const ManageResources = () => {
                       <div className="flex items-center gap-3">
                         <img src={res.imageUrl} alt={res.title} className="w-10 h-10 object-cover rounded-lg shrink-0" />
                         <div>
-                          <span className="font-bold text-slate-900 block line-clamp-1">{res.title}</span>
+                          <span 
+                             className="font-bold text-slate-900 block line-clamp-1"
+                             onMouseEnter={(e) => handleShowTitleIfClipped(e, res.title)}
+                           >
+                             {res.title}
+                           </span>
                           <a href={res.link} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline inline-flex items-center gap-0.5 mt-0.5">
                             View Resource <FiExternalLink className="w-3 h-3" />
                           </a>
