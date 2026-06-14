@@ -124,7 +124,7 @@ export const updateCheatStats = async (req, res) => {
         if (fullscreenExits) result.fullscreenExits += fullscreenExits;
 
         if (result.tabSwitchCount >= 3) {
-            result.status = 'auto-submitted';
+            result.status = 'terminated';
         }
 
         await result.save();
@@ -137,7 +137,7 @@ export const updateCheatStats = async (req, res) => {
 // Finalize test & Auto-grade Reading/Listening
 export const finalizeTest = async (req, res) => {
     try {
-        const { resultId } = req.body;
+        const { resultId, isTerminated } = req.body;
         const result = await MockTestResult.findById(resultId).populate({
             path: 'testId',
             populate: { path: 'sections.reading sections.listening sections.writing sections.speaking' }
@@ -168,7 +168,11 @@ export const finalizeTest = async (req, res) => {
             }
         }
 
-        result.status = 'completed';
+        if (isTerminated || result.status === 'terminated' || result.tabSwitchCount >= 3) {
+            result.status = 'terminated';
+        } else {
+            result.status = 'completed';
+        }
         await result.save();
         res.status(200).json({ success: true, message: 'Test finalized' });
     } catch (error) {

@@ -111,11 +111,15 @@ const TestEnvironment = () => {
         }
     };
 
-    const handleFinalSubmit = async () => {
+    const handleFinalSubmit = async (isTerminated = false) => {
         try {
-            await axiosSecure.post("/mock-tests/finalize", { resultId });
+            await axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated });
             localStorage.removeItem(`test_cache_${id}`);
-            toast.success("Test submitted successfully!");
+            if (isTerminated) {
+                toast.error("Test session terminated.");
+            } else {
+                toast.success("Test submitted successfully!");
+            }
             if (document.fullscreenElement) document.exitFullscreen();
             navigate("/dashboard/full-mock-test");
         } catch (err) {
@@ -159,6 +163,11 @@ const TestEnvironment = () => {
             : await alerts.confirmCancelMockTest();
 
         if (result.isConfirmed) {
+            try {
+                await axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated: true });
+            } catch (err) {
+                console.error("Failed to terminate test session:", err);
+            }
             localStorage.removeItem(`test_cache_${id}`);
             if (document.fullscreenElement) document.exitFullscreen();
             navigate("/dashboard/full-mock-test");
@@ -169,8 +178,13 @@ const TestEnvironment = () => {
         const result = await alerts.confirmTerminateMockTest();
         if (result.isConfirmed) {
             await handleSaveProgress();
-            await handleFinalSubmit();
+            await handleFinalSubmit(true);
         } else if (result.isDenied) {
+            try {
+                await axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated: true });
+            } catch (err) {
+                console.error("Failed to terminate test session:", err);
+            }
             localStorage.removeItem(`test_cache_${id}`);
             if (document.fullscreenElement) document.exitFullscreen();
             navigate("/dashboard/full-mock-test");
@@ -379,9 +393,9 @@ const TestEnvironment = () => {
                 
                 // INSTANT LOCAL ENFORCEMENT
                 if (newCount >= 3) {
-                    toast.error("Test auto-submitted due to excessive tab switching.");
+                    toast.error("Test terminated due to excessive tab switching.");
                     await handleSaveProgress();
-                    await axiosSecure.post("/mock-tests/finalize", { resultId });
+                    await axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated: true });
                     localStorage.removeItem(`test_cache_${id}`);
                     if (document.fullscreenElement) document.exitFullscreen();
                     navigate("/dashboard/full-mock-test");
@@ -507,7 +521,7 @@ const TestEnvironment = () => {
                     <div className="alert alert-warning shadow-2xl rounded-2xl border-none py-2 px-6 flex items-center gap-3">
                         <PiWarning className="w-5 h-5" />
                         <span className="text-xs font-black uppercase tracking-widest">
-                            Warning: {tabSwitches}/3 Tab Switches. On 3rd tab switch, test will auto-submit.
+                            Warning: {tabSwitches}/3 Tab Switches. On 3rd tab switch, test will terminate.
                         </span>
                     </div>
                 </div>

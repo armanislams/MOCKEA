@@ -25,7 +25,7 @@ export const FullscreenWarningOverlay = ({
           </h2>
           <p className="text-slate-500 leading-relaxed text-sm">
             {isTab 
-              ? `You have switched tabs ${tabSwitches} times. Reaching ${maxSwitches} switches will auto-submit the exam.` 
+              ? `You have switched tabs ${tabSwitches} times. Reaching ${maxSwitches} switches will terminate the exam.` 
               : "Fullscreen mode is required to maintain test integrity. Please re-enter to continue."}
           </p>
         </div>

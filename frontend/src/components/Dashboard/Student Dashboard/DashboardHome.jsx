@@ -16,6 +16,25 @@ import {
     PiCaretRightBold
 } from "react-icons/pi";
 
+const parseFeedback = (feedbackStr) => {
+    if (!feedbackStr) return { criteria: null, comments: "" };
+    const trimmed = feedbackStr.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed && (parsed.criteria || parsed.comments !== undefined)) {
+                return {
+                    criteria: parsed.criteria || null,
+                    comments: parsed.comments || ""
+                };
+            }
+        } catch (e) {
+            // Not JSON
+        }
+    }
+    return { criteria: null, comments: feedbackStr };
+};
+
 const quickActions = [
   {
     title: 'Listening',
@@ -59,6 +78,63 @@ const DashboardHome = () => {
       return res.data.summary;
     },
   });
+
+  const { data: mockResults = [] } = useQuery({
+    queryKey: ["user-mock-results"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/mock-tests/results/user");
+      return res.data.results ?? [];
+    }
+  });
+
+  const { data: labResults = [] } = useQuery({
+    queryKey: ["user-lab-results"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/submissions/my-submissions");
+      return res.data.submissions ?? [];
+    }
+  });
+
+  // Extract and combine feedback comments
+  const gradedFeedback = [];
+  
+  mockResults.forEach(result => {
+      result.sectionResults?.forEach(section => {
+          if (section.isGraded && section.feedback) {
+              gradedFeedback.push({
+                  id: `${result._id}-${section.sectionType}`,
+                  type: 'mock',
+                  testName: result.testId?.title || 'Mock Test',
+                  sectionType: section.sectionType,
+                  score: section.score,
+                  feedback: section.feedback,
+                  reviewedByName: section.reviewedByName,
+                  createdAt: section.updatedAt || result.updatedAt || result.createdAt,
+                  link: `/dashboard/review/${result._id}`
+              });
+          }
+      });
+  });
+
+  labResults.forEach(lab => {
+      if (lab.status === 'reviewed' && lab.feedback) {
+          gradedFeedback.push({
+              id: lab._id,
+              type: 'lab',
+              testName: lab.title || 'Practice Lab',
+              sectionType: lab.testType,
+              score: lab.bandScore || lab.score,
+              feedback: lab.feedback,
+              reviewedByName: lab.reviewedByName,
+              createdAt: lab.updatedAt || lab.createdAt,
+              link: `/dashboard/review`
+          });
+      }
+  });
+
+  // Sort by date descending and take top 2
+  gradedFeedback.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const latestFeedback = gradedFeedback.slice(0, 2);
 
   const container = {
     hidden: { opacity: 0 },
@@ -163,6 +239,61 @@ const DashboardHome = () => {
           ))}
         </div>
       </motion.section>
+
+      {/* --- RECENT FEEDBACK --- */}
+      {latestFeedback.length > 0 && (
+         <motion.section variants={item} className="space-y-6">
+            <div className="mb-6 px-4">
+                <h2 className="text-2xl font-black tracking-tight">Recent Instructor Feedback</h2>
+                <p className="text-sm font-bold text-base-content/40 uppercase tracking-widest mt-1">Direct feedback from your graded tests</p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+                {latestFeedback.map((fb) => {
+                    const parsed = parseFeedback(fb.feedback);
+                    const commentText = parsed.comments || fb.feedback;
+                    return (
+                        <div key={fb.id} className="card bg-white border border-base-300 p-8 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-305 flex flex-col justify-between group">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <span className="badge badge-primary font-black text-[9px] uppercase tracking-widest px-2.5 py-2 rounded-lg">
+                                            {fb.type === 'mock' ? 'Full Mock' : 'Practice Lab'}
+                                        </span>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-450">
+                                            {fb.sectionType}
+                                        </span>
+                                    </div>
+                                    <span className="text-sm font-black text-emerald-650 bg-emerald-500/5 border border-emerald-500/10 px-3 py-1 rounded-2xl">
+                                        Band {fb.score}
+                                    </span>
+                                </div>
+                                
+                                <div>
+                                    <h3 className="font-extrabold text-slate-800 group-hover:text-primary transition-colors text-lg line-clamp-1">{fb.testName}</h3>
+                                    <p className="text-[10px] font-bold text-base-content/30 uppercase tracking-widest mt-0.5">
+                                        Graded on {new Date(fb.createdAt).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                
+                                <p className="text-slate-650 italic text-sm line-clamp-3 leading-relaxed bg-slate-50/50 p-4 rounded-2xl border border-slate-100/70 shadow-inner">
+                                    "{commentText}"
+                                </p>
+                            </div>
+                            
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-base-100">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                    {fb.reviewedByName ? `Evaluated by ${fb.reviewedByName}` : 'Academic Review Team'}
+                                </span>
+                                <Link to={fb.link} className="flex items-center gap-1.5 text-xs font-black text-primary group-hover:gap-2.5 transition-all">
+                                    View Full Analysis <PiCaretRightBold />
+                                </Link>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+         </motion.section>
+      )}
 
       {/* --- PERFORMANCE SPLIT --- */}
       <div className="grid gap-10 xl:grid-cols-[1.8fr_1fr]">

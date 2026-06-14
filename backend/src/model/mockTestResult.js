@@ -56,7 +56,7 @@ const mockTestResultSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['ongoing', 'completed', 'auto-submitted'],
+        enum: ['ongoing', 'completed', 'auto-submitted', 'terminated'],
         default: 'ongoing'
     },
     lockedBy: {

@@ -21,6 +21,25 @@ import {
 } from "react-icons/pi";
 import { motion, AnimatePresence } from "framer-motion";
 
+const parseFeedback = (feedbackStr) => {
+    if (!feedbackStr) return { criteria: null, comments: "" };
+    const trimmed = feedbackStr.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed && (parsed.criteria || parsed.comments !== undefined)) {
+                return {
+                    criteria: parsed.criteria || null,
+                    comments: parsed.comments || ""
+                };
+            }
+        } catch (e) {
+            // Not JSON
+        }
+    }
+    return { criteria: null, comments: feedbackStr };
+};
+
 const Review = () => {
     const axiosSecure = useAxiosSecure();
     const [activeTab, setActiveTab] = useState("mock-tests");
@@ -109,51 +128,95 @@ const Review = () => {
                         ) : mockResults.length > 0 ? (
                             mockResults.map((result) => (
                                 <div key={result._id} className="group card bg-white border border-base-300 shadow-sm hover:shadow-xl transition-all duration-300 rounded-[2.5rem] overflow-hidden">
-                                    <div className="p-8 flex flex-col lg:flex-row lg:items-center gap-8">
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center gap-3">
-                                                <span className="badge badge-primary badge-sm font-black uppercase tracking-widest px-3 py-3 rounded-lg">Full Mock</span>
-                                                <span className="text-xs font-bold text-base-content/30 uppercase tracking-widest">
-                                                    {new Date(result.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
-                                                </span>
-                                            </div>
-                                            <h2 className="text-2xl font-black tracking-tight group-hover:text-primary transition-colors">
-                                                {result.testId?.title}
-                                            </h2>
-                                            <div className="flex items-center gap-6 pt-2">
-                                                <div className="flex items-center gap-2 text-xs font-bold text-base-content/50 uppercase tracking-widest">
-                                                    <PiWarningCircleFill className="text-error" /> {result.tabSwitchCount} Violations
+                                    <div className="p-8 space-y-6">
+                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                                            <div className="flex-1 space-y-2">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="badge badge-primary badge-sm font-black uppercase tracking-widest px-3 py-3 rounded-lg">Full Mock</span>
+                                                    <span className="text-xs font-bold text-base-content/30 uppercase tracking-widest">
+                                                        {new Date(result.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                                                    </span>
                                                 </div>
-                                                <div className="badge badge-ghost font-bold uppercase text-[10px] tracking-widest px-4 py-3">
-                                                    Status: {result.status}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-wrap gap-4">
-                                            {['reading', 'listening', 'writing', 'speaking'].map((type) => {
-                                                const section = result.sectionResults.find(s => s.sectionType === type);
-                                                return (
-                                                    <div key={type} className="flex flex-col items-center gap-2 p-4 rounded-3xl bg-base-100 border border-base-200 min-w-[100px] group-hover:bg-primary/5 group-hover:border-primary/20 transition-all">
-                                                        <div className="text-2xl">{getModuleIcon(type)}</div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-[10px] font-black uppercase tracking-widest">{type[0]}</span>
-                                                            {getStatusIcon(section?.isGraded)}
-                                                        </div>
-                                                        <div className="text-lg font-black text-primary">
-                                                            {section?.isGraded ? section.score : "--"}
-                                                        </div>
+                                                <h2 className="text-2xl font-black tracking-tight group-hover:text-primary transition-colors">
+                                                    {result.testId?.title}
+                                                </h2>
+                                                <div className="flex items-center gap-6 pt-2">
+                                                    <div className="flex items-center gap-2 text-xs font-bold text-base-content/50 uppercase tracking-widest">
+                                                        <PiWarningCircleFill className="text-error" /> {result.tabSwitchCount} Violations
                                                     </div>
-                                                );
-                                            })}
+                                                    <div className={`badge font-bold uppercase text-[10px] tracking-widest px-4 py-3 ${
+                                                        result.status === 'terminated' 
+                                                            ? 'bg-red-500 text-white border-none shadow-md shadow-red-500/10' 
+                                                            : result.status === 'completed' 
+                                                                ? 'bg-emerald-500 text-white border-none shadow-md shadow-emerald-500/10' 
+                                                                : 'badge-ghost border-base-300 text-slate-500'
+                                                    }`}>
+                                                        Status: {result.status}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-4">
+                                                {['reading', 'listening', 'writing', 'speaking'].map((type) => {
+                                                    const section = result.sectionResults.find(s => s.sectionType === type);
+                                                    return (
+                                                        <div key={type} className="flex flex-col items-center gap-2 p-4 rounded-3xl bg-base-100 border border-base-200 min-w-[100px] group-hover:bg-primary/5 group-hover:border-primary/20 transition-all">
+                                                            <div className="text-2xl">{getModuleIcon(type)}</div>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="text-[10px] font-black uppercase tracking-widest">{type[0]}</span>
+                                                                {getStatusIcon(section?.isGraded)}
+                                                            </div>
+                                                            <div className="text-lg font-black text-primary">
+                                                                {section?.isGraded ? section.score : "--"}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <Link 
+                                                to={`/dashboard/review/${result._id}`}
+                                                className="btn btn-ghost btn-circle self-center hidden lg:flex group-hover:bg-primary group-hover:text-white transition-all shadow-sm border border-base-200"
+                                            >
+                                                <PiCaretRightBold />
+                                            </Link>
                                         </div>
 
-                                        <Link 
-                                            to={`/dashboard/review/${result._id}`}
-                                            className="btn btn-ghost btn-circle self-center hidden lg:flex group-hover:bg-primary group-hover:text-white transition-all shadow-sm border border-base-200"
-                                        >
-                                            <PiCaretRightBold />
-                                        </Link>
+                                        {/* Instructor Feedback Comments Preview */}
+                                        {result.sectionResults.some(s => s.isGraded && s.feedback) && (
+                                            <div className="pt-6 border-t border-dashed border-base-300 space-y-4">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Instructor Evaluation Feedback</span>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    {result.sectionResults.filter(s => s.isGraded && s.feedback).map(section => {
+                                                        const parsed = parseFeedback(section.feedback);
+                                                        const comments = parsed.comments || section.feedback;
+                                                        return (
+                                                            <div key={section.sectionType} className="bg-slate-50/50 border border-slate-200/60 p-5 rounded-2xl flex flex-col justify-between hover:bg-slate-50 transition-all shadow-inner">
+                                                                <div>
+                                                                    <div className="flex items-center justify-between gap-2 mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                                                                            <span className="text-xs font-black uppercase tracking-widest text-slate-800">{section.sectionType} Section</span>
+                                                                        </div>
+                                                                        <span className="text-xs font-black text-primary bg-primary/10 px-3 py-1 rounded-xl">Band {section.score}</span>
+                                                                    </div>
+                                                                    <p className="text-xs text-slate-600 italic leading-relaxed line-clamp-3">
+                                                                        "{comments || "No comments provided."}"
+                                                                    </p>
+                                                                </div>
+                                                                {section.reviewedByName && (
+                                                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mt-3 text-right">
+                                                                        — Evaluated by {section.reviewedByName}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))
@@ -215,7 +278,7 @@ const Review = () => {
                                                 </div>
                                                 <div className="flex-1 space-y-2">
                                                     <p className="text-xs font-medium text-slate-500 italic line-clamp-2">
-                                                        "{lab.feedback}"
+                                                        "{parseFeedback(lab.feedback).comments || lab.feedback}"
                                                     </p>
                                                     {lab.reviewedByName && (
                                                         <p className="text-[9px] font-black uppercase tracking-widest text-primary/40">

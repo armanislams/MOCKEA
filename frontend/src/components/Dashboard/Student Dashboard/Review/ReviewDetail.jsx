@@ -50,6 +50,41 @@ const parseSpeakingSubmission = (content) => {
     return parsed;
 };
 
+const parseWritingSubmission = (content) => {
+    if (!content) return { task1: "", task2: "" };
+    if (content.includes("--- TASK 2")) {
+        const match = content.match(/--- TASK 1.*---\n([\s\S]*?)\n\n--- TASK 2.*---\n([\s\S]*)/);
+        if (match) {
+            return { task1: match[1].trim(), task2: match[2].trim() };
+        } else {
+            const parts = content.split(/--- TASK 2.*---\n?/);
+            const t1 = parts[0].replace(/--- TASK 1.*---\n?/, "").trim();
+            const t2 = (parts[1] || "").trim();
+            return { task1: t1, task2: t2 };
+        }
+    }
+    return { task1: content.trim(), task2: "" };
+};
+
+const parseFeedback = (feedbackStr) => {
+    if (!feedbackStr) return { criteria: null, comments: "" };
+    const trimmed = feedbackStr.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed && (parsed.criteria || parsed.comments !== undefined)) {
+                return {
+                    criteria: parsed.criteria || null,
+                    comments: parsed.comments || ""
+                };
+            }
+        } catch (e) {
+            // Not JSON
+        }
+    }
+    return { criteria: null, comments: feedbackStr };
+};
+
 const ReviewDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -116,45 +151,102 @@ const ReviewDetail = () => {
                 ) : (
                     <div className="space-y-8">
                         {/* Summary Bar */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6">
-                                <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl ${
-                                    currentSectionResult.isGraded ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-                                }`}>
-                                    {currentSectionResult.isGraded ? <PiCheckCircleFill /> : <PiClockFill />}
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Band Score / Raw</p>
-                                    <p className="text-3xl font-black tracking-tighter">
-                                        {currentSectionResult.isGraded ? currentSectionResult.score : "Pending"}
-                                    </p>
-                                </div>
-                            </div>
+                        {(() => {
+                            const parsedFeedback = parseFeedback(currentSectionResult.feedback);
+                            const crit = parsedFeedback.criteria;
+                            const comments = parsedFeedback.comments || currentSectionResult.feedback;
+                            
+                            return (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6">
+                                        <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl ${
+                                            currentSectionResult.isGraded ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                                        }`}>
+                                            {currentSectionResult.isGraded ? <PiCheckCircleFill /> : <PiClockFill />}
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Band Score / Raw</p>
+                                            <p className="text-3xl font-black tracking-tighter">
+                                                {currentSectionResult.isGraded ? currentSectionResult.score : "Pending"}
+                                            </p>
+                                        </div>
+                                    </div>
 
-                            <div className="card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6 md:col-span-2">
-                                <div className="w-16 h-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center text-3xl">
-                                    <PiInfoFill />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Instructor Comments</p>
-                                    <div 
-                                        className="text-base-content/70 prose prose-sm max-w-none italic mt-1"
-                                        dangerouslySetInnerHTML={{ 
-                                            __html: convertMarkdownContentToHtml(
-                                                currentSectionResult.isGraded 
-                                                    ? currentSectionResult.feedback || "_No specific comments provided for this section._" 
-                                                    : "_This section is currently under review by our senior instructors._"
-                                            ) 
-                                        }} 
-                                    />
-                                    {currentSectionResult.reviewedByName && (
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-primary/40 mt-2">
-                                            Evaluated by {currentSectionResult.reviewedByName}
-                                        </p>
+                                    {crit && (
+                                        <div className="card bg-white p-6 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-col justify-center">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-3 text-center">Criteria Breakdown</p>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {activeTab === 'writing' ? (
+                                                    <>
+                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                            <span className="text-sm font-black text-slate-800">{crit.ta}</span>
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Task Resp.</span>
+                                                        </div>
+                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                            <span className="text-sm font-black text-slate-800">{crit.cc}</span>
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Coherence</span>
+                                                        </div>
+                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                            <span className="text-sm font-black text-slate-800">{crit.lr}</span>
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Lexical</span>
+                                                        </div>
+                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                            <span className="text-sm font-black text-slate-800">{crit.gra}</span>
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Grammar</span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                            <span className="text-sm font-black text-slate-800">{crit.fc}</span>
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Fluency</span>
+                                                        </div>
+                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                            <span className="text-sm font-black text-slate-800">{crit.lr}</span>
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Lexical</span>
+                                                        </div>
+                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                            <span className="text-sm font-black text-slate-800">{crit.gra}</span>
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Grammar</span>
+                                                        </div>
+                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                            <span className="text-sm font-black text-slate-800">{crit.pr}</span>
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Pronunc.</span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
                                     )}
+
+                                    <div className={`card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6 ${
+                                        crit ? "" : "md:col-span-2"
+                                    }`}>
+                                        <div className="w-16 h-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center text-3xl flex-shrink-0">
+                                            <PiInfoFill />
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Instructor Comments</p>
+                                            <div 
+                                                className="text-base-content/70 prose prose-sm max-w-none italic mt-1"
+                                                dangerouslySetInnerHTML={{ 
+                                                    __html: convertMarkdownContentToHtml(
+                                                        currentSectionResult.isGraded 
+                                                            ? comments || "_No specific comments provided for this section._" 
+                                                            : "_This section is currently under review by our senior instructors._"
+                                                    ) 
+                                                }} 
+                                            />
+                                            {currentSectionResult.reviewedByName && (
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-primary/40 mt-2">
+                                                    Evaluated by {currentSectionResult.reviewedByName}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            );
+                        })()}
 
                         {/* Detail Review Content */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -294,45 +386,168 @@ const ReviewDetail = () => {
                                             Your Submission
                                         </h3>
                                         {activeTab === 'speaking' ? (() => {
-                                             const speakingAnswer = currentSectionResult.answers.find(ans => 
-                                                 ans.questionId === currentSectionData?._id || 
-                                                 (ans.userAnswer && (ans.userAnswer.includes("--- Part ") || ans.userAnswer.includes("Answer:")))
-                                             );
-                                             const parsedSpeaking = parseSpeakingSubmission(speakingAnswer?.userAnswer);
-                                             return (
-                                                 <div className="space-y-8 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                                                     {parsedSpeaking.map((part, partIdx) => (
-                                                         <div key={partIdx} className="space-y-4">
-                                                             <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b pb-1">{part.title}</h4>
-                                                             <div className="space-y-4">
-                                                                 {part.items.map((item, itemIdx) => (
-                                                                     <div key={itemIdx} className="p-5 bg-base-50 border border-base-200 rounded-2xl space-y-3">
-                                                                         <div className="flex items-center justify-between">
-                                                                             <span className="badge badge-primary font-black text-[9px] uppercase tracking-wider">{item.label}</span>
-                                                                         </div>
-                                                                         <p className="text-sm font-bold text-slate-700">{item.question}</p>
-                                                                         {item.audioUrl && (
-                                                                             <audio src={item.audioUrl} controls className="w-full rounded-xl border border-slate-200 shadow-sm" />
-                                                                         )}
-                                                                     </div>
-                                                                 ))}
-                                                             </div>
-                                                         </div>
-                                                     ))}
-                                                     {parsedSpeaking.length === 0 && (
-                                                         <p className="text-sm font-semibold text-slate-400 italic">No responses recorded.</p>
-                                                     )}
-                                                 </div>
-                                             );
-                                         })() : (
-                                            <div className="bg-base-100 p-8 rounded-[2rem] border border-base-300 shadow-inner min-h-[300px] leading-relaxed whitespace-pre-wrap font-medium text-base-content/80">
-                                                {currentSectionResult.answers[0]?.userAnswer || "No response recorded."}
+                                            const speakingAnswer = currentSectionResult.answers.find(ans => 
+                                                ans.questionId === currentSectionData?._id?.toString() ||
+                                                ans.questionId === currentSectionData?.id ||
+                                                (ans.userAnswer && (ans.userAnswer.includes("--- Part ") || ans.userAnswer.includes("Answer:")))
+                                            );
+                                            const parsedSpeakingParts = parseSpeakingSubmission(speakingAnswer?.userAnswer);
+                                            
+                                            // Align with speakingQuestionData
+                                            const aligned = (() => {
+                                                const findAudio = (partTitle, qText, qIndex) => {
+                                                    const part = parsedSpeakingParts.find(p => p.title.toLowerCase().includes(partTitle.toLowerCase()));
+                                                    if (!part) return null;
+                                                    const match = part.items.find(item => {
+                                                        const cleanItemQ = item.question.toLowerCase().replace(/[^a-z0-9]/g, "");
+                                                        const cleanTargetQ = qText.toLowerCase().replace(/[^a-z0-9]/g, "");
+                                                        return cleanItemQ === cleanTargetQ || item.label.includes((qIndex + 1).toString());
+                                                    });
+                                                    return match?.audioUrl || null;
+                                                };
+                                                return {
+                                                    part1: (currentSectionData?.speakingPart1Questions || []).map((q, idx) => ({
+                                                        question: q,
+                                                        audioUrl: findAudio("Part 1", q, idx)
+                                                    })),
+                                                    part2: {
+                                                        question: currentSectionData?.speakingPrompt || "Describe a historical building you have visited.",
+                                                        audioUrl: findAudio("Part 2", currentSectionData?.speakingPrompt || "", 0)
+                                                    },
+                                                    part3: (currentSectionData?.speakingPart3Questions || []).map((q, idx) => ({
+                                                        question: q,
+                                                        audioUrl: findAudio("Part 3", q, idx)
+                                                    }))
+                                                };
+                                            })();
+
+                                            const hasConfiguredQuestions = (currentSectionData?.speakingPart1Questions?.length > 0 || currentSectionData?.speakingPrompt || currentSectionData?.speakingPart3Questions?.length > 0);
+
+                                            if (!hasConfiguredQuestions && parsedSpeakingParts.length > 0) {
+                                                return (
+                                                    <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                                        {parsedSpeakingParts.map((part, partIdx) => (
+                                                            <div key={partIdx} className="space-y-3 col-span-full">
+                                                                <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b pb-1">{part.title}</h4>
+                                                                <div className="grid grid-cols-1 gap-4">
+                                                                    {part.items.map((item, itemIdx) => (
+                                                                        <div key={itemIdx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 shadow-inner">
+                                                                            <span className="badge badge-primary font-black text-[8px] uppercase tracking-wider">{item.label}</span>
+                                                                            <p className="text-xs font-bold text-slate-700 leading-tight">{item.question}</p>
+                                                                            {item.audioUrl ? (
+                                                                                <audio src={item.audioUrl} controls className="w-full rounded-lg mt-2" />
+                                                                            ) : (
+                                                                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest italic pt-1">No recording uploaded</p>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            }
+
+                                            return (
+                                                <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                                    {/* Part 1 */}
+                                                    <div className="space-y-3">
+                                                        <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b pb-1">Part 1: Interview</h4>
+                                                        {aligned.part1.length > 0 ? (
+                                                            <div className="grid grid-cols-1 gap-4">
+                                                                {aligned.part1.map((item, idx) => (
+                                                                    <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 shadow-inner">
+                                                                        <span className="badge badge-primary font-black text-[8px] uppercase tracking-wider">Question {idx + 1}</span>
+                                                                        <p className="text-xs font-bold text-slate-700 leading-tight">{item.question}</p>
+                                                                        {item.audioUrl ? (
+                                                                            <audio src={item.audioUrl} controls className="w-full rounded-lg mt-2" />
+                                                                        ) : (
+                                                                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest italic pt-1">No recording uploaded</p>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-xs font-bold text-slate-400 italic">No Part 1 questions configured.</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Part 2 */}
+                                                    <div className="space-y-3">
+                                                        <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b pb-1">Part 2: Cue Card Prompt</h4>
+                                                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 shadow-inner">
+                                                            <span className="badge badge-primary font-black text-[8px] uppercase tracking-wider">Cue Card Topic</span>
+                                                            <p className="text-xs font-bold text-slate-700 leading-tight whitespace-pre-wrap">{aligned.part2.question}</p>
+                                                            {aligned.part2.audioUrl ? (
+                                                                <audio src={aligned.part2.audioUrl} controls className="w-full rounded-lg mt-2" />
+                                                            ) : (
+                                                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest italic pt-1">No recording uploaded</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Part 3 */}
+                                                    <div className="space-y-3">
+                                                        <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b pb-1">Part 3: Discussion</h4>
+                                                        {aligned.part3.length > 0 ? (
+                                                            <div className="grid grid-cols-1 gap-4">
+                                                                {aligned.part3.map((item, idx) => (
+                                                                    <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 shadow-inner">
+                                                                        <span className="badge badge-primary font-black text-[8px] uppercase tracking-wider">Discussion Q{idx + 1}</span>
+                                                                        <p className="text-xs font-bold text-slate-700 leading-tight">{item.question}</p>
+                                                                        {item.audioUrl ? (
+                                                                            <audio src={item.audioUrl} controls className="w-full rounded-lg mt-2" />
+                                                                        ) : (
+                                                                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest italic pt-1">No recording uploaded</p>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-xs font-bold text-slate-400 italic">No Part 3 questions configured.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })() : (() => {
+                                            const writingAnswer = currentSectionResult.answers.find(ans => 
+                                                ans.questionId === currentSectionData?._id?.toString() ||
+                                                ans.questionId === currentSectionData?.id ||
+                                                (ans.userAnswer && ans.userAnswer.includes("--- TASK 1"))
+                                            );
+                                            const { task1, task2 } = parseWritingSubmission(writingAnswer?.userAnswer);
+                                            return (
+                                                <div className="space-y-4">
+                                                    {task1 && (
+                                                        <div className="space-y-2">
+                                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Task 1 Response</h4>
+                                                            <div className="bg-base-50 p-6 rounded-2xl border border-base-200 shadow-inner leading-relaxed whitespace-pre-wrap font-medium text-slate-700 select-text">
+                                                                {task1}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {task2 && (
+                                                        <div className="space-y-2">
+                                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Task 2 Response</h4>
+                                                            <div className="bg-base-50 p-6 rounded-2xl border border-base-200 shadow-inner leading-relaxed whitespace-pre-wrap font-medium text-slate-700 select-text">
+                                                                {task2}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {!task1 && !task2 && (
+                                                        <div className="bg-base-100 p-8 rounded-[2rem] border border-base-300 shadow-inner min-h-[300px] leading-relaxed whitespace-pre-wrap font-medium text-base-content/80 select-text">
+                                                            {writingAnswer?.userAnswer || "No response recorded."}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+                                        {!currentSectionResult.isGraded && (
+                                            <div className="alert alert-info rounded-2xl shadow-sm border-none bg-primary/10 text-primary">
+                                                <PiInfoFill className="w-5 h-5" />
+                                                <span className="text-xs font-bold uppercase tracking-widest">Evaluation in progress. Band descriptors will be visible once graded.</span>
                                             </div>
                                         )}
-                                        <div className="alert alert-info rounded-2xl shadow-sm border-none bg-primary/10 text-primary">
-                                            <PiInfoFill className="w-5 h-5" />
-                                            <span className="text-xs font-bold uppercase tracking-widest">Evaluation in progress. Band descriptors will be visible once graded.</span>
-                                        </div>
                                     </div>
                                 )}
                             </div>
