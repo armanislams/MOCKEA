@@ -43,9 +43,9 @@ export const InstructorHome = () => {
     // 3. Lock Mutation
     const lockMutation = useMutation({
         mutationFn: (id) => axiosSecure.patch(`/submissions/lock/${id}`),
-        onSuccess: () => {
+        onSuccess: (data, variables) => {
             queryClient.invalidateQueries(["pending-labs"]);
-            navigate("/dashboard/instructor/grade-submissions");
+            navigate("/dashboard/instructor/grade-submissions", { state: { submissionId: variables } });
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || "Failed to proceed with review");

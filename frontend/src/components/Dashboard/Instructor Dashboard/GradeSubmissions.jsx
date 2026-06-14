@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import useAuth from "../../../hooks/useAuth";
@@ -60,6 +61,9 @@ const GradeSubmissions = () => {
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState("mock-tests"); // 'mock-tests' or 'skill-labs'
     
+    const navigate = useNavigate();
+    const location = useLocation();
+
     /* --- Full Mock Test State --- */
     const [scores, setScores] = useState({});
     const [expandedMockResult, setExpandedMockResult] = useState(null);
@@ -102,6 +106,22 @@ const GradeSubmissions = () => {
         },
         enabled: activeTab === "skill-labs"
     });
+
+    useEffect(() => {
+        if (location.state?.submissionId) {
+            setActiveTab("skill-labs");
+        }
+    }, [location.state?.submissionId]);
+
+    useEffect(() => {
+        if (location.state?.submissionId && submissions.length > 0) {
+            const found = submissions.find(sub => sub._id === location.state.submissionId);
+            if (found) {
+                setSelectedSubmission(found);
+                navigate(location.pathname, { replace: true, state: {} });
+            }
+        }
+    }, [location.state?.submissionId, submissions, navigate, location.pathname]);
 
     const handleReviewSubmit = async (e) => {
         e.preventDefault();
