@@ -433,7 +433,7 @@ const Writing = () => {
                     )}
                     <button
                         onClick={handleExitTest}
-                        className="btn btn-ghost border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-2xl px-6 h-12 font-black text-xs uppercase tracking-widest"
+                        className="btn btn-error text-white rounded-2xl px-6 h-12 font-black border-none shadow-xl shadow-error/20"
                     >
                         End Session
                     </button>

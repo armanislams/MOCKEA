@@ -983,7 +983,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
               <button
                 onClick={handleExitTest}
                 disabled={isUploading}
-                className="btn btn-primary rounded-2xl px-8 h-12 font-black border-none shadow-xl shadow-primary/20"
+                className="btn btn-error text-white rounded-2xl px-8 h-12 font-black border-none shadow-xl shadow-error/20"
               >
                 {isUploading ? (
                   <span className="loading loading-spinner" />

@@ -410,7 +410,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 ) : (
                   <button
                     onClick={handleExitTest}
-                    className="btn btn-primary rounded-2xl px-8 h-12 font-black border-none shadow-xl shadow-primary/20"
+                    className="btn btn-error text-white rounded-2xl px-8 h-12 font-black border-none shadow-xl shadow-error/20"
                   >
                     End Session
                   </button>
