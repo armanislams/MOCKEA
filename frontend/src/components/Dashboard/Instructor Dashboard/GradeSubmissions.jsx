@@ -55,6 +55,22 @@ const parseSpeakingSubmission = (content) => {
     return parsed;
 };
 
+const parseWritingSubmission = (content) => {
+    if (!content) return { task1: "", task2: "" };
+    if (content.includes("--- TASK 2")) {
+        const match = content.match(/--- TASK 1.*---\n([\s\S]*?)\n\n--- TASK 2.*---\n([\s\S]*)/);
+        if (match) {
+            return { task1: match[1].trim(), task2: match[2].trim() };
+        } else {
+            const parts = content.split(/--- TASK 2.*---\n?/);
+            const t1 = parts[0].replace(/--- TASK 1.*---\n?/, "").trim();
+            const t2 = (parts[1] || "").trim();
+            return { task1: t1, task2: t2 };
+        }
+    }
+    return { task1: content.trim(), task2: "" };
+};
+
 const GradeSubmissions = () => {
     const axiosSecure = useAxiosSecure();
     const { user } = useAuth();
@@ -143,30 +159,32 @@ const GradeSubmissions = () => {
 
     return (
         <div className="space-y-10 p-2">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3">Academic Evaluation Hub</p>
-                    <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-800 leading-none">
-                        Review <span className="text-primary italic">Center</span>
-                    </h1>
-                </div>
+            {!selectedSubmission && (
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3">Academic Evaluation Hub</p>
+                        <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-800 leading-none">
+                            Review <span className="text-primary italic">Center</span>
+                        </h1>
+                    </div>
 
-                {/* Tab Switcher */}
-                <div className="bg-white p-2 rounded-4xl border border-base-300 shadow-sm flex items-center gap-1">
-                    <button 
-                        onClick={() => setActiveTab("mock-tests")}
-                        className={`flex items-center gap-3 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'mock-tests' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-base-100'}`}
-                    >
-                        <PiFilesFill className="text-lg" /> Full Mock Tests
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab("skill-labs")}
-                        className={`flex items-center gap-3 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'skill-labs' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-base-100'}`}
-                    >
-                        <PiSelectionAllFill className="text-lg" /> Individual Labs
-                    </button>
+                    {/* Tab Switcher */}
+                    <div className="bg-white p-2 rounded-4xl border border-base-300 shadow-sm flex items-center gap-1">
+                        <button 
+                            onClick={() => setActiveTab("mock-tests")}
+                            className={`flex items-center gap-3 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'mock-tests' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-base-100'}`}
+                        >
+                            <PiFilesFill className="text-lg" /> Full Mock Tests
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab("skill-labs")}
+                            className={`flex items-center gap-3 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'skill-labs' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-base-100'}`}
+                        >
+                            <PiSelectionAllFill className="text-lg" /> Individual Labs
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <AnimatePresence mode="wait">
                 {activeTab === "mock-tests" ? (
@@ -357,91 +375,95 @@ const GradeSubmissions = () => {
                         exit={{ opacity: 0, y: -10 }}
                         className="space-y-10"
                     >
-                        <div className="flex items-center gap-4 bg-white p-4 rounded-4xl border border-base-300 shadow-sm w-fit">
-                            <select 
-                                className="select select-sm border-none focus:ring-0 font-black text-[10px] uppercase tracking-widest"
-                                value={filter.status}
-                                onChange={(e) => setFilter({...filter, status: e.target.value})}
-                            >
-                                <option value="pending">Pending Review</option>
-                                <option value="reviewed">Already Reviewed</option>
-                            </select>
-                            <div className="w-px h-6 bg-base-300" />
-                            <select 
-                                className="select select-sm border-none focus:ring-0 font-black text-[10px] uppercase tracking-widest"
-                                value={filter.testType}
-                                onChange={(e) => setFilter({...filter, testType: e.target.value})}
-                            >
-                                <option value="">All Skills</option>
-                                <option value="writing">Writing</option>
-                                <option value="speaking">Speaking</option>
-                            </select>
-                        </div>
+                        {!selectedSubmission && (
+                            <div className="flex items-center gap-4 bg-white p-4 rounded-4xl border border-base-300 shadow-sm w-fit">
+                                <select 
+                                    className="select select-sm border-none focus:ring-0 font-black text-[10px] uppercase tracking-widest"
+                                    value={filter.status}
+                                    onChange={(e) => setFilter({...filter, status: e.target.value})}
+                                >
+                                    <option value="pending">Pending Review</option>
+                                    <option value="reviewed">Already Reviewed</option>
+                                </select>
+                                <div className="w-px h-6 bg-base-300" />
+                                <select 
+                                    className="select select-sm border-none focus:ring-0 font-black text-[10px] uppercase tracking-widest"
+                                    value={filter.testType}
+                                    onChange={(e) => setFilter({...filter, testType: e.target.value})}
+                                >
+                                    <option value="">All Skills</option>
+                                    <option value="writing">Writing</option>
+                                    <option value="speaking">Speaking</option>
+                                </select>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                             {/* List Side */}
-                            <div className={`${selectedSubmission ? 'lg:col-span-4' : 'lg:col-span-12'} space-y-4 h-[calc(100vh-350px)] overflow-y-auto custom-scrollbar pr-2`}>
-                                {submissions.length === 0 ? (
-                                    <div className="card bg-white border border-base-300 p-20 flex flex-col items-center justify-center text-center space-y-4 rounded-[3rem]">
-                                        <PiMagnifyingGlassFill className="text-6xl text-base-content/10" />
-                                        <h3 className="text-xl font-black opacity-30 uppercase tracking-tighter">No Lab Submissions</h3>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-                                            {submissions.map((sub) => {
-                                                const isLocked = sub.lockedBy && new Date(sub.lockExpiresAt) > new Date();
-                                                const currentUserEmail = user?.email || localStorage.getItem('user_email');
-                                                const isLockedByMe = sub.lockedByEmail === currentUserEmail;
-                                                const currentlyLockedByOther = isLocked && !isLockedByMe;
+                            {!selectedSubmission && (
+                                <div className="lg:col-span-12 space-y-4 h-[calc(100vh-350px)] overflow-y-auto custom-scrollbar pr-2">
+                                    {submissions.length === 0 ? (
+                                        <div className="card bg-white border border-base-300 p-20 flex flex-col items-center justify-center text-center space-y-4 rounded-[3rem]">
+                                            <PiMagnifyingGlassFill className="text-6xl text-base-content/10" />
+                                            <h3 className="text-xl font-black opacity-30 uppercase tracking-tighter">No Lab Submissions</h3>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+                                                {submissions.map((sub) => {
+                                                    const isLocked = sub.lockedBy && new Date(sub.lockExpiresAt) > new Date();
+                                                    const currentUserEmail = user?.email || localStorage.getItem('user_email');
+                                                    const isLockedByMe = sub.lockedByEmail === currentUserEmail;
+                                                    const currentlyLockedByOther = isLocked && !isLockedByMe;
 
-                                                return (
-                                                    <div 
-                                                        key={sub._id}
-                                                        onClick={() => !currentlyLockedByOther && setSelectedSubmission(sub)}
-                                                        className={`card p-6 border transition-all cursor-pointer group relative overflow-hidden ${
-                                                            selectedSubmission?._id === sub._id 
-                                                            ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/20 rounded-[2.5rem]' 
-                                                            : currentlyLockedByOther
-                                                            ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed rounded-4xl'
-                                                            : 'bg-white border-base-300 hover:border-primary/50 rounded-4xl'
-                                                        }`}
-                                                    >
-                                                        {currentlyLockedByOther && (
-                                                            <div className="absolute top-2 right-4 flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                                                                <PiClockFill className="animate-pulse" /> Locked by {sub.lockedByName || sub.lockedByEmail?.split('@')[0]}
-                                                            </div>
-                                                        )}
-                                                        <div className="flex items-center justify-between gap-4">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${selectedSubmission?._id === sub._id ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
-                                                                    {sub.testType === 'writing' ? <PiNotePencilFill /> : <PiMicrophoneStageFill />}
+                                                    return (
+                                                        <div 
+                                                            key={sub._id}
+                                                            onClick={() => !currentlyLockedByOther && setSelectedSubmission(sub)}
+                                                            className={`card p-6 border transition-all cursor-pointer group relative overflow-hidden ${
+                                                                selectedSubmission?._id === sub._id 
+                                                                ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/20 rounded-[2.5rem]' 
+                                                                : currentlyLockedByOther
+                                                                ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed rounded-4xl'
+                                                                : 'bg-white border-base-300 hover:border-primary/50 rounded-4xl'
+                                                            }`}
+                                                        >
+                                                            {currentlyLockedByOther && (
+                                                                <div className="absolute top-2 right-4 flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                                                    <PiClockFill className="animate-pulse" /> Locked by {sub.lockedByName || sub.lockedByEmail?.split('@')[0]}
                                                                 </div>
-                                                                <div>
-                                                                    <h4 className="font-black leading-tight text-sm uppercase tracking-tight">{sub.userName}</h4>
-                                                                    <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${selectedSubmission?._id === sub._id ? 'text-white/60' : 'text-slate-400'}`}>
-                                                                        {sub.title}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            {!currentlyLockedByOther && (
-                                                                <PiArrowRightBold className={`opacity-0 group-hover:opacity-100 transition-all ${selectedSubmission?._id === sub._id ? 'text-white' : 'text-primary'}`} />
                                                             )}
+                                                            <div className="flex items-center justify-between gap-4">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${selectedSubmission?._id === sub._id ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
+                                                                        {sub.testType === 'writing' ? <PiNotePencilFill /> : <PiMicrophoneStageFill />}
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-black leading-tight text-sm uppercase tracking-tight">{sub.userName}</h4>
+                                                                        <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${selectedSubmission?._id === sub._id ? 'text-white/60' : 'text-slate-400'}`}>
+                                                                            {sub.title}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                {!currentlyLockedByOther && (
+                                                                    <PiArrowRightBold className={`opacity-0 group-hover:opacity-100 transition-all ${selectedSubmission?._id === sub._id ? 'text-white' : 'text-primary'}`} />
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
-                                    </div>
-                                )}
-                            </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Evaluation Side */}
                             {selectedSubmission && (
                                 <motion.div 
                                     initial={{ x: 20, opacity: 0 }}
                                     animate={{ x: 0, opacity: 1 }}
-                                    className="lg:col-span-8 space-y-8"
+                                    className="lg:col-span-12 space-y-8"
                                 >
-                                    <div className="card bg-white border border-base-300 rounded-[3.5rem] shadow-sm overflow-hidden flex flex-col h-[calc(100vh-350px)]">
+                                    <div className="card bg-white border border-base-300 rounded-[3.5rem] shadow-sm overflow-hidden flex flex-col h-[calc(100vh-100px)]">
                                         <div className="px-10 py-6 border-b border-base-200 bg-base-50/50 flex items-center justify-between">
                                             <div className="flex items-center gap-4">
                                                 <PiUserCircleFill className="text-4xl text-primary" />
@@ -450,89 +472,139 @@ const GradeSubmissions = () => {
                                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{selectedSubmission.userEmail}</p>
                                                 </div>
                                             </div>
-                                            <button onClick={() => setSelectedSubmission(null)} className="btn btn-ghost btn-circle">
-                                                <PiXCircleFill className="text-2xl text-slate-300" />
+                                            <button 
+                                                onClick={() => setSelectedSubmission(null)} 
+                                                className="btn btn-ghost btn-sm rounded-xl font-black uppercase text-[10px] flex items-center gap-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors px-3 py-1.5"
+                                            >
+                                                <PiXCircleFill className="text-lg" /> Back to List
                                             </button>
                                         </div>
+                                         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                                             {/* Left Pane: Student Submission Content (Scrollable) */}
+                                             <div className="flex-1 overflow-y-auto p-10 border-r border-base-200 custom-scrollbar space-y-6">
+                                                 <div className="flex items-center justify-between border-b pb-4 mb-4">
+                                                     <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Student Submission</h5>
+                                                     <span className="badge badge-primary font-black text-[9px] uppercase tracking-wider">{selectedSubmission.testType}</span>
+                                                 </div>
+                                                 
+                                                 {selectedSubmission.testType === 'speaking' ? (
+                                                     <div className="space-y-6">
+                                                         {parseSpeakingSubmission(selectedSubmission.content).map((part, partIdx) => (
+                                                             <div key={partIdx} className="space-y-3 col-span-full">
+                                                                 <h5 className="text-[10px] font-black uppercase tracking-widest text-primary border-b pb-1 mt-2">{part.title}</h5>
+                                                                 <div className="grid grid-cols-1 gap-4">
+                                                                     {part.items.map((item, itemIdx) => (
+                                                                         <div key={itemIdx} className="p-4 bg-base-50 border border-base-200 rounded-2xl space-y-2 shadow-inner">
+                                                                             <span className="badge badge-primary font-black text-[8px] uppercase tracking-wider">{item.label}</span>
+                                                                             <p className="text-xs font-bold text-slate-700 leading-tight">{item.question}</p>
+                                                                             {item.audioUrl && (
+                                                                                 <audio src={item.audioUrl} controls className="w-full rounded-lg" />
+                                                                             )}
+                                                                         </div>
+                                                                     ))}
+                                                                 </div>
+                                                             </div>
+                                                         ))}
+                                                         {parseSpeakingSubmission(selectedSubmission.content).length === 0 && (
+                                                             <p className="text-xs font-bold text-slate-400 italic">No recordings found.</p>
+                                                         )}
+                                                     </div>
+                                                 ) : (() => {
+                                                     const { task1, task2 } = parseWritingSubmission(selectedSubmission.content);
+                                                     return (
+                                                         <div className="space-y-6">
+                                                             {task1 && (
+                                                                 <div className="space-y-2">
+                                                                     <h6 className="text-[10px] font-black uppercase tracking-widest text-primary">Task 1 Response</h6>
+                                                                     <div className="p-6 bg-base-50 border border-base-200 rounded-2xl text-base leading-relaxed text-slate-700 whitespace-pre-wrap font-medium shadow-inner">
+                                                                         {task1}
+                                                                     </div>
+                                                                 </div>
+                                                             )}
+                                                             {task2 && (
+                                                                 <div className="space-y-2">
+                                                                     <h6 className="text-[10px] font-black uppercase tracking-widest text-primary">Task 2 Response</h6>
+                                                                     <div className="p-6 bg-base-50 border border-base-200 rounded-2xl text-base leading-relaxed text-slate-700 whitespace-pre-wrap font-medium shadow-inner">
+                                                                         {task2}
+                                                                     </div>
+                                                                 </div>
+                                                             )}
+                                                         </div>
+                                                     );
+                                                 })()}
+                                             </div>
 
-                                        <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
-                                            <div className="space-y-4">
-                                                <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Attempt Content</h5>
-                                                <div className="p-8 bg-base-50 border border-base-200 rounded-[2.5rem] text-lg leading-relaxed text-slate-700 whitespace-pre-wrap font-medium italic">
-                                                    {selectedSubmission.testType === 'speaking' ? (
-                                                        <div className="flex flex-col items-center gap-4 py-4">
-                                                            <audio controls src={selectedSubmission.content} className="w-full" />
-                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Speaking Session Recording</p>
-                                                        </div>
-                                                    ) : (
-                                                        selectedSubmission.content
-                                                    )}
-                                                </div>
-                                            </div>
+                                             {/* Right Pane: Evaluation Form / Results (Scrollable) */}
+                                             <div className="w-full md:w-96 overflow-y-auto p-10 bg-base-50/50 custom-scrollbar flex flex-col justify-between border-t md:border-t-0 md:border-l border-base-200">
+                                                 <div className="space-y-6">
+                                                     <div className="flex items-center justify-between border-b pb-4 mb-4">
+                                                         <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Evaluation &amp; Feedback</h5>
+                                                     </div>
 
-                                            {filter.status === 'pending' ? (
-                                                <form onSubmit={handleReviewSubmit} className="space-y-8 pt-6 border-t border-base-200">
-                                                    <div className="grid grid-cols-2 gap-6">
-                                                        <div className="space-y-2">
-                                                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-4">Numeric Score (0-100)</label>
-                                                            <input 
-                                                                type="number"
-                                                                className="input input-bordered w-full rounded-2xl font-black focus:border-primary"
-                                                                placeholder="e.g. 85"
-                                                                value={reviewData.score}
-                                                                onChange={(e) => setReviewData({...reviewData, score: e.target.value})}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-4">IELTS Band Score</label>
-                                                            <input 
-                                                                type="text"
-                                                                className="input input-bordered w-full rounded-2xl font-black focus:border-primary"
-                                                                placeholder="e.g. 7.5"
-                                                                value={reviewData.bandScore}
-                                                                onChange={(e) => setReviewData({...reviewData, bandScore: e.target.value})}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-4">Professional Feedback</label>
-                                                        <textarea 
-                                                            className="textarea textarea-bordered w-full rounded-[2.5rem] h-32 font-medium focus:border-primary"
-                                                            placeholder="Provide detailed constructive criticism..."
-                                                            value={reviewData.feedback}
-                                                            onChange={(e) => setReviewData({...reviewData, feedback: e.target.value})}
-                                                        />
-                                                    </div>
-                                                    <button 
-                                                        type="submit"
-                                                        disabled={submitting}
-                                                        className="btn btn-primary btn-block rounded-2xl h-16 font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20"
-                                                    >
-                                                        {submitting ? <span className="loading loading-spinner" /> : "Submit Final Grade"}
-                                                        <PiCheckCircleFill className="text-xl" />
-                                                    </button>
-                                                </form>
-                                            ) : (
-                                                <div className="space-y-8 pt-6 border-t border-base-200">
-                                                    <div className="flex items-center gap-8">
-                                                        <div className="flex flex-col items-center p-6 bg-emerald-500/10 rounded-4xl border border-emerald-500/20 min-w-[100px]">
-                                                            <span className="text-3xl font-black text-emerald-600">{selectedSubmission.score}%</span>
-                                                            <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600/60 text-center">Score</span>
-                                                        </div>
-                                                        <div className="flex flex-col items-center p-6 bg-primary/10 rounded-4xl border border-primary/20 min-w-[100px]">
-                                                            <span className="text-3xl font-black text-primary">{selectedSubmission.bandScore}</span>
-                                                            <span className="text-[8px] font-black uppercase tracking-widest text-primary/60 text-center">IELTS Band</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Instructor Evaluation</h5>
-                                                        <div className="p-8 bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] font-bold text-slate-600 italic leading-relaxed">
-                                                            {selectedSubmission.feedback}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                                     {filter.status === 'pending' ? (
+                                                         <form onSubmit={handleReviewSubmit} className="space-y-6">
+                                                             <div className="grid grid-cols-2 gap-4">
+                                                                 <div className="space-y-2">
+                                                                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Score (0-100)</label>
+                                                                     <input 
+                                                                         type="number"
+                                                                         className="input input-sm input-bordered w-full h-12 rounded-xl font-black focus:border-primary text-sm"
+                                                                         placeholder="e.g. 85"
+                                                                         value={reviewData.score}
+                                                                         onChange={(e) => setReviewData({...reviewData, score: e.target.value})}
+                                                                     />
+                                                                 </div>
+                                                                 <div className="space-y-2">
+                                                                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">IELTS Band</label>
+                                                                     <input 
+                                                                         type="text"
+                                                                         className="input input-sm input-bordered w-full h-12 rounded-xl font-black focus:border-primary text-sm"
+                                                                         placeholder="e.g. 7.5"
+                                                                         value={reviewData.bandScore}
+                                                                         onChange={(e) => setReviewData({...reviewData, bandScore: e.target.value})}
+                                                                     />
+                                                                 </div>
+                                                             </div>
+                                                             <div className="space-y-2">
+                                                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Professional Feedback</label>
+                                                                 <textarea 
+                                                                     className="textarea textarea-bordered w-full rounded-2xl h-44 font-medium focus:border-primary text-sm leading-relaxed"
+                                                                     placeholder="Provide detailed constructive criticism..."
+                                                                     value={reviewData.feedback}
+                                                                     onChange={(e) => setReviewData({...reviewData, feedback: e.target.value})}
+                                                                 />
+                                                             </div>
+                                                             <button 
+                                                                 type="submit"
+                                                                 disabled={submitting}
+                                                                 className="btn btn-primary btn-block rounded-xl h-14 font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/25 mt-4"
+                                                             >
+                                                                 {submitting ? <span className="loading loading-spinner" /> : "Submit Review"}
+                                                             </button>
+                                                         </form>
+                                                     ) : (
+                                                         <div className="space-y-6">
+                                                             <div className="grid grid-cols-2 gap-4">
+                                                                 <div className="flex flex-col items-center p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                                                     <span className="text-2xl font-black text-emerald-600">{selectedSubmission.score}%</span>
+                                                                     <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600/60 text-center mt-1">Score</span>
+                                                                 </div>
+                                                                 <div className="flex flex-col items-center p-4 bg-primary/10 rounded-2xl border border-primary/20">
+                                                                     <span className="text-2xl font-black text-primary">{selectedSubmission.bandScore}</span>
+                                                                     <span className="text-[8px] font-black uppercase tracking-widest text-primary/60 text-center mt-1">IELTS Band</span>
+                                                                 </div>
+                                                             </div>
+                                                             <div className="space-y-2">
+                                                                 <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Instructor Feedback</h5>
+                                                                 <div className="p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl font-semibold text-slate-600 italic text-sm leading-relaxed whitespace-pre-wrap">
+                                                                     {selectedSubmission.feedback}
+                                                                 </div>
+                                                             </div>
+                                                         </div>
+                                                     )}
+                                                 </div>
+                                             </div>
+                                         </div>
                                     </div>
                                 </motion.div>
                             )}
