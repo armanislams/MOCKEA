@@ -15,6 +15,7 @@ import resourceRouter from "./routes/resource.route.js";
 import trainersRouter from "./routes/trainer.route.js";
 import apiRateLimiter from "./middlewares/apiRateLimiter.js";
 import chatbotRouter from "./routes/chatbot.route.js";
+import { sanitizeMiddleware } from "./middlewares/sanitize.js";
 
 const Port = process.env.PORT || 3000;
 
@@ -40,6 +41,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(sanitizeMiddleware);
 // app.use(express.urlencoded({ extended: true }));
 
 // Apply global rate limiting to all public and private API routes (60 requests per minute per IP)
