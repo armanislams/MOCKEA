@@ -247,7 +247,7 @@ const Profile = () => {
                             ))}
                         </ul>
                         {rawPlan !== 'premium' && rawPlan !== 'admin' && (
-                            <Link to="/pricing" className={`btn ${config.buttonColor} btn-block rounded-2xl h-14 font-black shadow-xl shadow-warning/20`}>
+                            <Link to={rawPlan === 'instructor' ? '/dashboard' : '/pricing'} className={`btn ${config.buttonColor} btn-block rounded-2xl h-14 font-black shadow-xl shadow-warning/20`}>
                                 {config.buttonText}
                             </Link>
                         )}
