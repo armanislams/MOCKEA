@@ -169,12 +169,13 @@ export const finalizeTest = async (req, res) => {
         }
 
         if (isTerminated || result.status === 'terminated' || result.tabSwitchCount >= 3) {
-            result.status = 'terminated';
+            await MockTestResult.findByIdAndDelete(resultId);
+            return res.status(200).json({ success: true, message: 'Test session discarded' });
         } else {
             result.status = 'completed';
+            await result.save();
+            res.status(200).json({ success: true, message: 'Test finalized' });
         }
-        await result.save();
-        res.status(200).json({ success: true, message: 'Test finalized' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

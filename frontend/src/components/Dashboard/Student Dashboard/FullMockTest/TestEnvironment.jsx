@@ -218,7 +218,7 @@ const TestEnvironment = () => {
                     const performTermination = async () => {
                         if (resId) {
                             try {
-                                await axiosSecure.post("/mock-tests/finalize", { resultId: resId });
+                                await axiosSecure.post("/mock-tests/finalize", { resultId: resId, isTerminated: true });
                             } catch (err) {
                                 console.error("Failed to finalize test on reload:", err);
                             }
