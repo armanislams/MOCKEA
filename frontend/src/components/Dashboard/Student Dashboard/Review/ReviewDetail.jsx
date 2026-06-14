@@ -22,7 +22,7 @@ const parseSpeakingSubmission = (content) => {
     const parsed = [];
     
     parts.forEach(partText => {
-        const titleMatch = partText.match(/--- (Part \d+:[^\n]+) ---/);
+        const titleMatch = partText.match(/--- (Part \d+[^\n]+) ---/);
         const title = titleMatch ? titleMatch[1] : "Speaking Part";
         
         const items = [];
@@ -208,7 +208,16 @@ const ReviewDetail = () => {
                                 {activeTab === 'writing' && (
                                     <div className="space-y-6">
                                         <h2 className="text-2xl font-black uppercase tracking-tighter text-primary">Writing Task Prompt</h2>
-                                        <div dangerouslySetInnerHTML={{ __html: currentSectionData?.content }} className="text-lg bg-base-100 p-8 rounded-[2rem] border border-base-300 shadow-inner" />
+                                        <div dangerouslySetInnerHTML={{ __html: convertMarkdownContentToHtml(currentSectionData?.passage || currentSectionData?.content) }} className="text-lg bg-base-100 p-8 rounded-[2rem] border border-base-300 shadow-inner select-text" />
+                                        {currentSectionData?.images?.filter(img => img && img.trim() !== "").length > 0 && (
+                                            <div className="grid gap-4 pt-4">
+                                                {currentSectionData.images.filter(img => img && img.trim() !== "").map((img, i) => (
+                                                    <div key={i} className="rounded-3xl overflow-hidden border border-base-300 bg-base-100 p-4">
+                                                        <img src={img} alt={`Writing Task Diagram ${i+1}`} className="w-full h-auto object-contain max-h-[400px]" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                                 {activeTab === 'speaking' && (
@@ -279,31 +288,38 @@ const ReviewDetail = () => {
                                             <PiPencilLineFill className="text-primary" />
                                             Your Submission
                                         </h3>
-                                        {activeTab === 'speaking' ? (
-                                            <div className="space-y-8 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                                                {parseSpeakingSubmission(currentSectionResult.answers[0]?.userAnswer).map((part, partIdx) => (
-                                                    <div key={partIdx} className="space-y-4">
-                                                        <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b pb-1">{part.title}</h4>
-                                                        <div className="space-y-4">
-                                                            {part.items.map((item, itemIdx) => (
-                                                                <div key={itemIdx} className="p-5 bg-base-50 border border-base-200 rounded-2xl space-y-3">
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="badge badge-primary font-black text-[9px] uppercase tracking-wider">{item.label}</span>
-                                                                    </div>
-                                                                    <p className="text-sm font-bold text-slate-700">{item.question}</p>
-                                                                    {item.audioUrl && (
-                                                                        <audio src={item.audioUrl} controls className="w-full rounded-xl border border-slate-200 shadow-sm" />
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                {parseSpeakingSubmission(currentSectionResult.answers[0]?.userAnswer).length === 0 && (
-                                                    <p className="text-sm font-semibold text-slate-400 italic">No responses recorded.</p>
-                                                )}
-                                            </div>
-                                        ) : (
+                                        {activeTab === 'speaking' ? (() => {
+                                             const speakingAnswer = currentSectionResult.answers.find(ans => 
+                                                 ans.questionId === currentSectionData?._id || 
+                                                 (ans.userAnswer && (ans.userAnswer.includes("--- Part ") || ans.userAnswer.includes("Answer:")))
+                                             );
+                                             const parsedSpeaking = parseSpeakingSubmission(speakingAnswer?.userAnswer);
+                                             return (
+                                                 <div className="space-y-8 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                                     {parsedSpeaking.map((part, partIdx) => (
+                                                         <div key={partIdx} className="space-y-4">
+                                                             <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b pb-1">{part.title}</h4>
+                                                             <div className="space-y-4">
+                                                                 {part.items.map((item, itemIdx) => (
+                                                                     <div key={itemIdx} className="p-5 bg-base-50 border border-base-200 rounded-2xl space-y-3">
+                                                                         <div className="flex items-center justify-between">
+                                                                             <span className="badge badge-primary font-black text-[9px] uppercase tracking-wider">{item.label}</span>
+                                                                         </div>
+                                                                         <p className="text-sm font-bold text-slate-700">{item.question}</p>
+                                                                         {item.audioUrl && (
+                                                                             <audio src={item.audioUrl} controls className="w-full rounded-xl border border-slate-200 shadow-sm" />
+                                                                         )}
+                                                                     </div>
+                                                                 ))}
+                                                             </div>
+                                                         </div>
+                                                     ))}
+                                                     {parsedSpeaking.length === 0 && (
+                                                         <p className="text-sm font-semibold text-slate-400 italic">No responses recorded.</p>
+                                                     )}
+                                                 </div>
+                                             );
+                                         })() : (
                                             <div className="bg-base-100 p-8 rounded-[2rem] border border-base-300 shadow-inner min-h-[300px] leading-relaxed whitespace-pre-wrap font-medium text-base-content/80">
                                                 {currentSectionResult.answers[0]?.userAnswer || "No response recorded."}
                                             </div>

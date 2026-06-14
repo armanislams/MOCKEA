@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 import useAuth from '../../../hooks/useAuth';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import { 
@@ -276,7 +277,10 @@ const DashboardHome = () => {
                     </p>
                 </div>
 
-                <button className="btn btn-primary btn-block mt-10 rounded-[1.5rem] h-14 font-black shadow-xl shadow-primary/20">
+                <button 
+                    onClick={() => toast.info("Targeted Practice is coming soon!")}
+                    className="btn btn-primary btn-block mt-10 rounded-[1.5rem] h-14 font-black shadow-xl shadow-primary/20"
+                >
                     Targeted Practice
                 </button>
             </div>

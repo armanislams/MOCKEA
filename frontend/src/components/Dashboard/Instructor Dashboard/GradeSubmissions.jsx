@@ -26,7 +26,7 @@ const parseSpeakingSubmission = (content) => {
     const parsed = [];
     
     parts.forEach(partText => {
-        const titleMatch = partText.match(/--- (Part \d+:[^\n]+) ---/);
+        const titleMatch = partText.match(/--- (Part \d+[^\n]+) ---/);
         const title = titleMatch ? titleMatch[1] : "Speaking Part";
         
         const items = [];
@@ -292,29 +292,36 @@ const GradeSubmissions = () => {
                                                     <div className="bg-white p-6 rounded-2xl border border-slate-200 text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-700 shadow-inner max-h-[400px] overflow-y-auto custom-scrollbar">
                                                         {section.answers[0]?.userAnswer || "No writing response recorded."}
                                                     </div>
-                                                ) : (
-                                                    <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                                        {parseSpeakingSubmission(section.answers[0]?.userAnswer).map((part, partIdx) => (
-                                                            <div key={partIdx} className="space-y-3 col-span-full">
-                                                                <h5 className="text-[10px] font-black uppercase tracking-widest text-primary border-b pb-1 mt-2">{part.title}</h5>
-                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                    {part.items.map((item, itemIdx) => (
-                                                                        <div key={itemIdx} className="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
-                                                                            <span className="badge badge-primary font-black text-[8px] uppercase tracking-wider">{item.label}</span>
-                                                                            <p className="text-xs font-bold text-slate-700 leading-tight">{item.question}</p>
-                                                                            {item.audioUrl && (
-                                                                                <audio src={item.audioUrl} controls className="w-full rounded-lg" />
-                                                                            )}
-                                                                        </div>
-                                                                    ))}
+                                                ) : (() => {
+                                                    const speakingAnswer = section.answers.find(ans => 
+                                                        !ans.questionId.endsWith('_completed') || 
+                                                        (ans.userAnswer && (ans.userAnswer.includes("--- Part ") || ans.userAnswer.includes("Answer:")))
+                                                    );
+                                                    const parsedSpeaking = parseSpeakingSubmission(speakingAnswer?.userAnswer);
+                                                    return (
+                                                        <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                                            {parsedSpeaking.map((part, partIdx) => (
+                                                                <div key={partIdx} className="space-y-3 col-span-full">
+                                                                    <h5 className="text-[10px] font-black uppercase tracking-widest text-primary border-b pb-1 mt-2">{part.title}</h5>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        {part.items.map((item, itemIdx) => (
+                                                                            <div key={itemIdx} className="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                                                                                <span className="badge badge-primary font-black text-[8px] uppercase tracking-wider">{item.label}</span>
+                                                                                <p className="text-xs font-bold text-slate-700 leading-tight">{item.question}</p>
+                                                                                {item.audioUrl && (
+                                                                                    <audio src={item.audioUrl} controls className="w-full rounded-lg" />
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        ))}
-                                                        {parseSpeakingSubmission(section.answers[0]?.userAnswer).length === 0 && (
-                                                            <p className="text-xs font-bold text-slate-400 italic">No recordings recorded.</p>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                            ))}
+                                                            {parsedSpeaking.length === 0 && (
+                                                                <p className="text-xs font-bold text-slate-400 italic">No recordings recorded.</p>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         );
                                     })()}
