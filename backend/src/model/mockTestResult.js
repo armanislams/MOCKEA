@@ -27,6 +27,9 @@ const mockTestResultSchema = new mongoose.Schema({
             type: Boolean,
             default: false
         },
+        feedback: {
+            type: String
+        },
         timeTaken: Number, // in seconds
         completedAt: {
             type: Date,

@@ -28,6 +28,7 @@ mockTestRouter.use(verifyUserRole());
 // Student/General Authenticated Routes
 mockTestRouter.get('/', getAllMockTests);
 mockTestRouter.get('/results/user', getUserResults);
+mockTestRouter.get('/results/all', verifyUserRole(['admin', 'instructor']), getAllResults);
 mockTestRouter.get('/results/:id', getResultDetail); // New: Result Detail for Review
 mockTestRouter.get('/:id', getMockTestById);
 mockTestRouter.post('/start', startTest);
@@ -36,7 +37,6 @@ mockTestRouter.post('/update-cheat-stats', updateCheatStats);
 mockTestRouter.post('/finalize', finalizeTest);
 
 // Instructor/Admin Routes for Manual Grading
-mockTestRouter.get('/results/all', verifyUserRole(['admin', 'instructor']), getAllResults);
 mockTestRouter.patch('/grade-section', verifyUserRole(['admin', 'instructor']), gradeSection);
 mockTestRouter.patch('/lock/:id', verifyUserRole(['admin', 'instructor']), lockMockResult);
 

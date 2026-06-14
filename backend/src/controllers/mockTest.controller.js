@@ -225,7 +225,7 @@ export const getAllResults = async (req, res) => {
 
 export const gradeSection = async (req, res) => {
     try {
-        const { resultId, sectionType, score } = req.body;
+        const { resultId, sectionType, score, feedback } = req.body;
         const result = await MockTestResult.findById(resultId);
 
         if (!result) return res.status(404).json({ success: false, message: 'Result not found' });
@@ -236,6 +236,9 @@ export const gradeSection = async (req, res) => {
         const instructor = await User.findOne({ email: req.decoded_email });
 
         section.score = score;
+        if (feedback !== undefined) {
+            section.feedback = feedback;
+        }
         section.isGraded = true;
         section.reviewedBy = instructor._id;
         section.reviewedByEmail = req.decoded_email;

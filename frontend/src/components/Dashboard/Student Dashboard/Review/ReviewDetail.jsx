@@ -137,11 +137,16 @@ const ReviewDetail = () => {
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Instructor Comments</p>
-                                    <p className="text-base-content/60 italic">
-                                        {currentSectionResult.isGraded 
-                                            ? "Well done! Focus on identifying distractors in multiple-choice questions." 
-                                            : "This section is currently under review by our senior instructors."}
-                                    </p>
+                                    <div 
+                                        className="text-base-content/70 prose prose-sm max-w-none italic mt-1"
+                                        dangerouslySetInnerHTML={{ 
+                                            __html: convertMarkdownContentToHtml(
+                                                currentSectionResult.isGraded 
+                                                    ? currentSectionResult.feedback || "_No specific comments provided for this section._" 
+                                                    : "_This section is currently under review by our senior instructors._"
+                                            ) 
+                                        }} 
+                                    />
                                     {currentSectionResult.reviewedByName && (
                                         <p className="text-[9px] font-black uppercase tracking-widest text-primary/40 mt-2">
                                             Evaluated by {currentSectionResult.reviewedByName}
