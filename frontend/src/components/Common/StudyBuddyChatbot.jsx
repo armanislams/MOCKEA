@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router";
 import { 
   PiChatCircleDotsBold, 
   PiXBold, 
@@ -20,10 +21,15 @@ const StudyBuddyChatbot = () => {
   const { user } = useAuth();
   const axiosPublic = useAxios();
   const axiosSecure = useAxiosSecure();
+  const { pathname } = useLocation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState("tutor"); // 'tutor' | 'examiner' | 'assistant'
-  const [messages, setMessages] = useState([]);
+  const [conversations, setConversations] = useState({
+    tutor: [],
+    examiner: [],
+    assistant: []
+  });
   const [inputText, setInputText] = useState("");
   
   const [isActive, setIsActive] = useState(true);
@@ -32,9 +38,23 @@ const StudyBuddyChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speakingMsgIndex, setSpeakingMsgIndex] = useState(null);
+  const [lastActivityTime, setLastActivityTime] = useState(null);
 
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  // Check if current page is in exam mode
+  const isExamMode = 
+    pathname.startsWith("/test/") || 
+    pathname.startsWith("/tests/") || 
+    ["/dashboard/listening", "/dashboard/reading", "/dashboard/writing", "/dashboard/speaking"].includes(pathname);
+
+  // Cancel any active TTS speech synthesis when entering exam mode
+  useEffect(() => {
+    if (isExamMode) {
+      window.speechSynthesis.cancel();
+    }
+  }, [isExamMode]);
 
   // Fetch global settings (welcome message, active state) on mount
   useEffect(() => {
@@ -52,24 +72,53 @@ const StudyBuddyChatbot = () => {
     fetchSettings();
   }, [axiosPublic]);
 
-  // Set default welcome message when chatbot opens or mode changes
+  // Set default welcome message when chatbot opens or mode changes (if history is empty)
   useEffect(() => {
     if (welcomeMessage) {
-      let greetText = welcomeMessage;
-      if (mode === "examiner") {
-        greetText = "Welcome to the IELTS Examination Simulator. I am your strict IELTS Examiner. Let's begin the interview. Are you ready for your speaking cue card topic?";
-      } else if (mode === "assistant") {
-        greetText = "Hello! I am your MOCKEA Site Assistant. Ask me anything about our Practice Labs, Full Mock Test integrity, fullscreen locks, scoring, or pricing plans!";
-      }
-      setMessages([
-        {
-          role: "assistant",
-          content: greetText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      setConversations((prev) => {
+        if (prev[mode] && prev[mode].length > 0) return prev;
+
+        let greetText = welcomeMessage;
+        if (mode === "examiner") {
+          greetText = "Welcome to the IELTS Examination Simulator. I am your strict IELTS Examiner. Let's begin the interview. Are you ready for your speaking cue card topic?";
+        } else if (mode === "assistant") {
+          greetText = "Hello! I am your MOCKEA Site Assistant. Ask me anything about our Practice Labs, Full Mock Test integrity, fullscreen locks, scoring, or pricing plans!";
         }
-      ]);
+
+        return {
+          ...prev,
+          [mode]: [
+            {
+              role: "assistant",
+              content: greetText,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ]
+        };
+      });
     }
   }, [mode, welcomeMessage]);
+
+  // Check for inactivity timeout (15 minutes) when widget opens
+  useEffect(() => {
+    if (isOpen) {
+      if (lastActivityTime) {
+        const elapsed = Date.now() - lastActivityTime;
+        const fifteenMinutes = 15 * 60 * 1000;
+        if (elapsed > fifteenMinutes) {
+          setConversations({
+            tutor: [],
+            examiner: [],
+            assistant: []
+          });
+          toast.info("Session reset due to inactivity.");
+        }
+      }
+      setLastActivityTime(Date.now());
+    }
+  }, [isOpen]);
+
+  const messages = conversations[mode] || [];
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -203,7 +252,11 @@ const StudyBuddyChatbot = () => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMessages((prev) => [...prev, studentMessage]);
+    setConversations((prev) => ({
+      ...prev,
+      [mode]: [...(prev[mode] || []), studentMessage]
+    }));
+    setLastActivityTime(Date.now());
     setInputText("");
     setIsLoading(true);
 
@@ -221,31 +274,39 @@ const StudyBuddyChatbot = () => {
       });
 
       if (res.data?.success) {
-        setMessages((prev) => [
+        setConversations((prev) => ({
           ...prev,
-          {
-            role: "assistant",
-            content: res.data.response,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ]);
+          [mode]: [
+            ...(prev[mode] || []),
+            {
+              role: "assistant",
+              content: res.data.response,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ]
+        }));
+        setLastActivityTime(Date.now());
       }
     } catch (err) {
       const errorMsg = err.response?.data?.message || "Failed to communicate with your AI Tutor. Please try again.";
-      setMessages((prev) => [
+      setConversations((prev) => ({
         ...prev,
-        {
-          role: "assistant",
-          content: `⚠️ Error: ${errorMsg}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
+        [mode]: [
+          ...(prev[mode] || []),
+          {
+            role: "assistant",
+            content: `⚠️ Error: ${errorMsg}`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]
+      }));
+      setLastActivityTime(Date.now());
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isActive) return null;
+  if (!isActive || isExamMode) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-[999] font-sans">
