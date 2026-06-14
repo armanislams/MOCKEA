@@ -7,6 +7,7 @@ import {
   PiBookOpen,
   PiCurrencyDollar,
   PiGraduationCap,
+  PiFileText,
 } from "react-icons/pi";
 
 export const AdminDashboard = ({ isDrawerOpen }) => {
@@ -22,6 +23,12 @@ export const AdminDashboard = ({ isDrawerOpen }) => {
         <NavLink to="/dashboard/admin/manage-users" className={!isDrawerOpen ? "justify-center" : ""}>
           <PiUsersThree className="w-5 h-5 shrink-0" />
           {isDrawerOpen && <span>Manage Users</span>}
+        </NavLink>
+      </li>
+      <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Manage Submissions">
+        <NavLink to="/dashboard/admin/manage-submissions" className={!isDrawerOpen ? "justify-center" : ""}>
+          <PiFileText className="w-5 h-5 shrink-0" />
+          {isDrawerOpen && <span>Manage Submissions</span>}
         </NavLink>
       </li>
       <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Manage Questions">

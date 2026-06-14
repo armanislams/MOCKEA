@@ -1,6 +1,40 @@
 import Questions from "../model/questions.js"
 import User from "../model/user.js";
 import MockTest from "../model/mockTest.js";
+import { v2 as cloudinary } from 'cloudinary';
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+}
+
+const getCloudinaryPublicId = (url) => {
+    try {
+        const parts = url.split('/upload/');
+        if (parts.length < 2) return null;
+        
+        let pathAfterUpload = parts[1];
+        if (pathAfterUpload.startsWith('v')) {
+            const nextSlashIndex = pathAfterUpload.indexOf('/');
+            if (nextSlashIndex !== -1) {
+                pathAfterUpload = pathAfterUpload.substring(nextSlashIndex + 1);
+            }
+        }
+        
+        const dotIndex = pathAfterUpload.lastIndexOf('.');
+        if (dotIndex !== -1) {
+            pathAfterUpload = pathAfterUpload.substring(0, dotIndex);
+        }
+        
+        return pathAfterUpload;
+    } catch (e) {
+        console.error("Error parsing Cloudinary URL", e);
+        return null;
+    }
+};
 
 export const getQuestions = async (req, res) => {
     try {
@@ -216,8 +250,27 @@ export const updateQuestion = async (req, res) => {
 
 export const deleteQuestion = async (req, res) => {
     try {
-        const question = await Questions.findByIdAndDelete(req.params.id);
-        if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
+        const { id } = req.params;
+        const question = await Questions.findById(id);
+        if (!question) {
+            return res.status(404).json({ success: false, message: 'Question not found' });
+        }
+
+        // If the question has an audioUrl on Cloudinary, delete it
+        if (question.audioUrl && question.audioUrl.includes("res.cloudinary.com")) {
+            const publicId = getCloudinaryPublicId(question.audioUrl);
+            if (publicId) {
+                console.log(`Deleting Cloudinary audio with public ID: ${publicId}`);
+                try {
+                    await cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
+                    console.log(`Successfully deleted Cloudinary asset: ${publicId}`);
+                } catch (cloudinaryErr) {
+                    console.error("Failed to delete asset from Cloudinary:", cloudinaryErr.message);
+                }
+            }
+        }
+
+        await Questions.findByIdAndDelete(id);
         res.status(200).json({ success: true, message: 'Question deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

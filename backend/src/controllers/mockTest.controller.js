@@ -324,3 +324,16 @@ export const deleteMockTest = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const deleteMockResult = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await MockTestResult.findByIdAndDelete(id);
+        if (!result) {
+            return res.status(404).json({ success: false, message: 'Result not found' });
+        }
+        res.status(200).json({ success: true, message: 'Mock test result deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

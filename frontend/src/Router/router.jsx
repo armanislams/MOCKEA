@@ -18,6 +18,7 @@ import Writing from "../components/Dashboard/Student Dashboard/Writing/Writing";
 import Speaking from "../components/Dashboard/Student Dashboard/Speaking/Speaking";
 import DashboardIndex from "../components/Dashboard/DashboardIndex";
 import ManageUsers from "../components/Dashboard/Admin Dashboard/ManageUsers";
+import ManageSubmissions from "../components/Dashboard/Admin Dashboard/ManageSubmissions";
 import AdminSettings from "../components/Dashboard/Admin Dashboard/AdminSettings";
 import FullMockTestLibrary from "../components/Dashboard/Student Dashboard/FullMockTest/FullMockTestLibrary";
 import AddQuestionForm from "../components/Dashboard/Admin Dashboard/AddQuestionForm";
@@ -167,6 +168,14 @@ const router = createBrowserRouter([
             element: (
               <AdminRoutes>
                 <ManageUsers />
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/manage-submissions",
+            element: (
+              <AdminRoutes>
+                <ManageSubmissions />
               </AdminRoutes>
             ),
           },

@@ -155,3 +155,16 @@ export const lockSubmission = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const deleteSubmission = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const submission = await PracticeSubmission.findByIdAndDelete(id);
+        if (!submission) {
+            return res.status(404).json({ success: false, message: 'Submission not found' });
+        }
+        res.status(200).json({ success: true, message: 'Submission deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
