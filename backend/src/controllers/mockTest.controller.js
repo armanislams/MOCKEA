@@ -1,6 +1,7 @@
 import MockTest from '../model/mockTest.js';
 import MockTestResult from '../model/mockTestResult.js';
 import User from '../model/user.js';
+import { cache } from '../utils/cache.js';
 
 // Get all mock tests (Library)
 export const getAllMockTests = async (req, res) => {
@@ -79,13 +80,22 @@ export const getAllMockTests = async (req, res) => {
 // Get single mock test by ID
 export const getMockTestById = async (req, res) => {
     try {
-        const test = await MockTest.findById(req.params.id)
-            .populate('sections.reading')
-            .populate('sections.listening')
-            .populate('sections.writing')
-            .populate('sections.speaking');
-        
-        if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
+        const { id } = req.params;
+        const cacheKey = `mocktest:${id}`;
+
+        let test = await cache.get(cacheKey);
+
+        if (!test) {
+            test = await MockTest.findById(id)
+                .populate('sections.reading')
+                .populate('sections.listening')
+                .populate('sections.writing')
+                .populate('sections.speaking');
+            
+            if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
+            await cache.set(cacheKey, test, 3600); // Cache for 1 hour
+        }
+
         res.status(200).json({ success: true, test });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -399,6 +409,7 @@ export const createMockTest = async (req, res) => {
 export const updateMockTest = async (req, res) => {
     try {
         const test = await MockTest.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
+        await cache.del(`mocktest:${req.params.id}`);
         res.status(200).json({ success: true, test });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -408,6 +419,7 @@ export const updateMockTest = async (req, res) => {
 export const deleteMockTest = async (req, res) => {
     try {
         await MockTest.findByIdAndDelete(req.params.id);
+        await cache.del(`mocktest:${req.params.id}`);
         res.status(200).json({ success: true, message: 'Deleted' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

@@ -5,7 +5,8 @@ import {
     getSubmissions, 
     reviewSubmission,
     lockSubmission,
-    deleteSubmission
+    deleteSubmission,
+    getUploadSignature
 } from '../controllers/submissions.controller.js';
 import verifyUserToken from '../middlewares/verifyUserToken.js';
 import verifyUserRole from '../middlewares/verifyUserRole.js';
@@ -16,6 +17,7 @@ const sRouter = express.Router();
 // Student routes
 sRouter.post('/submit', verifyUserToken, apiRateLimiter(5, 60 * 1000), submitPractice);
 sRouter.get('/my-submissions', verifyUserToken, getMySubmissions);
+sRouter.get('/upload-signature', verifyUserToken, getUploadSignature);
 
 // Admin/Instructor routes
 sRouter.get('/', verifyUserToken, verifyUserRole(['admin', 'instructor']), getSubmissions);

@@ -497,14 +497,20 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   }, [prepTime, isPrepPhase]);
 
   const uploadToCloudinary = async (blob, filename) => {
+    // 1. Fetch secure upload signature from backend
+    const signatureRes = await axiosSecure.get('/submissions/upload-signature');
+    const { signature, timestamp, folder, apiKey, cloudName } = signatureRes.data;
+
+    // 2. Perform direct-to-cloud signed upload
     const formData = new FormData();
     formData.append("file", blob, filename);
-    formData.append("upload_preset", import.meta.env.VITE_UPLOAD_PRESET);
-    formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME);
-    formData.append("resource_type", "video");
+    formData.append("api_key", apiKey);
+    formData.append("timestamp", timestamp);
+    formData.append("signature", signature);
+    formData.append("folder", folder);
 
     const response = await axios.post(
-      `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/video/upload`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
       formData,
     );
 
@@ -820,6 +826,37 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   }
 
   if (loading) return <Loader />;
+
+  const userPlan = userData?.plan || "free";
+  const userRole = userData?.role || "student";
+
+  if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white border border-base-300 rounded-[2.5rem] p-8 md:p-12 shadow-xl text-center space-y-6">
+          <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mx-auto text-rose-500 text-4xl font-bold">
+            🚫
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800 leading-tight">403 - Access Denied</h1>
+          <p className="text-sm text-base-content/60 leading-relaxed">
+            The Speaking practice section is exclusive to Standard and Premium plans. Please upgrade your plan to access this lab.
+          </p>
+          <button 
+            onClick={() => navigate("/pricing")}
+            className="btn btn-primary w-full rounded-2xl font-black text-sm uppercase tracking-wider animate-bounce"
+          >
+            Upgrade Plan
+          </button>
+          <button 
+            onClick={() => navigate("/dashboard")}
+            className="btn btn-ghost w-full rounded-2xl font-black text-sm uppercase tracking-wider"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!activeSet || (!preloadedSet && !selectedSetId)) {
     return (

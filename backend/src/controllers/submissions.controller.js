@@ -1,5 +1,14 @@
 import PracticeSubmission from '../model/practiceSubmission.js';
 import User from '../model/user.js';
+import { v2 as cloudinary } from 'cloudinary';
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+}
 
 export const submitPractice = async (req, res) => {
     try {
@@ -187,6 +196,34 @@ export const deleteSubmission = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Submission not found' });
         }
         res.status(200).json({ success: true, message: 'Submission deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getUploadSignature = async (req, res) => {
+    try {
+        const timestamp = Math.round(new Date().getTime() / 1000);
+        const folder = 'mockea_speaking_submissions';
+
+        const paramsToSign = {
+            timestamp,
+            folder
+        };
+
+        const signature = cloudinary.utils.api_sign_request(
+            paramsToSign,
+            process.env.CLOUDINARY_API_SECRET
+        );
+
+        res.status(200).json({
+            success: true,
+            signature,
+            timestamp,
+            folder,
+            apiKey: process.env.CLOUDINARY_API_KEY,
+            cloudName: process.env.CLOUDINARY_CLOUD_NAME
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

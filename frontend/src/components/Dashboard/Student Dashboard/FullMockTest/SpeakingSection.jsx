@@ -17,8 +17,10 @@ import {
 import Swal from "sweetalert2";
 import axios from "axios";
 import { toast } from "react-toastify";
+import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 
 const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
+    const axiosSecure = useAxiosSecure();
     // Timers & Active states
     const [prepTime, setPrepTime] = useState(60);
     const [isPrepActive, setIsPrepActive] = useState(false);
@@ -465,14 +467,20 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     const uploadToCloudinary = async (blob) => {
         setIsUploading(true);
         try {
+            // 1. Fetch secure upload signature from backend
+            const signatureRes = await axiosSecure.get('/submissions/upload-signature');
+            const { signature, timestamp, folder, apiKey, cloudName } = signatureRes.data;
+
+            // 2. Perform direct-to-cloud signed upload
             const formData = new FormData();
             formData.append("file", blob, "speaking_mock_recording.webm");
-            formData.append("upload_preset", import.meta.env.VITE_UPLOAD_PRESET);
-            formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME);
-            formData.append("resource_type", "video");
+            formData.append("api_key", apiKey);
+            formData.append("timestamp", timestamp);
+            formData.append("signature", signature);
+            formData.append("folder", folder);
 
             const response = await axios.post(
-                `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/video/upload`,
+                `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
                 formData
             );
 

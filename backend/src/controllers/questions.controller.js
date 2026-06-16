@@ -2,6 +2,7 @@ import Questions from "../model/questions.js"
 import User from "../model/user.js";
 import MockTest from "../model/mockTest.js";
 import { v2 as cloudinary } from 'cloudinary';
+import { cache } from '../utils/cache.js';
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
     cloudinary.config({
@@ -165,9 +166,17 @@ export const postQuestion = async (req, res) => {
 
 export const getQuestionById = async (req, res) => {
     try {
-        const question = await Questions.findById(req.params.id);
+        const { id } = req.params;
+        const cacheKey = `question:${id}`;
+
+        let question = await cache.get(cacheKey);
+
         if (!question) {
-            return res.status(404).json({ success: false, message: 'Question not found' });
+            question = await Questions.findById(id);
+            if (!question) {
+                return res.status(404).json({ success: false, message: 'Question not found' });
+            }
+            await cache.set(cacheKey, question, 3600); // Cache for 1 hour
         }
 
         // Enforce plan-tier checks on individual question sets
@@ -267,6 +276,7 @@ export const updateQuestion = async (req, res) => {
                 { $set: { [`${updateField}.$`]: newVersion._id } }
             );
 
+            await cache.del(`question:${original._id}`);
             return res.status(200).json({
                 success: true,
                 message: "Structural edit detected. Spawned a new version to preserve historical integrity.",
@@ -276,6 +286,7 @@ export const updateQuestion = async (req, res) => {
             // --- MINOR/TEXTUAL CHANGE FLOW ---
             // Standard in-place update
             const updatedQuestion = await Questions.findByIdAndUpdate(id, updateData, { returnDocument: 'after' });
+            await cache.del(`question:${id}`);
             return res.status(200).json({
                 success: true,
                 message: "Minor edit executed in-place.",
@@ -310,6 +321,7 @@ export const deleteQuestion = async (req, res) => {
         }
 
         await Questions.findByIdAndDelete(id);
+        await cache.del(`question:${id}`);
         res.status(200).json({ success: true, message: 'Question deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

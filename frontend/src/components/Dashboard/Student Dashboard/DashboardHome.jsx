@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import useAuth from '../../../hooks/useAuth';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import useUserProfile from '../../../hooks/useUserProfile';
 import { 
     PiBookOpenFill, 
     PiEarFill, 
@@ -69,7 +70,20 @@ const quickActions = [
 const DashboardHome = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
+  const { userData } = useUserProfile();
   const name = user?.displayName || user?.email?.split('@')[0] || 'there';
+
+  const userPlan = userData?.plan || "free";
+  const userRole = userData?.role || "student";
+
+  const filteredQuickActions = quickActions.filter(action => {
+    if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
+      if (["Writing", "Speaking"].includes(action.title)) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const { data: summary, isLoading: loading } = useQuery({
     queryKey: ["analytics-summary"],
@@ -220,7 +234,7 @@ const DashboardHome = () => {
             </Link>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {quickActions.map((action) => (
+          {filteredQuickActions.map((action) => (
             <Link
               key={action.title}
               to={action.to}
