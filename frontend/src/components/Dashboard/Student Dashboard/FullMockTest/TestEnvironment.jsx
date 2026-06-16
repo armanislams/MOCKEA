@@ -278,10 +278,15 @@ const TestEnvironment = () => {
                 })
                 .catch(err => {
                     console.error(err);
-                    toast.error("Failed to initialize test session");
+                    const errMsg = err.response?.data?.message || "Failed to initialize test session";
+                    toast.error(errMsg);
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                    navigate("/dashboard/full-mock-test");
                 });
         }
-    }, [test, id, isStarted, axiosSecure, resultId, isTerminating]);
+    }, [test, id, isStarted, axiosSecure, resultId, isTerminating, navigate]);
 
 
 

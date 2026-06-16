@@ -8,15 +8,28 @@ export const getAllMockTests = async (req, res) => {
         const email = req.decoded_email;
         let examPreference = "IELTS";
         let userRole = "student";
+        let userPlan = "free";
+        let userId = null;
 
         if (email) {
             const userObj = await User.findOne({ email });
-            if (userObj && userObj.targetExam) {
-                examPreference = userObj.targetExam;
+            if (userObj) {
+                userId = userObj._id;
+                if (userObj.targetExam) {
+                    examPreference = userObj.targetExam;
+                }
+                if (userObj.role) {
+                    userRole = userObj.role;
+                }
+                if (userObj.plan) {
+                    userPlan = userObj.plan;
+                }
             }
-            if (userObj && userObj.role) {
-                userRole = userObj.role;
-            }
+        }
+
+        // Enforce Free plan view block
+        if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
+            return res.status(200).json({ success: true, tests: [], todayMockTestTaken: false });
         }
 
         const filter = {};
@@ -41,7 +54,23 @@ export const getAllMockTests = async (req, res) => {
         }
 
         const tests = await MockTest.find(filter).populate('sections.reading sections.listening sections.writing sections.speaking');
-        res.status(200).json({ success: true, tests });
+
+        // Check if standard user took a test today
+        let todayMockTestTaken = false;
+        if (userRole !== "admin" && userRole !== "instructor" && userPlan === "standard" && userId) {
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            
+            const testToday = await MockTestResult.findOne({
+                userId,
+                createdAt: { $gte: startOfToday }
+            });
+            if (testToday) {
+                todayMockTestTaken = true;
+            }
+        }
+
+        res.status(200).json({ success: true, tests, todayMockTestTaken });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -67,9 +96,43 @@ export const getMockTestById = async (req, res) => {
 export const startTest = async (req, res) => {
     try {
         const { testId } = req.body;
-        const userId = req.user._id;
+        const userObj = req.user;
 
-        const result = new MockTestResult({ userId, testId });
+        if (!userObj) {
+            return res.status(404).json({ success: false, message: 'User not found in session' });
+        }
+
+        // Block admins and instructors
+        if (userObj.role === 'admin' || userObj.role === 'instructor') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access Denied: Admins and Instructors are not permitted to take mock tests.' 
+            });
+        }
+
+        if (userObj.plan === 'free') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Free tier users cannot access mock tests. Please upgrade your plan to Standard or Premium.' 
+            });
+        }
+
+        if (userObj.plan === 'standard') {
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            const testToday = await MockTestResult.findOne({
+                userId: userObj._id,
+                createdAt: { $gte: startOfToday }
+            });
+            if (testToday) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'Access Denied: Standard plan users are limited to 1 mock test per day. Please upgrade to Premium for unlimited access.' 
+                });
+            }
+        }
+
+        const result = new MockTestResult({ userId: userObj._id, testId });
         await result.save();
         res.status(201).json({ success: true, resultId: result._id });
     } catch (error) {

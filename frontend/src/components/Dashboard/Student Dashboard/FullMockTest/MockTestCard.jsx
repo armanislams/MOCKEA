@@ -10,19 +10,25 @@ import {
     PiArrowRightBold
 } from "react-icons/pi";
 import { motion } from "framer-motion";
-import useAuth from "../../../../hooks/useAuth";
 import { toast } from "react-toastify";
 
-const MockTestCard = ({ test, index, onStart }) => {
-    const { user } = useAuth();
-    const userPlan = user?.plan || "free";
-
+const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", isStandardLimitReached = false, onStart }) => {
+    const isAdminOrInstructor = userRole === "admin" || userRole === "instructor";
     const planHierarchy = { free: 0, standard: 1, premium: 2 };
-    const isLocked = planHierarchy[userPlan] < planHierarchy[test.planType || "free"];
+    const isTierLocked = !isAdminOrInstructor && (planHierarchy[userPlan] < planHierarchy[test.planType || "free"]);
+    const isLocked = isTierLocked || isStandardLimitReached || isAdminOrInstructor;
 
     const handleStartClick = () => {
-        if (isLocked) {
+        if (isAdminOrInstructor) {
+            toast.error("Access Denied: Admins and Instructors are not permitted to take mock tests.");
+            return;
+        }
+        if (isTierLocked) {
             toast.error(`This is a ${test.planType} test. Please upgrade your plan to access it!`);
+            return;
+        }
+        if (isStandardLimitReached) {
+            toast.warning(`Daily limit reached: Standard plan users are limited to 1 mock test per day. Upgrade to Premium for unlimited access!`);
             return;
         }
         onStart();
@@ -42,7 +48,19 @@ const MockTestCard = ({ test, index, onStart }) => {
         >
             {/* Status Badge */}
             <div className="absolute top-8 right-8 flex items-center gap-2">
-                {test.planType !== 'free' && (
+                {isAdminOrInstructor && (
+                    <div className="px-4 py-2 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border flex items-center gap-1.5 shadow-sm bg-red-500/10 text-red-600 border-red-500/20">
+                        <PiLockKeyFill className="w-3 h-3" />
+                        Staff Blocked
+                    </div>
+                )}
+                {isStandardLimitReached && !isAdminOrInstructor && (
+                    <div className="px-4 py-2 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border flex items-center gap-1.5 shadow-sm bg-orange-500/10 text-orange-600 border-orange-500/20">
+                        <PiLockKeyFill className="w-3 h-3" />
+                        Limit Reached
+                    </div>
+                )}
+                {test.planType !== 'free' && !isStandardLimitReached && !isAdminOrInstructor && (
                     <div className={`px-4 py-2 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border flex items-center gap-1.5 shadow-sm ${
                         test.planType === 'premium' ? "bg-amber-500/10 text-amber-600 border-amber-500/20" : "bg-primary/10 text-primary border-primary/20"
                     }`}>
@@ -103,7 +121,7 @@ const MockTestCard = ({ test, index, onStart }) => {
                     {isLocked ? (
                         <>
                             <PiLockKeyFill className="w-5 h-5 opacity-40" />
-                            Locked Module
+                            {isAdminOrInstructor ? "Staff Locked" : (isStandardLimitReached ? "Daily Limit Reached" : "Locked Module")}
                         </>
                     ) : (
                         <>

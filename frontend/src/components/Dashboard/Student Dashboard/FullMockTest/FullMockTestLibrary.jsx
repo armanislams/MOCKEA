@@ -15,10 +15,16 @@ import { motion } from "framer-motion";
 import MockTestCard from "./MockTestCard";
 import InstructionModal from "./InstructionModal";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
+import useUserProfile from "../../../../hooks/useUserProfile";
+import Loader from "../../../Loader/Loader";
 
 const FullMockTestLibrary = () => {
     const axiosSecure = useAxiosSecure();
     const [selectedTest, setSelectedTest] = useState(null);
+
+    const { userData, isLoading: profileLoading } = useUserProfile();
+    const userPlan = userData?.plan || "free";
+    const userRole = userData?.role || "student";
 
     useEffect(() => {
         // Cleanup expired test caches older than 24 hours
@@ -43,13 +49,64 @@ const FullMockTestLibrary = () => {
         });
     }, []);
 
-    const { data: tests = [], isLoading } = useQuery({
+    const { data: mockTestData, isLoading: testsLoading } = useQuery({
         queryKey: ["full-mock-tests"],
         queryFn: async () => {
             const res = await axiosSecure.get("/mock-tests");
-            return res.data.tests ?? [];
+            return {
+                tests: res.data.tests ?? [],
+                todayMockTestTaken: res.data.todayMockTestTaken ?? false
+            };
         }
     });
+
+    const tests = mockTestData?.tests ?? [];
+    const todayMockTestTaken = mockTestData?.todayMockTestTaken ?? false;
+
+    const isLoading = testsLoading || profileLoading;
+
+    if (isLoading) {
+        return <Loader />;
+    }
+
+    if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
+        return (
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="min-h-[80vh] flex items-center justify-center p-6"
+            >
+                <div className="relative overflow-hidden w-full max-w-2xl rounded-[3.5rem] bg-linear-to-br from-slate-900 via-slate-800 to-indigo-950 p-12 lg:p-16 text-center text-white shadow-2xl border border-white/10 animate-fade-in">
+                    <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+                    <div className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl" />
+
+                    <div className="relative z-10 space-y-8">
+                        <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500/10 text-4xl text-amber-500 border border-amber-500/20 shadow-lg shadow-amber-500/5">
+                            <PiCrownFill />
+                        </div>
+
+                        <div className="space-y-4">
+                            <h2 className="text-3xl lg:text-5xl font-black tracking-tight leading-none">
+                                Unlock Mock Exams
+                            </h2>
+                            <p className="text-sm lg:text-base text-slate-400 font-medium max-w-md mx-auto leading-relaxed">
+                                Experience realistic timed IELTS test simulations, complete integrity shielding, automated Reading/Listening scoring, and personal examiner grading.
+                            </p>
+                        </div>
+
+                        <div className="pt-4">
+                            <a 
+                                href="/dashboard/pricing"
+                                className="btn btn-primary btn-lg rounded-[2rem] px-10 font-black uppercase tracking-widest text-xs h-16 shadow-xl shadow-primary/30 hover:scale-105 transition-transform"
+                            >
+                                Upgrade Plan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        );
+    }
 
     const stats = [
         { label: "Available Modules", value: tests.length, icon: <PiCardsFill />, color: "bg-blue-500" },
@@ -129,6 +186,31 @@ const FullMockTestLibrary = () => {
                 <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
             </motion.section>
 
+            {/* --- STANDARD TIER INFO BANNER --- */}
+            {userRole !== "admin" && userRole !== "instructor" && userPlan === "standard" && (
+                <motion.div 
+                    variants={item}
+                    className="flex flex-col md:flex-row items-center justify-between gap-6 p-8 rounded-[2.5rem] bg-amber-500/5 border border-amber-500/20 backdrop-blur-md shadow-sm"
+                >
+                    <div className="flex items-center gap-5">
+                        <div className="h-12 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-2xl text-amber-500 border border-amber-500/20">
+                            <PiSparkleFill />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black tracking-tight text-base-content">Standard Plan daily credit</h3>
+                            <p className="text-sm text-base-content/60 font-medium">
+                                You are allowed **1 full mock test per day**. Choose your assessment wisely!
+                            </p>
+                        </div>
+                    </div>
+                    {todayMockTestTaken && (
+                        <div className="badge badge-error gap-2 font-black uppercase tracking-widest text-[10px] px-5 py-4 rounded-xl shadow-md">
+                            Daily Limit Used
+                        </div>
+                    )}
+                </motion.div>
+            )}
+
             {/* --- FREE PRACTICE SECTION --- */}
             <motion.section variants={item} className="space-y-8">
                 <div className="flex items-center justify-between px-4">
@@ -142,18 +224,17 @@ const FullMockTestLibrary = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    {isLoading ? (
-                        [1, 2].map(i => <div key={i} className="h-72 bg-base-300 animate-pulse rounded-[3rem]" />)
-                    ) : (
-                        tests.filter(t => t.planType === 'free').map((test, index) => (
-                            <MockTestCard 
-                                key={test._id} 
-                                test={test} 
-                                index={index + 1} 
-                                onStart={() => setSelectedTest(test)} 
-                            />
-                        ))
-                    )}
+                    {tests.filter(t => t.planType === 'free').map((test, index) => (
+                        <MockTestCard 
+                            key={test._id} 
+                            test={test} 
+                            index={index + 1} 
+                            userPlan={userPlan}
+                            userRole={userRole}
+                            isStandardLimitReached={todayMockTestTaken && userPlan === 'standard' && userRole !== 'admin' && userRole !== 'instructor'}
+                            onStart={() => setSelectedTest(test)} 
+                        />
+                    ))}
                 </div>
             </motion.section>
 
@@ -177,6 +258,9 @@ const FullMockTestLibrary = () => {
                                 key={test._id} 
                                 test={test} 
                                 index={index + 1} 
+                                userPlan={userPlan}
+                                userRole={userRole}
+                                isStandardLimitReached={todayMockTestTaken && userPlan === 'standard' && userRole !== 'admin' && userRole !== 'instructor'}
                                 onStart={() => setSelectedTest(test)} 
                             />
                         ))}
