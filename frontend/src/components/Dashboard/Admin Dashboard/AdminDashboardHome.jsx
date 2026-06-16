@@ -13,6 +13,8 @@ import {
 import { motion } from "framer-motion";
 import Loader from "../../Loader/Loader";
 import Error from "../../Common/Error";
+import PageHeader from "../../Common/PageHeader";
+import StatCard from "../../Common/StatCard";
 
 const AdminDashboardHome = () => {
   const axiosSecure = useAxiosSecure();
@@ -60,81 +62,72 @@ const AdminDashboardHome = () => {
       className="space-y-8 p-4 md:p-6"
     >
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-black tracking-tight text-gray-800 dark:text-white">System Overview</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium italic">"Real-time platform metrics and student performance tracking."</p>
-      </div>
+      <PageHeader
+        title="System Overview"
+        subtitle='"Real-time platform metrics and student performance tracking."'
+        className="!p-0 !bg-transparent !border-none !shadow-none !rounded-none"
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Users</div>
-              <div className="text-4xl font-black tracking-tighter text-gray-800 dark:text-white mt-1">{overview.totalUsers ?? 0}</div>
-            </div>
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
-              <FiUsers className="text-blue-600 dark:text-blue-400 text-2xl" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-xs font-bold uppercase tracking-widest">
-            <span className="text-green-500 flex items-center">
-              <FiUserPlus className="mr-1" /> {overview.usersToday ?? 0}
-            </span>
-            <span className="ml-2 text-gray-400">New Today</span>
-          </div>
-        </motion.div>
+        <StatCard
+          label="Total Users"
+          value={overview.totalUsers ?? 0}
+          icon={<FiUsers />}
+          color="blue"
+          variants={itemVariants}
+          description={
+            <>
+              <span className="text-green-500 flex items-center">
+                <FiUserPlus className="mr-1" /> {overview.usersToday ?? 0}
+              </span>
+              <span className="ml-2 text-gray-400">New Today</span>
+            </>
+          }
+        />
 
-        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Tests Completed</div>
-              <div className="text-4xl font-black tracking-tighter text-gray-800 dark:text-white mt-1">{overview.totalTests ?? 0}</div>
-            </div>
-            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-2xl">
-              <FiFileText className="text-purple-600 dark:text-purple-400 text-2xl" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-xs font-bold uppercase tracking-widest">
-            <span className="text-green-500 flex items-center">
-              <FiActivity className="mr-1" /> {overview.testsToday ?? 0}
-            </span>
-            <span className="ml-2 text-gray-400">Today</span>
-          </div>
-        </motion.div>
+        <StatCard
+          label="Tests Completed"
+          value={overview.totalTests ?? 0}
+          icon={<FiFileText />}
+          color="purple"
+          variants={itemVariants}
+          description={
+            <>
+              <span className="text-green-500 flex items-center">
+                <FiActivity className="mr-1" /> {overview.testsToday ?? 0}
+              </span>
+              <span className="ml-2 text-gray-400">Today</span>
+            </>
+          }
+        />
 
-        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Average/User</div>
-              <div className="text-4xl font-black tracking-tighter text-gray-800 dark:text-white mt-1">
-                {(overview.totalTests / (overview.totalUsers || 1)).toFixed(1)}
-              </div>
-            </div>
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl">
-              <FiTrendingUp className="text-orange-600 dark:text-orange-400 text-2xl" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-xs font-bold uppercase tracking-widest text-gray-400">
-            <FiCalendar className="mr-1" /> Session Density
-          </div>
-        </motion.div>
+        <StatCard
+          label="Average/User"
+          value={(overview.totalTests / (overview.totalUsers || 1)).toFixed(1)}
+          icon={<FiTrendingUp />}
+          color="orange"
+          variants={itemVariants}
+          description={
+            <>
+              <FiCalendar className="mr-1 text-slate-400" /> <span className="text-slate-400">Session Density</span>
+            </>
+          }
+        />
 
-        <motion.div variants={itemVariants} className="stat bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Live Traffic</div>
-              <div className="text-4xl font-black tracking-tighter text-gray-800 dark:text-white mt-1">{overview.testsToday ?? 0}</div>
-            </div>
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-2xl">
-              <FiActivity className="text-green-600 dark:text-green-400 text-2xl" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-xs font-bold uppercase tracking-widest">
-            <span className="text-green-500 animate-pulse">● Active</span>
-            <span className="ml-2 text-gray-400">Monitoring</span>
-          </div>
-        </motion.div>
+        <StatCard
+          label="Live Traffic"
+          value={overview.testsToday ?? 0}
+          icon={<FiActivity />}
+          color="green"
+          variants={itemVariants}
+          description={
+            <>
+              <span className="text-green-500 animate-pulse">● Active</span>
+              <span className="ml-2 text-slate-400">Monitoring</span>
+            </>
+          }
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

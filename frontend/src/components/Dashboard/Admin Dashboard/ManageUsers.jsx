@@ -525,54 +525,44 @@ const ManageUsers = () => {
         </div>
 
         {/* Table */}
-        <div className="card bg-base-100 border border-base-300 shadow-sm overflow-hidden">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20 gap-3 text-base-content/50">
-              <span className="loading loading-spinner loading-md text-primary" />
-              <span className="text-sm">Loading users…</span>
-            </div>
-          ) : isError ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-base-content/40">
-              <p className="font-medium text-error">Failed to load users</p>
-              <button className="btn btn-sm btn-outline" onClick={() => refetch()}>
-                Try Again
-              </button>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-2 text-base-content/40">
-              <PiUsersThree className="w-12 h-12" />
-              <p className="font-medium">No users found</p>
-              <p className="text-xs">Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="table w-full">
-                <thead className="bg-base-200/70">
-                  <tr>
-                    <th className="pl-4 text-xs font-semibold text-base-content/60 uppercase tracking-wider">User</th>
-                    <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">Role</th>
-                    <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden sm:table-cell">Plan</th>
-                    <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden md:table-cell">Status</th>
-                    <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden lg:table-cell">Joined</th>
-                    <th className="pr-4 text-xs font-semibold text-base-content/60 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-base-200">
-                  {users.map((user) => (
-                    <UserRow
-                      key={user._id}
-                      user={user}
-                      onChangeRole={handleChangeRole}
-                      onChangePlan={handleChangePlan}
-                      onDelete={handleDelete}
-                      onToggleBan={handleToggleBan}
-                      loadingId={loadingId}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <TableShell
+          isLoading={isLoading}
+          isError={isError}
+          errorText="Failed to load users"
+          onRetry={refetch}
+          empty={users.length === 0}
+          emptyTitle="No users found"
+          emptyText="Try adjusting your search or filters"
+          emptyIcon={<PiUsersThree />}
+          loadingText="Loading users list..."
+        >
+          <div className="overflow-x-auto">
+            <table className="table w-full">
+              <thead className="bg-base-200/70">
+                <tr>
+                  <th className="pl-4 text-xs font-semibold text-base-content/60 uppercase tracking-wider">User</th>
+                  <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">Role</th>
+                  <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden sm:table-cell">Plan</th>
+                  <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden md:table-cell">Status</th>
+                  <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden lg:table-cell">Joined</th>
+                  <th className="pr-4 text-xs font-semibold text-base-content/60 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-base-200">
+                {users.map((user) => (
+                  <UserRow
+                    key={user._id}
+                    user={user}
+                    onChangeRole={handleChangeRole}
+                    onChangePlan={handleChangePlan}
+                    onDelete={handleDelete}
+                    onToggleBan={handleToggleBan}
+                    loadingId={loadingId}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* Footer */}
           {!isLoading && !isError && users.length > 0 && (
@@ -587,7 +577,7 @@ const ManageUsers = () => {
               </div>
             </div>
           )}
-        </div>
+        </TableShell>
       </div>
   );
 };

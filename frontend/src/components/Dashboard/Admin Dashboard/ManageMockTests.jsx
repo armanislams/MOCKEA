@@ -1,24 +1,23 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import { useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import { 
-    PiTrash, 
-    PiPencilSimple,
     PiPlus,
     PiFiles,
     PiClock,
-    PiUsers,
     PiTrophy
 } from "react-icons/pi";
 import { Link, useNavigate } from "react-router";
 import useAdminQuery from "../../../hooks/useAdminQuery";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import PageHeader from "../../Common/PageHeader";
+import TableShell from "../../Common/TableShell";
+import HoverActions from "../../Common/HoverActions";
 
 const ManageMockTests = () => {
     const axiosSecure = useAxiosSecure();
     const navigate = useNavigate();
 
-    const { data: tests = [], isLoading, queryClient } = useAdminQuery(
+    const { data: tests = [], isLoading, isError, refetch } = useAdminQuery(
         ["admin-mock-tests"],
         "/mock-tests",
         "tests"
@@ -38,7 +37,7 @@ const ManageMockTests = () => {
                     popup: "rounded-[2rem]"
                 }
             });
-            queryClient.invalidateQueries(["admin-mock-tests"]);
+            refetch();
         }
     });
 
@@ -66,21 +65,30 @@ const ManageMockTests = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Manage Mock Tests</h1>
-                    <p className="text-base-content/60">View, edit, and manage all full-length IELTS mock tests.</p>
-                </div>
-                <Link to="/dashboard/admin/create-mock-test" className="btn btn-primary rounded-2xl gap-2">
-                    <PiPlus /> Create Mock Test
-                </Link>
-            </div>
+            <PageHeader
+                title="Manage Mock Tests"
+                subtitle="View, edit, and manage all full-length IELTS mock tests."
+                action={
+                    <Link to="/dashboard/admin/create-mock-test" className="btn btn-primary rounded-2xl gap-2 font-bold">
+                        <PiPlus /> Create Mock Test
+                    </Link>
+                }
+            />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {isLoading ? (
-                    [1, 2].map(i => <div key={i} className="h-64 bg-base-300 animate-pulse rounded-3xl" />)
-                ) : (
-                    tests.map((test) => (
+            <TableShell
+                isLoading={isLoading}
+                isError={isError}
+                errorText="Failed to load mock tests"
+                onRetry={refetch}
+                empty={tests.length === 0}
+                emptyTitle="No Mock Tests Yet"
+                emptyText="Create your first full-length IELTS mock test to help students practice."
+                emptyIcon={<PiFiles />}
+                transparent={true}
+                loadingText="Loading mock tests list..."
+            >
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {tests.map((test) => (
                         <div key={test._id} className="card bg-white border border-base-300 shadow-sm p-8 hover:shadow-md transition-shadow group relative overflow-hidden">
                             {/* Decorative Background */}
                             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -119,17 +127,11 @@ const ManageMockTests = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
-                                    <button  className="btn btn-square btn-ghost btn-md text-primary bg-base-100 shadow-sm border-base-200">
-                                        <PiPencilSimple className="w-5 h-5" />
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDelete(test._id)}
-                                        className="btn btn-square btn-ghost btn-md text-error bg-base-100 shadow-sm border-base-200"
-                                    >
-                                        <PiTrash className="w-5 h-5" />
-                                    </button>
-                                </div>
+                                <HoverActions
+                                    onEdit={() => {}} // Visual placeholder as edit route is not defined
+                                    onDelete={() => handleDelete(test._id)}
+                                    className="flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4"
+                                />
                             </div>
                             
                             <div className="mt-8 flex items-center justify-between border-t border-base-100 pt-6">
@@ -148,24 +150,9 @@ const ManageMockTests = () => {
                                 </span>
                             </div>
                         </div>
-                    ))
-                )}
-            </div>
-
-            {!isLoading && tests.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-base-300 rounded-[3rem] text-center space-y-4">
-                    <div className="w-20 h-20 bg-base-100 rounded-full flex items-center justify-center text-3xl text-base-content/20">
-                        <PiFiles />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-bold">No Mock Tests Yet</h2>
-                        <p className="text-base-content/50 max-w-xs mx-auto mt-1">Create your first full-length IELTS mock test to help students practice.</p>
-                    </div>
-                    <Link to="/dashboard/admin/create-mock-test" className="btn btn-primary rounded-2xl px-8">
-                        Get Started
-                    </Link>
+                    ))}
                 </div>
-            )}
+            </TableShell>
         </div>
     );
 };

@@ -1,32 +1,32 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import { useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import { 
     PiBookOpen, 
     PiEar, 
     PiPencilLine, 
     PiMicrophoneStage, 
-    PiTrash, 
-    PiPencilSimple,
     PiPlus,
-    PiEye,
-    PiX,
     PiCheckCircle,
     PiInfo,
     PiSquaresFour,
     PiList
 } from "react-icons/pi";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import useAdminQuery from "../../../hooks/useAdminQuery";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import PageHeader from "../../Common/PageHeader";
+import TableShell from "../../Common/TableShell";
+import AdminModal from "../../Common/AdminModal";
+import HoverActions from "../../Common/HoverActions";
 
 const ManageQuestions = () => {
     const axiosSecure = useAxiosSecure();
+    const navigate = useNavigate();
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
 
-    const { data: questions = [], isLoading, queryClient } = useAdminQuery(
+    const { data: questions = [], isLoading, isError, refetch } = useAdminQuery(
         ["admin-questions"],
         "/questions",
         "questions"
@@ -46,7 +46,7 @@ const ManageQuestions = () => {
                     popup: "rounded-[2rem]"
                 }
             });
-            queryClient.invalidateQueries(["admin-questions"]);
+            refetch();
         }
     });
 
@@ -93,35 +93,44 @@ const ManageQuestions = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Question Bank</h1>
-                    <p className="text-base-content/60">Manage all IELTS questions across different sections.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="join bg-base-100 border border-base-300 rounded-2xl p-0.5 shadow-sm">
-                        <button 
-                            onClick={() => setViewMode("grid")}
-                            className={`btn btn-sm btn-ghost join-item rounded-xl gap-1.5 ${viewMode === "grid" ? "bg-primary text-white hover:bg-primary/95" : "text-base-content/70"}`}
-                        >
-                            <PiSquaresFour className="text-lg" /> Grid
-                        </button>
-                        <button 
-                            onClick={() => setViewMode("table")}
-                            className={`btn btn-sm btn-ghost join-item rounded-xl gap-1.5 ${viewMode === "table" ? "bg-primary text-white hover:bg-primary/95" : "text-base-content/70"}`}
-                        >
-                            <PiList className="text-lg" /> Table
-                        </button>
+            <PageHeader
+                title="Question Bank"
+                subtitle="Manage all IELTS questions across different sections."
+                action={
+                    <div className="flex items-center gap-3">
+                        <div className="join bg-base-100 border border-base-300 rounded-2xl p-0.5 shadow-sm">
+                            <button 
+                                onClick={() => setViewMode("grid")}
+                                className={`btn btn-sm btn-ghost join-item rounded-xl gap-1.5 ${viewMode === "grid" ? "bg-primary text-white hover:bg-primary/95" : "text-base-content/70"}`}
+                            >
+                                <PiSquaresFour className="text-lg" /> Grid
+                            </button>
+                            <button 
+                                onClick={() => setViewMode("table")}
+                                className={`btn btn-sm btn-ghost join-item rounded-xl gap-1.5 ${viewMode === "table" ? "bg-primary text-white hover:bg-primary/95" : "text-base-content/70"}`}
+                            >
+                                <PiList className="text-lg" /> Table
+                            </button>
+                        </div>
+                        <Link to="/dashboard/admin/add-questions" className="btn btn-primary rounded-2xl gap-2 font-bold">
+                            <PiPlus /> Add Questions
+                        </Link>
                     </div>
-                    <Link to="/dashboard/admin/add-questions" className="btn btn-primary rounded-2xl gap-2">
-                        <PiPlus /> Add Questions
-                    </Link>
-                </div>
-            </div>
+                }
+            />
 
-            {viewMode === "table" ? (
-                <div className="card bg-white border border-base-300 shadow-sm overflow-hidden rounded-[2rem] p-4">
-                    <div className="overflow-x-auto">
+            <TableShell
+                isLoading={isLoading}
+                isError={isError}
+                errorText="Failed to load questions"
+                onRetry={refetch}
+                empty={questions.length === 0}
+                emptyTitle="No Question Sets Found"
+                emptyText="There are no question sets in the bank at this time."
+                transparent={viewMode === "grid"}
+            >
+                {viewMode === "table" ? (
+                    <div className="overflow-x-auto p-4">
                         <table className="table table-md w-full">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-base-200 text-slate-500 text-xs font-black uppercase tracking-wider">
@@ -137,102 +146,68 @@ const ManageQuestions = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-base-100">
-                                {isLoading ? (
-                                    <tr>
-                                        <td colSpan="9" className="text-center py-8">
-                                            <span className="loading loading-spinner loading-lg text-primary" />
+                                {questions.map((q) => (
+                                    <tr key={q._id} className="hover:bg-slate-50/80 transition-colors group">
+                                        <td className="py-4 pl-6 font-bold text-slate-800">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-xl bg-base-100 text-lg">
+                                                    {getIcon(q.testType)}
+                                                </div>
+                                                <span 
+                                                    className="line-clamp-1 max-w-[200px]" 
+                                                    onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
+                                                >
+                                                    {q.title}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4">
+                                            <span className="capitalize text-xs font-bold text-slate-600">{q.testType}</span>
+                                        </td>
+                                        <td className="py-4">
+                                            <span className={`badge badge-sm font-bold border-none ${
+                                                q.examType === 'IELTS' ? 'bg-blue-50 text-blue-700' :
+                                                q.examType === 'PTE' ? 'bg-green-50 text-green-700' :
+                                                'bg-amber-50 text-amber-700'
+                                            }`}>{q.examType || 'IELTS'}</span>
+                                        </td>
+                                        <td className="py-4 font-bold text-slate-600">
+                                            {q.questions?.length || 0} Qs
+                                        </td>
+                                        <td className="py-4">
+                                            <span className={`badge badge-sm font-black border-none uppercase text-[9px] px-2.5 ${
+                                                q.forPlanType === 'premium' ? 'bg-accent/15 text-accent-content' : 'bg-base-200 text-base-content/60'
+                                            }`}>{q.forPlanType}</span>
+                                        </td>
+                                        <td className="py-4">
+                                            <span className={`badge badge-sm font-semibold border-none text-xs ${
+                                                q.isPublic ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                            }`}>{q.isPublic ? "Allowed" : "Restricted"}</span>
+                                        </td>
+                                        <td className="py-4 font-bold text-slate-500">
+                                            V{q.version || 1}
+                                        </td>
+                                        <td className="py-4 text-xs text-base-content/50">
+                                            {new Date(q.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="py-4 pr-6 text-right">
+                                            <HoverActions
+                                                onView={() => setSelectedQuestion(q)}
+                                                onEdit={() => navigate(`/dashboard/admin/edit-questions/${q._id}`)}
+                                                onDelete={() => handleDelete(q._id)}
+                                                viewTooltip="See Questions"
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                            />
                                         </td>
                                     </tr>
-                                ) : questions.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="9" className="text-center py-8 text-base-content/40 italic">
-                                            No question sets found.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    questions.map((q) => (
-                                        <tr key={q._id} className="hover:bg-slate-50/80 transition-colors group">
-                                            <td className="py-4 pl-6 font-bold text-slate-800">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 rounded-xl bg-base-100 text-lg">
-                                                        {getIcon(q.testType)}
-                                                    </div>
-                                                    <span 
-                                                        className="line-clamp-1 max-w-[200px]" 
-                                                        onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
-                                                    >
-                                                        {q.title}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="py-4">
-                                                <span className="capitalize text-xs font-bold text-slate-600">{q.testType}</span>
-                                            </td>
-                                            <td className="py-4">
-                                                <span className={`badge badge-sm font-bold border-none ${
-                                                    q.examType === 'IELTS' ? 'bg-blue-50 text-blue-700' :
-                                                    q.examType === 'PTE' ? 'bg-green-50 text-green-700' :
-                                                    'bg-amber-50 text-amber-700'
-                                                }`}>{q.examType || 'IELTS'}</span>
-                                            </td>
-                                            <td className="py-4 font-bold text-slate-600">
-                                                {q.questions?.length || 0} Qs
-                                            </td>
-                                            <td className="py-4">
-                                                <span className={`badge badge-sm font-black border-none uppercase text-[9px] px-2.5 ${
-                                                    q.forPlanType === 'premium' ? 'bg-accent/15 text-accent-content' : 'bg-base-200 text-base-content/60'
-                                                }`}>{q.forPlanType}</span>
-                                            </td>
-                                            <td className="py-4">
-                                                <span className={`badge badge-sm font-semibold border-none text-xs ${
-                                                    q.isPublic ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                                                }`}>{q.isPublic ? "Allowed" : "Restricted"}</span>
-                                            </td>
-                                            <td className="py-4 font-bold text-slate-500">
-                                                V{q.version || 1}
-                                            </td>
-                                            <td className="py-4 text-xs text-base-content/50">
-                                                {new Date(q.createdAt).toLocaleDateString()}
-                                            </td>
-                                            <td className="py-4 pr-6 text-right">
-                                                <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button 
-                                                        onClick={() => setSelectedQuestion(q)}
-                                                        className="btn btn-ghost btn-xs btn-circle text-primary"
-                                                        title="See Questions"
-                                                    >
-                                                        <PiEye className="text-base" />
-                                                    </button>
-                                                    <Link 
-                                                        to={`/dashboard/admin/edit-questions/${q._id}`}
-                                                        className="btn btn-ghost btn-xs btn-circle text-info"
-                                                        title="Edit"
-                                                    >
-                                                        <PiPencilSimple className="text-base" />
-                                                    </Link>
-                                                    <button 
-                                                        onClick={() => handleDelete(q._id)}
-                                                        className="btn btn-ghost btn-xs btn-circle text-error"
-                                                        title="Delete"
-                                                    >
-                                                        <PiTrash className="text-base" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                                ))}
                             </tbody>
                         </table>
                     </div>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {isLoading ? (
-                        [1, 2, 3].map(i => <div key={i} className="h-48 bg-base-300 animate-pulse rounded-3xl" />)
-                    ) : (
-                        questions.map((q) => (
-                            <div key={q._id} className="card bg-white border border-base-300 shadow-sm p-6 hover:shadow-md transition-shadow group">
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {questions.map((q) => (
+                            <div key={q._id} className="card bg-white border border-base-300 shadow-sm p-6 hover:shadow-md transition-shadow group relative">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="p-3 rounded-2xl bg-base-100 text-2xl">
@@ -248,20 +223,11 @@ const ManageQuestions = () => {
                                             <p className="text-xs uppercase tracking-widest text-base-content/50 font-semibold">{q.testType}</p>
                                         </div>
                                     </div>
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Link 
-                                            to={`/dashboard/admin/edit-questions/${q._id}`}
-                                            className="btn btn-ghost btn-xs btn-circle text-primary"
-                                        >
-                                            <PiPencilSimple />
-                                        </Link>
-                                        <button 
-                                            onClick={() => handleDelete(q._id)}
-                                            className="btn btn-ghost btn-xs btn-circle text-error"
-                                        >
-                                            <PiTrash />
-                                        </button>
-                                    </div>
+                                    <HoverActions
+                                        onEdit={() => navigate(`/dashboard/admin/edit-questions/${q._id}`)}
+                                        onDelete={() => handleDelete(q._id)}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    />
                                 </div>
                                 
                                 <div className="mt-6 flex items-center justify-between border-t border-base-200 pt-4">
@@ -276,63 +242,71 @@ const ManageQuestions = () => {
                                         onClick={() => setSelectedQuestion(q)}
                                         className="btn btn-primary btn-sm rounded-xl gap-1.5 font-bold shadow-sm hover:shadow transition-all"
                                     >
-                                        <PiEye className="text-sm" /> See Questions
+                                        <PiSquaresFour className="text-sm" /> See Questions
                                     </button>
                                 </div>
                             </div>
-                        ))
-                    )}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
+            </TableShell>
 
             {/* Questions Preview Modal */}
-            {selectedQuestion && (
-                <div className="modal modal-open z-[9999]">
-                    <div className="modal-box max-w-4xl rounded-[2.5rem] bg-white border border-base-300 p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-                        <button 
-                            onClick={() => setSelectedQuestion(null)}
-                            className="btn btn-sm btn-circle btn-ghost absolute right-6 top-6 hover:bg-base-200 transition-colors"
-                        >
-                            <PiX className="text-xl" />
-                        </button>
-
-                        {/* Modal Header */}
-                        <div className="flex items-start gap-4 mb-6 pr-8">
-                            <div className="p-4 rounded-3xl bg-primary/10 text-primary text-3xl">
-                                {getIcon(selectedQuestion.testType)}
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-xs font-black uppercase tracking-widest text-primary">
-                                    Previewing Question Set V{selectedQuestion.version || 1}
-                                </span>
-                                <h2 className="text-2xl font-bold leading-tight text-slate-800">{selectedQuestion.title}</h2>
-                                <div className="flex flex-wrap gap-2 pt-1">
-                                    <span className="badge badge-sm font-semibold capitalize bg-slate-100 text-slate-700 border-none px-2.5 py-3">
-                                        Type: {selectedQuestion.testType}
-                                    </span>
-                                    <span className="badge badge-sm font-semibold bg-indigo-50 text-indigo-700 border-none px-2.5 py-3">
-                                        Exam: {selectedQuestion.examType || "IELTS"}
-                                    </span>
-                                    <span className={`badge badge-sm font-bold border-none px-2.5 py-3 ${
-                                        selectedQuestion.forPlanType === 'premium' 
-                                            ? 'bg-accent/15 text-accent-content' 
-                                            : 'bg-base-200 text-base-content/75'
-                                    }`}>
-                                        Plan: {selectedQuestion.forPlanType}
-                                    </span>
-                                    <span className={`badge badge-sm font-bold border-none px-2.5 py-3 ${
-                                        selectedQuestion.isPublic 
-                                            ? 'bg-green-50 text-green-700' 
-                                            : 'bg-red-50 text-red-700'
-                                    }`}>
-                                        {selectedQuestion.isPublic ? "Guest Practice Allowed" : "Registered Users Only"}
-                                    </span>
-                                </div>
-                            </div>
+            <AdminModal
+                isOpen={!!selectedQuestion}
+                onClose={() => setSelectedQuestion(null)}
+                title={selectedQuestion?.title || ""}
+                subtitle={selectedQuestion ? `Previewing Question Set V${selectedQuestion.version || 1}` : ""}
+                maxWidth="max-w-4xl"
+                footer={
+                    selectedQuestion && (
+                        <>
+                            <button 
+                                onClick={() => setSelectedQuestion(null)}
+                                className="btn btn-ghost rounded-2xl px-6 font-bold"
+                            >
+                                Close
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setSelectedQuestion(null);
+                                    navigate(`/dashboard/admin/edit-questions/${selectedQuestion._id}`);
+                                }}
+                                className="btn btn-primary rounded-2xl gap-2 px-6 font-bold"
+                            >
+                                Edit Question Set
+                            </button>
+                        </>
+                    )
+                }
+            >
+                {selectedQuestion && (
+                    <div className="space-y-6">
+                        <div className="flex flex-wrap gap-2 pb-4 border-b border-base-200">
+                            <span className="badge badge-sm font-semibold capitalize bg-slate-100 text-slate-700 border-none px-2.5 py-3">
+                                Type: {selectedQuestion.testType}
+                            </span>
+                            <span className="badge badge-sm font-semibold bg-indigo-50 text-indigo-700 border-none px-2.5 py-3">
+                                Exam: {selectedQuestion.examType || "IELTS"}
+                            </span>
+                            <span className={`badge badge-sm font-bold border-none px-2.5 py-3 ${
+                                selectedQuestion.forPlanType === 'premium' 
+                                    ? 'bg-accent/15 text-accent-content' 
+                                    : 'bg-base-200 text-base-content/75'
+                            }`}>
+                                Plan: {selectedQuestion.forPlanType}
+                            </span>
+                            <span className={`badge badge-sm font-bold border-none px-2.5 py-3 ${
+                                selectedQuestion.isPublic 
+                                    ? 'bg-green-50 text-green-700' 
+                                    : 'bg-red-50 text-red-700'
+                            }`}>
+                                {selectedQuestion.isPublic ? "Guest Practice Allowed" : "Registered Users Only"}
+                            </span>
                         </div>
 
                         {/* Modal Body */}
-                        <div className="space-y-6 pt-4 border-t border-base-200">
+                        <div className="space-y-6 pt-2">
                             {/* Global Instructions */}
                             {selectedQuestion.instructions && (
                                 <div className="bg-slate-50 border-l-4 border-primary p-4 rounded-r-2xl text-sm italic text-slate-700">
@@ -518,26 +492,9 @@ const ManageQuestions = () => {
                                 </div>
                             )}
                         </div>
-
-                        {/* Modal Footer Actions */}
-                        <div className="mt-8 flex justify-end gap-3 border-t border-base-200 pt-6">
-                            <button 
-                                onClick={() => setSelectedQuestion(null)}
-                                className="btn btn-ghost rounded-2xl px-6"
-                            >
-                                Close
-                            </button>
-                            <Link 
-                                to={`/dashboard/admin/edit-questions/${selectedQuestion._id}`}
-                                className="btn btn-primary rounded-2xl gap-2 px-6"
-                            >
-                                <PiPencilSimple /> Edit Question Set
-                            </Link>
-                        </div>
                     </div>
-                    <div className="modal-backdrop bg-black/50 backdrop-blur-sm" onClick={() => setSelectedQuestion(null)}></div>
-                </div>
-            )}
+                )}
+            </AdminModal>
         </div>
     );
 };

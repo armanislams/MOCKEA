@@ -23,6 +23,7 @@ import {
 import { useNavigate } from "react-router";
 import FullscreenGate from "../../../Common/FullscreenGate.jsx";
 import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
+import PracticeSetSelector from "../../../Common/PracticeSetSelector.jsx";
 
 const defaultPart1Questions = [
   "Do you work or study?",
@@ -840,83 +841,21 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
           </p>
         </div>
 
-        {speakingSets.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-xl mx-auto"
-          >
-            <div className="card bg-white border-2 border-dashed border-base-300 p-16 rounded-[3rem] text-center space-y-6">
-              <div className="w-20 h-20 rounded-[2rem] bg-amber-50 border border-amber-100 flex items-center justify-center text-4xl mx-auto">
-                🎤
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-black tracking-tight text-slate-800">
-                  No Speaking Sessions Yet
-                </h3>
-                <p className="text-slate-500 font-medium leading-relaxed">
-                  No speaking content is available for your current exam track{" "}
-                  <span className="font-black text-primary">({targetExam})</span>.
-                  This could be because:
-                </p>
-              </div>
-              <ul className="text-left space-y-3 text-sm text-slate-500 font-medium">
-                <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">1</span>
-                  The admin hasn't uploaded any speaking prompts for <strong>{targetExam}</strong> yet.
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">2</span>
-                  Your exam preference might not match the available content — try switching to <strong>IELTS</strong> or <strong>BOTH</strong>.
-                </li>
-              </ul>
-              <a
-                href="/dashboard/profile"
-                className="btn btn-primary btn-block rounded-2xl h-14 font-black text-sm uppercase tracking-widest shadow-lg shadow-primary/20"
-              >
-                Change Exam Preference →
-              </a>
-            </div>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {speakingSets.map((set, idx) => (
-              <motion.div
-                key={set._id}
-                whileHover={{ y: -10 }}
-                className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
-                onClick={() => setSelectedSetId(set._id)}
-              >
-                <div className="flex flex-col h-full space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
-                      <PiMicrophoneStageFill />
-                    </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">
-                      Session {idx + 1}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-black group-hover:text-primary transition-colors text-slate-800">
-                    {set.title}
-                  </h3>
-                  <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                    <span className="flex items-center gap-1.5"><PiClockFill /> 15m</span>
-                    <span className="flex items-center gap-1.5"><PiMicrophoneFill /> Open Test</span>
-                    {set.examType && (
-                      <span className={`badge badge-sm font-black ${
-                        set.examType === 'IELTS' ? 'badge-primary' :
-                        set.examType === 'PTE' ? 'badge-success' : 'badge-warning'
-                      }`}>{set.examType}</span>
-                    )}
-                  </div>
-                  <button className="btn btn-block rounded-2xl h-14 bg-primary text-white border-none transition-all font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:bg-slate-900">
-                    Start Interview
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+        <PracticeSetSelector
+          sets={speakingSets}
+          onSelect={setSelectedSetId}
+          emptyTitle="No Speaking Sessions Yet"
+          emptySuggestions={[
+            `The admin hasn't uploaded any speaking prompts for ${targetExam} yet.`,
+            `Your exam preference might not match the available content — try switching to IELTS or BOTH.`
+          ]}
+          actionText="Change Exam Preference →"
+          actionLink="/dashboard/profile"
+          trackExam={targetExam}
+          icon={<PiMicrophoneStageFill />}
+          timeLabel="15m"
+          actionLabel="Open Test"
+        />
       </div>
     );
   }
