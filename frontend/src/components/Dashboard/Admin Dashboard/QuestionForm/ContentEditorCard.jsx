@@ -1,0 +1,430 @@
+import { 
+    PiPlus, 
+    PiTrash, 
+    PiBookOpen, 
+    PiPencilLine 
+} from "react-icons/pi";
+
+export default function ContentEditorCard({ testType, isIeltsListening, formData, patch }) {
+    return (
+        <div className="card bg-white border border-base-300 shadow-sm p-6 space-y-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+                <PiPencilLine className="text-primary" /> Test Content &amp; Context
+            </h2>
+
+            {/* Reading Passages Manager */}
+            {testType === "reading" && (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-700 tracking-wide">Reading Passages ({formData.passages?.length || 0})</label>
+                        <button
+                            type="button"
+                            onClick={() => patch({ passages: [...(formData.passages || []), { title: "", content: "" }] })}
+                            className="btn btn-primary btn-sm rounded-xl gap-1"
+                        >
+                            <PiPlus /> Add Passage
+                        </button>
+                    </div>
+                    <div className="space-y-4">
+                        {(formData.passages || []).map((passage, pIdx) => (
+                            <div key={pIdx} className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4 relative">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-black uppercase tracking-widest text-primary">Passage {pIdx + 1}</span>
+                                    {formData.passages.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => patch({ passages: formData.passages.filter((_, idx) => idx !== pIdx) })}
+                                            className="btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg gap-1"
+                                        >
+                                            <PiTrash /> Remove Passage
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-bold text-slate-700">Passage Title</label>
+                                    <input
+                                        type="text"
+                                        className="w-full px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none"
+                                        placeholder={`e.g. Reading Passage ${pIdx + 1}: Electroreception`}
+                                        value={passage.title}
+                                        onChange={(e) => {
+                                            const updated = [...formData.passages];
+                                            updated[pIdx].title = e.target.value;
+                                            patch({ passages: updated });
+                                        }}
+                                        required
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-bold text-slate-700">Passage Content</label>
+                                    <textarea
+                                        className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none resize-y min-h-[150px] font-serif"
+                                        placeholder="Paste passage paragraphs here..."
+                                        value={passage.content}
+                                        onChange={(e) => {
+                                            const updated = [...formData.passages];
+                                            updated[pIdx].content = e.target.value;
+                                            patch({ passages: updated });
+                                        }}
+                                        required
+                                    />
+                                    <p className="text-[11px] text-slate-500 font-semibold mt-1">
+                                        Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>. Empty lines create paragraph breaks.
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Question Groups Manager ──────────────────────────── */}
+            {testType === "reading" && (
+                <div className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <label className="text-xs font-black text-slate-700 tracking-wide uppercase">Question Groups</label>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Define ranges, headers & instructions shown above each block of questions.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => patch({ questionGroups: [...(formData.questionGroups || []), { title: "", instructions: "", fromQuestion: 1, toQuestion: 1, passageIndex: 0 }] })}
+                            className="btn btn-outline btn-primary btn-sm rounded-xl gap-1"
+                        >
+                            <PiPlus /> Add Group
+                        </button>
+                    </div>
+                    <div className="space-y-3">
+                        {(formData.questionGroups || []).map((group, gIdx) => (
+                            <div key={gIdx} className="p-5 bg-gradient-to-br from-primary/5 to-transparent border border-primary/15 rounded-3xl space-y-4 relative">
+                                {/* Delete */}
+                                {(formData.questionGroups || []).length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => patch({ questionGroups: (formData.questionGroups || []).filter((_, i) => i !== gIdx) })}
+                                        className="btn btn-ghost btn-xs btn-circle absolute top-3 right-3 text-error animate-none"
+                                    >✕</button>
+                                )}
+                                <div className="flex items-center gap-2">
+                                    <PiBookOpen className="text-primary w-4 h-4" />
+                                    <span className="text-xs font-black uppercase tracking-widest text-primary">Group {gIdx + 1}</span>
+                                </div>
+                                <div className="grid md:grid-cols-4 gap-3">
+                                    {/* From Q# */}
+                                    <div>
+                                        <label className="label"><span className="label-text font-semibold text-xs">From Q#</span></label>
+                                        <input
+                                            type="number" min={1}
+                                            className="input input-bordered w-full rounded-2xl text-sm"
+                                            value={group.fromQuestion || 1}
+                                            onChange={(e) => {
+                                                const upd = [...(formData.questionGroups || [])];
+                                                upd[gIdx] = { ...upd[gIdx], fromQuestion: parseInt(e.target.value) || 1 };
+                                                patch({ questionGroups: upd });
+                                            }}
+                                        />
+                                    </div>
+                                    {/* To Q# */}
+                                    <div>
+                                        <label className="label"><span className="label-text font-semibold text-xs">To Q#</span></label>
+                                        <input
+                                            type="number" min={1}
+                                            className="input input-bordered w-full rounded-2xl text-sm"
+                                            value={group.toQuestion || 1}
+                                            onChange={(e) => {
+                                                const upd = [...(formData.questionGroups || [])];
+                                                upd[gIdx] = { ...upd[gIdx], toQuestion: parseInt(e.target.value) || 1 };
+                                                patch({ questionGroups: upd });
+                                            }}
+                                        />
+                                    </div>
+                                    {/* Target Passage */}
+                                    <div>
+                                        <label className="label"><span className="label-text font-semibold text-xs">Target Passage</span></label>
+                                        <select
+                                            className="select select-bordered w-full rounded-2xl text-sm font-semibold"
+                                            value={group.passageIndex || 0}
+                                            onChange={(e) => {
+                                                const upd = [...(formData.questionGroups || [])];
+                                                upd[gIdx] = { ...upd[gIdx], passageIndex: parseInt(e.target.value) };
+                                                patch({ questionGroups: upd });
+                                            }}
+                                        >
+                                            {(formData.passages || []).map((p, pIdx) => (
+                                                <option key={pIdx} value={pIdx}>
+                                                    Passage {pIdx + 1}: {p.title || "(Untitled)"}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {/* Group Title */}
+                                    <div>
+                                        <label className="label"><span className="label-text font-semibold text-xs">Group Title (optional)</span></label>
+                                        <input
+                                            type="text"
+                                            className="input input-bordered w-full rounded-2xl text-sm"
+                                            placeholder="e.g. True / False / Not Given"
+                                            value={group.title || ""}
+                                            onChange={(e) => {
+                                                const upd = [...(formData.questionGroups || [])];
+                                                upd[gIdx] = { ...upd[gIdx], title: e.target.value };
+                                                patch({ questionGroups: upd });
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                {/* Instructions */}
+                                <div>
+                                    <label className="label"><span className="label-text font-semibold text-xs">Instructions for this group</span></label>
+                                    <textarea
+                                        className="textarea textarea-bordered w-full rounded-xl text-sm bg-white min-h-[3.5rem]"
+                                        placeholder="e.g. Do the following statements agree with the information given in the passage? Write TRUE, FALSE or NOT GIVEN."
+                                        value={group.instructions || ""}
+                                        onChange={(e) => {
+                                            const upd = [...(formData.questionGroups || [])];
+                                            upd[gIdx] = { ...upd[gIdx], instructions: e.target.value };
+                                            patch({ questionGroups: upd });
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Listening */}
+            {testType === "listening" && (
+                <div className="space-y-5">
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-700 tracking-wide">Audio URL</label>
+                        <input
+                            type="url"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                            placeholder="Direct link to audio file (Dropbox, S3, Cloudinary…)"
+                            value={formData.audioUrl}
+                            onChange={(e) => patch({ audioUrl: e.target.value })}
+                            required
+                        />
+                    </div>
+
+                    {/* IELTS/BOTH: Example box + Gapped Notes */}
+                    {isIeltsListening && (
+                        <div className="p-6 bg-indigo-50/40 border border-indigo-100 rounded-3xl space-y-5">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-primary">
+                                IELTS — Example &amp; Notes Context
+                            </h3>
+
+                            {formData.listeningPart === 1 && (
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-xs font-bold text-indigo-700 tracking-wide">
+                                            Example Question Label
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                                            placeholder="e.g. Destination:"
+                                            value={formData.exampleQuestion}
+                                            onChange={(e) => patch({ exampleQuestion: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-xs font-bold text-indigo-700 tracking-wide">
+                                            Example Answer (pre-filled for student)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                                            placeholder="e.g. Harbour City"
+                                            value={formData.exampleAnswer}
+                                            onChange={(e) => patch({ exampleAnswer: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-bold text-indigo-700 tracking-wide flex justify-between items-center">
+                                    <span>Gapped Notes / Passage Context (Optional)</span>
+                                    {(formData.listeningPart === 3 || formData.listeningPart === 4) && (
+                                        <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">
+                                            Part {formData.listeningPart} Inline Format Enabled
+                                        </span>
+                                    )}
+                                </label>
+                                <textarea
+                                    className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px] font-mono text-slate-800 leading-relaxed"
+                                    placeholder={
+                                        formData.listeningPart === 3
+                                            ? "Novel: (21) ___21___\nProtagonists: Mary Lennox; Colin Craven\nTime period: Early in (22) ___22___..."
+                                            : formData.listeningPart === 4
+                                            ? "| Column Header 1 | Column Header 2 |\n|---|---|\n| Avoid pain | ___31___ |\n| Plan future | ___32___ |"
+                                            : "Transport from Bayswater...\nThe passenger wants to travel to ___1___ on ___2___ of this month..."
+                                    }
+                                    value={formData.passage}
+                                    onChange={(e) => patch({ passage: e.target.value })}
+                                />
+                                <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1">
+                                    <span>💡 Use <code>___21___</code>, <code>___22___</code> etc. to mark answer gaps.</span>
+                                    <span>📊 To create a table, use vertical bars (<code>|</code>) at the start and end of rows.</span>
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Writing */}
+            {testType === "writing" && (
+                <div className="space-y-6">
+                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-200/60 space-y-6">
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                            Writing Task 1 — Academic Report
+                        </h3>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Task 1 Prompt</label>
+                            <textarea
+                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px]"
+                                placeholder="The table below shows global plastic production…"
+                                value={formData.task1Prompt}
+                                onChange={(e) => patch({ task1Prompt: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Task 1 Diagram Image URL (Optional)</label>
+                            <input
+                                type="url"
+                                className="w-full px-4 py-3.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                                placeholder="https://domain.com/chart.png"
+                                value={formData.task1Image}
+                                onChange={(e) => patch({ task1Image: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-200/60 space-y-6">
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                            Writing Task 2 — Opinion Essay
+                        </h3>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Task 2 Prompt</label>
+                            <textarea
+                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px]"
+                                placeholder="Some people argue that university education should be free…"
+                                value={formData.task2Prompt}
+                                onChange={(e) => patch({ task2Prompt: e.target.value })}
+                                required
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Speaking */}
+            {testType === "speaking" && (
+                <div className="space-y-6">
+                    {/* Part 1 */}
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                            <span>Part 1: Introduction &amp; Interview Questions</span>
+                            <button
+                                type="button"
+                                onClick={() => patch({ speakingPart1Questions: [...formData.speakingPart1Questions, ""] })}
+                                className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
+                            >
+                                + Add Question
+                            </button>
+                        </h3>
+                        <div className="space-y-2">
+                            {formData.speakingPart1Questions.map((q, idx) => (
+                                <div key={idx} className="flex gap-2 items-center">
+                                    <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
+                                    <input
+                                        type="text"
+                                        className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
+                                        placeholder="e.g. Do you work or study?"
+                                        value={q}
+                                        onChange={(e) => {
+                                            const arr = [...formData.speakingPart1Questions];
+                                            arr[idx] = e.target.value;
+                                            patch({ speakingPart1Questions: arr });
+                                        }}
+                                    />
+                                    {formData.speakingPart1Questions.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => patch({ speakingPart1Questions: formData.speakingPart1Questions.filter((_, i) => i !== idx) })}
+                                            className="btn btn-ghost btn-circle btn-sm text-error animate-none"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Part 2 Cue Card */}
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                            Part 2: Long Turn (Cue Card Prompt)
+                        </h3>
+                        <div className="form-control">
+                            <label className="label">
+                                <span className="label-text font-semibold text-xs text-slate-600">Cue Card Topic Prompt</span>
+                            </label>
+                            <textarea
+                                className="textarea textarea-bordered rounded-2xl h-28 text-sm bg-white font-medium"
+                                placeholder="Describe a historical building you have visited. You should say..."
+                                value={formData.speakingPrompt}
+                                onChange={(e) => patch({ speakingPrompt: e.target.value })}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    {/* Part 3 Discussion */}
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                            <span>Part 3: Two-Way Analytical Discussion Questions</span>
+                            <button
+                                type="button"
+                                onClick={() => patch({ speakingPart3Questions: [...formData.speakingPart3Questions, ""] })}
+                                className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
+                            >
+                                + Add Question
+                            </button>
+                        </h3>
+                        <div className="space-y-2">
+                            {formData.speakingPart3Questions.map((q, idx) => (
+                                <div key={idx} className="flex gap-2 items-center">
+                                    <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
+                                    <input
+                                        type="text"
+                                        className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
+                                        placeholder="e.g. Why do people think protecting old buildings is important?"
+                                        value={q}
+                                        onChange={(e) => {
+                                            const arr = [...formData.speakingPart3Questions];
+                                            arr[idx] = e.target.value;
+                                            patch({ speakingPart3Questions: arr });
+                                        }}
+                                    />
+                                    {formData.speakingPart3Questions.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => patch({ speakingPart3Questions: formData.speakingPart3Questions.filter((_, i) => i !== idx) })}
+                                            className="btn btn-ghost btn-circle btn-sm text-error animate-none"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
