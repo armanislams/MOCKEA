@@ -281,11 +281,36 @@ export const getResultDetail = async (req, res) => {
 // Get all results (For Instructors)
 export const getAllResults = async (req, res) => {
     try {
-        const results = await MockTestResult.find()
+        const { page, limit } = req.query;
+        const total = await MockTestResult.countDocuments();
+
+        res.set("X-Total-Count", total.toString());
+        res.set("Access-Control-Expose-Headers", "X-Total-Count");
+
+        let query = MockTestResult.find()
             .populate('userId', 'name email')
             .populate('testId', 'title')
             .sort({ createdAt: -1 });
-        res.status(200).json({ success: true, results });
+
+        if (page || limit) {
+            const pageNum = parseInt(page) || 1;
+            const limitNum = parseInt(limit) || 10;
+            const skip = (pageNum - 1) * limitNum;
+            query = query.skip(skip).limit(limitNum);
+
+            const results = await query;
+            return res.status(200).json({ 
+                success: true, 
+                results,
+                total,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(total / limitNum)
+            });
+        }
+
+        const results = await query;
+        res.status(200).json({ success: true, results, total });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

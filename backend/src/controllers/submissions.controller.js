@@ -62,16 +62,39 @@ export const getMySubmissions = async (req, res) => {
 
 export const getSubmissions = async (req, res) => {
     try {
-        const { status, testType } = req.query;
+        const { status, testType, page, limit } = req.query;
         const filter = {};
         if (status) filter.status = status;
         if (testType) filter.testType = testType;
 
-        const submissions = await PracticeSubmission.find(filter).sort({ createdAt: -1 });
+        const total = await PracticeSubmission.countDocuments(filter);
+        res.set("X-Total-Count", total.toString());
+        res.set("Access-Control-Expose-Headers", "X-Total-Count");
 
+        let query = PracticeSubmission.find(filter).sort({ createdAt: -1 });
+
+        if (page || limit) {
+            const pageNum = parseInt(page) || 1;
+            const limitNum = parseInt(limit) || 10;
+            const skip = (pageNum - 1) * limitNum;
+            query = query.skip(skip).limit(limitNum);
+
+            const submissions = await query;
+            return res.status(200).json({ 
+                success: true, 
+                submissions,
+                total,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(total / limitNum)
+            });
+        }
+
+        const submissions = await query;
         res.status(200).json({ 
             success: true, 
-            submissions 
+            submissions,
+            total
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

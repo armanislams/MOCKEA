@@ -36,7 +36,7 @@ export const postUser = async (req, res) => {
 };
 
 export const getAllUser = async (req, res) => {
-    const { search, role, plan, status } = req.query;
+    const { search, role, plan, status, page, limit } = req.query;
 
     const filter = {};
 
@@ -51,8 +51,37 @@ export const getAllUser = async (req, res) => {
     if (status === "banned") filter.isBanned = true;
     if (status === "active") filter.isBanned = { $ne: true };
 
-    const users = await User.find(filter).sort({ createdAt: -1 });
-    res.status(200).json({ success: true, message: "Users fetched successfully", users });
+    const total = await User.countDocuments(filter);
+    res.set("X-Total-Count", total.toString());
+    res.set("Access-Control-Expose-Headers", "X-Total-Count");
+
+    let query = User.find(filter).sort({ createdAt: -1 });
+
+    if (page || limit) {
+        const pageNum = parseInt(page) || 1;
+        const limitNum = parseInt(limit) || 10;
+        const skip = (pageNum - 1) * limitNum;
+        query = query.skip(skip).limit(limitNum);
+
+        const users = await query;
+        return res.status(200).json({
+            success: true,
+            message: "Users fetched successfully",
+            users,
+            total,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: Math.ceil(total / limitNum)
+        });
+    }
+
+    const users = await query;
+    return res.status(200).json({
+        success: true,
+        message: "Users fetched successfully",
+        users,
+        total
+    });
 };
 
 export const getUserRole = async (req, res) => {
