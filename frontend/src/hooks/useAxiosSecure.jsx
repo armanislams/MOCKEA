@@ -14,11 +14,18 @@ const useAxiosSecure = () => {
 
   useEffect(() => {
     //intercept request
-    const reqInterceptor = axiosSecure.interceptors.request.use((config) => {
-      
-      config.headers.Authorization = `Bearer ${user?.accessToken}`
-      return config
-    })
+    const reqInterceptor = axiosSecure.interceptors.request.use(async (config) => {
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          config.headers.Authorization = `Bearer ${token}`;
+        } catch (err) {
+          console.error("Failed to retrieve fresh Firebase ID token", err);
+          config.headers.Authorization = `Bearer ${user.accessToken}`;
+        }
+      }
+      return config;
+    });
 
     ///interceptor response
     const resInterceptor = axiosSecure.interceptors.response.use((response) => {

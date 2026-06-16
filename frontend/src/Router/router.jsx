@@ -1,51 +1,60 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router";
 import Home from "../components/Home/Home";
 import Login from "../components/Auth/Login";
 import Register from "../components/Auth/Register";
 import HomeLayout from "../Layout/HomeLayout";
-import Profile from "../components/Dashboard/Profile";
-import Review from "../components/Dashboard/Student Dashboard/Review/Review";
-import ReviewDetail from "../components/Dashboard/Student Dashboard/Review/ReviewDetail";
-import Analytics from "../components/Dashboard/Student Dashboard/Analytics/Analytics";
 import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
-import DashboardLayout from "../Layout/DashboardLayout";
-import Practice from "../components/Dashboard/Student Dashboard/Practice/Practice";
-import TakeTest from "../components/Dashboard/Student Dashboard/TakeTest/TakeTest";
-import Reading from "../components/Dashboard/Student Dashboard/Reading/Reading";
-import Listening from "../components/Dashboard/Student Dashboard/Listening/Listening";
-import Writing from "../components/Dashboard/Student Dashboard/Writing/Writing";
-import Speaking from "../components/Dashboard/Student Dashboard/Speaking/Speaking";
-import DashboardIndex from "../components/Dashboard/DashboardIndex";
-import ManageUsers from "../components/Dashboard/Admin Dashboard/ManageUsers";
-import ManageSubmissions from "../components/Dashboard/Admin Dashboard/ManageSubmissions";
-import AdminSettings from "../components/Dashboard/Admin Dashboard/AdminSettings";
-import FullMockTestLibrary from "../components/Dashboard/Student Dashboard/FullMockTest/FullMockTestLibrary";
-import AddQuestionForm from "../components/Dashboard/Admin Dashboard/AddQuestionForm";
-import EditQuestionForm from "../components/Dashboard/Admin Dashboard/EditQuestionForm";
-import ManageQuestions from "../components/Dashboard/Admin Dashboard/ManageQuestions";
-import CreateMockTest from "../components/Dashboard/Admin Dashboard/CreateMockTest";
-import ManageMockTests from "../components/Dashboard/Admin Dashboard/ManageMockTests";
-import ManagePricing from "../components/Dashboard/Admin Dashboard/ManagePricing";
-import ManageResources from "../components/Dashboard/Admin Dashboard/ManageResources";
-import TestEnvironment from "../components/Dashboard/Student Dashboard/FullMockTest/TestEnvironment";
 import Error from "../components/Common/Error";
-import TrainerLibrary from "../components/Dashboard/Student Dashboard/TrainerLibrary";
-import ManageTrainers from "../components/Dashboard/Admin Dashboard/ManageTrainers";
-import GradeSubmissions from "../components/Dashboard/Instructor Dashboard/GradeSubmissions";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 import { InstructorRoutes } from "../context/Role Based Routes/InstructorRoutes";
-import GuestTestLibrary from "../components/Guest/GuestTestLibrary";
 import FreePracticeLayout from "../Layout/FreePracticeLayout";
-import GuestTestEnvironment from "../components/Guest/GuestTestEnvironment";
 import AuthLayout from "../components/Auth/AuthLayout";
-import PricingPage from "../components/PricingPage/PricingPage";
-import FreeResourcesPage from "../components/FreeResources/FreeResourcesPage";
 import RootLayout from "../Layout/RootLayout";
-import CoursesPage from "../components/Home/CoursesPage";
-import StudentCourses from "../components/Dashboard/Student Dashboard/StudentCourses";
-import AboutPage from "../components/AboutPage/AboutPage";
 
+// Helper for Suspense wrapper
+const withSuspense = (Component) => (
+  <Suspense fallback={<Loader />}>
+    <Component />
+  </Suspense>
+);
+
+// Lazy Loaded Pages & Layouts
+const DashboardLayout = lazy(() => import("../Layout/DashboardLayout"));
+const Profile = lazy(() => import("../components/Dashboard/Profile"));
+const Review = lazy(() => import("../components/Dashboard/Student Dashboard/Review/Review"));
+const ReviewDetail = lazy(() => import("../components/Dashboard/Student Dashboard/Review/ReviewDetail"));
+const Analytics = lazy(() => import("../components/Dashboard/Student Dashboard/Analytics/Analytics"));
+const Practice = lazy(() => import("../components/Dashboard/Student Dashboard/Practice/Practice"));
+const TakeTest = lazy(() => import("../components/Dashboard/Student Dashboard/TakeTest/TakeTest"));
+const Reading = lazy(() => import("../components/Dashboard/Student Dashboard/Reading/Reading"));
+const Listening = lazy(() => import("../components/Dashboard/Student Dashboard/Listening/Listening"));
+const Writing = lazy(() => import("../components/Dashboard/Student Dashboard/Writing/Writing"));
+const Speaking = lazy(() => import("../components/Dashboard/Student Dashboard/Speaking/Speaking"));
+const DashboardIndex = lazy(() => import("../components/Dashboard/DashboardIndex"));
+const ManageUsers = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageUsers"));
+const ManageSubmissions = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageSubmissions"));
+const AdminSettings = lazy(() => import("../components/Dashboard/Admin Dashboard/AdminSettings"));
+const FullMockTestLibrary = lazy(() => import("../components/Dashboard/Student Dashboard/FullMockTest/FullMockTestLibrary"));
+const AddQuestionForm = lazy(() => import("../components/Dashboard/Admin Dashboard/AddQuestionForm"));
+const EditQuestionForm = lazy(() => import("../components/Dashboard/Admin Dashboard/EditQuestionForm"));
+const ManageQuestions = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageQuestions"));
+const CreateMockTest = lazy(() => import("../components/Dashboard/Admin Dashboard/CreateMockTest"));
+const ManageMockTests = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageMockTests"));
+const ManagePricing = lazy(() => import("../components/Dashboard/Admin Dashboard/ManagePricing"));
+const ManageResources = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageResources"));
+const TestEnvironment = lazy(() => import("../components/Dashboard/Student Dashboard/FullMockTest/TestEnvironment"));
+const TrainerLibrary = lazy(() => import("../components/Dashboard/Student Dashboard/TrainerLibrary"));
+const ManageTrainers = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageTrainers"));
+const GradeSubmissions = lazy(() => import("../components/Dashboard/Instructor Dashboard/GradeSubmissions"));
+const GuestTestLibrary = lazy(() => import("../components/Guest/GuestTestLibrary"));
+const GuestTestEnvironment = lazy(() => import("../components/Guest/GuestTestEnvironment"));
+const PricingPage = lazy(() => import("../components/PricingPage/PricingPage"));
+const FreeResourcesPage = lazy(() => import("../components/FreeResources/FreeResourcesPage"));
+const CoursesPage = lazy(() => import("../components/Home/CoursesPage"));
+const StudentCourses = lazy(() => import("../components/Dashboard/Student Dashboard/StudentCourses"));
+const AboutPage = lazy(() => import("../components/AboutPage/AboutPage"));
 
 const router = createBrowserRouter([
   {
@@ -65,25 +74,25 @@ const router = createBrowserRouter([
             path: "/practice",
             element: (
               <PrivateRoute>
-                <Practice />
+                {withSuspense(Practice)}
               </PrivateRoute>
             ),
           },
           {
             path: "/about",
-            element: <AboutPage />,
+            element: withSuspense(AboutPage),
           },
           {
             path: "/pricing",
-            element: <PricingPage />,
+            element: withSuspense(PricingPage),
           },
           {
             path: "/free-resources",
-            element: <FreeResourcesPage />,
+            element: withSuspense(FreeResourcesPage),
           },
           {
             path: "/courses",
-            element: <CoursesPage />,
+            element: withSuspense(CoursesPage),
           },
         ],
       },
@@ -105,7 +114,7 @@ const router = createBrowserRouter([
         path: "/test/:id",
         element: (
           <PrivateRoute>
-            <TestEnvironment />
+            {withSuspense(TestEnvironment)}
           </PrivateRoute>
         ),
       },
@@ -113,67 +122,67 @@ const router = createBrowserRouter([
         path: "/dashboard",
         element: (
           <PrivateRoute>
-            <DashboardLayout />
+            {withSuspense(DashboardLayout)}
           </PrivateRoute>
         ),
         children: [
           {
             index: true,
-            element: <DashboardIndex />,
+            element: withSuspense(DashboardIndex),
           },
           {
             path: "practice",
-            element: <TakeTest />,
+            element: withSuspense(TakeTest),
           },
           {
             path: "full-mock-test",
-            element: <FullMockTestLibrary />,
+            element: withSuspense(FullMockTestLibrary),
           },
           {
             path: "review",
-            element: <Review />,
+            element: withSuspense(Review),
           },
           {
             path: "review/:id",
-            element: <ReviewDetail />,
+            element: withSuspense(ReviewDetail),
           },
           {
             path: "analytics",
-            element: <Analytics />,
+            element: withSuspense(Analytics),
           },
           {
             path: "profile",
-            element: <Profile />,
+            element: withSuspense(Profile),
           },
           {
             path: "trainer",
-            element: <TrainerLibrary />,
+            element: withSuspense(TrainerLibrary),
           },
           {
             path: "reading",
-            element: <Reading />,
+            element: withSuspense(Reading),
           },
           {
             path: "listening",
-            element: <Listening />,
+            element: withSuspense(Listening),
           },
           {
             path: "writing",
-            element: <Writing />,
+            element: withSuspense(Writing),
           },
           {
             path: "speaking",
-            element: <Speaking />,
+            element: withSuspense(Speaking),
           },
           {
             path: "courses",
-            element: <StudentCourses />,
+            element: withSuspense(StudentCourses),
           },
           {
             path: "admin/manage-users",
             element: (
               <AdminRoutes>
-                <ManageUsers />
+                {withSuspense(ManageUsers)}
               </AdminRoutes>
             ),
           },
@@ -181,7 +190,7 @@ const router = createBrowserRouter([
             path: "admin/manage-submissions",
             element: (
               <AdminRoutes>
-                <ManageSubmissions />
+                {withSuspense(ManageSubmissions)}
               </AdminRoutes>
             ),
           },
@@ -189,7 +198,7 @@ const router = createBrowserRouter([
             path: "admin/manage-questions",
             element: (
               <AdminRoutes>
-                <ManageQuestions />
+                {withSuspense(ManageQuestions)}
               </AdminRoutes>
             ),
           },
@@ -197,7 +206,7 @@ const router = createBrowserRouter([
             path: "admin/manage-mock-tests",
             element: (
               <AdminRoutes>
-                <ManageMockTests />
+                {withSuspense(ManageMockTests)}
               </AdminRoutes>
             ),
           },
@@ -205,7 +214,7 @@ const router = createBrowserRouter([
             path: "admin/manage-pricing",
             element: (
               <AdminRoutes>
-                <ManagePricing />
+                {withSuspense(ManagePricing)}
               </AdminRoutes>
             ),
           },
@@ -213,7 +222,7 @@ const router = createBrowserRouter([
             path: "admin/manage-resources",
             element: (
               <AdminRoutes>
-                <ManageResources />
+                {withSuspense(ManageResources)}
               </AdminRoutes>
             ),
           },
@@ -221,7 +230,7 @@ const router = createBrowserRouter([
             path: "admin/manage-trainers",
             element: (
               <AdminRoutes>
-                <ManageTrainers />
+                {withSuspense(ManageTrainers)}
               </AdminRoutes>
             ),
           },
@@ -229,7 +238,7 @@ const router = createBrowserRouter([
             path: "admin/create-mock-test",
             element: (
               <AdminRoutes>
-                <CreateMockTest />
+                {withSuspense(CreateMockTest)}
               </AdminRoutes>
             ),
           },
@@ -237,7 +246,7 @@ const router = createBrowserRouter([
             path: "admin/add-questions",
             element: (
               <AdminRoutes>
-                <AddQuestionForm />
+                {withSuspense(AddQuestionForm)}
               </AdminRoutes>
             ),
           },
@@ -245,7 +254,7 @@ const router = createBrowserRouter([
             path: "admin/edit-questions/:id",
             element: (
               <AdminRoutes>
-                <EditQuestionForm />
+                {withSuspense(EditQuestionForm)}
               </AdminRoutes>
             ),
           },
@@ -253,7 +262,7 @@ const router = createBrowserRouter([
             path: "instructor/grade-submissions",
             element: (
               <InstructorRoutes>
-                <GradeSubmissions />
+                {withSuspense(GradeSubmissions)}
               </InstructorRoutes>
             ),
           },
@@ -261,7 +270,7 @@ const router = createBrowserRouter([
             path: "instructor/manage-resources",
             element: (
               <InstructorRoutes>
-                <ManageResources />
+                {withSuspense(ManageResources)}
               </InstructorRoutes>
             ),
           },
@@ -269,7 +278,7 @@ const router = createBrowserRouter([
             path: "admin/settings",
             element: (
               <AdminRoutes>
-                <AdminSettings />
+                {withSuspense(AdminSettings)}
               </AdminRoutes>
             ),
           },
@@ -277,10 +286,10 @@ const router = createBrowserRouter([
       },
       {
         path: "free-practice",
-        element: <FreePracticeLayout />, // public area
+        element: <FreePracticeLayout />,
         children: [
-          { index: true, element: <GuestTestLibrary /> },
-          { path: "tests/:id", element: <GuestTestEnvironment /> },
+          { index: true, element: withSuspense(GuestTestLibrary) },
+          { path: "tests/:id", element: withSuspense(GuestTestEnvironment) },
         ],
       },
     ],
