@@ -50,10 +50,18 @@ export const sanitizeMiddleware = (req, res, next) => {
         req.body = sanitizeObject(req.body);
     }
     if (req.query) {
-        req.query = sanitizeObject(req.query);
+        const sanitized = sanitizeObject(req.query);
+        for (const key in req.query) {
+            delete req.query[key];
+        }
+        Object.assign(req.query, sanitized);
     }
     if (req.params) {
-        req.params = sanitizeObject(req.params);
+        const sanitized = sanitizeObject(req.params);
+        for (const key in req.params) {
+            delete req.params[key];
+        }
+        Object.assign(req.params, sanitized);
     }
     next();
 };

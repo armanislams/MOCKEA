@@ -44,6 +44,8 @@ import FreeResourcesPage from "../components/FreeResources/FreeResourcesPage";
 import RootLayout from "../Layout/RootLayout";
 import CoursesPage from "../components/Home/CoursesPage";
 import StudentCourses from "../components/Dashboard/Student Dashboard/StudentCourses";
+import AboutPage from "../components/AboutPage/AboutPage";
+
 
 const router = createBrowserRouter([
   {
@@ -66,6 +68,10 @@ const router = createBrowserRouter([
                 <Practice />
               </PrivateRoute>
             ),
+          },
+          {
+            path: "/about",
+            element: <AboutPage />,
           },
           {
             path: "/pricing",
