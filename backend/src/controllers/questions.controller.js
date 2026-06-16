@@ -112,8 +112,24 @@ export const getQuestions = async (req, res) => {
                 filter.$and = andConditions;
             }
         }
-        
-        const questions = await Questions.find(filter);
+        // Check if user is free plan to block writing/speaking or limit listening/reading to 2 random questions
+        if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
+            if (type && ['writing', 'speaking'].includes(type.toLowerCase())) {
+                return res.status(200).json({
+                    success: true,
+                    message: `${type} questions are locked on the Free tier. Please upgrade.`,
+                    questions: []
+                });
+            }
+        }
+
+        let questions = await Questions.find(filter);
+
+        if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
+            // Shuffle and return only 2 random question sets
+            questions = questions.sort(() => 0.5 - Math.random()).slice(0, 2);
+        }
+
         return res.status(200).json({
             success: true,
             message: "Questions fetched successfully",
@@ -153,6 +169,29 @@ export const getQuestionById = async (req, res) => {
         if (!question) {
             return res.status(404).json({ success: false, message: 'Question not found' });
         }
+
+        // Enforce plan-tier checks on individual question sets
+        const email = req.decoded_email;
+        let userRole = "student";
+        let userPlan = "free";
+
+        if (email) {
+            const userObj = await User.findOne({ email });
+            if (userObj) {
+                userRole = userObj.role || "student";
+                userPlan = userObj.plan || "free";
+            }
+        }
+
+        if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
+            if (['writing', 'speaking'].includes(question.testType.toLowerCase())) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: "Access Denied: This practice module is locked on the Free tier. Please upgrade." 
+                });
+            }
+        }
+
         return res.status(200).json({
             success: true,
             question

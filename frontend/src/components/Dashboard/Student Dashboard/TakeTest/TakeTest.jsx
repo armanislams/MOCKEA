@@ -120,8 +120,19 @@ const TakeTest = () => {
     const { userData } = useUserProfile();
     const targetExam = userData?.targetExam || "IELTS";
 
+    const userPlan = userData?.plan || "free";
+    const userRole = userData?.role || "student";
+
     // Select content based on user preference — BOTH shows IELTS sections as primary
-    const sectionTests = targetExam === "PTE" ? SECTIONS_PTE : SECTIONS_IELTS;
+    let sectionTests = targetExam === "PTE" ? SECTIONS_PTE : SECTIONS_IELTS;
+
+    // Free tier users can only access Listening and Reading sections
+    if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
+        sectionTests = sectionTests.filter(sec => 
+            sec.title.toLowerCase().includes("listening") || 
+            sec.title.toLowerCase().includes("reading")
+        );
+    }
 
     const container = {
         hidden: { opacity: 0 },
