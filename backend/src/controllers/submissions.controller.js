@@ -22,8 +22,8 @@ export const submitPractice = async (req, res) => {
 
         const submission = new PracticeSubmission({
             userId,
-            userName,
-            userEmail,
+            userName: user.name || userName,
+            userEmail: user.email || userEmail,
             questionSetId,
             testType,
             title,

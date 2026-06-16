@@ -1,5 +1,15 @@
 import User from "../model/user.js";
 
+// Helper function to check if requesting user is the owner or an admin
+const isOwnerOrAdmin = async (decodedEmail, targetEmail) => {
+    if (!decodedEmail || !targetEmail) return false;
+    if (decodedEmail.toLowerCase().trim() === targetEmail.toLowerCase().trim()) {
+        return true;
+    }
+    const requestor = await User.findOne({ email: decodedEmail.toLowerCase().trim() });
+    return !!(requestor && requestor.role === 'admin');
+};
+
 export const postUser = async (req, res) => {
     const { email, name, targetExam, gender } = req.body;
 
@@ -48,6 +58,12 @@ export const getAllUser = async (req, res) => {
 export const getUserRole = async (req, res) => {
     const { email } = req.params;
     const cleanEmail = email.toLowerCase().trim();
+
+    const authorized = await isOwnerOrAdmin(req.decoded_email, cleanEmail);
+    if (!authorized) {
+        return res.status(403).json({ success: false, message: "Access denied: cannot fetch role of another user" });
+    }
+
     const user = await User.findOne({ email: cleanEmail });
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
@@ -58,6 +74,12 @@ export const getUserRole = async (req, res) => {
 export const getUserProfile = async (req, res) => {
     const { email } = req.params;
     const cleanEmail = email.toLowerCase().trim();
+
+    const authorized = await isOwnerOrAdmin(req.decoded_email, cleanEmail);
+    if (!authorized) {
+        return res.status(403).json({ success: false, message: "Access denied: cannot access another user's profile" });
+    }
+
     const user = await User.findOne({ email: cleanEmail });
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
@@ -160,17 +182,21 @@ export const updateUserExamPreference = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid exam preference specified" });
         }
 
-        const user = await User.findByIdAndUpdate(
-            id,
-            { targetExam },
-            { returnDocument: 'after' }
-        );
-
-        if (!user) {
+        const userToUpdate = await User.findById(id);
+        if (!userToUpdate) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        res.status(200).json({ success: true, message: `Exam preference updated to ${targetExam}`, user });
+        // Verify ownership/admin permissions
+        const authorized = await isOwnerOrAdmin(req.decoded_email, userToUpdate.email);
+        if (!authorized) {
+            return res.status(403).json({ success: false, message: "Access denied: cannot update another user's preferences" });
+        }
+
+        userToUpdate.targetExam = targetExam;
+        await userToUpdate.save();
+
+        res.status(200).json({ success: true, message: `Exam preference updated to ${targetExam}`, user: userToUpdate });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

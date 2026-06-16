@@ -23,7 +23,7 @@ userRouter.post("/auth/register", apiRateLimiter(10, 60 * 1000), postUser);
 userRouter.use(verifyUserToken);
 
 // Authenticated user routes
-userRouter.get("/all", getAllUser);
+userRouter.get("/all", verifyUserRole(["admin"]), getAllUser);
 userRouter.get("/:email/role", getUserRole);
 userRouter.get("/:email", getUserProfile);
 userRouter.patch("/:id/exam-preference", updateUserExamPreference);
