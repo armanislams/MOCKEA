@@ -21,8 +21,7 @@ import {
   PiUserCircleFill,
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
-import FullscreenGate from "../../../Common/FullscreenGate.jsx";
-import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
+import TestShell from "../../../Common/TestShell.jsx";
 import PracticeSetSelector from "../../../Common/PracticeSetSelector.jsx";
 
 const defaultPart1Questions = [
@@ -860,26 +859,19 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     );
   }
 
-  if (!isStarted) {
-    return (
-      <FullscreenGate 
-        isStarted={isStarted}
-        onStart={() => { setIsStarted(true); enterFullscreen(); }}
-        onCancel={() => navigate(-1)}
-        title="Ready to Start?"
-        description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment and your microphone is working."
-        icon={PiMicrophoneStageFill}
-      />
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#FDFDFB] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
-      <FullscreenWarningOverlay 
-        isOpen={showWarning}
-        onResume={() => { setShowWarning(false); enterFullscreen(); }}
-        onExit={handleExitTest}
-      />
+    <TestShell
+      isStarted={isStarted}
+      onStart={() => { setIsStarted(true); enterFullscreen(); }}
+      onCancel={() => navigate(-1)}
+      title="Ready to Start?"
+      description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment and your microphone is working."
+      icon={PiMicrophoneStageFill}
+      isFullscreen={isFullscreen}
+      showWarning={showWarning}
+      onWarningResume={() => { setShowWarning(false); enterFullscreen(); }}
+      onWarningExit={handleExitTest}
+    >
 
       {/* Immersive Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-xl">
@@ -1442,7 +1434,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
           </div>
         </div>
       </div>
-    </div>
+    </TestShell>
   );
 };
 

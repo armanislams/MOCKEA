@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import Swal from "sweetalert2";
 import { 
     PiPlus,
     PiFiles,
@@ -12,6 +11,7 @@ import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import PageHeader from "../../Common/PageHeader";
 import TableShell from "../../Common/TableShell";
 import HoverActions from "../../Common/HoverActions";
+import alerts from "../../../utils/alerts";
 
 const ManageMockTests = () => {
     const axiosSecure = useAxiosSecure();
@@ -26,36 +26,17 @@ const ManageMockTests = () => {
     const deleteMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/mock-tests/${id}`),
         onSuccess: () => {
-            Swal.fire({
-                title: "Deleted!",
-                text: "The mock test has been removed.",
-                icon: "success",
-                timer: 2000,
-                showConfirmButton: false,
-                background: "#ffffff",
-                customClass: {
-                    popup: "rounded-[2rem]"
-                }
-            });
+            alerts.success("Deleted!", "The mock test has been removed.");
             refetch();
         }
     });
 
     const handleDelete = async (id) => {
-        const result = await Swal.fire({
+        const result = await alerts.confirmAction({
             title: "Are you sure?",
             text: "This action cannot be undone. All results associated with this test might be affected.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#EF4444",
-            cancelButtonColor: "#6B7280",
-            confirmButtonText: "Yes, delete it!",
-            background: "#ffffff",
-            customClass: {
-                popup: "rounded-[2rem]",
-                confirmButton: "rounded-xl px-6 py-2.5 font-bold",
-                cancelButton: "rounded-xl px-6 py-2.5 font-bold"
-            }
+            confirmText: "Yes, delete it!",
+            danger: true
         });
 
         if (result.isConfirmed) {

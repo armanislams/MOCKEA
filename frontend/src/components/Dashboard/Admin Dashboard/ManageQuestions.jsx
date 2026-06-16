@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import Swal from "sweetalert2";
 import { 
     PiBookOpen, 
     PiEar, 
@@ -19,6 +18,7 @@ import PageHeader from "../../Common/PageHeader";
 import TableShell from "../../Common/TableShell";
 import AdminModal from "../../Common/AdminModal";
 import HoverActions from "../../Common/HoverActions";
+import alerts from "../../../utils/alerts";
 
 const ManageQuestions = () => {
     const axiosSecure = useAxiosSecure();
@@ -35,37 +35,13 @@ const ManageQuestions = () => {
     const deleteMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/questions/${id}`),
         onSuccess: () => {
-            Swal.fire({
-                title: "Deleted!",
-                text: "The question has been removed from the bank.",
-                icon: "success",
-                timer: 2000,
-                showConfirmButton: false,
-                background: "#ffffff",
-                customClass: {
-                    popup: "rounded-[2rem]"
-                }
-            });
+            alerts.success("Deleted!", "The question has been removed from the bank.");
             refetch();
         }
     });
 
     const handleDelete = async (id) => {
-        const result = await Swal.fire({
-            title: "Are you sure?",
-            text: "This question will be permanently removed from the question bank.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#EF4444",
-            cancelButtonColor: "#6B7280",
-            confirmButtonText: "Yes, delete it!",
-            background: "#ffffff",
-            customClass: {
-                popup: "rounded-[2rem]",
-                confirmButton: "rounded-xl px-6 py-2.5 font-bold",
-                cancelButton: "rounded-xl px-6 py-2.5 font-bold"
-            }
-        });
+        const result = await alerts.confirmDelete("question");
 
         if (result.isConfirmed) {
             deleteMutation.mutate(id);

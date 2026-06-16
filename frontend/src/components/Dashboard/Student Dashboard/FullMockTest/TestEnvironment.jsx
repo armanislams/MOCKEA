@@ -10,8 +10,7 @@ import {
     PiClock,
     PiCaretRightBold
 } from "react-icons/pi";
-import FullscreenGate from "../../../Common/FullscreenGate";
-import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay";
+import TestShell from "../../../Common/TestShell";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import ReadingSection from "./ReadingSection";
 import ListeningSection from "./ListeningSection";
@@ -484,27 +483,22 @@ const TestEnvironment = () => {
 
     if (isLoading) return <Loader/>
 
-    if (!isStarted) {
-        return (
-            <FullscreenGate 
-                isStarted={isStarted}
-                onStart={() => { setIsStarted(true); enterFullscreen(); }}
-                onCancel={() => navigate(-1)}
-                title="Ready to Start?"
-                description="This test will open in fullscreen mode. Ensure you are in a quiet environment."
-            />
-        );
-    }
-
     return (
-        <div className="h-screen overflow-hidden bg-[#FDFDFB] flex flex-col relative select-none" onContextMenu={e => e.preventDefault()}>
-            <FullscreenWarningOverlay 
-                isOpen={showWarning}
-                onResume={() => { setShowWarning(false); enterFullscreen(); }}
-                onExit={handleExitTest}
-                warningType={warningType}
-                tabSwitches={tabSwitches}
-            />
+        <TestShell
+            isStarted={isStarted}
+            onStart={() => { setIsStarted(true); enterFullscreen(); }}
+            onCancel={() => navigate(-1)}
+            title="Ready to Start?"
+            description="This test will open in fullscreen mode. Ensure you are in a quiet environment."
+            isFullscreen={isFullscreen}
+            showWarning={showWarning}
+            onWarningResume={() => { setShowWarning(false); enterFullscreen(); }}
+            onWarningExit={handleExitTest}
+            warningType={warningType}
+            tabSwitches={tabSwitches}
+            maxSwitches={3}
+            className="h-screen overflow-hidden bg-[#FDFDFB] flex flex-col relative select-none"
+        >
 
             {tabSwitches > 0 && !showWarning && (
                 <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[1040] animate-bounce pointer-events-none">
@@ -663,7 +657,7 @@ const TestEnvironment = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </TestShell>
     );
 };
 

@@ -21,8 +21,7 @@ import {
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
-import FullscreenGate from "../../../Common/FullscreenGate.jsx";
-import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
+import TestShell from "../../../Common/TestShell.jsx";
 
 const getTaskContent = (passage, tab) => {
   if (!passage) return "";
@@ -352,26 +351,19 @@ const Writing = () => {
     );
   }
 
-  if (!isStarted) {
-    return (
-      <FullscreenGate 
-        isStarted={isStarted}
-        onStart={() => { setIsStarted(true); setTimerActive(true); enterFullscreen(); }}
-        onCancel={() => setSelectedSetId("")}
-        title="Ready to Start?"
-        description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment."
-        icon={PiPencilLineFill}
-      />
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
-      <FullscreenWarningOverlay 
-        isOpen={showWarning}
-        onResume={() => { setShowWarning(false); enterFullscreen(); }}
-        onExit={handleExitTest}
-      />
+    <TestShell
+      isStarted={isStarted}
+      onStart={() => { setIsStarted(true); setTimerActive(true); enterFullscreen(); }}
+      onCancel={() => setSelectedSetId("")}
+      title="Ready to Start?"
+      description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment."
+      icon={PiPencilLineFill}
+      isFullscreen={isFullscreen}
+      showWarning={showWarning}
+      onWarningResume={() => { setShowWarning(false); enterFullscreen(); }}
+      onWarningExit={handleExitTest}
+    >
 
       {/* Sticky Premium Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
@@ -574,7 +566,7 @@ const Writing = () => {
             </div>
         </div>
       </div>
-    </div>
+    </TestShell>
   );
 };
 

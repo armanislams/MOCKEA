@@ -1,4 +1,3 @@
-import React from "react";
 import { PiSpinner, PiWarning, PiDatabase } from "react-icons/pi";
 
 export default function TableShell({

@@ -26,8 +26,7 @@ import useUserProfile from "../../../../hooks/useUserProfile";
 import Loader from "../../../Loader/Loader";
 import { useNavigate } from "react-router";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity";
-import FullscreenGate from "../../../Common/FullscreenGate";
-import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay";
+import TestShell from "../../../Common/TestShell";
 import IeltsListeningFormat from "./IeltsListeningFormat";
 import useEvaluate from "../../../../hooks/useEvaluate";
 
@@ -333,26 +332,19 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     );
   }
 
-  if (!isStarted) {
-    return (
-      <FullscreenGate 
-        isStarted={isStarted}
-        onStart={() => { setIsStarted(true); enterFullscreen(); }}
-        onCancel={() => preloadedSet ? navigate(-1) : setSelectedSetId("")}
-        title="Ready to Start?"
-        description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment and have headphones/speakers ready."
-        icon={PiHeadphonesFill}
-      />
-    );
-  }
-
   return (
-    <div className={`min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none ${isFullscreen ? "h-screen overflow-y-auto" : ""}`} onContextMenu={e => e.preventDefault()}>
-      <FullscreenWarningOverlay 
-        isOpen={showWarning}
-        onResume={() => { setShowWarning(false); enterFullscreen(); }}
-        onExit={handleExitTest}
-      />
+    <TestShell
+      isStarted={isStarted}
+      onStart={() => { setIsStarted(true); enterFullscreen(); }}
+      onCancel={() => preloadedSet ? navigate(-1) : setSelectedSetId("")}
+      title="Ready to Start?"
+      description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment and have headphones/speakers ready."
+      icon={PiHeadphonesFill}
+      isFullscreen={isFullscreen}
+      showWarning={showWarning}
+      onWarningResume={() => { setShowWarning(false); enterFullscreen(); }}
+      onWarningExit={handleExitTest}
+    >
 
       {/* Minimal Sticky Nav Bar */}
       <div className="bg-white border-b border-slate-200 text-slate-800 sticky top-0 z-50 shadow-sm">
@@ -710,7 +702,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
             </div>
         </div>
       </div>
-    </div>
+    </TestShell>
   );
 };
 

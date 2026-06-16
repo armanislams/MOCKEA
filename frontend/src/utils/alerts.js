@@ -32,6 +32,40 @@ export const alerts = {
     });
   },
 
+  confirmDelete: (itemName = "item") => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "warning",
+      title: "Are you sure?",
+      text: `This ${itemName} will be permanently removed. This action cannot be undone.`,
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+      customClass: {
+        ...BASE_SWAL_CONFIG.customClass,
+        confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-error text-white border-none mx-2"
+      }
+    });
+  },
+
+  confirmAction: ({ title, text, confirmText = "Confirm", danger = false }) => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      icon: "warning",
+      title,
+      text,
+      showCancelButton: true,
+      confirmButtonText,
+      cancelButtonText: "Cancel",
+      customClass: {
+        ...BASE_SWAL_CONFIG.customClass,
+        confirmButton: `rounded-xl px-8 py-3 font-bold btn ${
+          danger ? "btn-error" : "btn-primary"
+        } text-white border-none mx-2`
+      }
+    });
+  },
+
   confirmExitPractice: (testType = "practice test") => {
     return Swal.fire({
       ...BASE_SWAL_CONFIG,

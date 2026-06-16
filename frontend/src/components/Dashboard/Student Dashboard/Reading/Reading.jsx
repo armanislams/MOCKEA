@@ -21,8 +21,7 @@ import {
     PiNotePencil
 } from "react-icons/pi";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
-import FullscreenGate from "../../../Common/FullscreenGate.jsx";
-import FullscreenWarningOverlay from "../../../Common/FullscreenWarningOverlay.jsx";
+import TestShell from "../../../Common/TestShell.jsx";
 import useEvaluate from "../../../../hooks/useEvaluate";
 
 const Reading = () => {
@@ -380,26 +379,19 @@ const Reading = () => {
     );
   }
 
-  if (!isStarted) {
-    return (
-      <FullscreenGate 
-        isStarted={isStarted}
-        onStart={() => { setIsStarted(true); enterFullscreen(); }}
-        onCancel={() => setSelectedSetId("")}
-        title="Ready to Start?"
-        description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment."
-        icon={PiBookOpenFill}
-      />
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 pb-20 relative select-none" onContextMenu={e => e.preventDefault()}>
-      <FullscreenWarningOverlay 
-        isOpen={showWarning}
-        onResume={() => { setShowWarning(false); enterFullscreen(); }}
-        onExit={handleExitTest}
-      />
+    <TestShell
+      isStarted={isStarted}
+      onStart={() => { setIsStarted(true); enterFullscreen(); }}
+      onCancel={() => setSelectedSetId("")}
+      title="Ready to Start?"
+      description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment."
+      icon={PiBookOpenFill}
+      isFullscreen={isFullscreen}
+      showWarning={showWarning}
+      onWarningResume={() => { setShowWarning(false); enterFullscreen(); }}
+      onWarningExit={handleExitTest}
+    >
 
       {/* Premium Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
@@ -697,7 +689,7 @@ const Reading = () => {
               </div>
           </div>
       )}
-    </div>
+    </TestShell>
   );
 };
 
