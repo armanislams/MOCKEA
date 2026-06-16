@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import {
@@ -14,6 +14,7 @@ import {
   PiWarning,
 } from "react-icons/pi";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import useAdminQuery from "../../../hooks/useAdminQuery";
 
 // ─── Utility ───────────────────────────────────────────────────────────────────
 
@@ -236,16 +237,15 @@ const ManageUsers = () => {
     isError,
     refetch,
     isFetching,
-  } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: async () => {
-      const res = await axiosSecure.get("/user/all");
-      return res.data.users ?? [];
-    },
-    staleTime: 1000 * 60 * 2,
-    gcTime: 1000 * 60 * 10,
-    retry: 2,
-  });
+  } = useAdminQuery(
+    ["admin-users"],
+    "/user/all",
+    "users",
+    {
+      gcTime: 1000 * 60 * 10,
+      retry: 2,
+    }
+  );
 
   // ── useMutation: change role ──────────────────────────────────────────────────
   const roleMutation = useMutation({

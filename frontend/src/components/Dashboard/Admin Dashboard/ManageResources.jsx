@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FiEdit2, FiTrash2, FiPlus, FiX, FiExternalLink, FiBookOpen, FiCheck, FiSlash, FiAlertCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import useAuth from '../../../hooks/useAuth';
 import { useRole } from '../../../hooks/useRole';
 import Swal from 'sweetalert2';
+import useAdminQuery from '../../../hooks/useAdminQuery';
+import useFormModal from '../../../hooks/useFormModal';
 
 const CATEGORIES = ["Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips", "General"];
 
@@ -14,7 +16,6 @@ const ManageResources = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { role, roleLoading } = useRole();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
 
   const initialFormState = {
@@ -29,16 +30,14 @@ const ManageResources = () => {
     status: 'Pending'
   };
 
-  const [formData, setFormData] = useState(initialFormState);
+  const { isOpen: isModalOpen, formData, setFormData, openModal, closeModal, handleChange } = useFormModal(initialFormState);
 
   // Fetch all resources for management (including pending/rejected)
-  const { data: resources = [], isLoading } = useQuery({
-    queryKey: ['resources-manage'],
-    queryFn: async () => {
-      const res = await axiosSecure.get('/resources/manage');
-      return res.data.resources;
-    }
-  });
+  const { data: resources = [], isLoading } = useAdminQuery(
+    ['resources-manage'],
+    '/resources/manage',
+    'resources'
+  );
 
   // Create Resource Mutation
   const createMutation = useMutation({
@@ -50,7 +49,7 @@ const ManageResources = () => {
       } else {
         toast.success('Resource submitted successfully! Pending admin approval.');
       }
-      closeModal();
+      handleCloseModal();
     },
     onError: (error) => toast.error(error.response?.data?.message || 'Error creating resource')
   });
@@ -65,7 +64,7 @@ const ManageResources = () => {
       } else {
         toast.success('Resource modifications submitted! Pending admin approval.');
       }
-      closeModal();
+      handleCloseModal();
     },
     onError: (error) => toast.error(error.response?.data?.message || 'Error updating resource')
   });
@@ -115,26 +114,19 @@ const ManageResources = () => {
   const handleOpenModal = (resource = null) => {
     if (resource) {
       setEditingResource(resource);
-      setFormData(resource);
+      openModal(resource);
     } else {
       setEditingResource(null);
-      setFormData({
+      openModal({
         ...initialFormState,
         status: role === 'admin' ? 'Approved' : 'Pending'
       });
     }
-    setIsModalOpen(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const handleCloseModal = () => {
     setEditingResource(null);
-    setFormData(initialFormState);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    closeModal();
   };
 
   const handleSubmit = (e) => {
@@ -300,7 +292,7 @@ const ManageResources = () => {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl my-8 relative flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white rounded-t-3xl sticky top-0 z-10">
               <h2 className="text-2xl font-black text-slate-900">{editingResource ? 'Edit Resource' : 'Add New Resource'}</h2>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer">
+              <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer">
                 <FiX className="w-5 h-5" />
               </button>
             </div>
@@ -381,7 +373,7 @@ const ManageResources = () => {
             </div>
             
             <div className="p-6 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0 bg-white rounded-b-3xl z-10">
-              <button onClick={closeModal} className="px-6 py-2.5 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
+              <button onClick={handleCloseModal} className="px-6 py-2.5 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
                 Cancel
               </button>
               <button type="submit" form="resource-form" disabled={createMutation.isPending || updateMutation.isPending} className="px-6 py-2.5 bg-cta-btn hover:bg-red-600 text-white font-semibold rounded-xl shadow-lg shadow-red-500/20 transition-colors disabled:opacity-50 cursor-pointer">

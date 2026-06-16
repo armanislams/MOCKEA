@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import useAdminQuery from "../../../hooks/useAdminQuery";
 import { 
   FiUsers, 
   FiFileText, 
@@ -17,13 +17,11 @@ import Error from "../../Common/Error";
 const AdminDashboardHome = () => {
   const axiosSecure = useAxiosSecure();
 
-  const { data: analytics, isLoading, isError } = useQuery({
-    queryKey: ["admin-analytics"],
-    queryFn: async () => {
-      const res = await axiosSecure.get("/analytics/admin");
-      return res.data.data;
-    },
-  });
+  const { data: analytics, isLoading, isError } = useAdminQuery(
+    ["admin-analytics"],
+    "/analytics/admin",
+    "data"
+  );
 
   if (isLoading) {
     return<Loader/>

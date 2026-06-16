@@ -11,20 +11,18 @@ import {
     PiTrophy
 } from "react-icons/pi";
 import { Link, useNavigate } from "react-router";
+import useAdminQuery from "../../../hooks/useAdminQuery";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const ManageMockTests = () => {
     const axiosSecure = useAxiosSecure();
-    const queryClient = useQueryClient();
     const navigate = useNavigate();
 
-    const { data: tests = [], isLoading } = useQuery({
-        queryKey: ["admin-mock-tests"],
-        queryFn: async () => {
-            const res = await axiosSecure.get("/mock-tests");
-            return res.data.tests ?? [];
-        }
-    });
+    const { data: tests = [], isLoading, queryClient } = useAdminQuery(
+        ["admin-mock-tests"],
+        "/mock-tests",
+        "tests"
+    );
 
     const deleteMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/mock-tests/${id}`),

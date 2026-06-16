@@ -18,21 +18,19 @@ import {
     PiList
 } from "react-icons/pi";
 import { Link } from "react-router";
+import useAdminQuery from "../../../hooks/useAdminQuery";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const ManageQuestions = () => {
     const axiosSecure = useAxiosSecure();
-    const queryClient = useQueryClient();
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
 
-    const { data: questions = [], isLoading } = useQuery({
-        queryKey: ["admin-questions"],
-        queryFn: async () => {
-            const res = await axiosSecure.get("/questions");
-            return res.data.questions ?? [];
-        }
-    });
+    const { data: questions = [], isLoading, queryClient } = useAdminQuery(
+        ["admin-questions"],
+        "/questions",
+        "questions"
+    );
 
     const deleteMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/questions/${id}`),

@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import useAnswers from "../../../../hooks/useAnswers";
+import useCountdown from "../../../../hooks/useCountdown";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
@@ -31,9 +33,8 @@ const Reading = () => {
 
   const [readingSets, setReadingSets] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");
-  const [answers, setAnswers] = useState({});
+  const { answers, setAnswers, handleAnswerChange } = useAnswers({});
   const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
   const [activePassageTab, setActivePassageTab] = useState(0);
 
@@ -196,38 +197,12 @@ const Reading = () => {
     }
   }, [axiosSecure, user?.email]);
 
-  // Countdown Logic
-  useEffect(() => {
-    if (!selectedSetId || submitted) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [selectedSetId, submitted]);
-
-  const fmtTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  };
-
   const activeSet = useMemo(
     () => readingSets.find((set) => set._id === selectedSetId) || null,
     [readingSets, selectedSetId],
   );
 
-  const handleAnswerChange = useCallback((questionId, value) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: value,
-    }));
-  }, []);
+  const { timeLeft, setTimeLeft, fmtTime } = useCountdown(3600, !!selectedSetId, submitted);
 
   const passageElement = useMemo(() => {
     if (!activeSet) return null;

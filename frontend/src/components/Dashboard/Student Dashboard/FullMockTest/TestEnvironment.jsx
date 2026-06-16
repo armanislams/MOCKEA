@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import useAnswers from "../../../../hooks/useAnswers";
+import useCountdown from "../../../../hooks/useCountdown";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
@@ -29,7 +31,7 @@ const TestEnvironment = () => {
     });
     
     // Lazy initializers for crash recovery
-    const [answers, setAnswers] = useState(() => {
+    const { answers, setAnswers, handleAnswerChange } = useAnswers(() => {
         const cached = localStorage.getItem(`test_cache_${id}`);
         return cached ? JSON.parse(cached).answers : {};
     });
@@ -37,10 +39,14 @@ const TestEnvironment = () => {
         const cached = localStorage.getItem(`test_cache_${id}`);
         return cached ? JSON.parse(cached).currentModuleIdx : 0;
     });
-    const [timeLeft, setTimeLeft] = useState(() => {
-        const cached = localStorage.getItem(`test_cache_${id}`);
-        return cached ? JSON.parse(cached).timeLeft : 0;
-    });
+    const { timeLeft, setTimeLeft, fmtTime: formatTime } = useCountdown(
+        () => {
+            const cached = localStorage.getItem(`test_cache_${id}`);
+            return cached ? JSON.parse(cached).timeLeft : 0;
+        },
+        isStarted && isFullscreen && !isTerminating,
+        false
+    );
 
     const [tabSwitches, setTabSwitches] = useState(() => {
         const cached = localStorage.getItem(`test_cache_${id}`);
@@ -278,21 +284,7 @@ const TestEnvironment = () => {
         }
     }, [test, id, isStarted, axiosSecure, resultId, isTerminating]);
 
-    // 3. Timer Countdown Logic
-    useEffect(() => {
-        if (isTerminating) return;
-        if (!isFullscreen || !isStarted) return;
-        const interval = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(interval);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [isFullscreen, isStarted, isTerminating]);
+
 
     // 4. Cache Logic
     useEffect(() => {
@@ -418,9 +410,7 @@ const TestEnvironment = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tabSwitches, isFullscreen, resultId, axiosSecure, navigate, isStarted, id, isTerminating]);
 
-    const handleAnswerChange = useCallback((qId, val) => {
-        setAnswers(prev => ({ ...prev, [qId]: val }));
-    }, []);
+
 
     const { total: totalQuestions, answered: answeredQuestions } = useMemo(() => {
         if (!test) return { total: 0, answered: 0 };
@@ -677,11 +667,6 @@ const TestEnvironment = () => {
     );
 };
 
-const formatTime = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-};
+
 
 export default TestEnvironment;

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import useAnswers from "../../../../hooks/useAnswers";
+import useCountdown from "../../../../hooks/useCountdown";
 import { Howl } from "howler";
 import { 
     PiPlayCircleFill, 
@@ -48,7 +50,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [selectedSetId, setSelectedSetId] = useState("");
   const [loading, setLoading] = useState(!preloadedSet); // skip loader if data already provided
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
-  const [answers, setAnswers] = useState({});
+  const { answers, setAnswers, handleAnswerChange } = useAnswers({});
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
@@ -67,12 +69,12 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [testStarted, setTestStarted] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
-  const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes for listening
-
   const activeSet = useMemo(
     () => preloadedSet || listeningSets.find((set) => set._id === selectedSetId) || null,
     [preloadedSet, listeningSets, selectedSetId],
   );
+
+  const { timeLeft, setTimeLeft, fmtTime: fmtCountdown } = useCountdown(1800, !!activeSet, submitted);
 
   /* --- Fetch Data --- */
   useEffect(() => {
@@ -92,27 +94,6 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     };
     if (user?.email) fetchListening();
   }, [axiosSecure, user?.email, preloadedSet]);
-
-  // Countdown Logic — uses activeSet (works for both guests with preloadedSet and authenticated users)
-  useEffect(() => {
-    if (!activeSet || submitted) return;
-    const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-            if (prev <= 1) {
-                clearInterval(timer);
-                return 0;
-            }
-            return prev - 1;
-        });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [activeSet, submitted]);
-
-  const fmtCountdown = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  };
 
   /* --- Audio Logic --- */
   useEffect(() => {
@@ -174,9 +155,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return () => clearInterval(iv);
   }, [testStarted, submitted]);
 
-  const handleAnswerChange = useCallback((qId, val) => {
-    setAnswers(prev => ({ ...prev, [qId]: val }));
-  }, []);
+
 
   const handleEvaluate = async () => {
     await evaluate(activeSet, answers, onSubmitGuest);

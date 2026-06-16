@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import useCountdown from "../../../../hooks/useCountdown";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
@@ -92,8 +93,8 @@ const Writing = () => {
     }
   };
 
-  const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes
   const [timerActive, setTimerActive] = useState(false);
+  const { timeLeft, setTimeLeft, fmtTime: fmt } = useCountdown(3600, timerActive, submitted);
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
@@ -127,19 +128,7 @@ const Writing = () => {
     if (user?.email) fetchWriting();
   }, [axiosSecure, user?.email]);
 
-  useEffect(() => {
-    if (!timerActive || submitted) return;
-    const iv = setInterval(() => {
-      setTimeLeft((p) => {
-        if (p <= 1) {
-          clearInterval(iv);
-          return 0;
-        }
-        return p - 1;
-      });
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [timerActive, submitted]);
+
 
   const handleFirstTaskSubmit = async () => {
     if (wordCount1 < 30) {
@@ -267,11 +256,7 @@ const Writing = () => {
     }
   };
 
-  const fmt = (s) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-  };
+
 
   if (loading) return <Loader />;
 
