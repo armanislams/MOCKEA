@@ -19,21 +19,21 @@ MOCKEA bridges the gap between simulated testing conditions and educational feed
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **Framework & Tooling:** React 19, Vite, React Router 7
+- **Framework & Tooling:** React 19, Vite, React Router 7 (configured with **Route-Level Code-Splitting** / Lazy Loading)
 - **Styling & Theme:** Tailwind CSS 4, DaisyUI 5 (providing sleek components and theme selectors)
 - **Animations:** Framer Motion, GSAP (GreenSock) for micro-animations and smooth page transitions
 - **Audio Engines:** Howler.js (for Listening audio control)
 - **State Management:** React Context API & TanStack Query (React Query 5) for clean, cached server-state retrieval
 - **Forms & Validation:** React Hook Form, SweetAlert2, React Toastify
-- **Services:** Firebase Auth (Client SDK) for user accounts, Google Analytics 4 (`react-ga4` standalone utility)
+- **Services:** Firebase Auth (Client SDK) with **Axios JWT Auto-Refresh Interceptors** for seamless session management
 
 ### Backend
-- **Environment:** Node.js, Express 5
-- **Database:** MongoDB & Mongoose (Object Document Mapper)
-- **Authentication & Security:** Firebase Admin SDK, CORS, custom input sanitizers (XSS protection)
-- **Media Hosting:** Cloudinary SDK (for questions' audio files)
+- **Environment:** Node.js, Express 5, **PM2 Process Manager** (multi-core clustering)
+- **Database:** MongoDB & Mongoose (Object Document Mapper) with optimized collection indexing
+- **Caching Layer:** Redis Client with automatic **fail-safe local in-memory Map caching** fallback
+- **Authentication & Security:** Firebase Admin SDK, CORS, custom input sanitizers, and JWT ownership verification gates
+- **Media Hosting:** Cloudinary SDK with **secure direct-to-cloud signed uploads**
 - **AI Engine:** Gemini 2.5 Flash API (via `@google/genai` or similar integration)
-- **Deployment:** Pre-configured with `vercel.json` for serverless API scaling on Vercel
 
 ---
 
@@ -43,11 +43,12 @@ MOCKEA is structured as a monorepo containing both the frontend client and the b
 
 ```text
 MOCKEA/
+├── README.md                      # Platform documentation
 ├── frontend/                      # React / Vite Client Application
 │   ├── public/                    # Static Assets (Logos, SVGs, etc.)
 │   ├── src/
 │   │   ├── components/            # UI components
-│   │   │   ├── Common/            # Reusable widgets (StatCard, TableShell, StudyBuddyChatbot, etc.)
+│   │   │   ├── Common/            # Reusable widgets (StatCard, TableShell, TestShell, etc.)
 │   │   │   └── Dashboard/         # Student & Admin dashboards, Settings Panels
 │   │   ├── Layout/                # General and Dashboard layout templates
 │   │   ├── Router/                # App route definitions & guards (PrivateRoutes)
@@ -60,13 +61,14 @@ MOCKEA/
 │   └── vite.config.js
 │
 └── backend/                       # Node.js / Express Server API
+    ├── ecosystem.config.cjs       # PM2 clustering configuration
     ├── src/
     │   ├── controllers/           # API controllers containing core business logic
     │   ├── lib/                   # Integrations (database connections, AI services)
-    │   ├── middlewares/           # Authentication guards, CORS, global error handler
+    │   ├── middlewares/           # Authentication guards, CORS, rate limiters
     │   ├── model/                 # Mongoose schemas (User, Questions, MockTest, results, AI settings)
     │   ├── routes/                # Express API endpoint definitions
-    │   ├── utils/                 # Utilities (input sanitizers, logs)
+    │   ├── utils/                 # Utilities (input sanitizers, cache, logs)
     │   └── index.js               # Entry script launching the server
     ├── package.json
     └── vercel.json                # Vercel Serverless routing deployment config
@@ -74,34 +76,32 @@ MOCKEA/
 
 ---
 
-## ✨ Key Features & Integrations
+## ⚡ Performance, Scalability & Security Optimizations
 
-### 1. Advanced Full Mock Test Simulator & Anti-Cheat Engine
-- **Timed Exam Sequencing:** Guides the student sequentially through all four modules: Reading, Listening, Writing, Speaking.
-- **Integrity Shields:** Enforces fullscreen mode. Employs `visibilitychange` and `fullscreenchange` event listeners to record violations.
-- **Auto-Submission Trigger:** If the student exits fullscreen or changes tabs more than twice, the simulator triggers an automatic final submit.
-- **State Crash Recovery:** Periodically updates `localStorage` (`test_cache_${testId}`) with current responses and remaining time. If the student suffers a crash or disconnects, the test restores instantly back to the exact second and question where they left off.
+To handle high traffic volume, large media payloads, and protect premium assets, MOCKEA features several production-grade optimization systems:
 
-### 2. Premium AI Study Buddy & IELTS Tutor
-- **Persona Toggling:** A floating, glassmorphic widget allowing students to choose between:
-  - **IELTS Tutor:** Friendly, educational guidance, and hints.
-  - **IELTS Examiner:** Strict evaluations using IELTS Band Score descriptors.
-  - **Site Guide:** A conversational assistant helping navigate platform features.
-- **Speech Synthesis & Recognition:** Utilizes Web Speech API for voice transcriptions (STT) and vocal readings of tutor responses (TTS).
-- **Session Exporter:** Generates downloadable markdown files containing the dialogue exchange.
-- **Security Sanitizer:** Integrates a strict `sanitizeInput.js` utility, filtering script injections (`<script>`), event triggers (`onerror=`), scripting URIs (`javascript:`), and syntax matching major programming codes to prevent prompt injections or execution escapes.
-- **Daily Quotas:** Limits message frequencies according to subscription tiers (Free, Standard, Premium) or client IP addresses (Guests). Admin dashboards can toggle states, adjust default greetings, and modify query limits dynamically.
+### 1. Process Clustering (PM2)
+To leverage multi-core processors, the backend incorporates [ecosystem.config.cjs](file:///g:/project/MOCKEA/backend/ecosystem.config.cjs) running workers in cluster mode. Spawns one instance per logical CPU core, distributing connections via round-robin.
 
-### 3. Google Analytics 4 (GA4) Standalone Tracking
-- Stands independent of the Firebase SDK on the client side, using the standard `react-ga4` package.
-- **Automated Pageview Tracking:** Logs SPA route navigation hooks in the client layout.
-- **Exam Audits:** Fires telemetry for `test_start`, `test_submit`, and `test_auto_submitted_violation`.
-- **Commerce Funnels:** Measures checkout actions (`begin_checkout`) on membership pricing pages.
-- **Site Stability:** Logs client runtime errors to GA4 dashboard via the global exceptions handler (`errorLogger.js`).
+### 2. Dual-Engine Caching (Redis + Memory Fallback)
+Avoids expensive database joins during populated Mock Test retrievals and Question set reads:
+- Caches queries under `mocktest:${id}` and `question:${id}` in Redis.
+- If Redis is unconfigured or goes offline, the [cache.js](file:///g:/project/MOCKEA/backend/src/utils/cache.js) utility automatically falls back to a local in-memory Map, ensuring high availability.
+- Cache entries are cleared automatically on document updates and deletions.
 
-### 4. Cloudinary Audio Lifecycles
-- Listening exam segments host high-fidelity sound recordings on Cloudinary.
-- Includes a backend hook to automatically remove assets from Cloudinary when an Admin deletes a question record from MongoDB, maintaining clean storage states.
+### 3. Secure Direct-to-Cloud Signed Uploads
+To prevent backend memory exhaustion and keep Cloudinary credentials hidden:
+- The backend generates temporary cryptographically signed tokens via `GET /api/submissions/upload-signature`.
+- The frontend uploads raw speaking test audio recordings directly to Cloudinary using the signature, bypassing Node.js buffer limits.
+
+### 4. Database Optimization & Pagination
+- Added schema indexes (`userEmail: 1` on `PracticeSubmissionSchema`) to resolve queries in $O(\log N)$ instead of collection scans.
+- Implemented optional query pagination (`page`, `limit`) on user, submission, and result lists, setting total matches in the standard `X-Total-Count` header.
+
+### 5. Plan-Tier Gates & Warnings
+- **Free Plan:** Writing and speaking practice sections are hidden from the dashboard. Attempts to manually load these routes are caught by frontend guards and render a 403 Forbidden Upgrade card. Listening and reading queries are limited to 2 random questions. Mock test library displays upgrade warnings.
+- **Standard Plan:** Standard users are capped at 1 Mock Test attempt per day (checked on the backend during test start) and see warning banners advising them to choose tests wisely.
+- **Staff Restrictions:** Admins and instructors are blocked from taking mock tests (403 Forbidden).
 
 ---
 
@@ -114,13 +114,13 @@ The backend routes are prefix-scoped to `/api`. Key endpoints include:
 | `/api/user/:email/role` | `GET` | Decides current dashboard and navigation layouts based on user roles |
 | `/api/user/sync` | `POST` | Syncs current Firebase user metadata into local MongoDB |
 | `/api/mock-tests` | `GET` | Fetches lists of available full-length mock exams |
-| `/api/mock-tests/:id` | `GET` | Retrieves full mock test metadata and nested section questions |
-| `/api/mock-tests/start` | `POST` | Sets up a `MockTestResult` session, starts timer, and locks the anti-cheat monitor |
+| `/api/mock-tests/:id` | `GET` | Retrieves full mock test metadata and nested section questions (Cached) |
+| `/api/mock-tests/start` | `POST` | Sets up a `MockTestResult` session, verifies daily limits, and locks anti-cheat monitor |
 | `/api/mock-tests/finalize` | `POST` | Auto-grades Listening & Reading, flags Writing & Speaking sections for instructor reviews |
-| `/api/submissions` | `GET` | Retrieves ungraded writing/speaking submissions for instructors |
+| `/api/submissions` | `GET` | Retrieves ungraded writing/speaking submissions for instructors (Paginated) |
+| `/api/submissions/upload-signature` | `GET` | Generates secure Cloudinary signed upload credentials |
 | `/api/submissions/:id/grade` | `POST` | Submits band scores (0-9) and qualitative comments |
 | `/api/chatbot/query` | `POST` | Submits messages to the Gemini 2.5 Flash chatbot |
-| `/api/chatbot/settings` | `GET` / `PUT` | Manages global controls, active states, custom greetings, and tier quotas |
 
 ---
 
@@ -134,7 +134,10 @@ PORT=3000
 MONGODB_URI=your_mongodb_connection_string
 FIREBASE_KEY=your_firebase_admin_sdk_json_string
 
-# Cloudinary (Optional, for automatic listening audio cleanups)
+# Caching Configuration
+REDIS_URL=redis://127.0.0.1:6379   # Optional, falls back to memory if empty
+
+# Cloudinary (Direct-to-Cloud uploads and deletion cleanups)
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
@@ -168,6 +171,7 @@ VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 - [Node.js](https://nodejs.org/) (v18 or higher)
 - [MongoDB](https://www.mongodb.com/) (Atlas cluster or a running local instance)
 - A [Firebase Project](https://console.firebase.google.com/) with Authentication active
+- [PM2](https://pm2.keymetrics.io/) installed globally (for process clustering: `npm install pm2 -g`)
 
 ### Step 1: Clone the repository
 ```bash
@@ -185,11 +189,9 @@ cd MOCKEA
    npm install
    ```
 3. Create and populate your `.env` file based on the environment configurations section above.
-4. Launch the API server in development mode:
-   ```bash
-   npm run dev
-   ```
-   The backend will start listening on `http://localhost:3000`.
+4. Launch the API server in clustered mode or dev mode:
+   - **Clustered Mode (Production):** `pm2 start ecosystem.config.cjs`
+   - **Development Mode:** `npm run dev`
 
 ### Step 3: Set up the Frontend
 1. Open a new terminal window and navigate to the frontend workspace:
@@ -213,19 +215,9 @@ cd MOCKEA
 
 ### Student Journey
 1. **Sign Up:** Register an account using Firebase authentication.
-2. **Modular Practice:** Access **Practice Labs** to practice individual Reading, Listening, Writing, or Speaking sections. 
-3. **Full Simulation:** Enter the **Mock Test Environment**, lock fullscreen, and complete a full 4-section timed test under anti-cheat supervision.
+2. **Modular Practice:** Access **Practice Labs** to practice individual Reading or Listening sections (Free users) or Writing and Speaking sections (Standard/Premium users).
+3. **Full Simulation:** Enter the **Mock Test Environment** (Standard/Premium users), lock fullscreen, and complete a full 4-section timed test. Standard users are limited to 1 mock test per day.
 4. **Review Analytics:** Track scores, view correct/incorrect answers for auto-graded parts, examine band score progress trends, and view detailed tutor reviews.
-
-### Instructor Review Center
-1. **Role Access:** Log in using credentials with certified `instructor` roles.
-2. **Locking Mechanism:** Lock specific student submissions to prevent multiple instructors from grading the same submission simultaneously.
-3. **Review & Evaluate:** Listen to speaking recordings, read essay assignments, assign band scores, and leave text feedback.
-
-### Admin Controls
-1. **User Management:** Manage, query, ban/unban users, and update account permissions or pricing tiers.
-2. **Content Management:** Create and edit practice sections using the unified components form builder. Combine multiple sections into full mock tests.
-3. **Chatbot Config:** Adjust daily quotas, change welcome dialogues, and toggle chatbot state parameters globally.
 
 ---
 
