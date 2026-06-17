@@ -81,7 +81,7 @@ const ManageSubmissions = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries(["admin-submissions"]);
+      queryClient.invalidateQueries({ queryKey: ["admin-submissions"] });
       toast.success(data.message || "Submission deleted successfully");
     },
     onError: (error) => {
@@ -96,7 +96,7 @@ const ManageSubmissions = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries(["admin-mock-results"]);
+      queryClient.invalidateQueries({ queryKey: ["admin-mock-results"] });
       toast.success(data.message || "Mock test result deleted successfully");
     },
     onError: (error) => {

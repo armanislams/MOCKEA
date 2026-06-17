@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
+import { parseFeedback } from "../../../../utils/parseFeedback";
 import { 
     PiArrowLeftBold, 
     PiCheckCircleFill, 
@@ -64,25 +65,6 @@ const parseWritingSubmission = (content) => {
         }
     }
     return { task1: content.trim(), task2: "" };
-};
-
-const parseFeedback = (feedbackStr) => {
-    if (!feedbackStr) return { criteria: null, comments: "" };
-    const trimmed = feedbackStr.trim();
-    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            if (parsed && (parsed.criteria || parsed.comments !== undefined)) {
-                return {
-                    criteria: parsed.criteria || null,
-                    comments: parsed.comments || ""
-                };
-            }
-        } catch (e) {
-            // Not JSON
-        }
-    }
-    return { criteria: null, comments: feedbackStr };
 };
 
 const ReviewDetail = () => {

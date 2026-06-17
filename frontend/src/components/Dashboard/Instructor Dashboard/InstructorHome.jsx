@@ -44,7 +44,7 @@ export const InstructorHome = () => {
     const lockMutation = useMutation({
         mutationFn: (id) => axiosSecure.patch(`/submissions/lock/${id}`),
         onSuccess: (data, variables) => {
-            queryClient.invalidateQueries(["pending-labs"]);
+            queryClient.invalidateQueries({ queryKey: ["pending-labs"] });
             navigate("/dashboard/instructor/grade-submissions", { state: { submissionId: variables } });
         },
         onError: (error) => {

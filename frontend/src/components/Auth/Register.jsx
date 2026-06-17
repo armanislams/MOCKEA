@@ -94,7 +94,7 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
         toast.error("User Creation Failed");
       }
     } catch (error) {
-      console.log(error);
+      console.error("Registration error:", error);
       setLoading(false);
       setIsLoading(false);
       

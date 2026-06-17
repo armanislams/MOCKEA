@@ -106,7 +106,7 @@ const Profile = () => {
             return data;
         },
         onSuccess: (data) => {
-            queryClient.invalidateQueries(["user-profile", authUser?.email]);
+            queryClient.invalidateQueries({ queryKey: ["user-profile", authUser?.email] });
             toast.success(`Target exam preference updated to ${data?.user?.targetExam}!`);
         },
         onError: (err) => {

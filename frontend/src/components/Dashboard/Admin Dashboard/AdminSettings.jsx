@@ -35,7 +35,7 @@ const AdminSettings = () => {
         },
         onSuccess: () => {
             toast.success('Chatbot settings updated successfully');
-            queryClient.invalidateQueries(['chatbot-settings']);
+            queryClient.invalidateQueries({ queryKey: ['chatbot-settings'] });
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || 'Failed to update chatbot settings');
@@ -61,7 +61,7 @@ const AdminSettings = () => {
         },
         onSuccess: () => {
             toast.success('Error logs cleared successfully');
-            queryClient.invalidateQueries(['error-logs']);
+            queryClient.invalidateQueries({ queryKey: ['error-logs'] });
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || 'Failed to clear logs');
@@ -255,7 +255,7 @@ const AdminSettings = () => {
                                     await axiosSecure.get('/settings/logs/test-error');
                                 } catch (error) {
                                     toast.success('Test error triggered!');
-                                    queryClient.invalidateQueries(['error-logs']);
+                                    queryClient.invalidateQueries({ queryKey: ['error-logs'] });
                                 }
                             }}
                             className="btn btn-sm bg-blue-50 hover:bg-blue-100 text-blue-600 border-none dark:bg-blue-900/20 dark:hover:bg-blue-900/40 dark:text-blue-400 transition-colors"

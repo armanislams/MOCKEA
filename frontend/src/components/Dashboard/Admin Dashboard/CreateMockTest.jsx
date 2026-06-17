@@ -12,6 +12,7 @@ import {
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import { DEFAULT_MOCK_TEST_DURATION_MINUTES } from "../../../constants";
 
 const EXAM_COLORS = {
     IELTS: "badge-primary",
@@ -28,7 +29,7 @@ const CreateMockTest = () => {
         planType: "free",
         examType: "IELTS",
         isPublic: false,
-        totalDuration: 165,
+        totalDuration: DEFAULT_MOCK_TEST_DURATION_MINUTES,
         sections: {
             reading: [],
             listening: [],

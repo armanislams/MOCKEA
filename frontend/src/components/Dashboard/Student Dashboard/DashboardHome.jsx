@@ -17,24 +17,7 @@ import {
     PiCaretRightBold
 } from "react-icons/pi";
 
-const parseFeedback = (feedbackStr) => {
-    if (!feedbackStr) return { criteria: null, comments: "" };
-    const trimmed = feedbackStr.trim();
-    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            if (parsed && (parsed.criteria || parsed.comments !== undefined)) {
-                return {
-                    criteria: parsed.criteria || null,
-                    comments: parsed.comments || ""
-                };
-            }
-        } catch (e) {
-            // Not JSON
-        }
-    }
-    return { criteria: null, comments: feedbackStr };
-};
+import { parseFeedback } from '../../../utils/parseFeedback';
 
 const quickActions = [
   {

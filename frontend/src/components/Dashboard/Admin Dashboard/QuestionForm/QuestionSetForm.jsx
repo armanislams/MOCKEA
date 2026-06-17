@@ -87,7 +87,7 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
         },
         onSuccess: (res) => {
             toast.success(res.data.message || `Question set ${mode === "edit" ? "updated" : "saved"} successfully!`);
-            queryClient.invalidateQueries(["admin-questions"]);
+            queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
             if (mode === "edit") {
                 navigate("/dashboard/admin/manage-questions");
             } else {

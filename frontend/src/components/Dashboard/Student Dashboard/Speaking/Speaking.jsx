@@ -307,13 +307,8 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   }, [activeSet, part1Questions, part3Questions]);
 
   const startRecording = useCallback(async () => {
-    console.log("[SpeakingDebug] startRecording called. isRecording:", isRecording, "isSaving:", isSaving, "speakingStep:", speakingStep, "part1QuestionIdx:", part1QuestionIdxRef.current);
-    if (isRecording || isSaving) {
-      console.warn("[SpeakingDebug] startRecording early return because isRecording or isSaving is active.");
-      return;
-    }
+    if (isRecording || isSaving) return;
 
-    // Strict Check: Prevent recording if a response already exists
     if (speakingStep === 1 && part1BlobsRef.current[part1QuestionIdxRef.current]) {
       toast.error("You have already recorded a response for this question.");
       return;
@@ -329,38 +324,30 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
     toast.info("Recording is starting... Please wait.");
     try {
-      console.log("[SpeakingDebug] startRecording - requesting getUserMedia...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("[SpeakingDebug] startRecording - mic stream acquired successfully:", stream.id);
       setMediaStream(stream);
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        console.log("[SpeakingDebug] ondataavailable fired. chunk size:", event.data?.size);
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
-        console.log("[SpeakingDebug] MediaRecorder onstop callback fired. recordingTimeRef.current:", recordingTimeRef.current, "chunks length:", audioChunksRef.current.length);
         try {
           if (recordingTimeRef.current > 0) {
             const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-            console.log("[SpeakingDebug] MediaRecorder onstop - created blob of size:", blob.size);
             if (speakingStep === 1) {
-              console.log("[SpeakingDebug] MediaRecorder onstop - setting Part 1 blob at index:", part1QuestionIdxRef.current);
               setPart1BlobsWithRef((prev) => {
                 const updated = prev ? [...prev] : [];
                 updated[part1QuestionIdxRef.current] = blob;
                 return updated;
               });
             } else if (speakingStep === 2) {
-              console.log("[SpeakingDebug] MediaRecorder onstop - setting Part 2 blob");
               setPart2BlobWithRef(blob);
             } else if (speakingStep === 3) {
-              console.log("[SpeakingDebug] MediaRecorder onstop - setting Part 3 blob at index:", part3QuestionIdxRef.current);
               setPart3BlobsWithRef((prev) => {
                 const updated = prev ? [...prev] : [];
                 updated[part3QuestionIdxRef.current] = blob;
@@ -368,61 +355,47 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
               });
             }
             setAudioBlobWithRef(blob);
-          } else {
-            console.warn("[SpeakingDebug] MediaRecorder onstop - recording duration was 0, not saving blob.");
           }
         } catch (err) {
-          console.error("[SpeakingDebug] Error in MediaRecorder.onstop execution:", err);
+          console.error("Recording error:", err);
           toast.error("Failed to capture recording. Please try again.");
         } finally {
-          console.log("[SpeakingDebug] MediaRecorder onstop finally block - cleaning up track stream and resetting state.");
           if (stream) {
-            stream.getTracks().forEach((track) => {
-              console.log("[SpeakingDebug] Stopping stream track:", track.label);
-              track.stop();
-            });
+            stream.getTracks().forEach((track) => track.stop());
           }
           setMediaStream(null);
           setIsRecording(false);
           setIsSaving(false);
-          console.log("[SpeakingDebug] MediaRecorder onstop finally block - states reset successfully.");
         }
       };
 
-      console.log("[SpeakingDebug] startRecording - calling mediaRecorder.start()");
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setIsPrepPhase(false);
       setRecordingTime(0);
       toast.success("Recording Started! Speak clearly.");
     } catch (err) {
-      console.error("[SpeakingDebug] startRecording failed inside try/catch:", err);
+      console.error("Microphone access failed:", err);
       toast.error("Microphone access denied. Please enable it to record.");
     }
   }, [speakingStep, isRecording, isSaving]);
 
   const stopRecording = useCallback(() => {
-    console.log("[SpeakingDebug] stopRecording called. mediaRecorder status:", mediaRecorderRef.current ? mediaRecorderRef.current.state : "null", "isRecording:", isRecording);
     if (mediaRecorderRef.current && isRecording && mediaRecorderRef.current.state !== "inactive") {
       try {
-        console.log("[SpeakingDebug] stopRecording - Setting isSaving to true and isRecording to false, triggering mediaRecorder.stop()");
         setIsSaving(true);
         setIsRecording(false);
         mediaRecorderRef.current.stop();
         if (recordingTimeRef.current > 0) {
-          toast.info(
-            "Recording captured. Ready for submission. Please submit your response.",
-          );
+          toast.info("Recording captured. Ready for submission. Please submit your response.");
         } else {
           toast.warn("Recording was too short to be saved.");
         }
       } catch (err) {
-        console.error("[SpeakingDebug] Failed to stop media recorder in stopRecording catch block:", err);
+        console.error("Failed to stop recorder:", err);
         setIsSaving(false);
         setIsRecording(false);
       }
-    } else {
-      console.warn("[SpeakingDebug] stopRecording - condition not met. mediaRecorder:", !!mediaRecorderRef.current, "isRecording:", isRecording, "state:", mediaRecorderRef.current?.state);
     }
   }, [isRecording]);
 
@@ -805,17 +778,6 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       </div>
     );
   };
-
-  console.log("[SpeakingDebug] State check on render:", {
-    speakingStep,
-    part1QuestionIdx,
-    part1BlobsLength: part1Blobs.length,
-    part1BlobAtIdx: !!part1Blobs[part1QuestionIdx],
-    activeBlob: !!activeBlob,
-    isPrepPhase,
-    isRecording,
-    isSaving
-  });
 
   if (isUploading) {
     return (

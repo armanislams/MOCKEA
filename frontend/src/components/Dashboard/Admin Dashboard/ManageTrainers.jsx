@@ -53,7 +53,7 @@ const ManageTrainers = () => {
         },
         onSuccess: (data) => {
             toast.success(data.message || "Trainer added successfully!");
-            queryClient.invalidateQueries(["trainers"]);
+            queryClient.invalidateQueries({ queryKey: ["trainers"] });
             closeModal();
         },
         onError: (error) => {
@@ -70,7 +70,7 @@ const ManageTrainers = () => {
         },
         onSuccess: (data) => {
             toast.success(data.message || "Trainer deleted successfully!");
-            queryClient.invalidateQueries(["trainers"]);
+            queryClient.invalidateQueries({ queryKey: ["trainers"] });
         },
         onError: (error) => {
             console.error(error);

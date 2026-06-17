@@ -16,6 +16,7 @@ import useAuth from "../../hooks/useAuth";
 import useAxios from "../../hooks/useAxios";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 import { toast } from "react-toastify";
+import { MODEL_NAME } from "../../constants";
 
 const StudyBuddyChatbot = () => {
   const { user } = useAuth();
@@ -332,7 +333,7 @@ const StudyBuddyChatbot = () => {
                 <span className="text-xl">🎓</span>
                 <div>
                   <h3 className="font-bold text-base leading-none">MOCKEA AI Study Buddy</h3>
-                  <span className="text-[10px] text-white/70">Powered by Gemini 2.5 Flash</span>
+                  <span className="text-[10px] text-white/70">Powered by {MODEL_NAME}</span>
                 </div>
               </div>
               

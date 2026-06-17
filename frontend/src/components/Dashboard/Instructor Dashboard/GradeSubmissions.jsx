@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import useAuth from "../../../hooks/useAuth";
+import { parseFeedback } from "../../../utils/parseFeedback";
 import { motion, AnimatePresence } from "framer-motion";
 import {  
     PiCalendar,
@@ -85,25 +86,6 @@ const calculateIeltsBand = (scoresList) => {
     }
 };
 
-const parseFeedback = (feedbackStr) => {
-    if (!feedbackStr) return { criteria: null, comments: "" };
-    const trimmed = feedbackStr.trim();
-    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            if (parsed && (parsed.criteria || parsed.comments !== undefined)) {
-                return {
-                    criteria: parsed.criteria || null,
-                    comments: parsed.comments || ""
-                };
-            }
-        } catch (e) {
-            // Not JSON
-        }
-    }
-    return { criteria: null, comments: feedbackStr };
-};
-
 const GradeSubmissions = () => {
     const axiosSecure = useAxiosSecure();
     const { user } = useAuth();
@@ -137,7 +119,7 @@ const GradeSubmissions = () => {
         mutationFn: (data) => axiosSecure.patch("/mock-tests/grade-section", data),
         onSuccess: () => {
             toast.success("Section graded successfully");
-            queryClient.invalidateQueries(["all-mock-results"]);
+            queryClient.invalidateQueries({ queryKey: ["all-mock-results"] });
         }
     });
 
@@ -215,7 +197,7 @@ const GradeSubmissions = () => {
                     feedback: "", 
                     criteria: { ta: "", cc: "", fc: "", lr: "", gra: "", pr: "" } 
                 });
-                queryClient.invalidateQueries(["all-mock-results"]);
+                queryClient.invalidateQueries({ queryKey: ["all-mock-results"] });
             } else {
                 toast.error("Failed to submit grade");
             }

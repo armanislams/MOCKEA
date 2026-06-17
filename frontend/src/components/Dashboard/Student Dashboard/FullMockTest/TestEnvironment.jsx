@@ -4,6 +4,7 @@ import useCountdown from "../../../../hooks/useCountdown";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { DEFAULT_MOCK_TEST_DURATION_MINUTES } from "../../../../constants";
 import alerts from "../../../../utils/alerts";
 import { 
     PiWarning,
@@ -284,7 +285,7 @@ const TestEnvironment = () => {
             axiosSecure.post("/mock-tests/start", { testId: id })
                 .then(res => {
                     setResultId(res.data.resultId);
-                    setTimeLeft(prev => prev === 0 ? (test.totalDuration || 165) * 60 : prev);
+                    setTimeLeft(prev => prev === 0 ? (test.totalDuration || DEFAULT_MOCK_TEST_DURATION_MINUTES) * 60 : prev);
                 })
                 .catch(err => {
                     console.error(err);

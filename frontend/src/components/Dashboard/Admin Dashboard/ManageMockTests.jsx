@@ -8,6 +8,7 @@ import {
 import { Link, useNavigate } from "react-router";
 import useAdminQuery from "../../../hooks/useAdminQuery";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import { DEFAULT_MOCK_TEST_DURATION_MINUTES } from "../../../constants";
 import PageHeader from "../../Common/PageHeader";
 import TableShell from "../../Common/TableShell";
 import HoverActions from "../../Common/HoverActions";
@@ -86,7 +87,7 @@ const ManageMockTests = () => {
                                             <h3 className="font-bold text-xl">{test.title}</h3>
                                             <div className="flex items-center gap-4 mt-1">
                                                 <span className="flex items-center gap-1 text-xs font-semibold text-base-content/40 uppercase tracking-widest">
-                                                    <PiClock className="text-primary" /> {test.totalDuration || 165} Mins
+                                                    <PiClock className="text-primary" /> {test.totalDuration || DEFAULT_MOCK_TEST_DURATION_MINUTES} Mins
                                                 </span>
                                                 <span className={`badge badge-sm ${test.planType === 'premium' ? 'badge-accent' : 'badge-ghost'}`}>
                                                     {test.planType}

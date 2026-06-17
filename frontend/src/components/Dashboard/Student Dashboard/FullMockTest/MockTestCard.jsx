@@ -11,6 +11,7 @@ import {
 } from "react-icons/pi";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { DEFAULT_MOCK_TEST_DURATION_MINUTES } from "../../../../constants";
 
 const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", isStandardLimitReached = false, onStart }) => {
     const isAdminOrInstructor = userRole === "admin" || userRole === "instructor";
@@ -85,7 +86,7 @@ const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", is
                             {test.title || `Mock Assessment ${index}`}
                         </h3>
                         <div className="flex items-center gap-4 text-[10px] font-bold text-base-content/40 uppercase tracking-widest">
-                            <span className="flex items-center gap-1.5"><PiClockFill className="text-primary/50" /> {test.totalDuration || 165} Minutes</span>
+                            <span className="flex items-center gap-1.5"><PiClockFill className="text-primary/50" /> {test.totalDuration || DEFAULT_MOCK_TEST_DURATION_MINUTES} Minutes</span>
                             <span className="flex items-center gap-1.5"><PiUsersBold className="text-primary/50" /> Live Environment</span>
                         </div>
                     </div>
