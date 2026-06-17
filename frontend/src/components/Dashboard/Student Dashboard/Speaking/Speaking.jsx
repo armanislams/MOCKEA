@@ -904,7 +904,6 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       title="Ready to Start?"
       description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment and your microphone is working."
       icon={PiMicrophoneStageFill}
-      isFullscreen={isFullscreen}
       showWarning={showWarning}
       onWarningResume={() => { setShowWarning(false); enterFullscreen(); }}
       onWarningExit={handleExitTest}

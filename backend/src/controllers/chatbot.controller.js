@@ -185,10 +185,18 @@ CRITICAL INSTRUCTIONS:
     // 6. Request AI response from Gemini service
     const aiResponse = await aiService.chat(messages, systemInstruction);
 
-    // 7. Save Usage Count
+    // 7. Save Usage Count (atomic increment to prevent race conditions)
+    const usageQuery = usageRecord
+      ? { _id: usageRecord._id }
+      : activeUser
+        ? { userId: activeUser._id, lastUsedDate: todayStr }
+        : { ipAddress: ipAddress, lastUsedDate: todayStr };
+
     if (usageRecord) {
-      usageRecord.messageCount += 1;
-      await usageRecord.save();
+      await UserChatbotUsage.findOneAndUpdate(
+        { _id: usageRecord._id },
+        { $inc: { messageCount: 1 } }
+      );
     } else {
       const newRecord = {
         lastUsedDate: todayStr,

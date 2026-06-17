@@ -145,7 +145,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
       howlRef.current.play();
       rafRef.current = requestAnimationFrame(tick);
     }
-    setIsPlaying(!isPlaying);
+    setIsPlaying(prev => !prev);
   };
 
   useEffect(() => {

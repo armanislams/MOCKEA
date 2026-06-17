@@ -38,7 +38,8 @@ const Practice = () => {
 
     const updateProgress = () => {
       setCurrentTime(audio.currentTime);
-      setProgress((audio.currentTime / audio.duration) * 100);
+      const duration = audio.duration;
+      setProgress(duration && duration > 0 ? (audio.currentTime / duration) * 100 : 0);
     };
 
     const handleLoadedMetadata = () => {

@@ -21,30 +21,53 @@ const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const register = (email, password) => {
+  const register = async (email, password) => {
     setLoading(true);
-    return createUserWithEmailAndPassword(auth, email, password);
+    try {
+      return await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
-  const signIn = (email, password) => {
+  const signIn = async (email, password) => {
     setLoading(true);
-
-    return signInWithEmailAndPassword(auth, email, password);
+    try {
+      return await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
-  const logOut = () => {
+  const logOut = async () => {
     setLoading(true);
-    return signOut(auth);
+    try {
+      return await signOut(auth);
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
   const updateUser = (profile) => {
     return updateProfile(auth.currentUser, profile);
   };
-  const signInGoogle = () => {
+  const signInGoogle = async () => {
     setLoading(true);
-
-    return signInWithPopup(auth, googleProvider);
+    try {
+      return await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
-  const resetPass = (email) => {
+  const resetPass = async (email) => {
     setLoading(true);
-    return sendPasswordResetEmail(auth, email);
+    try {
+      return await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
   useEffect(() => {
     const unSubscribe = onAuthStateChanged(auth, (currentUser) => {

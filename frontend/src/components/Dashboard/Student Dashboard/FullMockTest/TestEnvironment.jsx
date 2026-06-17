@@ -148,7 +148,7 @@ const TestEnvironment = () => {
         await handleSaveProgress();
         if (currentModuleIdx < 3) {
             setCurrentModuleIdx(prev => prev + 1);
-            toast.success(`Moving to ${['Reading', 'Writing', 'Speaking'][currentModuleIdx]} section`);
+            toast.success(`Moving to ${['Listening', 'Reading', 'Writing', 'Speaking'][currentModuleIdx + 1]} section`);
         } else {
             handleFinalSubmit();
         }

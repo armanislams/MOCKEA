@@ -193,8 +193,10 @@ export const updateCheatStats = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
-        if (tabSwitches) result.tabSwitchCount += tabSwitches;
-        if (fullscreenExits) result.fullscreenExits += fullscreenExits;
+        const safeTabSwitches = Math.max(0, Number(tabSwitches) || 0);
+        const safeFullscreenExits = Math.max(0, Number(fullscreenExits) || 0);
+        if (safeTabSwitches > 0) result.tabSwitchCount += safeTabSwitches;
+        if (safeFullscreenExits > 0) result.fullscreenExits += safeFullscreenExits;
 
         if (result.tabSwitchCount >= 3) {
             result.status = 'terminated';
@@ -226,7 +228,8 @@ export const finalizeTest = async (req, res) => {
                 let correctCount = 0;
                 section.answers = section.answers.map(ans => {
                     const originalQ = questionSet.questions.find(q => q.id === ans.questionId);
-                    const isCorrect = originalQ && originalQ.correctAnswer.toLowerCase().trim() === ans.userAnswer.toLowerCase().trim();
+                    const hasCorrectAnswer = originalQ && originalQ.correctAnswer != null;
+                    const isCorrect = hasCorrectAnswer && originalQ.correctAnswer.toLowerCase().trim() === (ans.userAnswer || '').toLowerCase().trim();
                     if (isCorrect) correctCount++;
                     
                     return {
@@ -398,7 +401,8 @@ export const lockMockResult = async (req, res) => {
 // Admin Mock Test CRUD
 export const createMockTest = async (req, res) => {
     try {
-        const newTest = new MockTest(req.body);
+        const { title, description, planType, isPublic, totalDuration, sections } = req.body;
+        const newTest = new MockTest({ title, description, planType, isPublic, totalDuration, sections });
         await newTest.save();
         res.status(201).json({ success: true, test: newTest });
     } catch (error) {
@@ -408,7 +412,12 @@ export const createMockTest = async (req, res) => {
 
 export const updateMockTest = async (req, res) => {
     try {
-        const test = await MockTest.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
+        const { title, description, planType, isPublic, totalDuration, sections } = req.body;
+        const test = await MockTest.findByIdAndUpdate(
+            req.params.id,
+            { title, description, planType, isPublic, totalDuration, sections },
+            { returnDocument: 'after' }
+        );
         await cache.del(`mocktest:${req.params.id}`);
         res.status(200).json({ success: true, test });
     } catch (error) {
