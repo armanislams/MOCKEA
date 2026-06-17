@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 const isImageUrl = (url) => /\.(jpe?g|png|gif|webp|svg|avif|bmp)(\?.*)?$/i.test(url);
 
 const convertMarkdownImageLinks = (text) => {
@@ -80,7 +82,7 @@ export const convertMarkdownContentToHtml = (rawText) => {
 
   const hasHtmlTags = /<\/?[a-z][\s\S]*?>/i.test(text);
   if (hasHtmlTags) {
-    return text;
+    return DOMPurify.sanitize(text, { ADD_TAGS: ["img", "th", "td", "tr", "thead", "tbody", "table", "div"], ADD_ATTR: ["class", "src", "alt", "href", "target", "rel", "colspan", "rowspan"] });
   }
 
   const lines = text.split(/\r?\n/);
@@ -112,5 +114,5 @@ export const convertMarkdownContentToHtml = (rawText) => {
     htmlParts.push(`<p class="leading-relaxed">${paragraphText}</p>`);
   }
 
-  return htmlParts.join("\n");
+  return DOMPurify.sanitize(htmlParts.join("\n"), { ADD_TAGS: ["img", "th", "td", "tr", "thead", "tbody", "table", "div"], ADD_ATTR: ["class", "src", "alt", "href", "target", "rel", "colspan", "rowspan"] });
 };

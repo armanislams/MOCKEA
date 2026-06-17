@@ -159,6 +159,15 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return URL.createObjectURL(activeBlob);
   }, [activeBlob]);
 
+  // Cleanup blob URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (activeAudioUrl) {
+        URL.revokeObjectURL(activeAudioUrl);
+      }
+    };
+  }, [activeAudioUrl]);
+
   const studioSubtitle = useMemo(() => {
     if (speakingStep === 1) return `Part 1 of 3 • Question ${part1QuestionIdx + 1} of ${part1Questions.length}`;
     if (speakingStep === 3) return `Part 3 of 3 • Question ${part3QuestionIdx + 1} of ${part3Questions.length}`;

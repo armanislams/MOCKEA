@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router";
+import { getAuth, deleteUser } from "firebase/auth";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "react-toastify";
 import SocialLoginButton from "./SocialLoginButton";
@@ -79,6 +80,15 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
           navigate(from, { replace: true });
         }
       } catch (err) {
+        // Rollback: delete the Firebase account if backend registration fails
+        try {
+          const auth = getAuth();
+          if (auth.currentUser) {
+            await deleteUser(auth.currentUser);
+          }
+        } catch (deleteErr) {
+          console.error("Failed to rollback Firebase account:", deleteErr);
+        }
         setLoading(false);
         setIsLoading(false);
         toast.error("User Creation Failed");

@@ -272,10 +272,11 @@ const ManageUsers = () => {
   // ── useMutation: toggle ban ───────────────────────────────────────────────────
   const banMutation = useMutation({
     mutationFn: ({ id }) => axiosSecure.patch(`/user/${id}/ban`),
-    onSuccess: (_, { isBanned }) => {
+    onSuccess: (data, { isBanned }) => {
+        const nowBanned = data?.data?.user?.isBanned ?? !isBanned;
         Swal.fire({
-            title: isBanned ? "Unbanned!" : "Banned!",
-            text: isBanned ? "User has regained access." : "User has been restricted.",
+            title: nowBanned ? "Banned!" : "Unbanned!",
+            text: nowBanned ? "User has been restricted." : "User has regained access.",
             icon: "success",
             timer: 2000,
             showConfirmButton: false,

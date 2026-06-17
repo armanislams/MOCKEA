@@ -26,7 +26,7 @@ const app = express();
 const allowedOrigins = [
   process.env.CLIENT_URL,
   process.env.DEV_URL,
-];
+].filter(Boolean); // Filter out undefined values to prevent CORS bypass
 
 app.use(
   cors({
@@ -79,6 +79,7 @@ const startServer = async ()=>{
         })
     } catch (error) {
         console.error("Error connecting to MongoDB:", error);
+        process.exit(1);
     }
 }
 

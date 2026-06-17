@@ -8,7 +8,8 @@ import alerts from "../../../../utils/alerts";
 import Swal from "sweetalert2";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import DOMPurify from 'dompurify';
+import {
     PiPencilLineFill, 
     PiClockFill, 
     PiTextAaFill, 
@@ -41,16 +42,16 @@ const getTaskContent = (passage, tab) => {
     // The task content is inside the parent container of this heading
     const container = taskHeading.closest(".p-6") || taskHeading.parentElement;
     if (container) {
-      return container.outerHTML;
+      return DOMPurify.sanitize(container.outerHTML, { ADD_TAGS: ["img"], ADD_ATTR: ["class", "src", "alt"] });
     }
   }
   
   // Fallback: If DOMParser didn't find it, do a basic split
   if (tab === "task1") {
-    return passage.split(/Task 2/i)[0] || passage;
+    return DOMPurify.sanitize(passage.split(/Task 2/i)[0] || passage);
   } else {
     const parts = passage.split(/Task 2/i);
-    return parts.length > 1 ? "<h3>Task 2" + parts[1] : passage;
+    return DOMPurify.sanitize(parts.length > 1 ? "<h3>Task 2" + parts[1] : passage);
   }
 };
 

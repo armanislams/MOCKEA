@@ -75,6 +75,15 @@ export const chatWithAI = async (req, res, next) => {
       });
     }
 
+    // Limit messages array to prevent abuse and excessive API costs
+    const MAX_MESSAGES = 50;
+    if (messages.length > MAX_MESSAGES) {
+      return res.status(400).json({
+        success: false,
+        message: `Message history exceeds maximum allowed limit of ${MAX_MESSAGES}.`
+      });
+    }
+
     // 1. Fetch current chatbot settings
     const settings = await getOrCreateSettings();
     if (!settings.isActive) {

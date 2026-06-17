@@ -6,6 +6,17 @@ let isRedisConnected = false;
 // Local in-memory fallback cache Map
 const localCache = new Map();
 
+// Periodic cleanup: evict expired entries every 5 minutes to prevent memory leak
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of localCache) {
+    if (entry.expiresAt <= now) {
+      localCache.delete(key);
+    }
+  }
+}, CLEANUP_INTERVAL_MS).unref();
+
 // Initialize Redis client
 const initRedis = async () => {
     if (!process.env.REDIS_URL) {

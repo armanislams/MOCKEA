@@ -13,11 +13,12 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Send error report to backend
+    // Send error report to backend with component stack trace
     logErrorToBackend(error, {
       path: window.location.href,
       method: 'CLIENT_RENDER',
-      status: 500
+      status: 500,
+      componentStack: errorInfo.componentStack
     });
   }
 

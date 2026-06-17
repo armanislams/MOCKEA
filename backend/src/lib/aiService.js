@@ -119,10 +119,11 @@ You MUST respond with a valid, clean JSON object. Ensure that there are no markd
    */
   async callGemini(promptText) {
     try {
-      const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+      const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-goog-api-key': this.apiKey
         },
         body: JSON.stringify({
           contents: [{
