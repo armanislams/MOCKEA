@@ -21,7 +21,8 @@
     "redis": "^6.0.0"
   },
   "overrides": {
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "jwks-rsa": "3.2.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
