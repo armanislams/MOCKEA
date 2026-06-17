@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router";
 import { PiBookOpenBold, PiGraduationCapBold, PiClockBold, PiPlayCircleBold, PiStarBold } from "react-icons/pi";
 
 const COURSES = [
@@ -127,12 +128,12 @@ export default function CoursesPage() {
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">One-time payment</span>
                   <span className="text-2xl font-black text-[#000f38]">{course.price}</span>
                 </div>
-                <a
-                  href="/auth/register"
+                <Link
+                  to="/auth/register"
                   className="bg-cta-btn hover:bg-red-600 text-white font-extrabold px-6 py-3 rounded-2xl shadow-xl shadow-red-500/20 text-xs uppercase tracking-wider active:scale-98 transition-all"
                 >
                   Enroll Now →
-                </a>
+                </Link>
               </div>
             </motion.div>
           ))}

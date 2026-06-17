@@ -214,8 +214,12 @@ const ManageSubmissions = () => {
 
       {/* Tab Switcher */}
       <div className="flex justify-start border-b border-gray-200 dark:border-gray-700 pb-2">
-        <div className="tabs tabs-boxed gap-2 p-1 bg-gray-100/80 dark:bg-gray-800 rounded-2xl">
+        <div className="tabs tabs-boxed gap-2 p-1 bg-gray-100/80 dark:bg-gray-800 rounded-2xl" role="tablist" aria-label="Submission type">
           <button
+            role="tab"
+            aria-selected={activeTab === "standalone"}
+            aria-controls="panel-standalone"
+            id="tab-standalone"
             onClick={() => {
               setActiveTab("standalone");
               setSearchTerm("");
@@ -229,6 +233,10 @@ const ManageSubmissions = () => {
             Standalone Labs
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === "mock"}
+            aria-controls="panel-mock"
+            id="tab-mock"
             onClick={() => {
               setActiveTab("mock");
               setSearchTerm("");
@@ -316,6 +324,7 @@ const ManageSubmissions = () => {
         <div className="overflow-x-auto">
           {activeTab === "standalone" ? (
             /* STANDALONE LABS TABLE */
+            <div role="tabpanel" id="panel-standalone" aria-labelledby="tab-standalone">
             <table className="table w-full text-left">
               <thead>
                 <tr className="bg-gray-50/70 dark:bg-gray-900/40 text-gray-550 border-b border-gray-100 dark:border-gray-700">
@@ -466,8 +475,10 @@ const ManageSubmissions = () => {
                 )}
               </tbody>
             </table>
+            </div>
           ) : (
             /* MOCK TEST RESULTS TABLE */
+            <div role="tabpanel" id="panel-mock" aria-labelledby="tab-mock">
             <table className="table w-full text-left">
               <thead>
                 <tr className="bg-gray-50/70 dark:bg-gray-900/40 text-gray-550 border-b border-gray-100 dark:border-gray-700">
@@ -614,6 +625,7 @@ const ManageSubmissions = () => {
                 )}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

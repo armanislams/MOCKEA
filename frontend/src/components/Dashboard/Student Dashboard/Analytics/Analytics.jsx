@@ -210,8 +210,19 @@ const Analytics = () => {
                         r="14" 
                         fill="transparent" 
                         className="cursor-pointer"
+                        tabIndex={0}
+                        role="img"
+                        aria-label={`Band ${item.band}, ${item.accuracy !== null ? item.accuracy + '% accuracy' : 'N/A'} on ${new Date(item.date).toLocaleDateString()}`}
                         onMouseEnter={() => setActivePoint(idx)}
                         onMouseLeave={() => setActivePoint(null)}
+                        onFocus={() => setActivePoint(idx)}
+                        onBlur={() => setActivePoint(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setActivePoint(activePoint === idx ? null : idx);
+                          }
+                        }}
                       />
 
                       {/* Active Visual Ring */}

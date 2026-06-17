@@ -98,14 +98,22 @@ const Review = () => {
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="bg-white p-2 rounded-[2rem] border border-base-300 shadow-sm flex items-center gap-1">
+                <div className="bg-white p-2 rounded-[2rem] border border-base-300 shadow-sm flex items-center gap-1" role="tablist" aria-label="Result type">
                     <button 
+                        role="tab"
+                        aria-selected={activeTab === 'mock-tests'}
+                        aria-controls="panel-mock-tests"
+                        id="tab-mock-tests"
                         onClick={() => setActiveTab("mock-tests")}
                         className={`flex items-center gap-3 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'mock-tests' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-base-100'}`}
                     >
                         <PiFilesFill className="text-lg" /> Mock Tests
                     </button>
                     <button 
+                        role="tab"
+                        aria-selected={activeTab === 'skill-labs'}
+                        aria-controls="panel-skill-labs"
+                        id="tab-skill-labs"
                         onClick={() => setActiveTab("skill-labs")}
                         className={`flex items-center gap-3 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'skill-labs' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-base-100'}`}
                     >
@@ -118,6 +126,9 @@ const Review = () => {
                 {activeTab === "mock-tests" ? (
                     <motion.div 
                         key="mock"
+                        role="tabpanel"
+                        id="panel-mock-tests"
+                        aria-labelledby="tab-mock-tests"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -233,6 +244,9 @@ const Review = () => {
                 ) : (
                     <motion.div 
                         key="labs"
+                        role="tabpanel"
+                        id="panel-skill-labs"
+                        aria-labelledby="tab-skill-labs"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}

@@ -3,7 +3,7 @@
  *
  * Props:
  *   front        — ReactNode  — content shown on the front face
- *   back         — ReactNode  — content shown on the back face (revealed on hover)
+ *   back         — ReactNode  — content shown on the back face (revealed on hover/tap)
  *   height       — string     — CSS height for the card (default "260px")
  *   duration     — string     — CSS transition duration (default "0.7s")
  *   frontClass   — string     — extra classes for the front face wrapper
@@ -11,10 +11,9 @@
  *   className    — string     — extra classes for the outer container
  *   as           — string     — HTML tag for the outer container (default "div")
  *   ...rest      — any additional props forwarded to the outer container (e.g. onClick, href)
- *
- * The component injects its own scoped CSS via a single <style> tag that is
- * deduplicated in the DOM by the shared `data-flipcard-styles` attribute.
  */
+
+import { useEffect, useState, useCallback } from "react";
 
 const STYLES = `
   .fc-root {
@@ -28,7 +27,8 @@ const STYLES = `
     transition: transform var(--fc-duration, 0.7s) cubic-bezier(0.4, 0, 0.2, 1);
     transform-style: preserve-3d;
   }
-  .fc-root:hover .fc-inner {
+  .fc-root:hover .fc-inner,
+  .fc-root.fc-flipped .fc-inner {
     transform: rotateY(180deg);
   }
   .fc-face {
@@ -41,6 +41,11 @@ const STYLES = `
   }
   .fc-back {
     transform: rotateY(180deg);
+  }
+  .fc-root:focus-visible {
+    outline: 2px solid oklch(var(--p));
+    outline-offset: 2px;
+    border-radius: var(--fc-radius, 2rem);
   }
 `;
 
@@ -58,8 +63,6 @@ const injectStyles = () => {
   document.head.appendChild(tag);
   stylesInjected = true;
 };
-
-import { useEffect } from "react";
 
 /**
  * @param {object} props
@@ -85,21 +88,48 @@ const FlipCard = ({
   as: Tag = "div",
   ...rest
 }) => {
-  useEffect(() => { injectStyles(); }, []);
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  useEffect(() => {
+    injectStyles();
+  }, []);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setIsFlipped((prev) => !prev);
+    }
+  }, []);
+
+  const handleClick = useCallback(() => {
+    setIsFlipped((prev) => !prev);
+  }, []);
 
   return (
     <Tag
-      className={`fc-root ${className}`}
-      style={{ height, "--fc-duration": duration, "--fc-radius": radius }}
+      className={`fc-root ${isFlipped ? "fc-flipped" : ""} ${className}`}
+      style={{
+        height,
+        "--fc-duration": duration,
+        "--fc-radius": radius,
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label="Flip card. Press Enter or Space to toggle."
+      onKeyDown={handleKeyDown}
+      onClick={handleClick}
       {...rest}
     >
       <div className="fc-inner">
         {/* Front face */}
-        <div className={`fc-face ${frontClass}`}>
+        <div className={`fc-face ${frontClass}`} aria-hidden={isFlipped}>
           {front}
         </div>
         {/* Back face */}
-        <div className={`fc-face fc-back ${backClass}`}>
+        <div
+          className={`fc-face fc-back ${backClass}`}
+          aria-hidden={!isFlipped}
+        >
           {back}
         </div>
       </div>

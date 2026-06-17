@@ -39,7 +39,14 @@ export const Hero = () => {
               >
                 Start Practice
               </Link>
-              <a href="/#testFormats" className="border-2 border-white text-white hover:bg-white hover:text-[#0028a1] px-8 py-3 rounded-md font-bold text-lg btn-animated shadow-lg">
+              <a
+                href="/#testFormats"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById("testFormats")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="border-2 border-white text-white hover:bg-white hover:text-[#0028a1] px-8 py-3 rounded-md font-bold text-lg btn-animated shadow-lg"
+              >
                 View Test Format
               </a>
             </div>

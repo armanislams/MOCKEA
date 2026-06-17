@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router";
 import { FiDownload, FiBookOpen, FiFileText, FiMessageSquare, FiTrendingUp } from "react-icons/fi";
 
 const getCategoryIcon = (category) => {
@@ -111,15 +112,13 @@ export default function ResourceCard({ item, onDownload }) {
               <FiDownload className="w-3.5 h-3.5" />
             </button>
           ) : (
-            <a
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to={link}
               className="inline-flex items-center gap-1.5 bg-cta-btn hover:bg-red-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer shadow-md shadow-red-500/10 hover:shadow-red-500/25 transition-all"
             >
               {ctaText}
               <span aria-hidden>→</span>
-            </a>
+            </Link>
           )}
         </div>
       </div>

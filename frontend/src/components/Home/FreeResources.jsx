@@ -5,7 +5,7 @@ const RESOURCES = [
   {
     title: "Free Vocabulary E-book",
     cta: "Free E-book",
-    href: "#",
+    href: "/free-resources",
     image:
       "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80",
     alt: "Open book and tablet on a desk",
@@ -13,7 +13,7 @@ const RESOURCES = [
   {
     title: "10 Tips for Writing Task 2",
     cta: "Free Tip Guide",
-    href: "#",
+    href: "/free-resources",
     image:
       "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=800&q=80",
     alt: "Hand holding a fountain pen over paper",
@@ -21,7 +21,7 @@ const RESOURCES = [
   {
     title: "Blog: Article Book Ebook",
     cta: "Free Blog Article",
-    href: "#",
+    href: "/free-resources",
     image:
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80",
     alt: "Laptop on a desk with notebook and coffee",

@@ -125,10 +125,14 @@ const ReviewDetail = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" role="tablist" aria-label="Test sections">
                         {['reading', 'listening', 'writing', 'speaking'].map((type) => (
                             <button 
                                 key={type}
+                                role="tab"
+                                aria-selected={activeTab === type}
+                                aria-controls={`panel-${type}`}
+                                id={`tab-${type}`}
                                 onClick={() => setActiveTab(type)}
                                 className={`btn btn-sm rounded-xl px-4 font-black uppercase tracking-tighter ${
                                     activeTab === type ? "btn-primary" : "btn-ghost text-base-content/40"
@@ -141,7 +145,7 @@ const ReviewDetail = () => {
                 </div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-6 pt-10">
+            <main className="max-w-7xl mx-auto px-6 pt-10" role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
                 {!currentSectionResult ? (
                     <div className="card bg-white p-20 text-center space-y-4 rounded-[3rem] border border-base-300 shadow-sm">
                         <PiInfoFill className="text-5xl text-base-content/10 mx-auto" />
