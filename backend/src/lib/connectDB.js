@@ -10,10 +10,10 @@ export const connectDb = async () => {
 
   try {
     await mongoose.connect(MongoDBUrl, {
-      maxPoolSize: 20,
-      minPoolSize: 5
+      maxPoolSize: 300,
+      minPoolSize: 10
     });
-    console.log("Connected to MongoDB (pool: 5-20)");
+    console.log("Connected to MongoDB (pool: 10-200)");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
     throw error;
