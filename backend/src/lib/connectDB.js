@@ -9,8 +9,11 @@ export const connectDb = async () => {
     }
 
   try {
-    await mongoose.connect(MongoDBUrl);
-    console.log("Connected to MongoDB");
+    await mongoose.connect(MongoDBUrl, {
+      maxPoolSize: 20,
+      minPoolSize: 5
+    });
+    console.log("Connected to MongoDB (pool: 5-20)");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
     throw error;

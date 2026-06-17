@@ -24,8 +24,6 @@ const PLAN_CONFIG = {
         color: "bg-white/5 border-white/10 text-white/60",
         icon: null,
         benefits: [
-            "1 Free Mock Tests",
-            "Free Writing Support",
             "Free Listening and Reading Test Access",
             "Basic Performance Tracking"
         ],
