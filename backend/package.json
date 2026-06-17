@@ -1,7 +1,7 @@
 {
   "name": "MOCKEA-backend",
   "version": "1.0.0",
-  "description": "This Server is for eco stream client",
+  "description": "This Server is for MOCKEA client",
   "license": "ISC",
   "author": "",
   "type": "module",
