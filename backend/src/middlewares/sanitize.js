@@ -14,8 +14,13 @@ const sanitizeString = (str) => {
     sanitized = sanitized.replace(/\s*on[a-z]+\s*=\s*(["'])(?:(?!\1)[\s\S])*\1/gi, '');
     sanitized = sanitized.replace(/\s*on[a-z]+\s*=\s*[^\s>]+/gi, '');
     
-    // Remove javascript: URIs (e.g. href="javascript:alert(1)")
+    // Remove javascript: URIs (e.g. href="javascript:alert(1)" or href=javascript:alert(1))
     sanitized = sanitized.replace(/href\s*=\s*(["'])\s*javascript:[^"']*\1/gi, '');
+    sanitized = sanitized.replace(/href\s*=\s*javascript:[^\s>]+/gi, 'href="#"');
+    sanitized = sanitized.replace(/src\s*=\s*javascript:[^\s>]+/gi, 'src=""');
+    
+    // Remove data: URIs in src attributes
+    sanitized = sanitized.replace(/src\s*=\s*(["'])\s*data:[^"']*\1/gi, 'src=""');
     
     return sanitized;
 };

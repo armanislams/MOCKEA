@@ -299,7 +299,7 @@ const Practice = () => {
                   placeholder="Type what you hear..."
                   value={transcription}
                   onChange={(e) => setTranscription(e.target.value)}
-                  spellCheck="false"
+                  spellCheck={false}
                 ></textarea>
 
                 <div className="absolute inset-0 border-2 border-transparent group-focus-within:border-primary/10 rounded-b-xl pointer-events-none transition-colors"></div>

@@ -127,8 +127,12 @@ export const getQuestions = async (req, res) => {
         let questions = await Questions.find(filter);
 
         if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
-            // Shuffle and return only 2 random question sets
-            questions = questions.sort(() => 0.5 - Math.random()).slice(0, 2);
+            // Fisher-Yates shuffle for uniform distribution
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+            questions = questions.slice(0, 2);
         }
 
         return res.status(200).json({

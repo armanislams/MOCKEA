@@ -88,10 +88,10 @@ class ErrorBoundary extends React.Component {
                   {this.state.showDetails && (
                     <div className="px-5 pb-5 text-left border-t border-white/5">
                       <div className="text-xs text-rose-300 font-semibold mb-2 font-mono truncate">
-                        Exception: {this.state.error.message}
+                        Exception: {this.state.error?.name || "Error"}
                       </div>
                       <pre className="text-[10px] text-slate-500 font-mono overflow-auto max-h-48 whitespace-pre-wrap break-all leading-relaxed bg-black/40 p-4 rounded-xl border border-white/5">
-                        {this.state.error.stack || 'No component stack trace available.'}
+                        {this.state.error?.message || 'An unexpected error occurred.'}
                       </pre>
                     </div>
                   )}

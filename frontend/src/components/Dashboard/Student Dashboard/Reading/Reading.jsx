@@ -508,7 +508,7 @@ const Reading = () => {
                             const globalQNum = idx + 1;
                             const groupHeader = (activeSet.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
 
-                            const isCorrect = submitted && result?.evaluatedAnswers.find(a => a.questionId === q.id)?.isCorrect;
+                            const isCorrect = submitted && result?.evaluatedAnswers?.find(a => a.questionId === q.id)?.isCorrect;
                             
                             return (
                                 <div key={q.id} className="space-y-4">

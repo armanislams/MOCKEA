@@ -66,10 +66,11 @@ export const getAnalyticsSummary = async (req, res) => {
         result.sectionResults.forEach(section => {
             if (['reading', 'listening'].includes(section.sectionType) && section.isGraded) {
                 totalCorrect += section.score || 0;
-                totalQuestions += 40; 
+                const questionCount = section.answers?.length || 0;
+                totalQuestions += questionCount; 
 
                 testScore += section.score || 0;
-                testQuestions += 40;
+                testQuestions += questionCount;
             }
         });
 

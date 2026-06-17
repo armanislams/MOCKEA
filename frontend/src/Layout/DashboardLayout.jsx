@@ -33,7 +33,18 @@ const DashboardLayout = () => {
   }
 
   if (isError) {
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-base-200 p-8 text-center">
+        <h2 className="text-2xl font-black text-error mb-4">Failed to load dashboard</h2>
+        <p className="text-base-content/60 mb-6">We couldn't load your profile. Please try again.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="btn btn-primary rounded-2xl px-8"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const handleLogOut = () => {

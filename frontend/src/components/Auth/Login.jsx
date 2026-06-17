@@ -14,68 +14,60 @@ const Login = ({ onSuccess, isModal, onToggleAuth }) => {
     formState: { errors },
   } = useForm();
   const [isLoading, setIsLoading] = useState(false);
-  const [show, isShow] = useState(false);
+  const [show, setShow] = useState(false);
   const { signIn, setLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
-  const axiosIstance = useAxios();
+  const axiosInstance = useAxios();
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      axiosIstance.get(`/user/verifyEmail/${data.email}`)
-        .then((res) => {
-          if (res.data.success) {
-            signIn(data.email, data.password)
-              .then((result) => {
-                toast.success("Logged In Successfully");
-                setTimeout(async () => {
-                  if (onSuccess) {
-                    onSuccess();
-                  } else {
-                    let role = null;
-                    try {
-                      const token = await result.user.getIdToken();
-                      const roleRes = await axiosIstance.get(`/user/${data.email}/role`, {
-                        headers: {
-                          Authorization: `Bearer ${token}`
-                        }
-                      });
-                      role = roleRes.data?.role;
-                    } catch (err) {
-                      console.error("Error fetching user role on login:", err);
-                    }
+      const res = await axiosInstance.get(`/user/verifyEmail/${data.email}`);
+      if (res.data.success) {
+        try {
+          const result = await signIn(data.email, data.password);
+          toast.success("Logged In Successfully");
 
-                    if (role === "admin" || role === "instructor") {
-                      const target = (from === "/" || from === "/dashboard") ? "/dashboard/profile" : from;
-                      navigate(target, { replace: true });
-                    } else {
-                      navigate(from, { replace: true });
-                    }
-                  }
-                  setIsLoading(false);
-                }, 500);
-              })
-              .catch((err) => {
-                setLoading(false);
-                toast.error(
-                  err.message == "Firebase: Error (auth/invalid-credential)."
-                    ? "Invalid Email or Password. Please Try Again"
-                    : "Something Went Wrong. Please Try Again",
-                );
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            let role = null;
+            try {
+              const token = await result.user.getIdToken();
+              const roleRes = await axiosInstance.get(`/user/${data.email}/role`, {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
               });
+              role = roleRes.data?.role;
+            } catch (err) {
+              console.error("Error fetching user role on login:", err);
+            }
+
+            if (role === "admin" || role === "instructor") {
+              const target = (from === "/" || from === "/dashboard") ? "/dashboard/profile" : from;
+              navigate(target, { replace: true });
+            } else {
+              navigate(from, { replace: true });
+            }
           }
-        })
-        .catch(() => {
-          toast.error("User Not Found. Please Register");
-        });
+        } catch (err) {
+          setLoading(false);
+          const message = err.message || "";
+          const isInvalidCredential = message.includes("auth/invalid-credential") || message.includes("invalid-credential");
+          toast.error(
+            isInvalidCredential
+              ? "Invalid Email or Password. Please Try Again"
+              : "Something Went Wrong. Please Try Again"
+          );
+        }
+      }
     } catch {
-      toast.error("Something Went Wrong. Please Try Again");
+      toast.error("User Not Found. Please Register");
     } finally {
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
+      setIsLoading(false);
     }
   };
 
@@ -170,7 +162,7 @@ const Login = ({ onSuccess, isModal, onToggleAuth }) => {
             />
             <button
               type="button"
-              onClick={() => isShow(!show)}
+              onClick={() => setShow(!show)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
             >
               {show ? (

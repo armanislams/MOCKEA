@@ -31,29 +31,39 @@ const TestEnvironment = () => {
     
     // Lazy initializers for crash recovery
     const { answers, setAnswers, handleAnswerChange } = useAnswers(() => {
-        const cached = localStorage.getItem(`test_cache_${id}`);
-        return cached ? JSON.parse(cached).answers : {};
+        try {
+            const cached = localStorage.getItem(`test_cache_${id}`);
+            return cached ? JSON.parse(cached).answers : {};
+        } catch { return {}; }
     });
     const [currentModuleIdx, setCurrentModuleIdx] = useState(() => {
-        const cached = localStorage.getItem(`test_cache_${id}`);
-        return cached ? JSON.parse(cached).currentModuleIdx : 0;
+        try {
+            const cached = localStorage.getItem(`test_cache_${id}`);
+            return cached ? JSON.parse(cached).currentModuleIdx : 0;
+        } catch { return 0; }
     });
     const { timeLeft, setTimeLeft, fmtTime: formatTime } = useCountdown(
         () => {
-            const cached = localStorage.getItem(`test_cache_${id}`);
-            return cached ? JSON.parse(cached).timeLeft : 0;
+            try {
+                const cached = localStorage.getItem(`test_cache_${id}`);
+                return cached ? JSON.parse(cached).timeLeft : 0;
+            } catch { return 0; }
         },
         isStarted && isFullscreen && !isTerminating,
         false
     );
 
     const [tabSwitches, setTabSwitches] = useState(() => {
-        const cached = localStorage.getItem(`test_cache_${id}`);
-        return cached ? JSON.parse(cached).tabSwitches || 0 : 0;
+        try {
+            const cached = localStorage.getItem(`test_cache_${id}`);
+            return cached ? JSON.parse(cached).tabSwitches || 0 : 0;
+        } catch { return 0; }
     });
     const [resultId, setResultId] = useState(() => {
-        const cached = localStorage.getItem(`test_cache_${id}`);
-        return cached ? JSON.parse(cached).resultId : null;
+        try {
+            const cached = localStorage.getItem(`test_cache_${id}`);
+            return cached ? JSON.parse(cached).resultId : null;
+        } catch { return null; }
     });
     const [showWarning, setShowWarning] = useState(false);
     const [warningType, setWarningType] = useState(""); // "fullscreen" or "tab"
