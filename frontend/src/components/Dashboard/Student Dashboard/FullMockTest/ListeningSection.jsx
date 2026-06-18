@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect, memo } from "react";
-import { PiEar, PiPlayCircle, PiPauseCircle, PiClock } from "react-icons/pi";
+import { PiEar, PiPlayCircle, PiPauseCircle } from "react-icons/pi";
 import { collapseListeningExampleBlocks } from "../../../../utils/listeningPassage";
 
 const EMPTY_ARRAY = [];
@@ -211,16 +211,18 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
 const ListeningSection = ({ data, answers, onAnswerChange }) => {
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const passage = data?.passage;
+    const questions = data?.questions;
     const offset = ((data?.listeningPart || 1) - 1) * 10;
 
     const renderedInlineIds = useMemo(() => {
-        if (!data?.passage) return new Set();
-        const matches = data.passage.match(/___([\w-]+)___/g) || [];
+        if (!passage) return new Set();
+        const matches = passage.match(/___([\w-]+)___/g) || [];
         const ids = new Set();
         
         matches.forEach(m => {
             const matchKey = m.replace(/___/g, "").trim();
-            const q = data.questions?.find((item, idx) => {
+            const q = questions?.find((item, idx) => {
                 const questionNum = offset + idx + 1;
                 const localIndex = idx + 1;
                 return (
@@ -234,11 +236,11 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
             }
         });
         return ids;
-    }, [data?.passage, data?.questions, offset]);
+    }, [passage, questions, offset]);
 
     const remainingQuestions = useMemo(() => {
-        return data?.questions?.filter(q => !renderedInlineIds.has(q.id)) || [];
-    }, [data?.questions, renderedInlineIds]);
+        return questions?.filter(q => !renderedInlineIds.has(q.id)) || [];
+    }, [questions, renderedInlineIds]);
 
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);

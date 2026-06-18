@@ -7,10 +7,6 @@ import {
     PiHeadphonesFill,
     PiCheckCircleFill,
     PiXCircleFill,
-    PiListBullets,
-    PiArrowsLeftRight,
-    PiMapTrifold,
-    PiTextT,
 } from "react-icons/pi";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -497,9 +493,7 @@ const QuestionRenderer = ({ q, idx, offset = 0, submitted, result, answers, onAn
  *   result         — evaluation result or null
  */
 const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, result }) => {
-    if (!activeSet) return null;
-
-    const part = activeSet.listeningPart || 1;
+    const part = activeSet?.listeningPart || 1;
     const meta = PART_META[part] || PART_META[1];
     const offset = (part - 1) * 10;
 
@@ -529,6 +523,8 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
     const remainingQuestions = useMemo(() => {
         return activeSet.questions?.filter(q => !renderedInlineIds.has(q.id)) || [];
     }, [activeSet.questions, renderedInlineIds]);
+
+    if (!activeSet) return null;
 
     return (
         <div className="card bg-white p-10 rounded-[3.5rem] border border-base-300 shadow-sm relative overflow-hidden">

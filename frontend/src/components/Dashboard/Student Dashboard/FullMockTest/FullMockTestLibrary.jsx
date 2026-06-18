@@ -42,6 +42,7 @@ const FullMockTestLibrary = () => {
                         cached.timestamp = Date.now();
                         localStorage.setItem(key, JSON.stringify(cached));
                     }
+                // eslint-disable-next-line no-unused-vars
                 } catch (e) {
                     localStorage.removeItem(key); // Clear corrupted cache
                 }

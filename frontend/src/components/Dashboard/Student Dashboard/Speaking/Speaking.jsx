@@ -54,7 +54,6 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
   const [mediaStream, setMediaStream] = useState(null);
 
   // 3-Part Speaking States
@@ -113,7 +112,6 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   };
   const setAudioBlobWithRef = (blob) => {
     audioBlobRef.current = blob;
-    setAudioBlob(blob);
   };
 
   // Fullscreen & Gating States
@@ -294,12 +292,14 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   useEffect(() => {
     if (activeSet) {
       const p1Len = part1Questions.length;
+      /* eslint-disable react-hooks/set-state-in-effect */
       setPart1Blobs(new Array(p1Len).fill(null));
       part1BlobsRef.current = new Array(p1Len).fill(null);
 
       const p3Len = part3Questions.length;
       setPart3Blobs(new Array(p3Len).fill(null));
       part3BlobsRef.current = new Array(p3Len).fill(null);
+      /* eslint-enable react-hooks/set-state-in-effect */
 
       setPart1QuestionIdx(0);
       setPart3QuestionIdx(0);
@@ -1033,7 +1033,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             const isActive = index === part1QuestionIdx;
                             return (
                               <button
-                                key={index /* eslint-disable-line react/no-array-index-key */}
+                                key={index}
                                 type="button"
                                 disabled={isRecording || isSaving}
                                 onClick={() => setPart1QuestionIdx(index)}
@@ -1193,7 +1193,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             const isActive = index === part3QuestionIdx;
                             return (
                               <button
-                                key={index /* eslint-disable-line react/no-array-index-key */}
+                                key={index}
                                 type="button"
                                 disabled={isRecording || isSaving}
                                 onClick={() => setPart3QuestionIdx(index)}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import useAnswers from "../../../../hooks/useAnswers";
 import useCountdown from "../../../../hooks/useCountdown";
 import { useParams, useNavigate } from "react-router";
@@ -26,12 +26,12 @@ const TestEnvironment = () => {
 
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isStarted, setIsStarted] = useState(() => !!localStorage.getItem(`test_cache_${id}`));
-    const [isTerminating, setIsTerminating] = useState(() => {
+    const [isTerminating] = useState(() => {
         return !!localStorage.getItem(`test_cache_${id}`);
     });
     
     // Lazy initializers for crash recovery
-    const { answers, setAnswers, handleAnswerChange } = useAnswers(() => {
+    const { answers, handleAnswerChange } = useAnswers(() => {
         try {
             const cached = localStorage.getItem(`test_cache_${id}`);
             return cached ? JSON.parse(cached).answers : {};
@@ -448,8 +448,8 @@ const TestEnvironment = () => {
             if (!writingData) return { total: 0, answered: 0 };
             
             const rawText = answers[writingData._id] || "";
-            let hasT1 = false;
-            let hasT2 = false;
+            let hasT1;
+            let hasT2;
             
             if (rawText.includes("--- TASK 2")) {
                 const match = rawText.match(/--- TASK 1.*---\n([\s\S]*?)\n\n--- TASK 2.*---\n([\s\S]*)/);
@@ -484,6 +484,7 @@ const TestEnvironment = () => {
                 answered: p1 + p2 + p3
             };
         }
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     }, [test, currentModuleIdx, answers]);
 
     // 8. Exit fullscreen on component unmount

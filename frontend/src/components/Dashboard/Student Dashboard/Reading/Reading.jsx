@@ -129,27 +129,18 @@ const Reading = () => {
     setToolbar({ show: false, x: 0, y: 0, range: null });
   };
 
-  const openNoteModal = (element) => {
-    const rect = element.getBoundingClientRect();
-    const noteText = element.getAttribute("data-note") || "";
-    setActiveNote({
-      show: true,
-      text: noteText,
-      element: element,
-      x: rect.left + window.scrollX + rect.width / 2,
-      y: rect.top + window.scrollY + rect.height + 10
-    });
-  };
+//   const openNoteModal = (element) => {
+//     const rect = element.getBoundingClientRect();
+//     const noteText = element.getAttribute("data-note") || "";
+//     setActiveNote({
+//       show: true,
+//       text: noteText,
+//       element: element,
+//       x: rect.left + window.scrollX + rect.width / 2,
+//       y: rect.top + window.scrollY + rect.height + 10
+//     });
+//   };
 
-  const removeHighlight = (element) => {
-    if (!element) return;
-    const parent = element.parentNode;
-    while (element.firstChild) {
-      parent.insertBefore(element.firstChild, element);
-    }
-    parent.removeChild(element);
-    setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 });
-  };
 
 
 

@@ -1,6 +1,5 @@
-import React from "react";
 import { motion } from "framer-motion";
-import { PiNotebookBold, PiPlayCircleBold, PiStarFill, PiCheckCircleBold, PiClockBold, PiVideoCameraBold } from "react-icons/pi";
+import { PiNotebookBold, PiPlayCircleBold, PiCheckCircleBold, PiClockBold, PiVideoCameraBold } from "react-icons/pi";
 
 const ENROLLED_COURSES = [
   {

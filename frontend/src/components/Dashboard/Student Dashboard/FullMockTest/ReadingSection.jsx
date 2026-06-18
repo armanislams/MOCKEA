@@ -8,9 +8,13 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
     const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
     const [activePassageTab, setActivePassageTab] = useState(0);
     const lastShownRef = useRef(0);
+    const prevDataRef = useRef(data);
 
     useEffect(() => {
-        setActivePassageTab(0);
+        if (prevDataRef.current !== data) {
+            prevDataRef.current = data;
+            setActivePassageTab(0);
+        }
     }, [data]);
 
     useEffect(() => {
@@ -259,8 +263,6 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
 
                     <div className="space-y-8">
                         {data?.questions?.map((q, idx) => {
-                            const qPassageIndex = getQuestionPassageIndex(q, data?.questionGroups, idx);
-
                             const globalQNum = idx + 1;
                             const groupHeader = (data?.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
 

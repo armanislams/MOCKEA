@@ -72,7 +72,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     [preloadedSet, listeningSets, selectedSetId],
   );
 
-    const { timeLeft, setTimeLeft, fmtTime: fmtCountdown, resetCountdown } = useCountdown(0, !!activeSet && duration > 0, submitted);
+    const { timeLeft, fmtTime: fmtCountdown, resetCountdown } = useCountdown(0, !!activeSet && duration > 0, submitted);
 
   /* --- Fetch Data --- */
   useEffect(() => {

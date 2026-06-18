@@ -7,18 +7,14 @@ import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
 import Swal from "sweetalert2";
 import Loader from "../../../Loader/Loader.jsx";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import DOMPurify from 'dompurify';
 import {
     PiPencilLineFill, 
     PiClockFill, 
     PiTextAaFill, 
     PiCheckCircleFill,
-    PiInfoFill,
-    PiArrowRightBold,
     PiArrowLeftBold,
-    PiImageFill,
-    PiMonitor
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
@@ -94,11 +90,11 @@ const Writing = () => {
   };
 
   const [timerActive, setTimerActive] = useState(false);
-  const { timeLeft, setTimeLeft, fmtTime: fmt } = useCountdown(3600, timerActive, submitted);
+  const { timeLeft, fmtTime: fmt } = useCountdown(3600, timerActive, submitted);
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
-  const { showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
+  const { isFullscreen, showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
 
   const activeSet = useMemo(
     () => writingSets.find((set) => set._id === selectedSetId) || null,
@@ -120,7 +116,7 @@ const Writing = () => {
         setWritingSets(fetched);
         // Auto-selection removed
         setLoading(false);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load writing prompts");
         setLoading(false);
       }
@@ -224,8 +220,8 @@ const Writing = () => {
             userEmail: user?.email
           });
           toast.success("Practice test auto-submitted successfully!");
-        } catch (error) {
-          console.error("Auto submit failed:", error);
+      } catch {
+          console.error("Auto submit failed:");
           toast.error("Auto-submit failed");
         }
       } else {
