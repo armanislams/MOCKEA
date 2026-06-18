@@ -13,7 +13,6 @@ import {
     PiHeadphonesFill,
     PiArrowRightBold,
     PiArrowLeftBold,
-    PiArrowClockwiseBold,
     PiInfoFill,
     PiChartLineUpFill
 } from "react-icons/pi";
@@ -73,7 +72,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     [preloadedSet, listeningSets, selectedSetId],
   );
 
-  const { timeLeft, setTimeLeft, fmtTime: fmtCountdown } = useCountdown(1800, !!activeSet, submitted);
+    const { timeLeft, setTimeLeft, fmtTime: fmtCountdown, resetCountdown } = useCountdown(0, !!activeSet && duration > 0, submitted);
 
   /* --- Fetch Data --- */
   useEffect(() => {
@@ -124,7 +123,19 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
       cancelAnimationFrame(rafRef.current);
       sound.unload();
     };
-  }, [activeSet?.audioUrl, volume]);
+    }, [activeSet?.audioUrl]);
+
+    useEffect(() => {
+        if (duration > 0 && !submitted) {
+            resetCountdown(Math.ceil(duration));
+        }
+    }, [duration, submitted, resetCountdown]);
+
+    useEffect(() => {
+        if (howlRef.current) {
+            howlRef.current.volume(isMuted ? 0 : volume);
+        }
+    }, [volume, isMuted]);
 
   const tick = useCallback(function tickFn() {
     if (howlRef.current?.playing()) {
@@ -160,7 +171,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     await evaluate(activeSet, answers, onSubmitGuest);
   };
 
-  const handleExitTest = async () => {
+    const handleExitTest = async () => {
     if (submitted) {
       exitFullscreen();
       setIsStarted(false);
@@ -232,6 +243,12 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
       }
     }
   };
+
+    const handleReturnToDashboard = () => {
+        exitFullscreen();
+        setIsStarted(false);
+        navigate("/dashboard");
+    };
 
   if (loading) return <Loader />;
 
@@ -462,7 +479,6 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                         const v = parseFloat(e.target.value);
                                         setVolume(v);
                                         setIsMuted(v === 0);
-                                        if (howlRef.current) howlRef.current.volume(v);
                                     }}
                                     className="w-28 accent-primary cursor-pointer"
                                 />
@@ -513,11 +529,11 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                 </p>
                             </div>
                         </div>
-                        <button 
-                            onClick={() => { setSubmitted(false); setAnswers({}); setResult(null); }}
-                            className="btn bg-white text-primary border-none rounded-2xl px-12 h-14 font-black shadow-xl"
+                        <button
+                            onClick={handleReturnToDashboard}
+                            className="btn bg-white text-primary border-none rounded-2xl px-8 h-14 font-black shadow-xl"
                         >
-                            <PiArrowClockwiseBold /> Retake Practice
+                            Return to Dashboard
                         </button>
                     </motion.div>
                 )}
