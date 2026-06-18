@@ -25,6 +25,7 @@ const app = express();
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  process.env.CLIENT_URL2,
   process.env.DEV_URL,
 ].filter(Boolean); // Filter out undefined values to prevent CORS bypass
 
