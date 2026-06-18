@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { 
     PiBookOpen, 
@@ -9,7 +9,8 @@ import {
     PiCheckCircle,
     PiInfo,
     PiSquaresFour,
-    PiList
+    PiList,
+    PiFunnel
 } from "react-icons/pi";
 import { Link, useNavigate } from "react-router";
 import useAdminQuery from "../../../hooks/useAdminQuery";
@@ -25,12 +26,23 @@ const ManageQuestions = () => {
     const navigate = useNavigate();
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
+    const [filterType, setFilterType] = useState("all");
 
     const { data: questions = [], isLoading, isError, refetch } = useAdminQuery(
         ["admin-questions"],
         "/questions",
         "questions"
     );
+
+    const uniqueTypes = useMemo(() => {
+        const types = [...new Set(questions.map((q) => q.testType).filter(Boolean))];
+        return ["all", ...types];
+    }, [questions]);
+
+    const filteredQuestions = useMemo(() => {
+        if (filterType === "all") return questions;
+        return questions.filter((q) => q.testType === filterType);
+    }, [questions, filterType]);
 
     const deleteMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/questions/${id}`),
@@ -74,6 +86,20 @@ const ManageQuestions = () => {
                 subtitle="Manage all IELTS questions across different sections."
                 action={
                     <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <select
+                                value={filterType}
+                                onChange={(e) => setFilterType(e.target.value)}
+                                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-xs font-bold capitalize text-slate-700 cursor-pointer hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm"
+                            >
+                                {uniqueTypes.map((type) => (
+                                    <option key={type} value={type}>
+                                        {type === "all" ? "All Types" : type}
+                                    </option>
+                                ))}
+                            </select>
+                            <PiFunnel className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                        </div>
                         <div className="join bg-base-100 border border-base-300 rounded-2xl p-0.5 shadow-sm">
                             <button 
                                 onClick={() => setViewMode("grid")}
@@ -100,7 +126,7 @@ const ManageQuestions = () => {
                 isError={isError}
                 errorText="Failed to load questions"
                 onRetry={refetch}
-                empty={questions.length === 0}
+                empty={filteredQuestions.length === 0}
                 emptyTitle="No Question Sets Found"
                 emptyText="There are no question sets in the bank at this time."
                 transparent={viewMode === "grid"}
@@ -122,7 +148,7 @@ const ManageQuestions = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-base-100">
-                                {questions.map((q) => (
+                                {filteredQuestions.map((q) => (
                                     <tr key={q._id} className="hover:bg-slate-50/80 transition-colors group">
                                         <td className="py-4 pl-6 font-bold text-slate-800">
                                             <div className="flex items-center gap-3">
@@ -182,16 +208,16 @@ const ManageQuestions = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {questions.map((q) => (
+                        {filteredQuestions.map((q) => (
                             <div key={q._id} className="card bg-white border border-base-300 shadow-sm p-6 hover:shadow-md transition-shadow group relative">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="p-3 rounded-2xl bg-base-100 text-2xl">
                                             {getIcon(q.testType)}
                                         </div>
-                                        <div>
+                                        <div className="min-w-0">
                                             <h3 
-                                                className="font-bold line-clamp-1"
+                                                className="font-bold text-sm leading-snug line-clamp-2"
                                                 onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
                                             >
                                                 {q.title}
@@ -206,7 +232,7 @@ const ManageQuestions = () => {
                                     />
                                 </div>
                                 
-                                <div className="mt-6 flex items-center justify-between border-t border-base-200 pt-4">
+                                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-base-200 pt-4">
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-1.5">
                                             <span className="badge badge-outline badge-xs px-2 font-semibold">{q.questions?.length || 0} Qs</span>
@@ -216,9 +242,9 @@ const ManageQuestions = () => {
                                     </div>
                                     <button 
                                         onClick={() => setSelectedQuestion(q)}
-                                        className="btn btn-primary btn-sm rounded-xl gap-1.5 font-bold shadow-sm hover:shadow transition-all"
+                                        className="btn btn-primary btn-sm rounded-xl gap-1 font-bold shadow-sm hover:shadow transition-all text-xs px-3"
                                     >
-                                        <PiSquaresFour className="text-sm" /> See Questions
+                                        <PiSquaresFour className="text-sm" /> See Qs
                                     </button>
                                 </div>
                             </div>

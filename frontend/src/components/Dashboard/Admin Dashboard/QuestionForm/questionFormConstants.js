@@ -72,16 +72,21 @@ export const LISTENING_PARTS = [
 ];
 
 // ─── Default question factory ─────────────────────────────────────────────────
-export const makeQuestion = () => ({
-    id: Date.now().toString() + Math.random().toString(36).slice(2),
-    type: "short-answer",
-    question: "",
-    correctAnswer: "",
-    options: ["", ""],
-    matchingPairs: [{ key: "", value: "" }],
-    imageUrl: "",
-    passageIndex: 0,
-});
+let _qCounter = 0;
+export const makeQuestion = (testType = "listening") => {
+    _qCounter++;
+    const prefix = testType === "listening" ? "l" : testType === "reading" ? "r" : "q";
+    return {
+        id: `${prefix}${_qCounter}`,
+        type: "short-answer",
+        question: "",
+        correctAnswer: "",
+        options: ["", ""],
+        matchingPairs: [{ key: "", value: "" }],
+        imageUrl: "",
+        passageIndex: 0,
+    };
+};
 
 // ─── Initial form state ───────────────────────────────────────────────────────
 export const initialForm = () => ({
@@ -105,5 +110,5 @@ export const initialForm = () => ({
     forPlanType: "free",
     isPublic: false,
     isMockOnly: false,
-    questions: [makeQuestion()],
+    questions: [makeQuestion("listening")],
 });

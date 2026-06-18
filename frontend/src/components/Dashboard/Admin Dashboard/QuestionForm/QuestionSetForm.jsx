@@ -230,6 +230,13 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
                     />
                 )}
 
+                {/* Listening Guide — shown above Content Editor */}
+                {testType === "listening" && isIeltsListening && (
+                    <ListeningInlineGuide 
+                        listeningPart={formData.listeningPart} 
+                    />
+                )}
+
                 {/* Content Editor Card */}
                 <ContentEditorCard 
                     testType={testType} 
@@ -237,13 +244,6 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
                     formData={formData} 
                     patch={patch} 
                 />
-
-                {/* Listening Guide for Part 3 & 4 */}
-                {testType === "listening" && isIeltsListening && (
-                    <ListeningInlineGuide 
-                        listeningPart={formData.listeningPart} 
-                    />
-                )}
 
                 {/* Sub-Questions list builder */}
                 <QuestionsBuilderCard 

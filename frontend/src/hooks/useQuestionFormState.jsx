@@ -6,6 +6,9 @@ import { stripListeningExampleBlocks } from "../utils/listeningPassage";
 export function parseQuestionToState(fetchedQuestion) {
     if (!fetchedQuestion) return null;
     
+    const testType = fetchedQuestion.testType || "listening";
+    const idPrefix = testType === "listening" ? "l" : testType === "reading" ? "r" : "q";
+    
     let task1Prompt = "";
     let task1Image = "";
     let task2Prompt = "";
@@ -82,8 +85,8 @@ export function parseQuestionToState(fetchedQuestion) {
         forPlanType: fetchedQuestion.forPlanType || "free",
         isPublic: fetchedQuestion.isPublic || false,
         isMockOnly: fetchedQuestion.isMockOnly || false,
-        questions: fetchedQuestion.questions?.length ? fetchedQuestion.questions.map(q => ({
-            id: q.id || (Date.now().toString() + Math.random().toString(36).slice(2)),
+        questions: fetchedQuestion.questions?.length ? fetchedQuestion.questions.map((q, idx) => ({
+            id: q.id || `${idPrefix}${idx + 1}`,
             type: q.type || "short-answer",
             question: q.question || "",
             correctAnswer: q.correctAnswer || "",
@@ -114,7 +117,7 @@ export function useQuestionFormState(initialData = initialForm()) {
     const handleAddQuestion = useCallback(() => {
         setFormData((prev) => ({
             ...prev,
-            questions: [...prev.questions, makeQuestion()],
+            questions: [...prev.questions, makeQuestion(prev.testType || "listening")],
         }));
     }, []);
 

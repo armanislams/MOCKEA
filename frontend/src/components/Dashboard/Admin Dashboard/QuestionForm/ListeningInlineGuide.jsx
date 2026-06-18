@@ -1,8 +1,6 @@
 import { PiBookOpen } from "react-icons/pi";
 
 export default function ListeningInlineGuide({ listeningPart }) {
-    if (listeningPart !== 3 && listeningPart !== 4) return null;
-
     return (
         <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl space-y-4 shadow-sm animate-fadeSlideDown">
             <div className="flex items-center gap-3">
@@ -61,16 +59,36 @@ export default function ListeningInlineGuide({ listeningPart }) {
                 </div>
             </div>
 
-            <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-[11px] space-y-2 overflow-x-auto border border-slate-800">
-                <div className="text-slate-400 border-b border-slate-800 pb-1.5 font-sans font-bold flex justify-between items-center">
-                    <span>💡 Quick Copy Markdown Table Template</span>
-                    <span className="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded font-mono font-normal">No coding needed!</span>
+            <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-[11px] space-y-2 overflow-x-auto border border-slate-800">
+                    <div className="text-slate-400 border-b border-slate-800 pb-1.5 font-sans font-bold flex justify-between items-center">
+                        <span>IELTS Table Completion Template</span>
+                        <span className="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded font-mono font-normal">Best for Parts 1 &amp; 4</span>
+                    </div>
+                    <div className="whitespace-pre">
+{`| GROUP TOUR | DETAILS |
+|---|---|
+| Beachcombers and Rock - ___l12___ | exploring rock pools away from the |
+| | ___l13___ |
+| Guided Forest walk | to catch lunch |
+| Beach Expedition | departs at ___l14___ |
+| Moonlight Forest Walk | departs at sundown |
+| the ___l15___ | |`}
+                    </div>
                 </div>
-                <div className="whitespace-pre">
-{`| Column Header 1 | Column Header 2 | Column Header 3 |
-|---|---|---|
-| Present | Avoid pain | ___31___ |
-| Future | Plan future | ___32___ |`}
+
+                <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-[11px] space-y-2 overflow-x-auto border border-slate-800">
+                    <div className="text-slate-400 border-b border-slate-800 pb-1.5 font-sans font-bold flex justify-between items-center">
+                        <span>Inline Passage Template</span>
+                        <span className="text-[10px] text-amber-400 bg-amber-950 px-1.5 py-0.5 rounded font-mono font-normal">Best for Parts 2 &amp; 3</span>
+                    </div>
+                    <div className="whitespace-pre">
+{`The speaker explains that ___31___ is the
+main advantage. Participants should arrive
+at the ___32___ entrance by 9:30am. The
+session includes a tour of the ___33___
+and ends with lunch at the ___34___.`}
+                    </div>
                 </div>
             </div>
         </div>

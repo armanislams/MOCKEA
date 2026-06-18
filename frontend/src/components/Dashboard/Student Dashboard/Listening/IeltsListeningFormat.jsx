@@ -145,22 +145,18 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             
             const isMockTest = submitted === undefined;
             
-            let inputClass = "inline-block px-3 py-1 text-sm font-bold bg-white border-2 rounded-lg outline-none transition-all text-center focus:ring-2 focus:ring-primary/20 w-36";
-            if (isMockTest) {
-                inputClass = "inline-block h-10 px-3 py-1 rounded-xl w-36 font-bold border border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm text-center outline-none bg-white transition-all";
-            } else if (submitted) {
+            let inputClass = "inline-flex items-baseline gap-0.5 text-sm font-bold bg-transparent outline-none transition-all";
+            if (submitted) {
                 inputClass += isCorrect
-                    ? " border-emerald-400 bg-emerald-50 text-emerald-700"
-                    : " border-red-400 bg-red-50 text-red-700";
-            } else {
-                inputClass += " border-slate-300 focus:border-primary hover:border-slate-400";
+                    ? " text-emerald-700"
+                    : " text-red-700";
             }
 
             let badgeHtml = "";
             if (!isMockTest && submitted) {
                 badgeHtml = isCorrect
-                    ? `<span class="badge badge-success text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 inline-flex items-center justify-center ml-1">✓</span>`
-                    : `<span class="badge badge-error text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 inline-flex items-center justify-center ml-1">✗</span>`;
+                    ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✓</span>`
+                    : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>`;
             }
 
             let tooltipHtml = "";
@@ -171,14 +167,15 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             const titleAttr = (!isMockTest && submitted && !isCorrect) ? `Correct Answer: ${q.correctAnswer}` : "";
 
             return `
-                <span class="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
+                <span class="inline-flex items-baseline mx-0.5 relative group align-baseline">
+                    <span class="text-red-600 font-black mr-0.5 flex-shrink-0">(${labelNum})</span>
                     <input
                         type="text"
                         data-q-id="${qId}"
                         ${(!isMockTest && submitted) ? "disabled" : ""}
-                        placeholder="(${labelNum})"
+                        placeholder="________"
                         value=""
-                        class="${inputClass}"
+                        class="${inputClass} w-28 border-b-2 border-dashed border-slate-400 focus:border-primary pb-0.5 text-center placeholder:text-slate-400 placeholder:font-normal placeholder:text-sm ${submitted ? (isCorrect ? "border-emerald-400" : "border-red-400") : ""}"
                         title="${titleAttr}"
                     />
                     ${badgeHtml}
@@ -232,6 +229,126 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             className={className}
             dangerouslySetInnerHTML={dangerouslySetHtml}
         />
+    );
+});
+
+/**
+ * TableCompletionRenderer — renders a markdown table with inline input boxes
+ * matching the classic IELTS table-completion format (dark headers, dotted-underline inputs).
+ */
+const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset }) => {
+    const containerRef = useRef(null);
+
+    const parsedTable = useMemo(() => {
+        const lines = passage.split("\n").map(l => l.trim()).filter(Boolean);
+        const tableLines = lines.filter(l => l.startsWith("|") && l.endsWith("|"));
+        if (tableLines.length < 2) return null;
+
+        const rows = [];
+        let isHeader = true;
+        for (const line of tableLines) {
+            const cells = line.split("|").slice(1, -1).map(c => c.trim());
+            if (cells.every(c => /^:?-+:?$/.test(c))) {
+                isHeader = false;
+                continue;
+            }
+            rows.push({ cells, isHeader });
+        }
+
+        return rows;
+    }, [passage]);
+
+    const processedRows = useMemo(() => {
+        if (!parsedTable) return [];
+        return parsedTable.map(row => ({
+            ...row,
+            cells: row.cells.map(cellText => {
+                const match = cellText.match(/___([\w-]+)___/);
+                if (!match) return { text: cellText, isGap: false };
+
+                const matchKey = match[1];
+                const q = questions.find((item, idx) => {
+                    const questionNum = offset + idx + 1;
+                    const localIndex = idx + 1;
+                    return item.id === matchKey || questionNum.toString() === matchKey || localIndex.toString() === matchKey;
+                });
+                if (!q) return { text: cellText, isGap: false };
+
+                const labelNum = offset + questions.indexOf(q) + 1;
+                return { text: cellText, isGap: true, q, labelNum };
+            })
+        }));
+    }, [parsedTable, questions, offset]);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const inputs = containerRef.current.querySelectorAll('input[data-q-id]');
+        inputs.forEach(input => {
+            const qId = input.getAttribute('data-q-id');
+            const value = answers[qId] || "";
+            if (input.value !== value) input.value = value;
+        });
+    }, [answers, processedRows]);
+
+    const onAnswerChangeRef = useRef(onAnswerChange);
+    useEffect(() => { onAnswerChangeRef.current = onAnswerChange; }, [onAnswerChange]);
+
+    useEffect(() => {
+        const handleInput = (e) => {
+            if (e.target?.hasAttribute('data-q-id')) {
+                onAnswerChangeRef.current(e.target.getAttribute('data-q-id'), e.target.value);
+            }
+        };
+        const el = containerRef.current;
+        if (el) el.addEventListener('input', handleInput);
+        return () => { if (el) el.removeEventListener('input', handleInput); };
+    }, []);
+
+    if (!processedRows.length) return null;
+
+    return (
+        <div ref={containerRef} className="overflow-x-auto my-6">
+            <table className="w-full border-collapse text-sm">
+                <thead>
+                    <tr>
+                        {processedRows[0]?.cells.map((cell, ci) => (
+                            <th key={ci} className="bg-slate-900 text-white font-black text-xs uppercase tracking-widest px-5 py-3.5 text-left border border-slate-700">
+                                {cell.text}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {processedRows.slice(1).map((row, ri) => (
+                        <tr key={ri} className={ri % 2 === 1 ? "bg-slate-50/50" : "bg-white"}>
+                            {row.cells.map((cell, ci) => (
+                                <td key={ci} className="px-5 py-3 border border-slate-200 text-slate-700 leading-relaxed">
+                                    {cell.isGap ? (
+                                        <span className="inline-flex items-baseline group relative">
+                                            <span className="text-red-600 font-black mr-0.5 flex-shrink-0">({cell.labelNum})</span>
+                                            <input
+                                                type="text"
+                                                data-q-id={cell.q.id}
+                                                disabled={submitted}
+                                                placeholder="________"
+                                                className="inline-flex w-28 bg-transparent border-b-2 border-dashed border-slate-400 focus:border-primary outline-none text-sm font-bold text-center pb-0.5 placeholder:text-slate-400 placeholder:font-normal placeholder:text-sm transition-colors"
+                                            />
+                                            {submitted && (
+                                                result?.evaluatedAnswers?.find(a => a.questionId === cell.q.id)?.isCorrect
+                                                    ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✓</span>
+                                                    : <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>
+                                            )}
+                                        </span>
+                                    ) : (
+                                        <span dangerouslySetInnerHTML={{ __html: cell.text || "&nbsp;" }} />
+                                    )}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 });
 
@@ -560,20 +677,35 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                     {activeSet.instructions || meta.instruction}
                 </div>
 
-                {/* ── Example box (compiled from passage HTML) ────────── */}
-                {activeSet.passage && activeSet.passage.trim() !== "" && (
-                    <div className="prose prose-sm max-w-none">
-                        <InlinePassage
-                            passage={activeSet.passage}
-                            questions={activeSet.questions || EMPTY_ARRAY}
-                            answers={answers}
-                            onAnswerChange={onAnswerChange}
-                            submitted={submitted}
-                            result={result}
-                            offset={offset}
-                        />
-                    </div>
-                )}
+                {/* ── Passage (auto-detect table vs inline) ────────── */}
+                {activeSet.passage && activeSet.passage.trim() !== "" && (() => {
+                    const hasTableCompletion = /___([\w-]+)___/.test(activeSet.passage) && /^\|.+\|$/m.test(activeSet.passage);
+                    return (
+                        <div className="prose prose-sm max-w-none">
+                            {hasTableCompletion ? (
+                                <TableCompletionRenderer
+                                    passage={activeSet.passage}
+                                    questions={activeSet.questions || EMPTY_ARRAY}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    submitted={submitted}
+                                    result={result}
+                                    offset={offset}
+                                />
+                            ) : (
+                                <InlinePassage
+                                    passage={activeSet.passage}
+                                    questions={activeSet.questions || EMPTY_ARRAY}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    submitted={submitted}
+                                    result={result}
+                                    offset={offset}
+                                />
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {/* ── Questions ───────────────────────────────────────── */}
                 {remainingQuestions.length > 0 && (

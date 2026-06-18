@@ -2,7 +2,7 @@ import {
     PiPlus, 
     PiTrash, 
     PiBookOpen, 
-    PiPencilLine 
+    PiPencilLine
 } from "react-icons/pi";
 
 export default function ContentEditorCard({ testType, isIeltsListening, formData, patch }) {
@@ -253,6 +253,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     )}
                                 </label>
                                 <textarea
+                                    id="listening-passage-textarea"
                                     className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px] font-mono text-slate-800 leading-relaxed"
                                     placeholder={
                                         formData.listeningPart === 3
@@ -264,8 +265,50 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     value={formData.passage}
                                     onChange={(e) => patch({ passage: e.target.value })}
                                 />
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Insert gap:</span>
+                                    {(formData.questions || []).map((q, idx) => {
+                                        const num = idx + 1;
+                                        const id = q.id || `l${num}`;
+                                        const alreadyInserted = (formData.passage || "").includes(`___${id}___`);
+                                        return (
+                                            <button
+                                                key={q.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    const ta = document.getElementById("listening-passage-textarea");
+                                                    const placeholder = `___${id}___`;
+                                                    if (ta) {
+                                                        const start = ta.selectionStart;
+                                                        const end = ta.selectionEnd;
+                                                        const text = formData.passage || "";
+                                                        const newText = text.substring(0, start) + placeholder + text.substring(end);
+                                                        patch({ passage: newText });
+                                                        setTimeout(() => {
+                                                            ta.focus();
+                                                            ta.selectionStart = ta.selectionEnd = start + placeholder.length;
+                                                        }, 0);
+                                                    } else {
+                                                        patch({ passage: (formData.passage || "") + `___${id}___` });
+                                                    }
+                                                }}
+                                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                    alreadyInserted
+                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
+                                                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
+                                                }`}
+                                                title={alreadyInserted ? `${id} already in passage` : `Insert ___${id}___ at cursor`}
+                                            >
+                                                Q{num}
+                                            </button>
+                                        );
+                                    })}
+                                    {(!formData.questions || formData.questions.length === 0) && (
+                                        <span className="text-[10px] text-slate-400 italic">Add questions below first, then click to insert gaps</span>
+                                    )}
+                                </div>
                                 <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1">
-                                    <span>💡 Use <code>___21___</code>, <code>___22___</code> etc. to mark answer gaps.</span>
+                                    <span>💡 Click a <strong>QN</strong> button to insert a gap at your cursor position, then <strong>keep typing</strong> to add text after it.</span>
                                     <span>📊 To create a table, use vertical bars (<code>|</code>) at the start and end of rows.</span>
                                 </p>
                             </div>

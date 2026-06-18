@@ -1,5 +1,4 @@
-import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { FiX } from "react-icons/fi";
 
 export default function AdminModal({
@@ -52,7 +51,7 @@ export default function AdminModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
             <div className="absolute inset-0" onClick={onClose} />
             <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full ${maxWidth} my-8 relative flex flex-col max-h-[90vh]`}>
                 <div className="flex justify-between items-center p-6 border-b border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-3xl sticky top-0 z-10">
