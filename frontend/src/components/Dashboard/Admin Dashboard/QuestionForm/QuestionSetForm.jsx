@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { PiCheckCircle, PiArrowLeft } from "react-icons/pi";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils";
+import { stripListeningExampleBlocks } from "../../../../utils/listeningPassage";
 
 import { initialForm } from "./questionFormConstants";
 import { useQuestionFormState, parseQuestionToState } from "../../../../hooks/useQuestionFormState";
@@ -145,6 +146,7 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
             (formData.examType === "IELTS" || formData.examType === "BOTH")
         ) {
             if (formData.listeningPart === 1) {
+                const cleanNotes = stripListeningExampleBlocks(formData.passage);
                 // Compile example row + gapped notes into passage HTML
                 const exampleHTML = `
 <div class="mb-6 p-5 bg-indigo-50/50 border border-indigo-100 rounded-3xl">
@@ -154,12 +156,13 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
     <span class="px-3 py-1 bg-white border border-slate-200 rounded-xl font-bold text-slate-800">${formData.exampleAnswer || "Harbour City"}</span>
   </div>
 </div>`.trim();
-                data.passage = formData.passage.trim()
-                    ? `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">${formData.passage}</div>`
+                data.passage = cleanNotes
+                    ? `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">${cleanNotes}</div>`
                     : exampleHTML;
             } else {
-                data.passage = formData.passage.trim()
-                    ? `<div class="ielts-listening-notes space-y-4">${formData.passage}</div>`
+                const cleanNotes = stripListeningExampleBlocks(formData.passage);
+                data.passage = cleanNotes
+                    ? `<div class="ielts-listening-notes space-y-4">${cleanNotes}</div>`
                     : "";
             }
             // Clear reading-specific passages — they have a required title field in the schema

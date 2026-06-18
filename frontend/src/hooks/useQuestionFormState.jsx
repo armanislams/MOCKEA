@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { makeQuestion, initialForm } from "../components/Dashboard/Admin Dashboard/QuestionForm/questionFormConstants";
+import { stripListeningExampleBlocks } from "../utils/listeningPassage";
 
 // Parser logic to reverse-engineer database HTML wrappers back into editable form state
 export function parseQuestionToState(fetchedQuestion) {
@@ -31,8 +32,8 @@ export function parseQuestionToState(fetchedQuestion) {
         exampleQuestion = eqMatch ? eqMatch[1].trim() : "Destination:";
         exampleAnswer = eqMatch ? eqMatch[2].trim() : "Harbour City";
 
-        // Strip the example wrapper if present
-        tempPassage = tempPassage.replace(/<div class=["']mb-6[\s\S]*?<\/div>\s*<\/div>/, "").trim();
+        // Strip any saved example blocks before restoring the editable notes content
+        tempPassage = stripListeningExampleBlocks(tempPassage);
 
         // Strip the ielts-listening-notes div wrapper if present
         tempPassage = tempPassage.replace(/<div class=["']ielts-listening-notes[^"']*["'][^>]*>/, "");

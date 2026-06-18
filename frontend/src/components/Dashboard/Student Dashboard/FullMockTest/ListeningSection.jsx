@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useEffect, memo } from "react";
 import { PiEar, PiPlayCircle, PiPauseCircle, PiClock } from "react-icons/pi";
+import { collapseListeningExampleBlocks } from "../../../../utils/listeningPassage";
 
 const EMPTY_ARRAY = [];
 
@@ -90,7 +91,7 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
     const resultKey = useMemo(() => result ? JSON.stringify(result.evaluatedAnswers?.map(a => `${a.questionId}:${a.isCorrect}`)) : "", [result]);
 
     const processedPassage = useMemo(() => {
-        const text = convertMarkdownTablesToHtml(passage);
+        const text = convertMarkdownTablesToHtml(collapseListeningExampleBlocks(passage));
         const hasInlinePlaceholders = /___([\w-]+)___/.test(text);
         if (!hasInlinePlaceholders) {
             return text;

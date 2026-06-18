@@ -1,5 +1,6 @@
 import { useMemo, useRef, useEffect, memo } from "react";
 import { motion } from "framer-motion";
+import { collapseListeningExampleBlocks } from "../../../../utils/listeningPassage";
 
 const EMPTY_ARRAY = [];
 import {
@@ -121,7 +122,7 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
     const resultKey = useMemo(() => result ? JSON.stringify(result.evaluatedAnswers?.map(a => `${a.questionId}:${a.isCorrect}`)) : "", [result]);
 
     const processedPassage = useMemo(() => {
-        const text = convertMarkdownTablesToHtml(passage);
+        const text = convertMarkdownTablesToHtml(collapseListeningExampleBlocks(passage));
         const hasInlinePlaceholders = /___([\w-]+)___/.test(text);
         if (!hasInlinePlaceholders) {
             return text;
