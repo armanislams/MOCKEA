@@ -688,28 +688,28 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 </div>
 
                 {/* Info Card */}
-                <div className="card bg-slate-900 p-8 rounded-[3rem] text-white overflow-hidden relative">
-                    <div className="absolute -bottom-10 -right-10 text-white/5 text-9xl">
+                <div className="card bg-white p-8 rounded-[3rem] text-slate-800 border border-slate-200 shadow-sm overflow-hidden relative">
+                    <div className="absolute -bottom-10 -right-10 text-slate-200 text-9xl">
                         <PiInfoFill />
                     </div>
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+                            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
                                 <PiChartLineUpFill />
                             </div>
-                            <h3 className="font-black tracking-tight leading-tight">Practice Intensity</h3>
+                            <h3 className="font-black tracking-tight leading-tight text-red-600">Practice Intensity</h3>
                         </div>
                         <ul className="space-y-4">
-                            <li className="flex items-start gap-3 text-xs font-bold text-white/60">
-                                <span className="w-1 h-1 rounded-full bg-primary mt-1.5" />
+                            <li className="flex items-start gap-3 text-xs font-bold text-red-500">
+                                <span className="w-1 h-1 rounded-full bg-red-500 mt-1.5 shrink-0" />
                                 Audio is played only once in real exam.
                             </li>
-                            <li className="flex items-start gap-3 text-xs font-bold text-white/60">
-                                <span className="w-1 h-1 rounded-full bg-primary mt-1.5" />
+                            <li className="flex items-start gap-3 text-xs font-bold text-red-500">
+                                <span className="w-1 h-1 rounded-full bg-red-500 mt-1.5 shrink-0" />
                                 Spelling accuracy is mission critical.
                             </li>
-                            <li className="flex items-start gap-3 text-xs font-bold text-white/60">
-                                <span className="w-1 h-1 rounded-full bg-primary mt-1.5" />
+                            <li className="flex items-start gap-3 text-xs font-bold text-red-500">
+                                <span className="w-1 h-1 rounded-full bg-red-500 mt-1.5 shrink-0" />
                                 Follow word count limits strictly.
                             </li>
                         </ul>
