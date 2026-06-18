@@ -96,7 +96,7 @@ const FullMockTestLibrary = () => {
 
                         <div className="pt-4">
                             <a 
-                                href="/dashboard/pricing"
+                                href="/pricing"
                                 className="btn btn-primary btn-lg rounded-[2rem] px-10 font-black uppercase tracking-widest text-xs h-16 shadow-xl shadow-primary/30 hover:scale-105 transition-transform"
                             >
                                 Upgrade Plan
@@ -137,17 +137,17 @@ const FullMockTestLibrary = () => {
             {/* --- IMMERSIVE HEADER --- */}
             <motion.section 
                 variants={item}
-                className="relative overflow-hidden rounded-[3.5rem] bg-linear-to-br from-slate-900 via-slate-800 to-indigo-950 p-12 lg:p-20 text-white shadow-2xl"
+                className="relative overflow-hidden rounded-[3.5rem] bg-linear-to-br from-primary to-indigo-700 p-12 lg:p-20 text-white shadow-2xl shadow-primary/30"
             >
                 <div className="relative z-10 space-y-6">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary border border-primary/20 backdrop-blur-md">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-white border border-white/20 backdrop-blur-md">
                         <PiSealCheckFill /> Standardized Testing
                     </div>
                     <div className="max-w-3xl">
                         <h1 className="text-4xl lg:text-7xl font-black tracking-tighter leading-[0.9]">
-                            Full Mock Test <span className="text-primary">Library</span>
+                            Full Mock Test <span className="text-yellow-300">Library</span>
                         </h1>
-                        <p className="mt-6 text-lg lg:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl">
+                        <p className="mt-6 text-lg lg:text-xl text-white/80 font-medium leading-relaxed max-w-2xl">
                             Simulate the actual IELTS environment. Four complete sections designed to test your endurance and precision.
                         </p>
                     </div>
@@ -182,8 +182,8 @@ const FullMockTestLibrary = () => {
                     ))}
                 </div>
 
-                <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-                <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
+                <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+                <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-primary-focus/20 blur-3xl" />
             </motion.section>
 
             {/* --- STANDARD TIER INFO BANNER --- */}

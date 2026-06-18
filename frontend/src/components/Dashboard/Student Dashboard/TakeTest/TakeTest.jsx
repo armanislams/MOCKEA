@@ -145,7 +145,7 @@ const TakeTest = () => {
     };
 
     const examBadgeStyle = {
-        IELTS: "bg-primary/20 text-primary border-primary/30",
+        IELTS: "bg-white/20 text-white border-white/30",
         PTE: "bg-emerald-500/20 text-emerald-400 border-emerald-400/30",
         BOTH: "bg-amber-500/20 text-amber-400 border-amber-400/30",
     };
@@ -166,11 +166,11 @@ const TakeTest = () => {
             {/* --- IMMERSIVE HEADER --- */}
             <motion.section 
                 variants={item}
-                className="relative overflow-hidden rounded-[3rem] bg-linear-to-br from-indigo-900 via-slate-900 to-black p-12 lg:p-20 text-white shadow-2xl"
+                className="relative overflow-hidden rounded-[3rem] bg-linear-to-br from-primary to-indigo-700 p-12 lg:p-20 text-white shadow-2xl shadow-primary/30"
             >
                 <div className="relative z-10 space-y-6">
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary border border-primary/20 backdrop-blur-md">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-white border border-white/20 backdrop-blur-md">
                             <PiSparkleFill className="text-yellow-400" /> Mastery Pathways
                         </div>
                         {/* Exam track badge */}
@@ -181,9 +181,9 @@ const TakeTest = () => {
                     <div className="max-w-3xl">
                         <h1 className="text-4xl lg:text-7xl font-black tracking-tighter leading-[0.9]">
                             Select Your <br />
-                            <span className="text-primary italic">Practice Test</span>
+                            <span className="text-yellow-300 italic">Practice Test</span>
                         </h1>
-                        <p className="mt-8 text-lg lg:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl">
+                        <p className="mt-8 text-lg lg:text-xl text-white/80 font-medium leading-relaxed max-w-2xl">
                             {targetExam === "PTE"
                                 ? "Target specific PTE Academic skills with our optimized training modules. Each test simulates actual PTE exam tasks for maximum score improvement."
                                 : "Target specific IELTS skills with our optimized training modules. Each test is designed to simulate actual exam pressure while providing a focused learning environment."
@@ -192,8 +192,8 @@ const TakeTest = () => {
                     </div>
                 </div>
 
-                <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-                <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
+                <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+                <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-primary-focus/20 blur-3xl" />
             </motion.section>
 
             {/* --- SECTION GRID --- */}

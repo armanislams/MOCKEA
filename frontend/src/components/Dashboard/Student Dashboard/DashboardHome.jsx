@@ -164,7 +164,7 @@ const DashboardHome = () => {
                 <PiLightningFill className="text-yellow-400" /> Daily Mission Active
             </div>
             <h1 className="text-4xl lg:text-6xl font-black tracking-tight leading-tight">
-              Ready to crush it, <span className="text-yellow-300">{name}</span>?
+              Ready to crush it, <span className="text-red-400">{name}</span>?
             </h1>
             <p className="text-lg lg:text-xl text-white/80 font-medium max-w-xl leading-relaxed">
               Your personalized IELTS path is ready. We've analyzed your past attempts and optimized today's focus areas.

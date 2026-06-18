@@ -392,8 +392,16 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 </div>
                 <div className="h-10 w-px bg-slate-200" />
                 {submitted ? (
-                  <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
-                    <PiCheckCircleFill className="text-xl" /> Session Finalized
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
+                      <PiCheckCircleFill className="text-xl" /> Session Finalized
+                    </div>
+                    <button
+                      onClick={handleReturnToDashboard}
+                      className="btn btn-primary btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest"
+                    >
+                      Return to Dashboard
+                    </button>
                   </div>
                 ) : (
                   <button
@@ -533,7 +541,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             onClick={handleReturnToDashboard}
                             className="btn bg-white text-primary border-none rounded-2xl px-8 h-14 font-black shadow-xl"
                         >
-                            Return to Dashboard
+                            Retake Test
                         </button>
                     </motion.div>
                 )}

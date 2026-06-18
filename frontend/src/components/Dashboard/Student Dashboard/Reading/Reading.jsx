@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import useAnswers from "../../../../hooks/useAnswers";
 import useCountdown from "../../../../hooks/useCountdown";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
@@ -7,7 +7,6 @@ import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
-import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion } from "framer-motion";
 import { 
@@ -17,15 +16,16 @@ import {
     PiArrowRightBold,
     PiClockFill,
     PiChartLineUpFill,
-    PiArrowLeftBold,
-    PiNotePencil
+    PiArrowLeftBold
 } from "react-icons/pi";
+import { useNavigate } from "react-router";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import TestShell from "../../../Common/TestShell.jsx";
 import useEvaluate from "../../../../hooks/useEvaluate";
 
 const Reading = () => {
   const axiosSecure = useAxiosSecure();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { userData } = useUserProfile();
   const targetExam = userData?.targetExam || "IELTS";
@@ -36,10 +36,6 @@ const Reading = () => {
   const [loading, setLoading] = useState(true);
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
   const [activePassageTab, setActivePassageTab] = useState(0);
-
-  useEffect(() => {
-    setActivePassageTab(0);
-  }, [selectedSetId]);
 
   const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
   const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
@@ -106,22 +102,14 @@ const Reading = () => {
     span.setAttribute("data-note", "");
 
     // Set inline styles to completely bypass Tailwind/prose specificity overrides!
-    if (colorClass.includes("bg-yellow-200")) {
-      span.style.backgroundColor = "#fef08a"; // Yellow 200
-    } else if (colorClass.includes("bg-emerald-200")) {
+    if (colorClass.includes("bg-emerald-200")) {
       span.style.backgroundColor = "#a7f3d0"; // Emerald 200
     } else if (colorClass.includes("bg-sky-200")) {
       span.style.backgroundColor = "#bae6fd"; // Sky 200
-    } else if (colorClass.includes("bg-pink-200")) {
-      span.style.backgroundColor = "#fbcfe8"; // Pink 200
-    } else if (colorClass.includes("border-yellow-400")) {
-      span.style.backgroundColor = "rgba(254, 240, 138, 0.5)"; // Yellow 100/50
-      span.style.borderBottom = "2px solid #eab308"; // Yellow 500 border
     }
 
     span.onclick = (e) => {
       e.stopPropagation();
-      openNoteModal(span);
     };
 
     try {
@@ -135,12 +123,6 @@ const Reading = () => {
       } catch (innerErr) {
         console.error("Highlight extraction fallback failed:", innerErr);
       }
-    }
-
-    // Auto-open note editor if "Add Note" was clicked
-    const isNote = colorClass.includes("border-yellow-400");
-    if (isNote) {
-      openNoteModal(span);
     }
 
     window.getSelection().removeAllRanges();
@@ -173,7 +155,7 @@ const Reading = () => {
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
-  const { showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
+  const { isFullscreen, showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
 
   // Fetch reading data
   useEffect(() => {
@@ -185,6 +167,7 @@ const Reading = () => {
         setReadingSets(fetchedSets);
         // Removed auto-selection of the first set
         setLoading(false);
+      // eslint-disable-next-line no-unused-vars
       } catch (error) {
         toast.error("Failed to load reading materials");
         setLoading(false);
@@ -201,7 +184,7 @@ const Reading = () => {
     [readingSets, selectedSetId],
   );
 
-  const { timeLeft, setTimeLeft, fmtTime } = useCountdown(3600, !!selectedSetId, submitted);
+  const { timeLeft, fmtTime } = useCountdown(3600, !!selectedSetId, submitted);
 
   const passageElement = useMemo(() => {
     if (!activeSet) return null;
@@ -285,6 +268,12 @@ const Reading = () => {
     }
   };
 
+  const handleReturnToDashboard = () => {
+    exitFullscreen();
+    setIsStarted(false);
+    navigate("/dashboard");
+  };
+
   if (loading) return <Loader />;
 
   if (!activeSet || !selectedSetId) {
@@ -347,7 +336,10 @@ const Reading = () => {
                             key={set._id}
                             whileHover={{ y: -10 }}
                             className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
-                            onClick={() => setSelectedSetId(set._id)}
+                            onClick={() => {
+                              setActivePassageTab(0);
+                              setSelectedSetId(set._id);
+                            }}
                         >
                             <div className="flex flex-col h-full space-y-6">
                                 <div className="flex items-center justify-between">
@@ -414,8 +406,16 @@ const Reading = () => {
                 )}
                 <div className="h-10 w-px bg-slate-200" />
                 {submitted ? (
-                  <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
-                    <PiCheckCircleFill className="text-xl" /> Session Finalized
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
+                      <PiCheckCircleFill className="text-xl" /> Session Finalized
+                    </div>
+                    <button
+                      onClick={handleReturnToDashboard}
+                      className="btn btn-primary btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest"
+                    >
+                      Return to Dashboard
+                    </button>
                   </div>
                 ) : (
                   <button
@@ -447,12 +447,6 @@ const Reading = () => {
                         </p>
                     </div>
                 </div>
-                <button 
-                    onClick={() => { setSubmitted(false); setAnswers({}); setResult(null); }}
-                    className="btn bg-white text-primary border-none rounded-2xl px-10 font-black hover:bg-yellow-300 hover:text-black transition-all"
-                >
-                    Retake Practice
-                </button>
             </motion.div>
         )}
 
@@ -502,8 +496,6 @@ const Reading = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-10">
                         {activeSet.questions.map((q, idx) => {
-                            const qPassageIndex = getQuestionPassageIndex(q, activeSet.questionGroups, idx);
-
                             // Find any group that starts at this question's 1-based global index
                             const globalQNum = idx + 1;
                             const groupHeader = (activeSet.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
@@ -620,75 +612,19 @@ const Reading = () => {
               style={{ top: `${toolbar.y}px`, left: `${toolbar.x}px` }}
           >
               <button 
-                  onClick={() => applyHighlight("bg-yellow-200")}
-                  className="w-6 h-6 rounded-full bg-yellow-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
-                  title="Yellow"
-              />
-              <button 
                   onClick={() => applyHighlight("bg-emerald-200")}
                   className="w-6 h-6 rounded-full bg-emerald-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
-                  title="Mint Green"
+                  title="Green"
               />
               <button 
                   onClick={() => applyHighlight("bg-sky-200")}
                   className="w-6 h-6 rounded-full bg-sky-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
-                  title="Soft Blue"
+                  title="Blue"
               />
-              <button 
-                  onClick={() => applyHighlight("bg-pink-200")}
-                  className="w-6 h-6 rounded-full bg-pink-200 hover:scale-110 active:scale-95 transition-transform border border-white/20"
-                  title="Rose Pink"
-              />
-              <div className="w-px h-5 bg-white/25 mx-1" />
-              <button 
-                  onClick={() => applyHighlight("bg-yellow-100/50 border-b-2 border-yellow-400")}
-                  className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 hover:bg-white/10 rounded-xl transition-all text-white/90"
-              >
-                  <PiNotePencil className="w-4 h-4 text-yellow-300" /> Add Note
-              </button>
           </div>
       )}
 
-      {/* Sticky Note Popover Editor */}
-      {activeNote.show && (
-          <div 
-              data-note-popover="true"
-              className="absolute z-[110] w-64 p-4 bg-white rounded-3xl shadow-2xl border border-base-200 -translate-x-1/2 flex flex-col gap-3"
-              style={{ 
-                  top: `${activeNote.y}px`, 
-                  left: `${activeNote.x}px` 
-              }}
-          >
-              <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1">
-                      <PiNotePencil className="text-sm" /> Sticky Note
-                  </span>
-                  <button 
-                      onClick={() => removeHighlight(activeNote.element)}
-                      className="btn btn-ghost btn-xs text-error font-black uppercase text-[9px] tracking-wider hover:bg-error/10 rounded-lg"
-                  >
-                      Delete Note
-                  </button>
-              </div>
-              <textarea
-                  value={activeNote.text}
-                  onChange={(e) => {
-                      setActiveNote((prev) => ({ ...prev, text: e.target.value }));
-                      activeNote.element.setAttribute("data-note", e.target.value);
-                  }}
-                  placeholder="Jot down a quick note..."
-                  className="textarea textarea-bordered rounded-2xl w-full h-24 text-xs font-medium focus:outline-none bg-white text-slate-800"
-              />
-              <div className="flex justify-end gap-2">
-                  <button 
-                      onClick={() => setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 })}
-                      className="btn btn-primary btn-sm rounded-xl text-[10px] font-black uppercase tracking-widest px-4 border-none shadow-md shadow-primary/20"
-                  >
-                      Save
-                  </button>
-              </div>
-          </div>
-      )}
+
     </TestShell>
   );
 };

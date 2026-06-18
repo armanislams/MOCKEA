@@ -666,6 +666,12 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     }
   };
 
+  const handleReturnToDashboard = () => {
+    exitFullscreen();
+    setIsStarted(false);
+    navigate("/dashboard");
+  };
+
   const fmt = (s) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -914,8 +920,16 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
             )}
             <div className="h-10 w-px bg-slate-200" />
             {submitted ? (
-              <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
-                <PiCheckCircleFill className="text-xl" /> Session Finalized
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-success font-black text-xs uppercase tracking-widest">
+                  <PiCheckCircleFill className="text-xl" /> Session Finalized
+                </div>
+                <button
+                  onClick={handleReturnToDashboard}
+                  className="btn btn-primary btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest"
+                >
+                  Return to Dashboard
+                </button>
               </div>
             ) : (
               <button

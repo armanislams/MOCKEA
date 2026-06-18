@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "daisyui/daisyui.css";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --font-bc: Verdana, Arial, Helvetica, sans-serif;
   --color-bc-navy: #0028a2;
@@ -34,6 +36,16 @@ body {
 
 html {
   scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: light;
+  }
+  :root {
+    color-scheme: light;
+  }
 }
 
 html,

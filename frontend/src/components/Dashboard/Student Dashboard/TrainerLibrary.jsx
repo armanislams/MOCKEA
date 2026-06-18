@@ -57,24 +57,24 @@ const TrainerLibrary = () => {
             <motion.section 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden rounded-[3.5rem] bg-linear-to-br from-slate-900 via-slate-800 to-indigo-950 p-12 lg:p-16 text-white shadow-2xl"
+                className="relative overflow-hidden rounded-[3.5rem] bg-linear-to-br from-primary to-indigo-700 p-12 lg:p-16 text-white shadow-2xl shadow-primary/30"
             >
                 <div className="relative z-10 space-y-6">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary border border-primary/20 backdrop-blur-md">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-white border border-white/20 backdrop-blur-md">
                         <PiGraduationCap className="text-indigo-400" /> Professional Mentorship
                     </div>
                     <div className="max-w-2xl">
                         <h1 className="text-4xl lg:text-6xl font-black tracking-tighter leading-[0.9]">
-                            MOCKEA <span className="text-primary italic">Expert Trainers</span>
+                            MOCKEA <span className="text-yellow-300 italic">Expert Trainers</span>
                         </h1>
-                        <p className="mt-6 text-base lg:text-lg text-slate-400 font-medium leading-relaxed">
+                        <p className="mt-6 text-base lg:text-lg text-white/80 font-medium leading-relaxed">
                             Connect with certified IELTS examiners and world-class specialists. Accelerate your practice with personalized guidance and comprehensive feedback.
                         </p>
                     </div>
                 </div>
 
-                <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-                <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
+                <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+                <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-primary-focus/20 blur-3xl" />
             </motion.section>
 
             {/* Filters and Search Bar */}
