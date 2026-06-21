@@ -3,6 +3,89 @@ import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { PiNotePencil } from "react-icons/pi";
 
+
+const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, data }) => {
+    return (
+        <div className="overflow-x-auto my-6 border border-base-200 rounded-3xl bg-white p-6 shadow-xs ml-14">
+            <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr className="bg-slate-50 text-slate-800 font-bold border-b border-slate-200">
+                        <th className="p-4 font-black text-xs uppercase tracking-widest text-slate-500">
+                            Question
+                        </th>
+                        {options.map((opt, i) => (
+                            <th key={i} className="p-4 text-center font-black text-xs uppercase tracking-widest text-slate-600">
+                                {opt}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {questions.map((q) => {
+                        const idx = data.questions.findIndex(item => item.id === q.id);
+                        const selectedVal = answers[q.id] || "";
+                        
+                        return (
+                            <tr key={q.id} className="hover:bg-slate-50/50 transition-colors" id={`question-${idx}`}>
+                                <td className="p-4 font-semibold text-slate-700 flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs flex-shrink-0">
+                                        {idx + 1}
+                                    </div>
+                                    <span>{q.question}</span>
+                                </td>
+                                {options.map((opt, optIdx) => {
+                                    const isSelected = selectedVal === opt;
+                                    return (
+                                        <td key={optIdx} className="p-4 text-center align-middle">
+                                            <input
+                                                type="radio"
+                                                name={q.id}
+                                                value={opt}
+                                                checked={isSelected}
+                                                onChange={() => onAnswerChange(q.id, opt)}
+                                                className="radio radio-primary radio-sm cursor-pointer mx-auto transition-transform hover:scale-110"
+                                            />
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+const groupQuestions = (questions) => {
+    const groups = [];
+    let currentGridGroup = null;
+
+    for (const q of questions) {
+        if (q.type === 'matching-grid') {
+            const optionsKey = (q.options || []).filter(o => o && o.trim() !== "").join(',');
+            if (currentGridGroup && currentGridGroup.optionsKey === optionsKey) {
+                currentGridGroup.questions.push(q);
+            } else {
+                currentGridGroup = {
+                    type: 'matching-grid-group',
+                    optionsKey,
+                    options: (q.options || []).filter(o => o && o.trim() !== ""),
+                    questions: [q]
+                };
+                groups.push(currentGridGroup);
+            }
+        } else {
+            currentGridGroup = null;
+            groups.push({
+                type: 'single',
+                question: q
+            });
+        }
+    }
+    return groups;
+};
+
 const ReadingSection = ({ data, answers, onAnswerChange }) => {
        const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
     const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
@@ -262,103 +345,163 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                     </header>
 
                     <div className="space-y-8">
-                        {data?.questions?.map((q, idx) => {
-                            const globalQNum = idx + 1;
-                            const groupHeader = (data?.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
+                        {(() => {
+                            const groups = groupQuestions(data?.questions || []);
+                            return groups.map((group, gIdx) => {
+                                if (group.type === 'matching-grid-group') {
+                                    const firstQ = group.questions[0];
+                                    const firstQIdx = data.questions.findIndex(item => item.id === firstQ.id);
+                                    const globalQNum = firstQIdx + 1;
+                                    const groupHeader = (data?.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
 
-                            return (
-                                <div key={q.id || idx} id={`question-${idx}`} className="space-y-4 scroll-mt-6">
-                                    {/* Group header if this question starts a group */}
-                                    {groupHeader && (
-                                        <div className="space-y-2">
-                                            <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
-                                                <span className="text-xs font-black uppercase tracking-widest text-primary">
-                                                    Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
-                                                </span>
-                                                {groupHeader.title && (
-                                                    <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
-                                                )}
-                                            </div>
-                                            {groupHeader.instructions && (
-                                                <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
-                                                    {groupHeader.instructions}
+                                    return (
+                                        <div key={`grid-${gIdx}`} className="space-y-4">
+                                            {groupHeader && (
+                                                <div className="space-y-2">
+                                                    <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
+                                                        <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                                            Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
+                                                        </span>
+                                                        {groupHeader.title && (
+                                                            <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
+                                                        )}
+                                                    </div>
+                                                    {groupHeader.instructions && (
+                                                        <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
+                                                            {groupHeader.instructions}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
-                                        </div>
-                                    )}
 
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex-none w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black">
-                                            {idx + 1}
-                                        </div>
-                                        <p className="text-lg font-medium pt-1">
-                                            {q.question}
-                                        </p>
-                                    </div>
-
-                                    {q.type === 'true-false' && (
-                                        <div className="flex flex-wrap gap-2 ml-14">
-                                            {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
-                                                <button 
-                                                    key={opt}
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        onAnswerChange(q.id, opt);
-                                                    }}
-                                                    className={`px-6 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
-                                                        answers[q.id] === opt 
-                                                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
-                                                        : "bg-white border-base-200 hover:border-primary/40"
-                                                    }`}
-                                                >
-                                                    {opt}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {q.type === 'multiple-choice' && (
-                                        <div className="space-y-2 ml-14">
-                                            {q.options?.filter(opt => opt && opt.trim() !== "").map((opt, optIdx) => (
-                                                <button 
-                                                    key={optIdx}
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        onAnswerChange(q.id, opt);
-                                                    }}
-                                                    className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
-                                                        answers[q.id] === opt 
-                                                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
-                                                        : "bg-white border-base-200 hover:border-primary/40"
-                                                    }`}
-                                                >
-                                                    <span className="w-8 h-8 rounded-lg bg-base-200 text-base-content/40 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                        {String.fromCharCode(65 + optIdx)}
-                                                    </span>
-                                                    {opt}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {q.type !== 'true-false' && q.type !== 'multiple-choice' && (
-                                        <div className="ml-14">
-                                            <input 
-                                                type="text" 
-                                                className="input input-bordered border-slate-400 w-full rounded-2xl font-bold bg-white focus:border-primary text-sm h-12 text-slate-800"
-                                                placeholder="Type your answer here..."
-                                                value={answers[q.id] || ""}
-                                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                                            <MatchingGridRenderer
+                                                questions={group.questions}
+                                                options={group.options}
+                                                answers={answers}
+                                                onAnswerChange={onAnswerChange}
+                                                data={data}
                                             />
                                         </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                    );
+                                }
+
+                                const q = group.question;
+                                const idx = data.questions.findIndex(item => item.id === q.id);
+                                const globalQNum = idx + 1;
+                                const groupHeader = (data?.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
+
+                                return (
+                                    <div key={q.id || idx} id={`question-${idx}`} className="space-y-4 scroll-mt-6">
+                                        {/* Group header if this question starts a group */}
+                                        {groupHeader && (
+                                            <div className="space-y-2">
+                                                <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
+                                                    <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                                        Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
+                                                    </span>
+                                                    {groupHeader.title && (
+                                                        <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
+                                                    )}
+                                                </div>
+                                                {groupHeader.instructions && (
+                                                    <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
+                                                        {groupHeader.instructions}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="flex items-start gap-4">
+                                            <div className="flex-none w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black">
+                                                {idx + 1}
+                                            </div>
+                                            <p className="text-lg font-medium pt-1">
+                                                {q.question}
+                                            </p>
+                                        </div>
+
+                                        {q.type === 'true-false' && (
+                                            <div className="flex flex-wrap gap-2 ml-14">
+                                                {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
+                                                    <button 
+                                                        key={opt}
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            onAnswerChange(q.id, opt);
+                                                        }}
+                                                        className={`px-6 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                                                            answers[q.id] === opt 
+                                                            ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
+                                                            : "bg-white border-base-200 hover:border-primary/40"
+                                                        }`}
+                                                    >
+                                                        {opt}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {q.type === 'multiple-choice' && (
+                                            <div className="space-y-2 ml-14">
+                                                {q.options?.filter(opt => opt && opt.trim() !== "").map((opt, optIdx) => (
+                                                    <button 
+                                                        key={optIdx}
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            onAnswerChange(q.id, opt);
+                                                        }}
+                                                        className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
+                                                            answers[q.id] === opt 
+                                                            ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
+                                                            : "bg-white border-base-200 hover:border-primary/40"
+                                                        }`}
+                                                    >
+                                                        <span className="w-8 h-8 rounded-lg bg-base-200 text-base-content/40 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                            {String.fromCharCode(65 + optIdx)}
+                                                        </span>
+                                                        {opt}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {(q.type === 'matching' || q.type === 'heading-matching') && (
+                                            <div className="ml-14">
+                                                <select
+                                                    value={answers[q.id] || ""}
+                                                    onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                                                    className="select select-bordered border-slate-400 w-full rounded-2xl font-bold bg-white focus:border-primary text-sm h-12 text-slate-800"
+                                                >
+                                                    <option value="">— Select a match —</option>
+                                                    {((q.options?.length && q.options.some(opt => opt && opt.trim() !== ""))
+                                                        ? q.options.filter(opt => opt && opt.trim() !== "")
+                                                        : (q.matchingPairs || []).map((p) => p.value).filter(Boolean)
+                                                    ).map((opt, optIdx) => (
+                                                        <option key={optIdx} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+
+                                        {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching') && (
+                                            <div className="ml-14">
+                                                <input 
+                                                    type="text" 
+                                                    className="input input-bordered border-slate-400 w-full rounded-2xl font-bold bg-white focus:border-primary text-sm h-12 text-slate-800"
+                                                    placeholder="Type your answer here..."
+                                                    value={answers[q.id] || ""}
+                                                    onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            });
+                        })()}
                     </div>
                 </div>
             </div>

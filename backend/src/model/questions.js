@@ -25,6 +25,7 @@ const QuestionItemSchema = new mongoose.Schema(
                 // ── Matching (IELTS + PTE) ───────────────────────────
                 "matching",               // Match items to a list
                 "heading-matching",       // Match headings to paragraphs
+                "matching-grid",          // Matrix grid layout with radio buttons
 
                 // ── Visual / Map (IELTS) ─────────────────────────────
                 "map-labelling",          // Map / Plan with numbered labels

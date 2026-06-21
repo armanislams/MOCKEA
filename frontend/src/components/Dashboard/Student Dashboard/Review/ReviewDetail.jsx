@@ -67,6 +67,114 @@ const parseWritingSubmission = (content) => {
     return { task1: content.trim(), task2: "" };
 };
 
+
+const ReviewMatchingGrid = ({ items, options }) => {
+    return (
+        <div className="card p-6 rounded-[2rem] border border-base-300 bg-white shadow-sm overflow-x-auto my-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-primary/45 mb-4 pl-1">Matching Grid Feedback</h4>
+            <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr className="bg-slate-50 text-slate-800 font-bold border-b border-slate-200">
+                        <th className="p-3 font-black text-xs uppercase tracking-widest text-slate-500">Question</th>
+                        {options.map((opt, i) => (
+                            <th key={i} className="p-3 text-center font-black text-xs uppercase tracking-widest text-slate-600">{opt}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {items.map(({ ans, q, qIdx, originalIdx }) => {
+                        const selectedVal = ans.userAnswer || "";
+                        return (
+                            <tr key={ans.questionId} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="p-3 font-semibold text-slate-700 flex items-center gap-3">
+                                    <span className="w-7 h-7 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-xs shadow-sm flex-shrink-0">
+                                        {originalIdx + 1}
+                                    </span>
+                                    <span>{q?.question}</span>
+                                </td>
+                                {options.map((opt, optIdx) => {
+                                    const isSelected = selectedVal === opt;
+                                    const isCorrectOption = ans.correctAnswer === opt;
+                                    
+                                    let cellContent = null;
+                                    if (isSelected && ans.isCorrect) {
+                                        cellContent = <PiCheckCircleFill className="text-success text-lg mx-auto" />;
+                                    } else if (isSelected && !ans.isCorrect) {
+                                        cellContent = <PiXCircleFill className="text-error text-lg mx-auto" />;
+                                    } else if (!isSelected && isCorrectOption) {
+                                        cellContent = (
+                                            <div className="flex items-center justify-center">
+                                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">
+                                                    ✓
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    return (
+                                        <td key={optIdx} className="p-3 text-center align-middle">
+                                            {cellContent || (
+                                                <input
+                                                    type="radio"
+                                                    disabled
+                                                    checked={isSelected}
+                                                    className="radio radio-primary radio-xs opacity-20 pointer-events-none mx-auto"
+                                                />
+                                            )}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassageTab) => {
+    const mapped = answers.map((ans, idx) => {
+        const originalQ = currentSectionData?.questions?.find(q => q.id === ans.questionId);
+        const qIdx = currentSectionData?.questions?.findIndex(q => q.id === ans.questionId);
+        
+        // Filter by passage if reading
+        if (activeTab === 'reading' && currentSectionData?.passages && currentSectionData.passages.length > 0) {
+            const qPassageIndex = getQuestionPassageIndex(originalQ, currentSectionData?.questionGroups, qIdx);
+            if (qPassageIndex !== activePassageTab) return null;
+        }
+        
+        return { ans, q: originalQ, qIdx, originalIdx: idx };
+    }).filter(Boolean);
+
+    const groups = [];
+    let currentGridGroup = null;
+
+    for (const item of mapped) {
+        if (item.q && item.q.type === 'matching-grid') {
+            const optionsKey = (item.q.options || []).filter(o => o && o.trim() !== "").join(',');
+            if (currentGridGroup && currentGridGroup.optionsKey === optionsKey) {
+                currentGridGroup.items.push(item);
+            } else {
+                currentGridGroup = {
+                    type: 'matching-grid-group',
+                    optionsKey,
+                    options: (item.q.options || []).filter(o => o && o.trim() !== ""),
+                    items: [item]
+                };
+                groups.push(currentGridGroup);
+            }
+        } else {
+            currentGridGroup = null;
+            groups.push({
+                type: 'single',
+                item
+            });
+        }
+    }
+    return groups;
+};
+
 const ReviewDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -325,45 +433,52 @@ const ReviewDetail = () => {
                                                 <p className="whitespace-pre-line">{currentSectionData.passages[activePassageTab].instructions}</p>
                                             </div>
                                         )}
-                                        {currentSectionResult.answers.map((ans, idx) => {
-                                            if (activeTab === 'reading' && currentSectionData?.passages && currentSectionData.passages.length > 0) {
-                                                const originalQ = currentSectionData.questions?.find(q => q.id === ans.questionId);
-                                                const answerIndex = currentSectionData.questions?.findIndex(q => q.id === ans.questionId);
-                                                const qPassageIndex = getQuestionPassageIndex(originalQ, currentSectionData?.questionGroups, answerIndex);
-                                                if (qPassageIndex !== activePassageTab) return null;
-                                            }
+                                        {(() => {
+                                            const groups = groupReviewAnswers(currentSectionResult.answers, currentSectionData, activeTab, activePassageTab);
+                                            return groups.map((group, gIdx) => {
+                                                if (group.type === 'matching-grid-group') {
+                                                    return (
+                                                        <ReviewMatchingGrid
+                                                            key={`grid-${gIdx}`}
+                                                            items={group.items}
+                                                            options={group.options}
+                                                        />
+                                                    );
+                                                }
 
-                                            return (
-                                                <div key={idx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
-                                                    ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
-                                                }`}>
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="flex-1 space-y-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
-                                                                <span className="text-xs font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
-                                                            </div>
-                                                            
-                                                            <div className="grid grid-cols-2 gap-4">
-                                                                <div className="space-y-1">
-                                                                    <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
-                                                                    <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
-                                                                        {ans.userAnswer || "No Answer"}
-                                                                    </p>
+                                                const { ans, originalIdx } = group.item;
+                                                return (
+                                                    <div key={originalIdx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
+                                                        ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
+                                                    }`}>
+                                                        <div className="flex items-start justify-between gap-4">
+                                                            <div className="flex-1 space-y-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{originalIdx + 1}</span>
+                                                                    <span className="text-xs font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
                                                                 </div>
-                                                                <div className="space-y-1">
-                                                                    <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
-                                                                    <p className="font-black text-lg text-success">{ans.correctAnswer}</p>
+                                                                
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
+                                                                        <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
+                                                                            {ans.userAnswer || "No Answer"}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
+                                                                        <p className="font-black text-lg text-success">{ans.correctAnswer}</p>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div className="text-3xl">
-                                                            {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
+                                                            <div className="text-3xl">
+                                                                {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            });
+                                        })()}
                                     </>
                                 ) : (
                                     <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm space-y-6">

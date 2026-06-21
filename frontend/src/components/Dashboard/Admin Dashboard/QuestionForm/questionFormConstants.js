@@ -44,6 +44,7 @@ export const QUESTION_TYPE_GROUPS = [
         types: [
             { value: "matching",         label: "Matching" },
             { value: "heading-matching", label: "Heading Matching" },
+            { value: "matching-grid",    label: "Matching Grid" },
         ],
     },
     {
@@ -57,7 +58,7 @@ export const QUESTION_TYPE_GROUPS = [
 ];
 
 // Which types need options array
-export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no"];
+export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid"];
 // Which types need matchingPairs
 export const NEEDS_PAIRS = ["matching", "heading-matching"];
 // Which types need a per-question image URL

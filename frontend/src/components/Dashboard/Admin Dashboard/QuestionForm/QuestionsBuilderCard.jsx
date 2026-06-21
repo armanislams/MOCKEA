@@ -5,6 +5,7 @@ import {
     PiTrash 
 } from "react-icons/pi";
 import { QuestionTypeSelect, QuestionTypeExtras } from "./QuestionTypeFields";
+import { NEEDS_OPTIONS } from "./questionFormConstants";
 
 export default function QuestionsBuilderCard({
     testType,
@@ -146,14 +147,37 @@ export default function QuestionsBuilderCard({
                             {/* Correct answer */}
                             <div className="form-control">
                                 <label className="label"><span className="label-text font-semibold">Correct Answer</span></label>
-                                <input
-                                    type="text"
-                                    className="input input-bordered rounded-2xl border-success/30 bg-success/5"
-                                    placeholder="Enter the exact correct answer"
-                                    value={q.correctAnswer}
-                                    onChange={(e) => updateQuestionField(q.id, "correctAnswer", e.target.value)}
-                                    required
-                                />
+                                {NEEDS_OPTIONS.includes(q.type) ? (
+                                    <select
+                                        className="select select-bordered w-full rounded-2xl border-success/30 bg-success/5 text-sm font-semibold"
+                                        value={q.correctAnswer}
+                                        onChange={(e) => updateQuestionField(q.id, "correctAnswer", e.target.value)}
+                                        required
+                                    >
+                                        <option value="">— Select Correct Answer —</option>
+                                        {(q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0
+                                            ? q.options.filter(opt => opt && opt.trim() !== "")
+                                            : q.type === "true-false"
+                                                ? ["True", "False", "Not Given"]
+                                                : q.type === "yes-no"
+                                                    ? ["Yes", "No", "Not Given"]
+                                                    : []
+                                        ).map((opt, optIdx) => (
+                                            <option key={optIdx} value={opt}>
+                                                {opt}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        className="input input-bordered rounded-2xl border-success/30 bg-success/5"
+                                        placeholder="Enter the exact correct answer"
+                                        value={q.correctAnswer}
+                                        onChange={(e) => updateQuestionField(q.id, "correctAnswer", e.target.value)}
+                                        required
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>

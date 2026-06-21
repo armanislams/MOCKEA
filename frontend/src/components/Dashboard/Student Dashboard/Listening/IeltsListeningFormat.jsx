@@ -205,9 +205,9 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
                     : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>`;
             }
 
-            let tooltipHtml = "";
+            let correctAnswerHtml = "";
             if (!isMockTest && submitted && !isCorrect) {
-                tooltipHtml = `<span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg z-50 whitespace-nowrap">✓ ${q.correctAnswer}</span>`;
+                correctAnswerHtml = `<span class="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">✓ ${q.correctAnswer}</span>`;
             }
 
             const titleAttr = (!isMockTest && submitted && !isCorrect) ? `Correct Answer: ${q.correctAnswer}` : "";
@@ -225,7 +225,7 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
                         title="${titleAttr}"
                     />
                     ${badgeHtml}
-                    ${tooltipHtml}
+                    ${correctAnswerHtml}
                 </span>
             `.trim();
         });
@@ -358,9 +358,9 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
                             : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>`;
                     }
 
-                    let tooltipHtml = "";
+                    let correctAnswerHtml = "";
                     if (!isMockTest && submitted && !isCorrect) {
-                        tooltipHtml = `<span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg z-50 whitespace-nowrap">✓ ${q.correctAnswer}</span>`;
+                        correctAnswerHtml = `<span class="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">✓ ${q.correctAnswer}</span>`;
                     }
 
                     return `
@@ -375,7 +375,7 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
                                 value=""
                             />
                             ${badgeHtml}
-                            ${tooltipHtml}
+                            ${correctAnswerHtml}
                         </span>
                     `.trim();
                 });
@@ -668,7 +668,125 @@ const MapLabellingRenderer = ({ q, idx, offset = 0, submitted, evaluation, answe
     );
 };
 
+
+/** Table/matrix grid per group of matching-grid items */
+const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, submitted, result, offset, activeSet }) => {
+    return (
+        <div className="overflow-x-auto my-6 border border-slate-200 rounded-3xl bg-slate-50/20 p-5 shadow-inner">
+            <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr className="bg-slate-100/80 text-slate-800 font-bold border-b border-slate-200">
+                        <th className="p-3 font-black text-xs uppercase tracking-widest text-slate-500">
+                            Question
+                        </th>
+                        {options.map((opt, i) => (
+                            <th key={i} className="p-3 text-center font-black text-xs uppercase tracking-widest text-slate-600">
+                                {opt}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {questions.map((q) => {
+                        const idx = activeSet.questions.findIndex(item => item.id === q.id);
+                        const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === q.id);
+                        const isCorrect = evaluation?.isCorrect;
+                        const selectedVal = answers[q.id] || "";
+                        
+                        return (
+                            <tr key={q.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="p-3 font-semibold text-slate-700 flex items-center gap-3">
+                                    <div className="w-7 h-7 rounded-lg bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-[10px] text-slate-500 flex-shrink-0">
+                                        {offset + idx + 1}
+                                    </div>
+                                    <span>{q.question}</span>
+                                </td>
+                                {options.map((opt, optIdx) => {
+                                    const isSelected = selectedVal === opt;
+                                    const isCorrectOption = q.correctAnswer === opt;
+                                    
+                                    // Styling on submission
+                                    let cellContent = null;
+                                    if (submitted) {
+                                        if (isSelected && isCorrect) {
+                                            cellContent = <PiCheckCircleFill className="text-emerald-500 text-lg mx-auto" />;
+                                        } else if (isSelected && !isCorrect) {
+                                            cellContent = <PiXCircleFill className="text-red-500 text-lg mx-auto" />;
+                                        } else if (!isSelected && isCorrectOption) {
+                                            cellContent = (
+                                                <div className="flex items-center justify-center">
+                                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">
+                                                        ✓
+                                                    </span>
+                                                </div>
+                                            );
+                                        }
+                                    }
+
+                                    return (
+                                        <td key={optIdx} className="p-3 text-center align-middle">
+                                            {submitted ? (
+                                                cellContent || (
+                                                    <input
+                                                        type="radio"
+                                                        disabled
+                                                        checked={isSelected}
+                                                        className="radio radio-primary radio-xs opacity-20 pointer-events-none mx-auto"
+                                                    />
+                                                )
+                                            ) : (
+                                                <input
+                                                    type="radio"
+                                                    name={q.id}
+                                                    value={opt}
+                                                    checked={isSelected}
+                                                    onChange={() => onAnswerChange(q.id, opt)}
+                                                    className="radio radio-primary radio-sm cursor-pointer mx-auto transition-transform hover:scale-110"
+                                                />
+                                            )}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+const groupQuestions = (questions) => {
+    const groups = [];
+    let currentGridGroup = null;
+
+    for (const q of questions) {
+        if (q.type === 'matching-grid') {
+            const optionsKey = (q.options || []).filter(o => o && o.trim() !== "").join(',');
+            if (currentGridGroup && currentGridGroup.optionsKey === optionsKey) {
+                currentGridGroup.questions.push(q);
+            } else {
+                currentGridGroup = {
+                    type: 'matching-grid-group',
+                    optionsKey,
+                    options: (q.options || []).filter(o => o && o.trim() !== ""),
+                    questions: [q]
+                };
+                groups.push(currentGridGroup);
+            }
+        } else {
+            currentGridGroup = null;
+            groups.push({
+                type: 'single',
+                question: q
+            });
+        }
+    }
+    return groups;
+};
+
 // ─── Question Router ─────────────────────────────────────────────────────────
+
 
 /** Picks the right renderer based on question type */
 const QuestionRenderer = ({ q, idx, offset = 0, submitted, result, answers, onAnswerChange }) => {
@@ -677,7 +795,7 @@ const QuestionRenderer = ({ q, idx, offset = 0, submitted, result, answers, onAn
 
     if (COMPLETION_TYPES.has(q.type))           return <CompletionRenderer {...props} />;
     if (["multiple-choice","true-false","yes-no"].includes(q.type)) return <McqRenderer {...props} />;
-    if (["matching","heading-matching"].includes(q.type))           return <MatchingRenderer {...props} />;
+    if (["matching","heading-matching","matching-grid"].includes(q.type)) return <MatchingRenderer {...props} />;
     if (["map-labelling","diagram-labelling"].includes(q.type))     return <MapLabellingRenderer {...props} />;
 
     // Fallback — same as completion
@@ -795,31 +913,62 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                 })()}
 
                 {/* ── Questions ───────────────────────────────────────── */}
-                {remainingQuestions.length > 0 && (
-                    <div className="space-y-4">
-                        {remainingQuestions.map((q) => {
-                            const idx = activeSet.questions.findIndex(item => item.id === q.id);
-                            return (
-                                <motion.div
-                                    key={q.id}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: idx * 0.04 }}
-                                >
-                                    <QuestionRenderer
-                                        q={q}
-                                        idx={idx}
-                                        offset={offset}
-                                        submitted={submitted}
-                                        result={result}
-                                        answers={answers}
-                                        onAnswerChange={onAnswerChange}
-                                    />
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                )}
+                {remainingQuestions.length > 0 && (() => {
+                    const groups = groupQuestions(remainingQuestions);
+                    return (
+                        <div className="space-y-6">
+                            {groups.map((group, gIdx) => {
+                                if (group.type === 'matching-grid-group') {
+                                    return (
+                                        <motion.div
+                                            key={`grid-${gIdx}`}
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: gIdx * 0.04 }}
+                                        >
+                                            <div className="p-6 bg-slate-50/40 border border-slate-200 rounded-[2.5rem] space-y-4">
+                                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
+                                                    Matching Table
+                                                </h3>
+                                                <MatchingGridRenderer
+                                                    questions={group.questions}
+                                                    options={group.options}
+                                                    answers={answers}
+                                                    onAnswerChange={onAnswerChange}
+                                                    submitted={submitted}
+                                                    result={result}
+                                                    offset={offset}
+                                                    activeSet={activeSet}
+                                                />
+                                            </div>
+                                        </motion.div>
+                                    );
+                                }
+
+                                const q = group.question;
+                                const idx = activeSet.questions.findIndex(item => item.id === q.id);
+                                return (
+                                    <motion.div
+                                        key={q.id}
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.04 }}
+                                    >
+                                        <QuestionRenderer
+                                            q={q}
+                                            idx={idx}
+                                            offset={offset}
+                                            submitted={submitted}
+                                            result={result}
+                                            answers={answers}
+                                            onAnswerChange={onAnswerChange}
+                                        />
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
             </div>
         </div>
     );
