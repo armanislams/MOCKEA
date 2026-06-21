@@ -321,7 +321,7 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
                 const formattedText = formatInlineBullets(cellText);
 
                 if (row.isHeader) {
-                    return { html: formattedText, text: formattedText };
+                    return { dangerouslySetInnerHTML: { __html: formattedText }, text: formattedText };
                 }
 
                 // Replace placeholders
@@ -380,7 +380,7 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
                     `.trim();
                 });
 
-                return { html, text: cellText };
+                return { dangerouslySetInnerHTML: { __html: html || "&nbsp;" }, text: cellText };
             })
         }));
     }, [parsedTable, questions, offset, submitted, result]);
@@ -418,7 +418,7 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
                     <tr>
                         {processedRows[0]?.cells.map((cell, ci) => (
                             <th key={ci} className="bg-slate-900 text-white font-black text-xs uppercase tracking-widest px-5 py-3.5 text-left border border-slate-700">
-                                {cell.text}
+                                <span dangerouslySetInnerHTML={cell.dangerouslySetInnerHTML} />
                             </th>
                         ))}
                     </tr>
@@ -428,7 +428,7 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
                         <tr key={ri} className={ri % 2 === 1 ? "bg-slate-50/50" : "bg-white"}>
                             {row.cells.map((cell, ci) => (
                                 <td key={ci} className="px-5 py-3 border border-slate-200 text-slate-700 leading-relaxed">
-                                    <span dangerouslySetInnerHTML={{ __html: cell.html || "&nbsp;" }} />
+                                    <span dangerouslySetInnerHTML={cell.dangerouslySetInnerHTML} />
                                 </td>
                             ))}
                         </tr>
