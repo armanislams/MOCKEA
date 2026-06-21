@@ -263,22 +263,70 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
         return parsedTable.map(row => ({
             ...row,
             cells: row.cells.map(cellText => {
-                const match = cellText.match(/___([\w-]+)___/);
-                if (!match) return { text: cellText, isGap: false };
+                if (row.isHeader) {
+                    return { html: cellText, text: cellText };
+                }
 
-                const matchKey = match[1];
-                const q = questions.find((item, idx) => {
-                    const questionNum = offset + idx + 1;
-                    const localIndex = idx + 1;
-                    return item.id === matchKey || questionNum.toString() === matchKey || localIndex.toString() === matchKey;
+                // Replace placeholders
+                const html = cellText.replace(/___([\w-]+)___/g, (match, matchKey) => {
+                    const q = questions.find((item, idx) => {
+                        const questionNum = offset + idx + 1;
+                        const localIndex = idx + 1;
+                        return (
+                            item.id === matchKey ||
+                            questionNum.toString() === matchKey ||
+                            localIndex.toString() === matchKey
+                        );
+                    });
+                    if (!q) return match;
+
+                    const qIndexInSet = questions.indexOf(q);
+                    const labelNum = offset + qIndexInSet + 1;
+                    const qId = q.id;
+                    const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === qId);
+                    const isCorrect = evaluation?.isCorrect;
+                    const isMockTest = submitted === undefined;
+
+                    let inputClass = "inline-flex bg-transparent border-b-2 border-dashed border-slate-400 focus:border-primary outline-none text-sm font-bold text-center pb-0.5 placeholder:text-slate-400 placeholder:font-normal placeholder:text-sm transition-colors";
+                    if (submitted) {
+                        inputClass += isCorrect
+                            ? " text-emerald-700 border-emerald-400"
+                            : " text-red-700 border-red-400";
+                    }
+
+                    let badgeHtml = "";
+                    if (!isMockTest && submitted) {
+                        badgeHtml = isCorrect
+                            ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✓</span>`
+                            : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>`;
+                    }
+
+                    let tooltipHtml = "";
+                    if (!isMockTest && submitted && !isCorrect) {
+                        tooltipHtml = `<span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg z-50 whitespace-nowrap">✓ ${q.correctAnswer}</span>`;
+                    }
+
+                    return `
+                        <span class="inline-flex items-baseline mx-0.5 relative group align-baseline">
+                            <span class="text-red-600 font-black mr-0.5 flex-shrink-0">(${labelNum})</span>
+                            <input
+                                type="text"
+                                data-q-id="${qId}"
+                                ${submitted ? "disabled" : ""}
+                                placeholder="________"
+                                class="${inputClass} w-28"
+                                value=""
+                            />
+                            ${badgeHtml}
+                            ${tooltipHtml}
+                        </span>
+                    `.trim();
                 });
-                if (!q) return { text: cellText, isGap: false };
 
-                const labelNum = offset + questions.indexOf(q) + 1;
-                return { text: cellText, isGap: true, q, labelNum };
+                return { html, text: cellText };
             })
         }));
-    }, [parsedTable, questions, offset]);
+    }, [parsedTable, questions, offset, submitted, result]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -323,25 +371,7 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
                         <tr key={ri} className={ri % 2 === 1 ? "bg-slate-50/50" : "bg-white"}>
                             {row.cells.map((cell, ci) => (
                                 <td key={ci} className="px-5 py-3 border border-slate-200 text-slate-700 leading-relaxed">
-                                    {cell.isGap ? (
-                                        <span className="inline-flex items-baseline group relative">
-                                            <span className="text-red-600 font-black mr-0.5 flex-shrink-0">({cell.labelNum})</span>
-                                            <input
-                                                type="text"
-                                                data-q-id={cell.q.id}
-                                                disabled={submitted}
-                                                placeholder="________"
-                                                className="inline-flex w-28 bg-transparent border-b-2 border-dashed border-slate-400 focus:border-primary outline-none text-sm font-bold text-center pb-0.5 placeholder:text-slate-400 placeholder:font-normal placeholder:text-sm transition-colors"
-                                            />
-                                            {submitted && (
-                                                result?.evaluatedAnswers?.find(a => a.questionId === cell.q.id)?.isCorrect
-                                                    ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✓</span>
-                                                    : <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>
-                                            )}
-                                        </span>
-                                    ) : (
-                                        <span dangerouslySetInnerHTML={{ __html: cell.text || "&nbsp;" }} />
-                                    )}
+                                    <span dangerouslySetInnerHTML={{ __html: cell.html || "&nbsp;" }} />
                                 </td>
                             ))}
                         </tr>
