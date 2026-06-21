@@ -20,13 +20,26 @@ const convertMarkdownTablesToHtml = (text) => {
 
     const lines = cleanedText.split("\n");
     let inTable = false;
+    let inList = false;
     let tableHtml = "";
+    let listHtml = "";
     const result = [];
     let rowCount = 0;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
+        
+        const formatInlineBullets = (str) => {
+            return str.replace(/(?<=^|\s|;)[-*]\s+/g, '<span class="text-primary font-black mr-1">•</span> ');
+        };
+
         if (line.startsWith("|") && line.endsWith("|")) {
+            if (inList) {
+                inList = false;
+                listHtml += '</ul>';
+                result.push(listHtml);
+                listHtml = "";
+            }
             if (!inTable) {
                 inTable = true;
                 tableHtml = '<div class="overflow-x-auto my-6"><table class="table-auto w-full text-left border-collapse border border-slate-200 text-sm">';
@@ -43,18 +56,36 @@ const convertMarkdownTablesToHtml = (text) => {
             if (!tableHtml.includes("<thead>")) {
                 tableHtml += "<thead><tr class=\"bg-slate-100 text-slate-800 font-bold\">";
                 cells.forEach(c => {
-                    tableHtml += `<th class="border border-slate-200 p-3">${c}</th>`;
+                    tableHtml += `<th class="border border-slate-200 p-3">${formatInlineBullets(c)}</th>`;
                 });
                 tableHtml += "</tr>";
             } else {
                 const rowClass = rowCount % 2 === 1 ? "bg-slate-50/30" : "";
                 tableHtml += `<tr class="${rowClass}">`;
                 cells.forEach(c => {
-                    tableHtml += `<td class="border border-slate-200 p-3">${c}</td>`;
+                    tableHtml += `<td class="border border-slate-200 p-3">${formatInlineBullets(c)}</td>`;
                 });
                 tableHtml += "</tr>";
                 rowCount++;
             }
+        } else if (/^[-*+]\s+/.test(line)) {
+            if (inTable) {
+                inTable = false;
+                if (tableHtml.includes("<tbody>") && !tableHtml.includes("</tbody>")) {
+                    tableHtml += "</tbody>";
+                } else if (tableHtml.includes("<thead>") && !tableHtml.includes("</thead>")) {
+                    tableHtml += "</thead>";
+                }
+                tableHtml += "</table></div>";
+                result.push(tableHtml);
+                tableHtml = "";
+            }
+            if (!inList) {
+                inList = true;
+                listHtml = '<ul class="list-disc pl-5 my-4 space-y-1.5">';
+            }
+            const itemText = line.replace(/^[-*+]\s+/, "");
+            listHtml += `<li>${formatInlineBullets(itemText)}</li>`;
         } else {
             if (inTable) {
                 inTable = false;
@@ -67,7 +98,13 @@ const convertMarkdownTablesToHtml = (text) => {
                 result.push(tableHtml);
                 tableHtml = "";
             }
-            result.push(lines[i]);
+            if (inList) {
+                inList = false;
+                listHtml += '</ul>';
+                result.push(listHtml);
+                listHtml = "";
+            }
+            result.push(formatInlineBullets(lines[i]));
         }
     }
     if (inTable) {
@@ -78,6 +115,10 @@ const convertMarkdownTablesToHtml = (text) => {
         }
         tableHtml += "</table></div>";
         result.push(tableHtml);
+    }
+    if (inList) {
+        listHtml += '</ul>';
+        result.push(listHtml);
     }
     
     const finalHtml = result.join("\n");
