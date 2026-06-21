@@ -190,15 +190,13 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
     return (
         <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
             <header className="flex flex-col gap-2 border-b border-base-300 pb-6 relative">
-                {mode === "edit" && (
-                    <button
-                        type="button"
-                        onClick={() => navigate("/dashboard/admin/manage-questions")}
-                        className="btn btn-ghost btn-sm rounded-xl gap-2 self-start mb-2"
-                    >
-                        <PiArrowLeft /> Back to Question Bank
-                    </button>
-                )}
+                <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/admin/manage-questions")}
+                    className="btn btn-ghost btn-sm rounded-xl gap-2 self-start mb-2"
+                >
+                    <PiArrowLeft /> Back to Question Bank
+                </button>
                 <p className="text-sm uppercase tracking-[0.3em] text-primary font-semibold">Admin Panel</p>
                 <h1 className="text-3xl font-bold">{mode === "edit" ? "Edit Question Set" : "Add New Question Set"}</h1>
                 <p className="text-base-content/60">

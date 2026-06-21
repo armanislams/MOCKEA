@@ -357,6 +357,19 @@ const ManageQuestions = () => {
                                             />
                                         </div>
                                     )}
+
+                                    {selectedQuestion.images && selectedQuestion.images.length > 0 && selectedQuestion.images.some(img => img) && (
+                                        <div className="space-y-2">
+                                            <h4 className="text-xs font-bold uppercase tracking-wider text-base-content/40">Reference Images (Map / Diagram)</h4>
+                                            <div className="flex flex-wrap gap-4">
+                                                {selectedQuestion.images.map((img, i) => img && (
+                                                    <div key={i} className="border border-base-300 rounded-2xl p-2 bg-white max-w-sm">
+                                                        <img src={img} alt={`Reference map/diagram ${i+1}`} className="rounded-xl max-h-48 object-contain" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

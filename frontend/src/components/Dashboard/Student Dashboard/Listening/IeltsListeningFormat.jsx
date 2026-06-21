@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, memo } from "react";
+import { useMemo, useRef, useEffect, memo, useState } from "react";
 import { motion } from "framer-motion";
 import { collapseListeningExampleBlocks } from "../../../../utils/listeningPassage";
 
@@ -802,6 +802,65 @@ const QuestionRenderer = ({ q, idx, offset = 0, submitted, result, answers, onAn
     return <CompletionRenderer {...props} />;
 };
 
+const ReferenceMediaRenderer = ({ url }) => {
+    const [isImage, setIsImage] = useState(true);
+
+    if (!url) return null;
+
+    return (
+        <div className="group relative rounded-3xl border border-base-200 bg-base-50 p-4 transition-all hover:shadow-md max-w-2xl mx-auto w-full space-y-3">
+            {isImage ? (
+                <div className="relative overflow-hidden rounded-2xl bg-white">
+                    <img 
+                        src={url} 
+                        alt="Reference Map or Diagram" 
+                        className="w-full h-auto max-h-[420px] object-contain mx-auto" 
+                        onError={() => setIsImage(false)}
+                    />
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a 
+                            href={url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="btn btn-sm btn-circle btn-primary shadow-lg"
+                            title="Open in new tab"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            ) : (
+                <div className="p-8 flex flex-col items-center justify-center text-center space-y-3 bg-white rounded-2xl">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5M7.5 12h9m-9 3.75h9m-9-7.5h3" />
+                        </svg>
+                    </div>
+                    <div className="space-y-1">
+                        <h4 className="font-bold text-slate-800">Reference Document / Map Link</h4>
+                        <p className="text-xs text-slate-500 max-w-sm">Admins have provided a reference link for this section. Click below to open it.</p>
+                    </div>
+                </div>
+            )}
+            <div className="flex justify-center pt-1">
+                <a 
+                    href={url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                    {isImage ? "Open Map / Diagram in new window" : "Open Reference Link"}
+                </a>
+            </div>
+        </div>
+    );
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 /**
@@ -881,6 +940,11 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                     </span>
                     {activeSet.instructions || meta.instruction}
                 </div>
+
+                {/* ── Reference Media ─────────────────────────────────── */}
+                {activeSet.images?.[0] && (
+                    <ReferenceMediaRenderer url={activeSet.images[0]} />
+                )}
 
                 {/* ── Passage (auto-detect table vs inline) ────────── */}
                 {activeSet.passage && activeSet.passage.trim() !== "" && (() => {
