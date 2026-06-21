@@ -1,4 +1,4 @@
-import { PiPlus } from "react-icons/pi";
+import { PiPlus, PiTrash } from "react-icons/pi";
 import { 
   QUESTION_TYPE_GROUPS, 
   NEEDS_OPTIONS, 
@@ -24,28 +24,39 @@ export const QuestionTypeSelect = ({ value, onChange }) => (
     </select>
 );
 
-export const QuestionTypeExtras = ({ q, onUpdate, onAddOption, onUpdateOption, onAddPair, onUpdatePair }) => {
+export const QuestionTypeExtras = ({ q, onUpdate, onAddOption, onUpdateOption, onRemoveOption, onAddPair, onUpdatePair }) => {
     if (NEEDS_OPTIONS.includes(q.type)) {
         return (
             <div className="bg-base-100 p-4 rounded-2xl space-y-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-base-content/50">
                     Options
                 </span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {q.options.map((opt, i) => (
-                        <input
-                            key={i}
-                            type="text"
-                            className="input input-bordered input-sm rounded-xl"
-                            placeholder={`Option ${String.fromCharCode(65 + i)}`}
-                            value={opt}
-                            onChange={(e) => onUpdateOption(q.id, i, e.target.value)}
-                        />
+                        <div key={i} className="flex items-center gap-1.5 w-full">
+                            <input
+                                type="text"
+                                className="input input-bordered input-sm rounded-xl flex-1"
+                                placeholder={`Option ${String.fromCharCode(65 + i)}`}
+                                value={opt}
+                                onChange={(e) => onUpdateOption(q.id, i, e.target.value)}
+                            />
+                            {q.options.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => onRemoveOption && onRemoveOption(q.id, i)}
+                                    className="btn btn-ghost btn-xs btn-circle text-error flex-shrink-0"
+                                    title="Delete Option"
+                                >
+                                    <PiTrash className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
                     ))}
                     <button
                         type="button"
                         onClick={() => onAddOption(q.id)}
-                        className="btn btn-ghost btn-xs text-primary gap-1 self-center"
+                        className="btn btn-ghost btn-xs text-primary gap-1 self-center md:col-span-2 justify-start pl-1"
                     >
                         <PiPlus /> Add Option
                     </button>

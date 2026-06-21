@@ -15,6 +15,7 @@ export default function QuestionsBuilderCard({
     updateQuestionField,
     handleAddOption,
     updateOption,
+    handleRemoveOption,
     handleAddPair,
     updatePair,
 }) {
@@ -140,6 +141,7 @@ export default function QuestionsBuilderCard({
                                 onUpdate={updateQuestionField}
                                 onAddOption={handleAddOption}
                                 onUpdateOption={updateOption}
+                                onRemoveOption={handleRemoveOption}
                                 onAddPair={handleAddPair}
                                 onUpdatePair={updatePair}
                             />

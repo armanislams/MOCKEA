@@ -129,13 +129,15 @@ export function useQuestionFormState(initialData = initialForm()) {
     }, []);
 
     const updateQuestionField = useCallback((id, field, value) => {
-        // Auto-populate default options when type changes to true-false or yes-no
+        // Auto-populate default options when type changes to true-false, yes-no, or matching-grid
         if (field === "type") {
             let updates = { [field]: value };
             if (value === "true-false") {
                 updates.options = ["True", "False", "Not Given"];
             } else if (value === "yes-no") {
                 updates.options = ["Yes", "No", "Not Given"];
+            } else if (value === "matching-grid") {
+                updates.options = ["A", "B", "C"];
             }
             patchQuestion(id, updates);
         } else {
@@ -162,6 +164,20 @@ export function useQuestionFormState(initialData = initialForm()) {
             if (!targetQuestion) return prev;
             const opts = [...targetQuestion.options];
             opts[idx] = value;
+            return {
+                ...prev,
+                questions: prev.questions.map((q) =>
+                    q.id === qId ? { ...q, options: opts } : q
+                ),
+            };
+        });
+    }, []);
+
+    const handleRemoveOption = useCallback((qId, idx) => {
+        setFormData((prev) => {
+            const targetQuestion = prev.questions.find((q) => q.id === qId);
+            if (!targetQuestion) return prev;
+            const opts = targetQuestion.options.filter((_, i) => i !== idx);
             return {
                 ...prev,
                 questions: prev.questions.map((q) =>
@@ -218,6 +234,7 @@ export function useQuestionFormState(initialData = initialForm()) {
         updateQuestionField,
         handleAddOption,
         updateOption,
+        handleRemoveOption,
         handleAddPair,
         updatePair,
     };
