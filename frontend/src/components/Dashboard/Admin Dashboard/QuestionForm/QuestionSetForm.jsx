@@ -90,6 +90,7 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
             toast.success(res.data.message || `Question set ${mode === "edit" ? "updated" : "saved"} successfully!`);
             queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
             if (mode === "edit") {
+                queryClient.invalidateQueries({ queryKey: ["admin-question", id] });
                 navigate("/dashboard/admin/manage-questions");
             } else {
                 // reset form in add mode
@@ -157,12 +158,12 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
   </div>
 </div>`.trim();
                 data.passage = cleanNotes
-                    ? `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">${cleanNotes}</div>`
+                    ? `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">\n${cleanNotes}\n</div>`
                     : exampleHTML;
             } else {
                 const cleanNotes = stripListeningExampleBlocks(formData.passage);
                 data.passage = cleanNotes
-                    ? `<div class="ielts-listening-notes space-y-4">${cleanNotes}</div>`
+                    ? `<div class="ielts-listening-notes space-y-4">\n${cleanNotes}\n</div>`
                     : "";
             }
             // Clear reading-specific passages — they have a required title field in the schema

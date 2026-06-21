@@ -37,6 +37,26 @@ const getCloudinaryPublicId = (url) => {
     }
 };
 
+const clearMockTestCacheForQuestion = async (questionId) => {
+    try {
+        const mockTests = await MockTest.find({
+            $or: [
+                { 'sections.reading': questionId },
+                { 'sections.listening': questionId },
+                { 'sections.writing': questionId },
+                { 'sections.speaking': questionId }
+            ]
+        });
+        
+        for (const test of mockTests) {
+            await cache.del(`mocktest:${test._id}`);
+            console.log(`Cleared cache for mocktest:${test._id} due to question update`);
+        }
+    } catch (err) {
+        console.error("Failed to clear mock test cache:", err);
+    }
+};
+
 export const getQuestions = async (req, res) => {
     try {
         const { type } = req.query;
@@ -281,6 +301,7 @@ export const updateQuestion = async (req, res) => {
             );
 
             await cache.del(`question:${original._id}`);
+            await clearMockTestCacheForQuestion(original._id);
             return res.status(200).json({
                 success: true,
                 message: "Structural edit detected. Spawned a new version to preserve historical integrity.",
@@ -291,6 +312,7 @@ export const updateQuestion = async (req, res) => {
             // Standard in-place update
             const updatedQuestion = await Questions.findByIdAndUpdate(id, updateData, { returnDocument: 'after' });
             await cache.del(`question:${id}`);
+            await clearMockTestCacheForQuestion(id);
             return res.status(200).json({
                 success: true,
                 message: "Minor edit executed in-place.",
@@ -326,6 +348,7 @@ export const deleteQuestion = async (req, res) => {
 
         await Questions.findByIdAndDelete(id);
         await cache.del(`question:${id}`);
+        await clearMockTestCacheForQuestion(id);
         res.status(200).json({ success: true, message: 'Question deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
