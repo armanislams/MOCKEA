@@ -23,6 +23,344 @@ import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import TestShell from "../../../Common/TestShell.jsx";
 import useEvaluate from "../../../../hooks/useEvaluate";
 
+const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, submitted, result, activeSet }) => {
+    return (
+        <div className="overflow-x-auto my-6 border border-slate-200 rounded-3xl bg-slate-50/20 p-5 shadow-inner">
+            <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr className="bg-slate-100/80 text-slate-800 font-bold border-b border-slate-200">
+                        <th className="p-3 font-black text-xs uppercase tracking-widest text-slate-500">
+                            Question
+                        </th>
+                        {options.map((opt, i) => (
+                            <th key={i} className="p-3 text-center font-black text-xs uppercase tracking-widest text-slate-600">
+                                {opt}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {questions.map((q) => {
+                        const idx = activeSet.questions.findIndex(item => item.id === q.id);
+                        const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === q.id);
+                        const isCorrect = evaluation?.isCorrect;
+                        const selectedVal = answers[q.id] || "";
+                        
+                        return (
+                            <tr key={q.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="p-3 font-semibold text-slate-700 flex items-center gap-3">
+                                    <div className="w-7 h-7 rounded-lg bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-[10px] text-slate-500 flex-shrink-0">
+                                        {idx + 1}
+                                    </div>
+                                    <span>{q.question}</span>
+                                </td>
+                                {options.map((opt, optIdx) => {
+                                    const isSelected = selectedVal === opt;
+                                    const isCorrectOption = q.correctAnswer === opt;
+                                    
+                                    // Styling on submission
+                                    let cellContent = null;
+                                    if (submitted) {
+                                        if (isSelected && isCorrect) {
+                                            cellContent = <PiCheckCircleFill className="text-emerald-500 text-lg mx-auto" />;
+                                        } else if (isSelected && !isCorrect) {
+                                            cellContent = <PiXCircleFill className="text-red-500 text-lg mx-auto" />;
+                                        } else if (!isSelected && isCorrectOption) {
+                                            cellContent = (
+                                                <div className="flex items-center justify-center">
+                                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">
+                                                        ✓
+                                                    </span>
+                                                </div>
+                                            );
+                                        }
+                                    }
+
+                                    return (
+                                        <td key={optIdx} className="p-3 text-center align-middle">
+                                            {submitted ? (
+                                                cellContent || (
+                                                    <input
+                                                        type="radio"
+                                                        disabled
+                                                        checked={isSelected}
+                                                        className="radio radio-primary radio-xs opacity-20 pointer-events-none mx-auto"
+                                                    />
+                                                )
+                                            ) : (
+                                                <input
+                                                    type="radio"
+                                                    name={q.id}
+                                                    value={opt}
+                                                    checked={isSelected}
+                                                    onChange={() => onAnswerChange(q.id, opt)}
+                                                    className="radio radio-primary radio-sm cursor-pointer mx-auto transition-transform hover:scale-110"
+                                                />
+                                            )}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer }) => {
+    return (
+        <div className={`space-y-4 p-6 rounded-3xl transition-all ${
+            submitted 
+            ? (isCorrect ? "bg-success/5 border border-success/20" : "bg-error/5 border border-error/20")
+            : "bg-base-50/50 border border-base-200"
+        }`}>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-base-content/30">Question</span>
+                </div>
+                {submitted && (
+                    isCorrect ? <PiCheckCircleFill className="text-success text-xl" /> : <PiXCircleFill className="text-error text-xl" />
+                )}
+            </div>
+
+            <p className="font-bold text-slate-700 leading-snug">{q.question}</p>
+
+            {q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
+                <div className="grid gap-3">
+                    {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
+                        <label 
+                            key={oIdx}
+                            className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${
+                                answers[q.id] === opt 
+                                ? "bg-primary/10 border-primary text-primary font-bold shadow-md shadow-primary/10" 
+                                : "bg-white border-base-200 hover:border-primary/30"
+                            }`}
+                        >
+                            <input 
+                                type="radio" 
+                                className="hidden"
+                                name={q.id}
+                                value={opt}
+                                disabled={submitted}
+                                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                            />
+                            <span className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center p-1">
+                                {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-current" />}
+                            </span>
+                            <span className="text-sm">{opt}</span>
+                        </label>
+                    ))}
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    <input 
+                        type="text" 
+                        disabled={submitted}
+                        className="input input-bordered w-full rounded-2xl font-bold bg-white focus:border-primary"
+                        placeholder="Type your answer here..."
+                        value={answers[q.id] || ""}
+                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                    />
+                    {submitted && !isCorrect && (
+                        <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
+                            <PiCheckCircleFill /> Correct: {correctAnswer}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const groupQuestions = (questions) => {
+    const groups = [];
+    let currentGridGroup = null;
+
+    for (const q of questions) {
+        if (q.type === 'matching-grid') {
+            if (currentGridGroup) {
+                currentGridGroup.questions.push(q);
+            } else {
+                currentGridGroup = {
+                    type: 'matching-grid-group',
+                    options: (q.options || []).filter(o => o && o.trim() !== ""),
+                    questions: [q]
+                };
+                groups.push(currentGridGroup);
+            }
+        } else {
+            currentGridGroup = null;
+            groups.push({
+                type: 'single',
+                question: q
+            });
+        }
+    }
+    return groups;
+};
+
+const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, questions) => {
+    const grouped = [];
+    const assignedVisuals = new Set();
+    const sortedGroups = [...(questionGroups || [])].sort((a, b) => Number(a.fromQuestion) - Number(b.fromQuestion));
+
+    for (const qg of sortedGroups) {
+        const fromQ = Number(qg.fromQuestion);
+        const toQ = Number(qg.toQuestion);
+        const groupVisuals = [];
+
+        for (let i = 0; i < visualGroups.length; i++) {
+            if (assignedVisuals.has(i)) continue;
+
+            const vg = visualGroups[i];
+            const firstQ = vg.type === 'matching-grid-group' ? vg.questions[0] : vg.question;
+            const firstQIdx = questions.findIndex(item => item.id === firstQ.id);
+            const globalQNum = offset + firstQIdx + 1;
+
+            if (globalQNum >= fromQ && globalQNum <= toQ) {
+                groupVisuals.push(vg);
+                assignedVisuals.add(i);
+            }
+        }
+
+        if (groupVisuals.length > 0) {
+            grouped.push({
+                type: 'group',
+                header: qg,
+                visuals: groupVisuals
+            });
+        }
+    }
+
+    const ungroupedVisuals = [];
+    for (let i = 0; i < visualGroups.length; i++) {
+        if (!assignedVisuals.has(i)) {
+            ungroupedVisuals.push(visualGroups[i]);
+        }
+    }
+
+    if (ungroupedVisuals.length > 0) {
+        grouped.push({
+            type: 'ungrouped',
+            visuals: ungroupedVisuals
+        });
+    }
+
+    return grouped;
+};
+
+const GroupedContainer = ({ header, children }) => {
+    return (
+        <div className="card p-8 rounded-[3rem] border border-slate-200 bg-slate-50/20 space-y-6 shadow-xs w-full mb-6">
+            {header && (
+                <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-5 py-3 rounded-r-2xl">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                Questions {header.fromQuestion}–{header.toQuestion}
+                            </span>
+                            {header.title && (
+                                <span className="font-bold text-sm text-slate-700">· {header.title}</span>
+                            )}
+                        </div>
+                        {header.linkUrl && (
+                            <a 
+                                href={header.linkUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:underline bg-white border border-primary/20 px-3 py-1.5 rounded-xl shadow-xs"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                                Reference Link
+                            </a>
+                        )}
+                    </div>
+                    {header.instructions && (
+                        <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
+                            {header.instructions}
+                        </div>
+                    )}
+                </div>
+            )}
+            <div className="space-y-6">
+                {children}
+            </div>
+        </div>
+    );
+};
+
+const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, submitted, result, activeSet }) => {
+    return (
+        <div className="space-y-8">
+            {groupedItems.map((groupEntry, geIdx) => {
+                const isGroup = groupEntry.type === 'group';
+                
+                const children = groupEntry.visuals.map((vg, vgIdx) => {
+                    if (vg.type === 'matching-grid-group') {
+                        return (
+                            <div key={`grid-${geIdx}-${vgIdx}`} className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white shadow-xs animate-fadeIn">
+                                <h3 className="text-lg font-black uppercase tracking-widest text-primary/40 pl-2">
+                                    Matching Grid
+                                </h3>
+                                <MatchingGridRenderer
+                                    questions={vg.questions}
+                                    options={vg.options}
+                                    answers={answers}
+                                    onAnswerChange={handleAnswerChange}
+                                    submitted={submitted}
+                                    result={result}
+                                    activeSet={activeSet}
+                                />
+                            </div>
+                        );
+                    }
+
+                    const q = vg.question;
+                    const idx = activeSet.questions.findIndex(item => item.id === q.id);
+                    const isCorrect = submitted && result?.evaluatedAnswers?.find(a => a.questionId === q.id)?.isCorrect;
+
+                    return (
+                        <div 
+                            key={q.id || idx} 
+                            id={`question-${idx}`}
+                            className="space-y-4 scroll-mt-6 animate-fadeIn"
+                        >
+                            <QuestionRenderer
+                                q={q}
+                                idx={idx}
+                                submitted={submitted}
+                                answers={answers}
+                                handleAnswerChange={handleAnswerChange}
+                                isCorrect={isCorrect}
+                                correctAnswer={q.correctAnswer}
+                            />
+                        </div>
+                    );
+                });
+
+                if (isGroup) {
+                    return (
+                        <GroupedContainer key={`group-${geIdx}`} header={groupEntry.header}>
+                            {children}
+                        </GroupedContainer>
+                    );
+                }
+
+                return (
+                    <div key={`ungrouped-${geIdx}`} className="space-y-8">
+                        {children}
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 const Reading = () => {
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
@@ -486,98 +824,20 @@ const Reading = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-10">
-                        {activeSet.questions.map((q, idx) => {
-                            // Find any group that starts at this question's 1-based global index
-                            const globalQNum = idx + 1;
-                            const groupHeader = (activeSet.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
-
-                            const isCorrect = submitted && result?.evaluatedAnswers?.find(a => a.questionId === q.id)?.isCorrect;
-                            
+                        {(() => {
+                            const groups = groupQuestions(activeSet.questions || []);
+                            const groupedItems = groupVisualsByQuestionGroups(groups, activeSet.questionGroups, 0, activeSet.questions || []);
                             return (
-                                <div key={q.id} className="space-y-4">
-                                    {/* Group header if this question starts a group */}
-                                    {groupHeader && (
-                                        <div className="space-y-2 pt-2">
-                                            <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
-                                                <span className="text-xs font-black uppercase tracking-widest text-primary">
-                                                    Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
-                                                </span>
-                                                {groupHeader.title && (
-                                                    <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
-                                                )}
-                                            </div>
-                                            {groupHeader.instructions && (
-                                                <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
-                                                    {groupHeader.instructions}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <div className={`space-y-4 p-6 rounded-3xl transition-all ${
-                                        submitted 
-                                        ? (isCorrect ? "bg-success/5 border border-success/20" : "bg-error/5 border border-error/20")
-                                        : "bg-base-50/50 border border-base-200"
-                                    }`}>
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{idx + 1}</span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-base-content/30">Question</span>
-                                        </div>
-                                        {submitted && (
-                                            isCorrect ? <PiCheckCircleFill className="text-success text-xl" /> : <PiXCircleFill className="text-error text-xl" />
-                                        )}
-                                    </div>
-
-                                    <p className="font-bold text-slate-700 leading-snug">{q.question}</p>
-
-                                    {q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
-                                        <div className="grid gap-3">
-                                            {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
-                                                <label 
-                                                    key={oIdx}
-                                                    className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${
-                                                        answers[q.id] === opt 
-                                                        ? "bg-primary/10 border-primary text-primary font-bold shadow-md shadow-primary/10" 
-                                                        : "bg-white border-base-200 hover:border-primary/30"
-                                                    }`}
-                                                >
-                                                    <input 
-                                                        type="radio" 
-                                                        className="hidden"
-                                                        name={q.id}
-                                                        value={opt}
-                                                        disabled={submitted}
-                                                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                                                    />
-                                                    <span className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center p-1">
-                                                        {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-current" />}
-                                                    </span>
-                                                    <span className="text-sm">{opt}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <input 
-                                                type="text" 
-                                                disabled={submitted}
-                                                className="input input-bordered w-full rounded-2xl font-bold bg-white focus:border-primary"
-                                                placeholder="Type your answer here..."
-                                                value={answers[q.id] || ""}
-                                                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                                            />
-                                            {submitted && !isCorrect && (
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
-                                                    <PiCheckCircleFill /> Correct: {q.correctAnswer}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                        </div>
-                                    </div>
-                                );
-                        })}
+                                <GroupedQuestionsRenderer
+                                    groupedItems={groupedItems}
+                                    answers={answers}
+                                    handleAnswerChange={handleAnswerChange}
+                                    submitted={submitted}
+                                    result={result}
+                                    activeSet={activeSet}
+                                />
+                            );
+                        })()}
 
                         {!submitted && (
                             <button 

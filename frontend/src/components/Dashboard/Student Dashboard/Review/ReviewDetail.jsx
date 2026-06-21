@@ -152,13 +152,11 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
 
     for (const item of mapped) {
         if (item.q && item.q.type === 'matching-grid') {
-            const optionsKey = (item.q.options || []).filter(o => o && o.trim() !== "").join(',');
-            if (currentGridGroup && currentGridGroup.optionsKey === optionsKey) {
+            if (currentGridGroup) {
                 currentGridGroup.items.push(item);
             } else {
                 currentGridGroup = {
                     type: 'matching-grid-group',
-                    optionsKey,
                     options: (item.q.options || []).filter(o => o && o.trim() !== ""),
                     items: [item]
                 };
@@ -174,6 +172,166 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
     }
     return groups;
 };
+
+const groupVisualsByQuestionGroups = (visualGroups, questionGroups, questions) => {
+    const grouped = [];
+    const assignedVisuals = new Set();
+    const sortedGroups = [...(questionGroups || [])].sort((a, b) => Number(a.fromQuestion) - Number(b.fromQuestion));
+
+    for (const qg of sortedGroups) {
+        const fromQ = Number(qg.fromQuestion);
+        const toQ = Number(qg.toQuestion);
+        const groupVisuals = [];
+
+        for (let i = 0; i < visualGroups.length; i++) {
+            if (assignedVisuals.has(i)) continue;
+
+            const vg = visualGroups[i];
+            const firstItem = vg.type === 'matching-grid-group' ? vg.items[0] : vg.item;
+            const globalQNum = firstItem.originalIdx + 1;
+
+            if (globalQNum >= fromQ && globalQNum <= toQ) {
+                groupVisuals.push(vg);
+                assignedVisuals.add(i);
+            }
+        }
+
+        if (groupVisuals.length > 0) {
+            grouped.push({
+                type: 'group',
+                header: qg,
+                visuals: groupVisuals
+            });
+        }
+    }
+
+    const ungroupedVisuals = [];
+    for (let i = 0; i < visualGroups.length; i++) {
+        if (!assignedVisuals.has(i)) {
+            ungroupedVisuals.push(visualGroups[i]);
+        }
+    }
+
+    if (ungroupedVisuals.length > 0) {
+        grouped.push({
+            type: 'ungrouped',
+            visuals: ungroupedVisuals
+        });
+    }
+
+    return grouped;
+};
+
+const GroupedContainer = ({ header, children }) => {
+    return (
+        <div className="card p-8 rounded-[3rem] border border-slate-200 bg-slate-50/20 space-y-6 shadow-xs w-full mb-6">
+            {header && (
+                <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-5 py-3 rounded-r-2xl">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                Questions {header.fromQuestion}–{header.toQuestion}
+                            </span>
+                            {header.title && (
+                                <span className="font-bold text-sm text-slate-700">· {header.title}</span>
+                            )}
+                        </div>
+                        {header.linkUrl && (
+                            <a 
+                                href={header.linkUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:underline bg-white border border-primary/20 px-3 py-1.5 rounded-xl shadow-xs"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                                Reference Link
+                            </a>
+                        )}
+                    </div>
+                    {header.instructions && (
+                        <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
+                            {header.instructions}
+                        </div>
+                    )}
+                </div>
+            )}
+            <div className="space-y-6">
+                {children}
+            </div>
+        </div>
+    );
+};
+
+const GroupedReviewQuestionsRenderer = ({ groupedItems }) => {
+    return (
+        <div className="space-y-8">
+            {groupedItems.map((groupEntry, geIdx) => {
+                const isGroup = groupEntry.type === 'group';
+                
+                const children = groupEntry.visuals.map((vg, vgIdx) => {
+                    if (vg.type === 'matching-grid-group') {
+                        return (
+                            <ReviewMatchingGrid
+                                key={`grid-${geIdx}-${vgIdx}`}
+                                items={vg.items}
+                                options={vg.options}
+                            />
+                        );
+                    }
+
+                    const { ans, originalIdx } = vg.item;
+                    return (
+                        <div key={originalIdx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
+                            ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
+                        }`}>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{originalIdx + 1}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
+                                            <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
+                                                {ans.userAnswer || "No Answer"}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
+                                            <p className="font-black text-lg text-success">{ans.correctAnswer}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-3xl flex-shrink-0">
+                                    {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                });
+
+                if (isGroup) {
+                    return (
+                        <GroupedContainer key={`group-${geIdx}`} header={groupEntry.header}>
+                            {children}
+                        </GroupedContainer>
+                    );
+                }
+
+                return (
+                    <div key={`ungrouped-${geIdx}`} className="space-y-8">
+                        {children}
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 
 const ReviewDetail = () => {
     const { id } = useParams();
@@ -435,49 +593,12 @@ const ReviewDetail = () => {
                                         )}
                                         {(() => {
                                             const groups = groupReviewAnswers(currentSectionResult.answers, currentSectionData, activeTab, activePassageTab);
-                                            return groups.map((group, gIdx) => {
-                                                if (group.type === 'matching-grid-group') {
-                                                    return (
-                                                        <ReviewMatchingGrid
-                                                            key={`grid-${gIdx}`}
-                                                            items={group.items}
-                                                            options={group.options}
-                                                        />
-                                                    );
-                                                }
-
-                                                const { ans, originalIdx } = group.item;
-                                                return (
-                                                    <div key={originalIdx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
-                                                        ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
-                                                    }`}>
-                                                        <div className="flex items-start justify-between gap-4">
-                                                            <div className="flex-1 space-y-3">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{originalIdx + 1}</span>
-                                                                    <span className="text-xs font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
-                                                                </div>
-                                                                
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="space-y-1">
-                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
-                                                                        <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
-                                                                            {ans.userAnswer || "No Answer"}
-                                                                        </p>
-                                                                    </div>
-                                                                    <div className="space-y-1">
-                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
-                                                                        <p className="font-black text-lg text-success">{ans.correctAnswer}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-3xl">
-                                                                {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            });
+                                            const groupedItems = groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups, currentSectionData?.questions);
+                                            return (
+                                                <GroupedReviewQuestionsRenderer
+                                                    groupedItems={groupedItems}
+                                                />
+                                            );
                                         })()}
                                     </>
                                 ) : (

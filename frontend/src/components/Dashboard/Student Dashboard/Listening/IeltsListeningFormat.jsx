@@ -762,13 +762,11 @@ const groupQuestions = (questions) => {
 
     for (const q of questions) {
         if (q.type === 'matching-grid') {
-            const optionsKey = (q.options || []).filter(o => o && o.trim() !== "").join(',');
-            if (currentGridGroup && currentGridGroup.optionsKey === optionsKey) {
+            if (currentGridGroup) {
                 currentGridGroup.questions.push(q);
             } else {
                 currentGridGroup = {
                     type: 'matching-grid-group',
-                    optionsKey,
                     options: (q.options || []).filter(o => o && o.trim() !== ""),
                     questions: [q]
                 };
@@ -857,6 +855,172 @@ const ReferenceMediaRenderer = ({ url }) => {
                     {isImage ? "Open Map / Diagram in new window" : "Open Reference Link"}
                 </a>
             </div>
+        </div>
+    );
+};
+
+const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, questions) => {
+    const grouped = [];
+    const assignedVisuals = new Set();
+    const sortedGroups = [...(questionGroups || [])].sort((a, b) => Number(a.fromQuestion) - Number(b.fromQuestion));
+
+    for (const qg of sortedGroups) {
+        const fromQ = Number(qg.fromQuestion);
+        const toQ = Number(qg.toQuestion);
+        const groupVisuals = [];
+
+        for (let i = 0; i < visualGroups.length; i++) {
+            if (assignedVisuals.has(i)) continue;
+
+            const vg = visualGroups[i];
+            const firstQ = vg.type === 'matching-grid-group' ? vg.questions[0] : vg.question;
+            const firstQIdx = questions.findIndex(item => item.id === firstQ.id);
+            const globalQNum = offset + firstQIdx + 1;
+
+            if (globalQNum >= fromQ && globalQNum <= toQ) {
+                groupVisuals.push(vg);
+                assignedVisuals.add(i);
+            }
+        }
+
+        if (groupVisuals.length > 0) {
+            grouped.push({
+                type: 'group',
+                header: qg,
+                visuals: groupVisuals
+            });
+        }
+    }
+
+    const ungroupedVisuals = [];
+    for (let i = 0; i < visualGroups.length; i++) {
+        if (!assignedVisuals.has(i)) {
+            ungroupedVisuals.push(visualGroups[i]);
+        }
+    }
+
+    if (ungroupedVisuals.length > 0) {
+        grouped.push({
+            type: 'ungrouped',
+            visuals: ungroupedVisuals
+        });
+    }
+
+    return grouped;
+};
+
+const GroupedContainer = ({ header, children }) => {
+    return (
+        <div className="card p-8 rounded-[3rem] border border-slate-200/80 bg-slate-50/20 space-y-6 shadow-xs w-full">
+            {header && (
+                <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-5 py-3 rounded-r-2xl">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                Questions {header.fromQuestion}–{header.toQuestion}
+                            </span>
+                            {header.title && (
+                                <span className="font-bold text-sm text-slate-700">· {header.title}</span>
+                            )}
+                        </div>
+                        {header.linkUrl && (
+                            <a 
+                                href={header.linkUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:underline bg-white border border-primary/20 px-3 py-1.5 rounded-xl shadow-xs"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                                Reference Link
+                            </a>
+                        )}
+                    </div>
+                    {header.instructions && (
+                        <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
+                            {header.instructions}
+                        </div>
+                    )}
+                </div>
+            )}
+            <div className="space-y-6">
+                {children}
+            </div>
+        </div>
+    );
+};
+
+const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, submitted, result, offset, activeSet }) => {
+    return (
+        <div className="space-y-8">
+            {groupedItems.map((groupEntry, geIdx) => {
+                const isGroup = groupEntry.type === 'group';
+                
+                const children = groupEntry.visuals.map((vg, vgIdx) => {
+                    if (vg.type === 'matching-grid-group') {
+                        return (
+                            <motion.div
+                                key={`grid-${geIdx}-${vgIdx}`}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: vgIdx * 0.04 }}
+                            >
+                                <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs">
+                                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
+                                        Matching Table
+                                    </h3>
+                                    <MatchingGridRenderer
+                                        questions={vg.questions}
+                                        options={vg.options}
+                                        answers={answers}
+                                        onAnswerChange={onAnswerChange}
+                                        submitted={submitted}
+                                        result={result}
+                                        offset={offset}
+                                        activeSet={activeSet}
+                                    />
+                                </div>
+                            </motion.div>
+                        );
+                    }
+
+                    const q = vg.question;
+                    const idx = activeSet.questions.findIndex(item => item.id === q.id);
+                    return (
+                        <motion.div
+                            key={q.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.04 }}
+                        >
+                            <QuestionRenderer
+                                q={q}
+                                idx={idx}
+                                offset={offset}
+                                submitted={submitted}
+                                result={result}
+                                answers={answers}
+                                onAnswerChange={onAnswerChange}
+                            />
+                        </motion.div>
+                    );
+                });
+
+                if (isGroup) {
+                    return (
+                        <GroupedContainer key={`group-${geIdx}`} header={groupEntry.header}>
+                            {children}
+                        </GroupedContainer>
+                    );
+                }
+
+                return (
+                    <div key={`ungrouped-${geIdx}`} className="space-y-6">
+                        {children}
+                    </div>
+                );
+            })}
         </div>
     );
 };
@@ -979,88 +1143,17 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                 {/* ── Questions ───────────────────────────────────────── */}
                 {remainingQuestions.length > 0 && (() => {
                     const groups = groupQuestions(remainingQuestions);
+                    const groupedItems = groupVisualsByQuestionGroups(groups, activeSet.questionGroups, offset, activeSet.questions);
                     return (
-                        <div className="space-y-6">
-                            {groups.map((group, gIdx) => {
-                                const firstQ = group.type === 'matching-grid-group' ? group.questions[0] : group.question;
-                                const firstQIdx = activeSet.questions.findIndex(item => item.id === firstQ.id);
-                                const globalQNum = offset + firstQIdx + 1;
-                                const groupHeader = (activeSet.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
-
-                                let element = null;
-
-                                if (group.type === 'matching-grid-group') {
-                                    element = (
-                                        <motion.div
-                                            key={`grid-${gIdx}`}
-                                            initial={{ opacity: 0, y: 8 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: gIdx * 0.04 }}
-                                        >
-                                            <div className="p-6 bg-slate-50/40 border border-slate-200 rounded-[2.5rem] space-y-4">
-                                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
-                                                    Matching Table
-                                                </h3>
-                                                <MatchingGridRenderer
-                                                    questions={group.questions}
-                                                    options={group.options}
-                                                    answers={answers}
-                                                    onAnswerChange={onAnswerChange}
-                                                    submitted={submitted}
-                                                    result={result}
-                                                    offset={offset}
-                                                    activeSet={activeSet}
-                                                />
-                                            </div>
-                                        </motion.div>
-                                    );
-                                } else {
-                                    const q = group.question;
-                                    const idx = activeSet.questions.findIndex(item => item.id === q.id);
-                                    element = (
-                                        <motion.div
-                                            key={q.id}
-                                            initial={{ opacity: 0, y: 8 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.04 }}
-                                        >
-                                            <QuestionRenderer
-                                                q={q}
-                                                idx={idx}
-                                                offset={offset}
-                                                submitted={submitted}
-                                                result={result}
-                                                answers={answers}
-                                                onAnswerChange={onAnswerChange}
-                                            />
-                                        </motion.div>
-                                    );
-                                }
-
-                                return (
-                                    <div key={group.type === 'matching-grid-group' ? `group-wrapper-${gIdx}` : firstQ.id} className="space-y-4">
-                                        {groupHeader && (
-                                            <div className="space-y-2 pt-2">
-                                                <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
-                                                    <span className="text-xs font-black uppercase tracking-widest text-primary">
-                                                        Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
-                                                    </span>
-                                                    {groupHeader.title && (
-                                                        <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
-                                                    )}
-                                                </div>
-                                                {groupHeader.instructions && (
-                                                    <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
-                                                        {groupHeader.instructions}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                        {element}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        <GroupedQuestionsRenderer
+                            groupedItems={groupedItems}
+                            answers={answers}
+                            onAnswerChange={onAnswerChange}
+                            submitted={submitted}
+                            result={result}
+                            offset={offset}
+                            activeSet={activeSet}
+                        />
                     );
                 })()}
             </div>

@@ -314,13 +314,11 @@ const groupQuestions = (questions) => {
 
     for (const q of questions) {
         if (q.type === 'matching-grid') {
-            const optionsKey = (q.options || []).filter(o => o && o.trim() !== "").join(',');
-            if (currentGridGroup && currentGridGroup.optionsKey === optionsKey) {
+            if (currentGridGroup) {
                 currentGridGroup.questions.push(q);
             } else {
                 currentGridGroup = {
                     type: 'matching-grid-group',
-                    optionsKey,
                     options: (q.options || []).filter(o => o && o.trim() !== ""),
                     questions: [q]
                 };
@@ -392,6 +390,169 @@ const ReferenceMediaRenderer = ({ url }) => {
                     {isImage ? "Open Map / Diagram in new window" : "Open Reference Link"}
                 </a>
             </div>
+        </div>
+    );
+};
+
+const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, questions) => {
+    const grouped = [];
+    const assignedVisuals = new Set();
+    const sortedGroups = [...(questionGroups || [])].sort((a, b) => Number(a.fromQuestion) - Number(b.fromQuestion));
+
+    for (const qg of sortedGroups) {
+        const fromQ = Number(qg.fromQuestion);
+        const toQ = Number(qg.toQuestion);
+        const groupVisuals = [];
+
+        for (let i = 0; i < visualGroups.length; i++) {
+            if (assignedVisuals.has(i)) continue;
+
+            const vg = visualGroups[i];
+            const firstQ = vg.type === 'matching-grid-group' ? vg.questions[0] : vg.question;
+            const firstQIdx = questions.findIndex(item => item.id === firstQ.id);
+            const globalQNum = offset + firstQIdx + 1;
+
+            if (globalQNum >= fromQ && globalQNum <= toQ) {
+                groupVisuals.push(vg);
+                assignedVisuals.add(i);
+            }
+        }
+
+        if (groupVisuals.length > 0) {
+            grouped.push({
+                type: 'group',
+                header: qg,
+                visuals: groupVisuals
+            });
+        }
+    }
+
+    const ungroupedVisuals = [];
+    for (let i = 0; i < visualGroups.length; i++) {
+        if (!assignedVisuals.has(i)) {
+            ungroupedVisuals.push(visualGroups[i]);
+        }
+    }
+
+    if (ungroupedVisuals.length > 0) {
+        grouped.push({
+            type: 'ungrouped',
+            visuals: ungroupedVisuals
+        });
+    }
+
+    return grouped;
+};
+
+const GroupedContainer = ({ header, children }) => {
+    return (
+        <div className="card p-8 rounded-[3rem] border border-slate-200 bg-slate-50/20 space-y-6 shadow-xs w-full">
+            {header && (
+                <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-5 py-3 rounded-r-2xl">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                Questions {header.fromQuestion}–{header.toQuestion}
+                            </span>
+                            {header.title && (
+                                <span className="font-bold text-sm text-slate-700">· {header.title}</span>
+                            )}
+                        </div>
+                        {header.linkUrl && (
+                            <a 
+                                href={header.linkUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:underline bg-white border border-primary/20 px-3 py-1.5 rounded-xl shadow-xs"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                                Reference Link
+                            </a>
+                        )}
+                    </div>
+                    {header.instructions && (
+                        <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
+                            {header.instructions}
+                        </div>
+                    )}
+                </div>
+            )}
+            <div className="space-y-6">
+                {children}
+            </div>
+        </div>
+    );
+};
+
+const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offset, data }) => {
+    return (
+        <div className="space-y-8">
+            {groupedItems.map((groupEntry, geIdx) => {
+                const isGroup = groupEntry.type === 'group';
+                
+                const children = groupEntry.visuals.map((vg, vgIdx) => {
+                    if (vg.type === 'matching-grid-group') {
+                        return (
+                            <div key={`grid-${geIdx}-${vgIdx}`} className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white shadow-xs">
+                                <h3 className="text-lg font-black uppercase tracking-widest text-primary/40 pl-2">
+                                    Matching Grid
+                                </h3>
+                                <MatchingGridRenderer
+                                    questions={vg.questions}
+                                    options={vg.options}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    offset={offset}
+                                    data={data}
+                                />
+                            </div>
+                        );
+                    }
+
+                    const q = vg.question;
+                    const idx = data.questions.findIndex(item => item.id === q.id);
+                    return (
+                        <div 
+                            key={q.id || idx} 
+                            id={`question-${idx}`}
+                            className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white hover:border-primary/30 transition-colors scroll-mt-6"
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="flex-none w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                                    {offset + idx + 1}
+                                </div>
+                                <div className="flex-1 space-y-4">
+                                    <p className="text-lg font-semibold leading-snug">
+                                        {q.question}
+                                    </p>
+                                    
+                                    <QuestionRenderer
+                                        q={q}
+                                        answers={answers}
+                                        onAnswerChange={onAnswerChange}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    );
+                });
+
+                if (isGroup) {
+                    return (
+                        <GroupedContainer key={`group-${geIdx}`} header={groupEntry.header}>
+                            {children}
+                        </GroupedContainer>
+                    );
+                }
+
+                return (
+                    <div key={`ungrouped-${geIdx}`} className="space-y-8">
+                        {children}
+                    </div>
+                );
+            })}
         </div>
     );
 };
@@ -592,131 +753,15 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
 
                     {remainingQuestions.length > 0 && (() => {
                         const groups = groupQuestions(remainingQuestions);
+                        const groupedItems = groupVisualsByQuestionGroups(groups, data.questionGroups, offset, data.questions);
                         return (
-                            <div className="space-y-8">
-                                {groups.map((group, gIdx) => {
-                                    const firstQ = group.type === 'matching-grid-group' ? group.questions[0] : group.question;
-                                    const firstQIdx = data.questions.findIndex(item => item.id === firstQ.id);
-                                    const globalQNum = offset + firstQIdx + 1;
-                                    const groupHeader = (data?.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
-
-                                    let element = null;
-
-                                    if (group.type === 'matching-grid-group') {
-                                        element = (
-                                            <div key={`grid-${gIdx}`} className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white shadow-xs">
-                                                <h3 className="text-lg font-black uppercase tracking-widest text-primary/40 pl-2">
-                                                    Matching Grid
-                                                </h3>
-                                                <MatchingGridRenderer
-                                                    questions={group.questions}
-                                                    options={group.options}
-                                                    answers={answers}
-                                                    onAnswerChange={onAnswerChange}
-                                                    offset={offset}
-                                                    data={data}
-                                                />
-                                            </div>
-                                        );
-                                    } else {
-                                        const q = group.question;
-                                        const idx = data.questions.findIndex(item => item.id === q.id);
-                                        element = (
-                                            <div 
-                                                key={q.id || idx} 
-                                                id={`question-${idx}`}
-                                                className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white hover:border-primary/30 transition-colors scroll-mt-6"
-                                            >
-                                                <div className="flex items-start gap-4">
-                                                    <div className="flex-none w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
-                                                        {offset + idx + 1}
-                                                    </div>
-                                                    <div className="flex-1 space-y-4">
-                                                        <p className="text-lg font-semibold leading-snug">
-                                                            {q.question}
-                                                        </p>
-
-                                                        {q.type === 'multiple-choice' && (
-                                                            <div className="grid grid-cols-1 gap-2">
-                                                                {q.options?.map((opt, optIdx) => (
-                                                                    <button 
-                                                                        key={optIdx}
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            e.stopPropagation();
-                                                                            onAnswerChange(q.id, opt);
-                                                                        }}
-                                                                        className={`w-full text-left px-6 py-4 rounded-2xl text-sm font-bold border-2 transition-all flex items-center gap-4 ${
-                                                                            answers[q.id] === opt 
-                                                                            ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 
-                                                                            : "bg-base-50 border-transparent hover:border-primary/20"
-                                                                        }`}
-                                                                    >
-                                                                        <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-black">
-                                                                            {String.fromCharCode(65 + optIdx)}
-                                                                        </span>
-                                                                        {opt}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-
-                                                        {(q.type === 'matching' || q.type === 'heading-matching') && (
-                                                            <select
-                                                                value={answers[q.id] || ""}
-                                                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
-                                                                className="select select-bordered w-full rounded-2xl h-14 bg-white border-slate-400 focus:border-primary font-bold"
-                                                            >
-                                                                <option value="">— Select a match —</option>
-                                                                {((q.options?.length && q.options.some(opt => opt && opt.trim() !== ""))
-                                                                    ? q.options.filter(opt => opt && opt.trim() !== "")
-                                                                    : (q.matchingPairs || []).map((p) => p.value).filter(Boolean)
-                                                                ).map((opt, optIdx) => (
-                                                                    <option key={optIdx} value={opt}>{opt}</option>
-                                                                ))}
-                                                            </select>
-                                                        )}
-
-                                                        {!(q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching') && (
-                                                            <input 
-                                                                type="text"
-                                                                value={answers[q.id] || ""}
-                                                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
-                                                                placeholder="Type your answer here..."
-                                                                className="input input-bordered w-full rounded-2xl h-14 bg-white border-slate-400 focus:border-primary font-bold"
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-
-                                    return (
-                                        <div key={group.type === 'matching-grid-group' ? `group-wrapper-${gIdx}` : firstQ.id} className="space-y-4">
-                                            {groupHeader && (
-                                                <div className="space-y-2 pt-2">
-                                                    <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
-                                                        <span className="text-xs font-black uppercase tracking-widest text-primary">
-                                                            Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
-                                                        </span>
-                                                        {groupHeader.title && (
-                                                            <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
-                                                        )}
-                                                    </div>
-                                                    {groupHeader.instructions && (
-                                                        <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
-                                                            {groupHeader.instructions}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                            {element}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            <GroupedQuestionsRenderer
+                                groupedItems={groupedItems}
+                                answers={answers}
+                                onAnswerChange={onAnswerChange}
+                                offset={offset}
+                                data={data}
+                            />
                         );
                     })()}
                 </div>

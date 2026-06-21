@@ -109,7 +109,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     <PiBookOpen className="text-primary w-4 h-4" />
                                     <span className="text-xs font-black uppercase tracking-widest text-primary">Group {gIdx + 1}</span>
                                 </div>
-                                <div className="grid md:grid-cols-4 gap-3">
+                                <div className="grid md:grid-cols-5 gap-3">
                                     {/* From Q# */}
                                     <div>
                                         <label className="label"><span className="label-text font-semibold text-xs">From Q#</span></label>
@@ -168,6 +168,21 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                             onChange={(e) => {
                                                 const upd = [...(formData.questionGroups || [])];
                                                 upd[gIdx] = { ...upd[gIdx], title: e.target.value };
+                                                patch({ questionGroups: upd });
+                                            }}
+                                        />
+                                    </div>
+                                    {/* Link URL */}
+                                    <div>
+                                        <label className="label"><span className="label-text font-semibold text-xs">Link URL (optional)</span></label>
+                                        <input
+                                            type="url"
+                                            className="input input-bordered w-full rounded-2xl text-sm"
+                                            placeholder="e.g. https://..."
+                                            value={group.linkUrl || ""}
+                                            onChange={(e) => {
+                                                const upd = [...(formData.questionGroups || [])];
+                                                upd[gIdx] = { ...upd[gIdx], linkUrl: e.target.value };
                                                 patch({ questionGroups: upd });
                                             }}
                                         />
