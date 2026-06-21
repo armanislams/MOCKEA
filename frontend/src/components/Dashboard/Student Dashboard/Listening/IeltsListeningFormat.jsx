@@ -53,7 +53,12 @@ const convertMarkdownTablesToHtml = (text) => {
         const line = lines[i].trim();
         
         const formatInlineBullets = (str) => {
-            return str.replace(/(?<=^|\s|;)[-*]\s+/g, '<span class="text-primary font-black mr-1">•</span> ');
+            if (!str) return str;
+            let formatted = str.trim();
+            formatted = formatted.replace(/^[-*]\s+/, '<span class="text-primary font-black mr-1">•</span> ');
+            formatted = formatted.replace(/\s*[,;\n]\s*[-*]\s+/g, '<br/><span class="text-primary font-black mr-1">•</span> ');
+            formatted = formatted.replace(/\s+[-*]\s+/g, '<br/><span class="text-primary font-black mr-1">•</span> ');
+            return formatted;
         };
 
         if (line.startsWith("|") && line.endsWith("|")) {
@@ -305,7 +310,12 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
             ...row,
             cells: row.cells.map(cellText => {
                 const formatInlineBullets = (str) => {
-                    return str.replace(/(?<=^|\s|;)[-*]\s+/g, '<span class="text-primary font-black mr-1">•</span> ');
+                    if (!str) return str;
+                    let formatted = str.trim();
+                    formatted = formatted.replace(/^[-*]\s+/, '<span class="text-primary font-black mr-1">•</span> ');
+                    formatted = formatted.replace(/\s*[,;\n]\s*[-*]\s+/g, '<br/><span class="text-primary font-black mr-1">•</span> ');
+                    formatted = formatted.replace(/\s+[-*]\s+/g, '<br/><span class="text-primary font-black mr-1">•</span> ');
+                    return formatted;
                 };
 
                 const formattedText = formatInlineBullets(cellText);
