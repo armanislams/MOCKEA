@@ -95,7 +95,7 @@ export const initialForm = () => ({
     instructions: "",
     passage: "",
     passages: [{ title: "", content: "" }],
-    questionGroups: [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0 }],
+    questionGroups: [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0, linkUrl: "" }],
     audioUrl: "",
     speakingPrompt: "",
     speakingPart1Questions: [""],

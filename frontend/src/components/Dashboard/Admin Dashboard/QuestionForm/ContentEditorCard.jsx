@@ -79,7 +79,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
             )}
 
             {/* ── Question Groups Manager ──────────────────────────── */}
-            {testType === "reading" && (
+            {(testType === "reading" || testType === "listening") && (
                 <div className="space-y-4 pt-2">
                     <div className="flex items-center justify-between">
                         <div>

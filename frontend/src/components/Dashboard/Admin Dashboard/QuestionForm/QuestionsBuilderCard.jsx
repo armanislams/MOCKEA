@@ -41,8 +41,8 @@ export default function QuestionsBuilderCard({
 
             {formData.questions?.map((q, index) => {
                 const questionNum = index + 1;
-                const group = testType === "reading"
-                    ? (formData.questionGroups || []).find(g => g.fromQuestion === questionNum)
+                const group = (testType === "reading" || testType === "listening")
+                    ? (formData.questionGroups || []).find(g => Number(g.fromQuestion) === questionNum)
                     : null;
 
                 return (

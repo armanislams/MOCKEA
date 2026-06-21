@@ -982,8 +982,15 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                     return (
                         <div className="space-y-6">
                             {groups.map((group, gIdx) => {
+                                const firstQ = group.type === 'matching-grid-group' ? group.questions[0] : group.question;
+                                const firstQIdx = activeSet.questions.findIndex(item => item.id === firstQ.id);
+                                const globalQNum = offset + firstQIdx + 1;
+                                const groupHeader = (activeSet.questionGroups || []).find(g => Number(g.fromQuestion) === globalQNum);
+
+                                let element = null;
+
                                 if (group.type === 'matching-grid-group') {
-                                    return (
+                                    element = (
                                         <motion.div
                                             key={`grid-${gIdx}`}
                                             initial={{ opacity: 0, y: 8 }}
@@ -1007,27 +1014,50 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                                             </div>
                                         </motion.div>
                                     );
+                                } else {
+                                    const q = group.question;
+                                    const idx = activeSet.questions.findIndex(item => item.id === q.id);
+                                    element = (
+                                        <motion.div
+                                            key={q.id}
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.04 }}
+                                        >
+                                            <QuestionRenderer
+                                                q={q}
+                                                idx={idx}
+                                                offset={offset}
+                                                submitted={submitted}
+                                                result={result}
+                                                answers={answers}
+                                                onAnswerChange={onAnswerChange}
+                                            />
+                                        </motion.div>
+                                    );
                                 }
 
-                                const q = group.question;
-                                const idx = activeSet.questions.findIndex(item => item.id === q.id);
                                 return (
-                                    <motion.div
-                                        key={q.id}
-                                        initial={{ opacity: 0, y: 8 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.04 }}
-                                    >
-                                        <QuestionRenderer
-                                            q={q}
-                                            idx={idx}
-                                            offset={offset}
-                                            submitted={submitted}
-                                            result={result}
-                                            answers={answers}
-                                            onAnswerChange={onAnswerChange}
-                                        />
-                                    </motion.div>
+                                    <div key={group.type === 'matching-grid-group' ? `group-wrapper-${gIdx}` : firstQ.id} className="space-y-4">
+                                        {groupHeader && (
+                                            <div className="space-y-2 pt-2">
+                                                <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-2.5 rounded-r-xl">
+                                                    <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                                        Questions {groupHeader.fromQuestion}–{groupHeader.toQuestion}
+                                                    </span>
+                                                    {groupHeader.title && (
+                                                        <span className="font-bold text-sm text-slate-700">· {groupHeader.title}</span>
+                                                    )}
+                                                </div>
+                                                {groupHeader.instructions && (
+                                                    <div className="bg-amber-50 border border-amber-200/60 px-4 py-3 rounded-2xl text-sm text-slate-700 leading-snug">
+                                                        {groupHeader.instructions}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        {element}
+                                    </div>
                                 );
                             })}
                         </div>

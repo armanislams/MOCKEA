@@ -104,6 +104,7 @@ const QuestionsSchema = new mongoose.Schema(
                 fromQuestion: { type: Number },
                 toQuestion:   { type: Number },
                 passageIndex: { type: Number, default: 0 },
+                linkUrl:      { type: String },
             }
         ],
         // For Listening

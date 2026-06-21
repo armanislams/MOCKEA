@@ -61,8 +61,9 @@ export function parseQuestionToState(fetchedQuestion) {
             fromQuestion: g.fromQuestion || 1,
             toQuestion: g.toQuestion || 1,
             passageIndex: g.passageIndex || 0,
+            linkUrl: g.linkUrl || "",
         }))
-        : [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0 }];
+        : [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0, linkUrl: "" }];
 
     return {
         title: fetchedQuestion.title || "",
@@ -149,10 +150,13 @@ export function useQuestionFormState(initialData = initialForm()) {
         setFormData((prev) => {
             const targetQuestion = prev.questions.find((q) => q.id === qId);
             if (!targetQuestion) return prev;
+            const nextValue = targetQuestion.type === "matching-grid"
+                ? String.fromCharCode(65 + targetQuestion.options.length)
+                : "";
             return {
                 ...prev,
                 questions: prev.questions.map((q) =>
-                    q.id === qId ? { ...q, options: [...q.options, ""] } : q
+                    q.id === qId ? { ...q, options: [...q.options, nextValue] } : q
                 ),
             };
         });
