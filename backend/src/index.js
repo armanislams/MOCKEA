@@ -27,6 +27,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
   process.env.CLIENT_URL2,
   process.env.DEV_URL,
+  process.env.DEV_URL2,
 ].filter(Boolean); // Filter out undefined values to prevent CORS bypass
 
 app.use(
