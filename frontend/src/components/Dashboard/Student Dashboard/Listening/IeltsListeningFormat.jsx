@@ -813,8 +813,17 @@ const MapLabellingRenderer = ({ q, idx, offset = 0, submitted, evaluation, answe
 
 /** Table/matrix grid per group of matching-grid items */
 const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, submitted, result, offset, activeSet }) => {
+    const firstQ = questions[0];
+    const infoText = firstQ?.info;
+
     return (
-        <div className="overflow-x-auto my-6 border border-slate-200 rounded-3xl bg-slate-50/20 p-5 shadow-inner">
+        <div className="space-y-4 w-full">
+            {infoText && (
+                <div className="p-5 bg-white border border-slate-200 rounded-3xl text-sm text-slate-700 leading-relaxed shadow-xs whitespace-pre-line">
+                    {infoText}
+                </div>
+            )}
+            <div className="overflow-x-auto my-6 border border-slate-200 rounded-3xl bg-slate-50/20 p-5 shadow-inner">
             <table className="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr className="bg-slate-100/80 text-slate-800 font-bold border-b border-slate-200">
@@ -894,6 +903,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
                     })}
                 </tbody>
             </table>
+        </div>
         </div>
     );
 };

@@ -87,6 +87,7 @@ export const makeQuestion = (testType = "listening") => {
         matchingPairs: [{ key: "", value: "" }],
         imageUrl: "",
         passageIndex: 0,
+        info: "",
     };
 };
 

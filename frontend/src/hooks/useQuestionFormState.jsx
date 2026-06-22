@@ -94,7 +94,8 @@ export function parseQuestionToState(fetchedQuestion) {
             options: q.options || ["", ""],
             matchingPairs: q.matchingPairs || [{ key: "", value: "" }],
             imageUrl: q.imageUrl || "",
-            passageIndex: q.passageIndex || 0
+            passageIndex: q.passageIndex || 0,
+            info: q.info || ""
         })) : [makeQuestion()],
     };
 }
