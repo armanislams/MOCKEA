@@ -375,9 +375,9 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
 
                 if (isGroup) {
                     const header = groupEntry.header;
-                    const hasTable = header?.instructions && 
+                    const hasTable = header?.rightSideQuestion || (header?.instructions && 
                                      /___([\w-]+)___/.test(header.instructions) && 
-                                     /^\|.+\|$/m.test(header.instructions);
+                                     /^\|.+\|$/m.test(header.instructions));
 
                     return (
                         <GroupedContainer 

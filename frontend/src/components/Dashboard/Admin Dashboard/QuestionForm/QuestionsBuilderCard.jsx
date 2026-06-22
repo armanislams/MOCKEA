@@ -202,12 +202,12 @@ export default function QuestionsBuilderCard({
                                 </div>
                                 {/* Reading: Passage index picker */}
                                 {testType === "reading" && (
-                                    <div>
+                                    <div className="min-w-0">
                                         <label className="label">
                                             <span className="label-text font-semibold text-xs">Target Passage</span>
                                         </label>
                                         <select
-                                            className="select select-bordered w-full rounded-2xl text-sm font-semibold"
+                                            className="select select-bordered w-full rounded-2xl text-sm font-semibold bg-white truncate"
                                             value={q.passageIndex || 0}
                                             onChange={(e) => updateQuestionField(q.id, "passageIndex", parseInt(e.target.value))}
                                         >

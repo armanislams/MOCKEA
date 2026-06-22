@@ -143,10 +143,10 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     </div>
                                     {/* Target Passage */}
                                     {testType !== "listening" && (
-                                        <div className="col-span-1">
+                                        <div className="col-span-1 min-w-0">
                                             <label className="label"><span className="label-text font-semibold text-xs">Target Passage</span></label>
                                             <select
-                                                className="select select-bordered w-full rounded-2xl text-sm font-semibold"
+                                                className="select select-bordered w-full rounded-2xl text-sm font-semibold bg-white truncate"
                                                 value={group.passageIndex || 0}
                                                 onChange={(e) => {
                                                     const upd = [...(formData.questionGroups || [])];
@@ -163,10 +163,10 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         </div>
                                     )}
                                     {/* Group Question Type */}
-                                    <div className={testType === "listening" ? "col-span-1 md:col-span-2" : "col-span-1"}>
+                                    <div className={testType === "listening" ? "col-span-1 md:col-span-2 min-w-0" : "col-span-1 min-w-0"}>
                                         <label className="label"><span className="label-text font-semibold text-xs">Group Question Type</span></label>
                                         <select
-                                            className="select select-bordered w-full rounded-2xl text-sm font-bold bg-primary/5 text-primary border-primary/20"
+                                            className="select select-bordered w-full rounded-2xl text-sm font-bold bg-white text-primary border-primary/20 hover:bg-slate-50 truncate"
                                             value={(() => {
                                                 const fromQ = Number(group.fromQuestion) || 1;
                                                 return formData.questions?.[fromQ - 1]?.type || "";
@@ -218,7 +218,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         </select>
                                     </div>
                                     {/* Group Title */}
-                                    <div className="col-span-1 md:col-span-2">
+                                    <div className="col-span-1">
                                         <label className="label"><span className="label-text font-semibold text-xs">Group Title (optional)</span></label>
                                         <input
                                             type="text"
@@ -247,13 +247,33 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                             }}
                                         />
                                     </div>
+                                    {/* Right-side inline question */}
+                                    <div className="col-span-1 flex items-center h-full pt-6">
+                                        <label className="flex items-center gap-3 cursor-pointer p-4 bg-primary/5 rounded-2xl border border-primary/10 w-full select-none hover:bg-primary/10 transition-colors">
+                                            <input
+                                                type="checkbox"
+                                                className="checkbox checkbox-primary checkbox-sm cursor-pointer"
+                                                checked={!!group.rightSideQuestion}
+                                                onChange={(e) => {
+                                                    const upd = [...(formData.questionGroups || [])];
+                                                    upd[gIdx] = { ...upd[gIdx], rightSideQuestion: e.target.checked };
+                                                    patch({ questionGroups: upd });
+                                                }}
+                                            />
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-slate-800">Right-side Question</span>
+                                                <span className="text-[10px] text-slate-400 font-semibold mt-0.5">Inline Table/Flowchart</span>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                                 {/* Instructions */}
                                 <div>
                                     <label className="label"><span className="label-text font-semibold text-xs">Instructions for this group</span></label>
                                     <textarea
-                                        className="textarea textarea-bordered w-full rounded-xl text-sm bg-white min-h-[3.5rem]"
-                                        placeholder="e.g. Do the following statements agree with the information given in the passage? Write TRUE, FALSE or NOT GIVEN."
+                                        id={`group-instructions-textarea-${gIdx}`}
+                                        className="textarea textarea-bordered w-full rounded-xl text-sm bg-white min-h-[10rem] font-mono leading-relaxed"
+                                        placeholder="e.g. Complete the table below using words from the passage..."
                                         value={group.instructions || ""}
                                         onChange={(e) => {
                                             const upd = [...(formData.questionGroups || [])];
@@ -261,6 +281,90 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                             patch({ questionGroups: upd });
                                         }}
                                     />
+                                    {group.rightSideQuestion && (
+                                        <div className="flex flex-wrap items-center gap-2 mt-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Insert:</span>
+                                            
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const ta = document.getElementById(`group-instructions-textarea-${gIdx}`);
+                                                    const arrow = "↓";
+                                                    if (ta) {
+                                                        const start = ta.selectionStart;
+                                                        const end = ta.selectionEnd;
+                                                        const text = group.instructions || "";
+                                                        const newText = text.substring(0, start) + arrow + text.substring(end);
+                                                        
+                                                        const upd = [...(formData.questionGroups || [])];
+                                                        upd[gIdx] = { ...upd[gIdx], instructions: newText };
+                                                        patch({ questionGroups: upd });
+                                                        
+                                                        setTimeout(() => {
+                                                            ta.focus();
+                                                            ta.selectionStart = ta.selectionEnd = start + arrow.length;
+                                                        }, 0);
+                                                    } else {
+                                                        const upd = [...(formData.questionGroups || [])];
+                                                        upd[gIdx] = { ...upd[gIdx], instructions: (group.instructions || "") + arrow };
+                                                        patch({ questionGroups: upd });
+                                                    }
+                                                }}
+                                                className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer flex items-center gap-1"
+                                                title="Insert flowchart arrow (↓) at cursor"
+                                            >
+                                                <span>↓</span> Arrow
+                                            </button>
+
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2 select-none">Gap:</span>
+                                            {(() => {
+                                                const fromQ = Number(group.fromQuestion) || 1;
+                                                const toQ = Number(group.toQuestion) || 1;
+                                                const buttons = [];
+                                                for (let num = fromQ; num <= toQ; num++) {
+                                                    const alreadyInserted = (group.instructions || "").includes(`___${num}___`);
+                                                    buttons.push(
+                                                        <button
+                                                            key={num}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const ta = document.getElementById(`group-instructions-textarea-${gIdx}`);
+                                                                const placeholder = `___${num}___`;
+                                                                if (ta) {
+                                                                    const start = ta.selectionStart;
+                                                                    const end = ta.selectionEnd;
+                                                                    const text = group.instructions || "";
+                                                                    const newText = text.substring(0, start) + placeholder + text.substring(end);
+                                                                    
+                                                                    const upd = [...(formData.questionGroups || [])];
+                                                                    upd[gIdx] = { ...upd[gIdx], instructions: newText };
+                                                                    patch({ questionGroups: upd });
+                                                                    
+                                                                    setTimeout(() => {
+                                                                        ta.focus();
+                                                                        ta.selectionStart = ta.selectionEnd = start + placeholder.length;
+                                                                    }, 0);
+                                                                } else {
+                                                                    const upd = [...(formData.questionGroups || [])];
+                                                                    upd[gIdx] = { ...upd[gIdx], instructions: (group.instructions || "") + placeholder };
+                                                                    patch({ questionGroups: upd });
+                                                                }
+                                                            }}
+                                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                                alreadyInserted
+                                                                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
+                                                                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
+                                                            }`}
+                                                            title={alreadyInserted ? `Q${num} already in instructions` : `Insert ___${num}___ at cursor`}
+                                                        >
+                                                            Q{num}
+                                                        </button>
+                                                    );
+                                                }
+                                                return buttons;
+                                            })()}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
