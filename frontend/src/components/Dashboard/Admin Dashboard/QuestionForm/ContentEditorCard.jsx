@@ -4,6 +4,7 @@ import {
     PiBookOpen, 
     PiPencilLine
 } from "react-icons/pi";
+import { makeQuestion } from "./questionFormConstants";
 
 export default function ContentEditorCard({ testType, isIeltsListening, formData, patch }) {
     return (
@@ -58,6 +59,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-slate-700">Passage Content</label>
                                     <textarea
+                                        id={`reading-passage-textarea-${pIdx}`}
                                         className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none resize-y min-h-[150px] font-serif"
                                         placeholder="Paste passage paragraphs here..."
                                         value={passage.content}
@@ -71,6 +73,79 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     <p className="text-[11px] text-slate-500 font-semibold mt-1">
                                         Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>. Empty lines create paragraph breaks.
                                     </p>
+                                    {/* Drag-drop gap helpers for Reading */}
+                                    {(() => {
+                                        const dragDropGroups = (formData.questionGroups || []).filter(g => {
+                                            if ((g.passageIndex || 0) !== pIdx) return false;
+                                            const fromQ = Number(g.fromQuestion) || 1;
+                                            const type = formData.questions?.[fromQ - 1]?.type || "";
+                                            return type === "drag-drop-completion";
+                                        });
+
+                                        if (dragDropGroups.length === 0) return null;
+
+                                        return (
+                                            <div className="mt-2 space-y-2">
+                                                {dragDropGroups.map((g) => {
+                                                    const fromQ = Number(g.fromQuestion) || 1;
+                                                    const toQ = Number(g.toQuestion) || 1;
+                                                    const actualGroupIdx = (formData.questionGroups || []).indexOf(g) + 1;
+
+                                                    return (
+                                                        <div key={actualGroupIdx} className="flex flex-wrap items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl animate-fadeIn">
+                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">
+                                                                Group {actualGroupIdx} Drag &amp; Drop Gap:
+                                                            </span>
+                                                            {(() => {
+                                                                const buttons = [];
+                                                                for (let num = fromQ; num <= toQ; num++) {
+                                                                    const alreadyInserted = (passage.content || "").includes(`___${num}___`);
+                                                                    buttons.push(
+                                                                        <button
+                                                                            key={num}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const ta = document.getElementById(`reading-passage-textarea-${pIdx}`);
+                                                                                const placeholder = `___${num}___`;
+                                                                                if (ta) {
+                                                                                    const start = ta.selectionStart;
+                                                                                    const end = ta.selectionEnd;
+                                                                                    const text = passage.content || "";
+                                                                                    const newText = text.substring(0, start) + placeholder + text.substring(end);
+                                                                                    
+                                                                                    const updated = [...formData.passages];
+                                                                                    updated[pIdx].content = newText;
+                                                                                    patch({ passages: updated });
+                                                                                    
+                                                                                    setTimeout(() => {
+                                                                                        ta.focus();
+                                                                                        ta.selectionStart = ta.selectionEnd = start + placeholder.length;
+                                                                                    }, 0);
+                                                                                } else {
+                                                                                    const updated = [...formData.passages];
+                                                                                    updated[pIdx].content = (passage.content || "") + placeholder;
+                                                                                    patch({ passages: updated });
+                                                                                }
+                                                                            }}
+                                                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                                                alreadyInserted
+                                                                                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
+                                                                                    : "bg-white text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
+                                                                            }`}
+                                                                            title={alreadyInserted ? `Q${num} already in passage` : `Insert ___${num}___ at cursor`}
+                                                                        >
+                                                                            Q{num}
+                                                                        </button>
+                                                                    );
+                                                                }
+                                                                return buttons;
+                                                            })()}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         ))}
@@ -134,9 +209,20 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                 placeholder="To"
                                                 value={group.toQuestion || 1}
                                                 onChange={(e) => {
+                                                    const val = parseInt(e.target.value) || 1;
                                                     const upd = [...(formData.questionGroups || [])];
-                                                    upd[gIdx] = { ...upd[gIdx], toQuestion: parseInt(e.target.value) || 1 };
-                                                    patch({ questionGroups: upd });
+                                                    upd[gIdx] = { ...upd[gIdx], toQuestion: val };
+                                                    
+                                                    let currentQuestions = [...(formData.questions || [])];
+                                                    if (currentQuestions.length < val) {
+                                                        const diff = val - currentQuestions.length;
+                                                        for (let i = 0; i < diff; i++) {
+                                                            currentQuestions.push(makeQuestion(testType));
+                                                        }
+                                                        patch({ questionGroups: upd, questions: currentQuestions });
+                                                    } else {
+                                                        patch({ questionGroups: upd });
+                                                    }
                                                 }}
                                             />
                                         </div>
@@ -176,7 +262,15 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                 const fromQ = Number(group.fromQuestion) || 1;
                                                 const toQ = Number(group.toQuestion) || 1;
                                                 
-                                                const updatedQuestions = formData.questions.map((q, idx) => {
+                                                let currentQuestions = [...(formData.questions || [])];
+                                                if (currentQuestions.length < toQ) {
+                                                    const diff = toQ - currentQuestions.length;
+                                                    for (let i = 0; i < diff; i++) {
+                                                        currentQuestions.push(makeQuestion(testType));
+                                                    }
+                                                }
+                                                
+                                                const updatedQuestions = currentQuestions.map((q, idx) => {
                                                     const questionNum = idx + 1;
                                                     if (questionNum >= fromQ && questionNum <= toQ) {
                                                         let updatedQ = { ...q, type: selectedType };
@@ -187,7 +281,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                         } else if (selectedType === "matching-grid") {
                                                             updatedQ.options = ["A", "B", "C"];
                                                         } else if (selectedType === "drag-drop-completion") {
-                                                            const firstDD = formData.questions.find(item => item.type === "drag-drop-completion");
+                                                            const firstDD = currentQuestions.find(item => item.type === "drag-drop-completion");
                                                             if (firstDD) {
                                                                 updatedQ.options = [...firstDD.options];
                                                             }
