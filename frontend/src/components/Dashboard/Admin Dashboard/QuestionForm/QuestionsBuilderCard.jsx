@@ -58,7 +58,7 @@ export default function QuestionsBuilderCard({
                     </span>
                 </div>
                 <div className="collapse-content bg-white border-t border-slate-200/50 p-6 space-y-4">
-                    <div className="grid md:grid-cols-2 gap-6 text-xs text-slate-600 leading-relaxed font-medium">
+                    <div className="grid md:grid-cols-3 gap-6 text-xs text-slate-600 leading-relaxed font-medium">
                         {/* Drag & Drop Card */}
                         <div className="space-y-2.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">
                             <h4 className="font-black text-sm text-primary uppercase tracking-wider">
@@ -97,6 +97,27 @@ export default function QuestionsBuilderCard({
                                 </li>
                                 <li>
                                     <strong>Question Groups:</strong> Ensure questions are grouped in a matching Question Group sequence to organize the flowchart layout.
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Table Completion Card */}
+                        <div className="space-y-2.5 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                            <h4 className="font-black text-sm text-indigo-700 uppercase tracking-wider">
+                                Table Completion
+                            </h4>
+                            <p>
+                                Renders an inline interactive question table on the right side of the split screen next to the passage.
+                            </p>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li>
+                                    <strong>Table Format:</strong> In the <em>Group Instructions</em> field, write a standard markdown table (e.g. <code>| Header 1 | Header 2 |</code>).
+                                </li>
+                                <li>
+                                    <strong>Placeholders:</strong> Add <code>___[Num]___</code> (e.g. <code>___1___</code>) inside table cells where students should input answers.
+                                </li>
+                                <li>
+                                    <strong>Interactive Blanks:</strong> Blanks will automatically render as inputs (for typed answers) or dropzones (if drag-drop is selected).
                                 </li>
                             </ul>
                         </div>

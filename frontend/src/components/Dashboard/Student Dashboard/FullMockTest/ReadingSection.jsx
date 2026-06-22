@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { PiNotePencil } from "react-icons/pi";
+import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
 
 
 const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, data }) => {
@@ -270,7 +271,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
     return grouped;
 };
 
-const GroupedContainer = ({ header, children }) => {
+const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
         <div className="card p-8 rounded-[3rem] border border-slate-200 bg-slate-50/20 space-y-6 shadow-xs w-full mb-6">
             {header && (
@@ -298,7 +299,7 @@ const GroupedContainer = ({ header, children }) => {
                             </a>
                         )}
                     </div>
-                    {header.instructions && (
+                    {header.instructions && !hideInstructions && (
                         <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
                             {header.instructions}
                         </div>
@@ -373,9 +374,29 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 });
 
                 if (isGroup) {
+                    const header = groupEntry.header;
+                    const hasTable = header?.instructions && 
+                                     /___([\w-]+)___/.test(header.instructions) && 
+                                     /^\|.+\|$/m.test(header.instructions);
+
                     return (
-                        <GroupedContainer key={`group-${geIdx}`} header={groupEntry.header}>
-                            {children}
+                        <GroupedContainer 
+                            key={`group-${geIdx}`} 
+                            header={header}
+                            hideInstructions={hasTable}
+                        >
+                            {hasTable ? (
+                                <TableCompletionRenderer
+                                    instructions={header.instructions}
+                                    allQuestions={data?.questions || []}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                />
+                            ) : (
+                                children
+                            )}
                         </GroupedContainer>
                     );
                 }

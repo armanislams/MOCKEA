@@ -5,6 +5,7 @@ import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { parseFeedback } from "../../../../utils/parseFeedback";
+import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
 import { 
     PiArrowLeftBold, 
     PiCheckCircleFill, 
@@ -222,7 +223,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, questions) =
     return grouped;
 };
 
-const GroupedContainer = ({ header, children }) => {
+const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
         <div className="card p-8 rounded-[3rem] border border-slate-200 bg-slate-50/20 space-y-6 shadow-xs w-full mb-6">
             {header && (
@@ -250,7 +251,7 @@ const GroupedContainer = ({ header, children }) => {
                             </a>
                         )}
                     </div>
-                    {header.instructions && (
+                    {header.instructions && !hideInstructions && (
                         <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
                             {header.instructions}
                         </div>
@@ -264,7 +265,7 @@ const GroupedContainer = ({ header, children }) => {
     );
 };
 
-const GroupedReviewQuestionsRenderer = ({ groupedItems }) => {
+const GroupedReviewQuestionsRenderer = ({ groupedItems, allQuestions, answersMap, evaluationResult }) => {
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -315,9 +316,29 @@ const GroupedReviewQuestionsRenderer = ({ groupedItems }) => {
                 });
 
                 if (isGroup) {
+                    const header = groupEntry.header;
+                    const hasTable = header?.instructions && 
+                                     /___([\w-]+)___/.test(header.instructions) && 
+                                     /^\|.+\|$/m.test(header.instructions);
+
                     return (
-                        <GroupedContainer key={`group-${geIdx}`} header={groupEntry.header}>
-                            {children}
+                        <GroupedContainer 
+                            key={`group-${geIdx}`} 
+                            header={header}
+                            hideInstructions={hasTable}
+                        >
+                            {hasTable ? (
+                                <TableCompletionRenderer
+                                    instructions={header.instructions}
+                                    allQuestions={allQuestions || []}
+                                    answers={answersMap || {}}
+                                    onAnswerChange={() => {}}
+                                    submitted={true}
+                                    result={evaluationResult}
+                                />
+                            ) : (
+                                children
+                            )}
                         </GroupedContainer>
                     );
                 }
@@ -597,6 +618,17 @@ const ReviewDetail = () => {
                                             return (
                                                 <GroupedReviewQuestionsRenderer
                                                     groupedItems={groupedItems}
+                                                    allQuestions={currentSectionData?.questions || []}
+                                                    answersMap={(() => {
+                                                        const map = {};
+                                                        (currentSectionResult?.answers || []).forEach(a => {
+                                                            map[a.questionId] = a.userAnswer;
+                                                        });
+                                                        return map;
+                                                    })()}
+                                                    evaluationResult={{
+                                                        evaluatedAnswers: currentSectionResult?.answers || []
+                                                    }}
                                                 />
                                             );
                                         })()}

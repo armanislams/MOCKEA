@@ -109,38 +109,41 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     <PiBookOpen className="text-primary w-4 h-4" />
                                     <span className="text-xs font-black uppercase tracking-widest text-primary">Group {gIdx + 1}</span>
                                 </div>
-                                <div className={`grid gap-3 ${testType === "listening" ? "grid-cols-2 md:grid-cols-5" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-6"}`}>
-                                    {/* From Q# */}
-                                    <div>
-                                        <label className="label"><span className="label-text font-semibold text-xs">From Q#</span></label>
-                                        <input
-                                            type="number" min={1}
-                                            className="input input-bordered w-full rounded-2xl text-sm"
-                                            value={group.fromQuestion || 1}
-                                            onChange={(e) => {
-                                                const upd = [...(formData.questionGroups || [])];
-                                                upd[gIdx] = { ...upd[gIdx], fromQuestion: parseInt(e.target.value) || 1 };
-                                                patch({ questionGroups: upd });
-                                            }}
-                                        />
-                                    </div>
-                                    {/* To Q# */}
-                                    <div>
-                                        <label className="label"><span className="label-text font-semibold text-xs">To Q#</span></label>
-                                        <input
-                                            type="number" min={1}
-                                            className="input input-bordered w-full rounded-2xl text-sm"
-                                            value={group.toQuestion || 1}
-                                            onChange={(e) => {
-                                                const upd = [...(formData.questionGroups || [])];
-                                                upd[gIdx] = { ...upd[gIdx], toQuestion: parseInt(e.target.value) || 1 };
-                                                patch({ questionGroups: upd });
-                                            }}
-                                        />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {/* Question Range */}
+                                    <div className="col-span-1">
+                                        <label className="label">
+                                            <span className="label-text font-semibold text-xs text-slate-700">Question Range</span>
+                                        </label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number" min={1}
+                                                className="input input-bordered w-full rounded-2xl text-sm text-center font-bold"
+                                                placeholder="From"
+                                                value={group.fromQuestion || 1}
+                                                onChange={(e) => {
+                                                    const upd = [...(formData.questionGroups || [])];
+                                                    upd[gIdx] = { ...upd[gIdx], fromQuestion: parseInt(e.target.value) || 1 };
+                                                    patch({ questionGroups: upd });
+                                                }}
+                                            />
+                                            <span className="text-slate-400 font-bold text-xs select-none">to</span>
+                                            <input
+                                                type="number" min={1}
+                                                className="input input-bordered w-full rounded-2xl text-sm text-center font-bold"
+                                                placeholder="To"
+                                                value={group.toQuestion || 1}
+                                                onChange={(e) => {
+                                                    const upd = [...(formData.questionGroups || [])];
+                                                    upd[gIdx] = { ...upd[gIdx], toQuestion: parseInt(e.target.value) || 1 };
+                                                    patch({ questionGroups: upd });
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                     {/* Target Passage */}
                                     {testType !== "listening" && (
-                                        <div>
+                                        <div className="col-span-1">
                                             <label className="label"><span className="label-text font-semibold text-xs">Target Passage</span></label>
                                             <select
                                                 className="select select-bordered w-full rounded-2xl text-sm font-semibold"
@@ -160,7 +163,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         </div>
                                     )}
                                     {/* Group Question Type */}
-                                    <div>
+                                    <div className={testType === "listening" ? "col-span-1 md:col-span-2" : "col-span-1"}>
                                         <label className="label"><span className="label-text font-semibold text-xs">Group Question Type</span></label>
                                         <select
                                             className="select select-bordered w-full rounded-2xl text-sm font-bold bg-primary/5 text-primary border-primary/20"
@@ -215,7 +218,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         </select>
                                     </div>
                                     {/* Group Title */}
-                                    <div>
+                                    <div className="col-span-1 md:col-span-2">
                                         <label className="label"><span className="label-text font-semibold text-xs">Group Title (optional)</span></label>
                                         <input
                                             type="text"
@@ -230,7 +233,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         />
                                     </div>
                                     {/* Link URL */}
-                                    <div>
+                                    <div className="col-span-1">
                                         <label className="label"><span className="label-text font-semibold text-xs">Link URL (optional)</span></label>
                                         <input
                                             type="url"
