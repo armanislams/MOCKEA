@@ -59,6 +59,10 @@ const QuestionItemSchema = new mongoose.Schema(
         passageIndex: {
             type: Number,
             default: 0
+        },
+        info: {
+            type: String,
+            default: ""
         }
     },
     { _id: false },

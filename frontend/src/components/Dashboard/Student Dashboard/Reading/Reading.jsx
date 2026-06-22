@@ -7,6 +7,7 @@ import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
+import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion } from "framer-motion";
 import { 
@@ -23,11 +24,21 @@ import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import TestShell from "../../../Common/TestShell.jsx";
 import useEvaluate from "../../../../hooks/useEvaluate";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
+import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
 
 const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, submitted, result, activeSet }) => {
+    const firstQ = questions[0];
+    const infoText = firstQ?.info;
+
     return (
-        <div className="overflow-x-auto my-6 border border-slate-200 rounded-3xl bg-slate-50/20 p-5 shadow-inner">
-            <table className="w-full text-left border-collapse text-sm">
+        <div className="space-y-4 w-full">
+            {infoText && (
+                <div className="p-5 bg-white border border-slate-200 rounded-3xl text-sm text-slate-700 leading-relaxed shadow-xs whitespace-pre-line">
+                    {infoText}
+                </div>
+            )}
+            <div className="overflow-x-auto my-6 border border-slate-200 rounded-3xl bg-slate-50/20 p-5 shadow-inner">
+                <table className="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr className="bg-slate-100/80 text-slate-800 font-bold border-b border-slate-200">
                         <th className="p-3 font-black text-xs uppercase tracking-widest text-slate-500">
@@ -106,6 +117,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
                     })}
                 </tbody>
             </table>
+        </div>
         </div>
     );
 };
@@ -342,6 +354,46 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
 };
 
 const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, submitted, result, activeSet, clickedOption, setClickedOption }) => {
+    const renderedInlineIds = useMemo(() => {
+        const ids = new Set();
+        if (!activeSet) return ids;
+
+        const passages = activeSet.passages || [];
+        passages.forEach(p => {
+            if (!p.content) return;
+            const matches = p.content.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = activeSet.questions?.find((item, idx) => {
+                    const questionNum = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        item.id.replace(/^r/, "") === matchKey
+                    );
+                });
+                if (q) ids.add(q.id);
+            });
+        });
+
+        if (activeSet.passage) {
+            const matches = activeSet.passage.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = activeSet.questions?.find((item, idx) => {
+                    const questionNum = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        item.id.replace(/^r/, "") === matchKey
+                    );
+                });
+                if (q) ids.add(q.id);
+            });
+        }
+        return ids;
+    }, [activeSet]);
+
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -349,35 +401,24 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                 
                 const children = groupEntry.visuals.map((vg, vgIdx) => {
                     if (vg.type === 'matching-grid-group') {
-                        return (
-                            <div key={`grid-${geIdx}-${vgIdx}`} className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white shadow-xs animate-fadeIn">
-                                <h3 className="text-lg font-black uppercase tracking-widest text-primary/40 pl-2">
-                                    Matching Grid
-                                </h3>
-                                <MatchingGridRenderer
-                                    questions={vg.questions}
-                                    options={vg.options}
-                                    answers={answers}
-                                    onAnswerChange={handleAnswerChange}
-                                    submitted={submitted}
-                                    result={result}
-                                    activeSet={activeSet}
-                                />
-                            </div>
-                        );
+                        return null; // completely hide matching grid from the right panel!
                     }
 
                     const q = vg.question;
+                    if (renderedInlineIds.has(q.id)) {
+                        return null;
+                    }
+
                     const idx = activeSet.questions.findIndex(item => item.id === q.id);
                     const isCorrect = submitted && result?.evaluatedAnswers?.find(a => a.questionId === q.id)?.isCorrect;
                     const isFlowChart = q.type === 'flow-chart-completion';
                     const nextIsFlowChart = vgIdx < groupEntry.visuals.length - 1 && groupEntry.visuals[vgIdx + 1]?.question?.type === 'flow-chart-completion';
 
                     return (
-                        <div key={q.id || idx} className="space-y-4">
+                        <div key={q.id || idx} className="space-y-4 animate-fadeIn">
                             <div 
                                 id={`question-${idx}`}
-                                className={`space-y-4 p-6 rounded-3xl border transition-all scroll-mt-6 animate-fadeIn ${
+                                className={`space-y-4 p-6 rounded-3xl border transition-all scroll-mt-6 ${
                                     isFlowChart 
                                     ? "bg-slate-50/50 border-dashed border-slate-300 max-w-lg mx-auto text-center shadow-xs" 
                                     : "border-base-200 bg-white hover:border-primary/30"
@@ -404,7 +445,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                             )}
                         </div>
                     );
-                });
+                }).filter(Boolean);
 
                 if (isGroup) {
                     const header = groupEntry.header;
@@ -605,6 +646,14 @@ const Reading = () => {
       const first = dragDropQuestions[0];
       return first?.options?.filter(Boolean) || [];
   }, [dragDropQuestions]);
+ 
+  const groupedItems = useMemo(() => {
+      if (!activeSet) return [];
+      const groups = groupQuestions(activeSet.questions || []);
+      return groupVisualsByQuestionGroups(groups, activeSet.questionGroups, 0, activeSet.questions || []);
+  }, [activeSet]);
+ 
+  const hasMultipleGroups = activeSet?.questionGroups?.length > 1;
 
   useEffect(() => {
       setClickedOption(null);
@@ -614,20 +663,30 @@ const Reading = () => {
 
   const passageElement = useMemo(() => {
     if (!activeSet) return null;
-    const contentHTML = (activeSet.passages && activeSet.passages.length > 0)
-      ? convertMarkdownContentToHtml(activeSet.passages[activePassageTab]?.content || "")
-      : convertMarkdownContentToHtml(activeSet.passage || "");
+    const contentText = (activeSet.passages && activeSet.passages.length > 0)
+      ? (activeSet.passages[activePassageTab]?.content || "")
+      : (activeSet.passage || "");
 
     return (
       <div
         data-passage-container="true"
         onMouseUp={handleTextSelection}
         onPointerUp={handleTextSelection}
-        dangerouslySetInnerHTML={{ __html: contentHTML }}
-        className="text-lg leading-relaxed text-slate-600 text-justify select-text"
-      />
+      >
+        <ReadingPassageRenderer
+          passageContent={contentText}
+          questions={activeSet.questions || []}
+          answers={answers}
+          onAnswerChange={handleAnswerChange}
+          submitted={submitted}
+          result={result}
+          clickedOption={clickedOption}
+          setClickedOption={setClickedOption}
+          className="text-lg leading-relaxed text-slate-600 text-justify select-text"
+        />
+      </div>
     );
-  }, [activeSet, activePassageTab]);
+  }, [activeSet, activePassageTab, answers, submitted, result, clickedOption]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -908,6 +967,33 @@ const Reading = () => {
                             </h3>
                         )}
                         {passageElement}
+ 
+                        {/* Matching Grid Questions inline below the reading passage */}
+                        {groupedItems.filter(item => item.visuals?.some(vg => vg.type === 'matching-grid-group')).map((groupEntry, geIdx) => {
+                            return groupEntry.visuals.filter(vg => vg.type === 'matching-grid-group').map((vg, vgIdx) => {
+                                // Check if this matching grid belongs to the active passage tab
+                                const qIdx = activeSet.questions.findIndex(item => item.id === vg.questions[0].id);
+                                const qPassageIndex = getQuestionPassageIndex(vg.questions[0], activeSet.questionGroups, qIdx);
+                                if (qPassageIndex !== activePassageTab) return null;
+ 
+                                return (
+                                    <div key={`grid-left-${geIdx}-${vgIdx}`} className="p-6 bg-slate-50 border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs mt-8">
+                                        <h3 className="text-sm font-black uppercase tracking-widest text-primary/70 pl-2">
+                                            Matching Table
+                                        </h3>
+                                        <MatchingGridRenderer
+                                            questions={vg.questions}
+                                            options={vg.options}
+                                            answers={answers}
+                                            onAnswerChange={handleAnswerChange}
+                                            submitted={submitted}
+                                            result={result}
+                                            activeSet={activeSet}
+                                        />
+                                    </div>
+                                );
+                            });
+                        })}
                     </div>
                 </div>
             </div>
@@ -926,7 +1012,9 @@ const Reading = () => {
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
                                 Drag or click to select an option to fill each blank
                             </p>
-                            <div className="flex flex-wrap justify-center gap-2">
+                            <div className={`flex flex-wrap justify-center gap-2 pr-1 custom-scrollbar ${
+                                hasMultipleGroups ? "max-h-[140px] overflow-y-auto" : ""
+                            }`}>
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
                                     const label = `${letter}. ${opt}`;
@@ -963,22 +1051,16 @@ const Reading = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-10">
-                        {(() => {
-                            const groups = groupQuestions(activeSet.questions || []);
-                            const groupedItems = groupVisualsByQuestionGroups(groups, activeSet.questionGroups, 0, activeSet.questions || []);
-                            return (
-                                <GroupedQuestionsRenderer
-                                    groupedItems={groupedItems}
-                                    answers={answers}
-                                    handleAnswerChange={handleAnswerChange}
-                                    submitted={submitted}
-                                    result={result}
-                                    activeSet={activeSet}
-                                    clickedOption={clickedOption}
-                                    setClickedOption={setClickedOption}
-                                />
-                            );
-                        })()}
+                        <GroupedQuestionsRenderer
+                            groupedItems={groupedItems}
+                            answers={answers}
+                            handleAnswerChange={handleAnswerChange}
+                            submitted={submitted}
+                            result={result}
+                            activeSet={activeSet}
+                            clickedOption={clickedOption}
+                            setClickedOption={setClickedOption}
+                        />
 
 
 

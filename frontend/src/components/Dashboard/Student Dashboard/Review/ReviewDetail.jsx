@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { parseFeedback } from "../../../../utils/parseFeedback";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
+import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
 import { 
     PiArrowLeftBold, 
     PiCheckCircleFill, 
@@ -70,8 +71,17 @@ const parseWritingSubmission = (content) => {
 
 
 const ReviewMatchingGrid = ({ items, options }) => {
+    const firstItem = items[0];
+    const infoText = firstItem?.q?.info;
+
     return (
-        <div className="card p-6 rounded-[2rem] border border-base-300 bg-white shadow-sm overflow-x-auto my-4">
+        <div className="space-y-4 w-full">
+            {infoText && (
+                <div className="p-5 bg-white border border-slate-200 rounded-3xl text-sm text-slate-700 leading-relaxed shadow-xs whitespace-pre-line">
+                    {infoText}
+                </div>
+            )}
+            <div className="card p-6 rounded-[2rem] border border-base-300 bg-white shadow-sm overflow-x-auto my-4">
             <h4 className="text-xs font-black uppercase tracking-widest text-primary/45 mb-4 pl-1">Matching Grid Feedback</h4>
             <table className="w-full text-left border-collapse text-sm">
                 <thead>
@@ -130,6 +140,7 @@ const ReviewMatchingGrid = ({ items, options }) => {
                     })}
                 </tbody>
             </table>
+        </div>
         </div>
     );
 };
@@ -265,7 +276,50 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
     );
 };
 
-const GroupedReviewQuestionsRenderer = ({ groupedItems, allQuestions, answersMap, evaluationResult }) => {
+const GroupedReviewQuestionsRenderer = ({ 
+    groupedItems, 
+    allQuestions, 
+    answersMap, 
+    evaluationResult,
+    activeTab,
+    currentSectionData,
+    activePassageTab
+}) => {
+    const renderedInlineIds = useMemo(() => {
+        const ids = new Set();
+        if (!currentSectionData || !allQuestions) return ids;
+
+        const checkText = (text) => {
+            if (!text) return;
+            const matches = text.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = allQuestions.find((item, idx) => {
+                    const questionNum = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        item.id.replace(/^r/, "") === matchKey
+                    );
+                });
+                if (q) ids.add(q.id);
+            });
+        };
+
+        if (activeTab === 'reading') {
+            const passages = currentSectionData.passages || [];
+            if (passages[activePassageTab]) {
+                checkText(passages[activePassageTab].content);
+            }
+            checkText(currentSectionData.passage);
+        } else if (activeTab === 'listening') {
+            checkText(currentSectionData.passage);
+            checkText(currentSectionData.instructions);
+        }
+
+        return ids;
+    }, [currentSectionData, allQuestions, activeTab, activePassageTab]);
+
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -273,16 +327,24 @@ const GroupedReviewQuestionsRenderer = ({ groupedItems, allQuestions, answersMap
                 
                 const children = groupEntry.visuals.map((vg, vgIdx) => {
                     if (vg.type === 'matching-grid-group') {
+                        if (activeTab === 'reading') {
+                            return null; // completely hide matching grid from the right panel for Reading!
+                        }
+                        const nonInlineQuestions = vg.items.filter(item => !renderedInlineIds.has(item.q.id));
+                        if (nonInlineQuestions.length === 0) return null;
                         return (
                             <ReviewMatchingGrid
                                 key={`grid-${geIdx}-${vgIdx}`}
-                                items={vg.items}
+                                items={nonInlineQuestions}
                                 options={vg.options}
                             />
                         );
                     }
 
-                    const { ans, originalIdx } = vg.item;
+                    const { ans, originalIdx, q } = vg.item;
+                    if (q && renderedInlineIds.has(q.id)) {
+                        return null;
+                    }
                     return (
                         <div key={originalIdx} className={`card p-6 rounded-3xl border shadow-sm transition-all ${
                             ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
@@ -313,7 +375,7 @@ const GroupedReviewQuestionsRenderer = ({ groupedItems, allQuestions, answersMap
                             </div>
                         </div>
                     );
-                });
+                }).filter(Boolean);
 
                 if (isGroup) {
                     const header = groupEntry.header;
@@ -378,6 +440,12 @@ const ReviewDetail = () => {
 
     const currentSectionResult = result.sectionResults.find(s => s.sectionType === activeTab);
     const currentSectionData = result.testId?.sections?.[activeTab]?.[0];
+ 
+    const groupedItems = useMemo(() => {
+        if (!currentSectionResult || !currentSectionData) return [];
+        const groups = groupReviewAnswers(currentSectionResult.answers, currentSectionData, activeTab, activePassageTab);
+        return groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups, currentSectionData?.questions);
+    }, [currentSectionResult, currentSectionData, activeTab, activePassageTab]);
 
     return (
         <div className="min-h-screen bg-base-200 pb-20">
@@ -527,12 +595,24 @@ const ReviewDetail = () => {
                             <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm sticky top-28 h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
                                 {activeTab === 'reading' && (() => {
                                     const hasMultiplePassages = currentSectionData?.passages && currentSectionData.passages.length > 0;
-                                    const contentHTML = hasMultiplePassages
-                                        ? convertMarkdownContentToHtml(currentSectionData.passages[activePassageTab]?.content || "")
-                                        : convertMarkdownContentToHtml(currentSectionData?.passage || currentSectionData?.content || "No content available.");
+                                    const contentText = hasMultiplePassages
+                                        ? (currentSectionData.passages[activePassageTab]?.content || "")
+                                        : (currentSectionData?.passage || currentSectionData?.content || "No content available.");
                                     const titleText = hasMultiplePassages
                                         ? currentSectionData.passages[activePassageTab]?.title || ""
                                         : currentSectionData?.title || "";
+
+                                    const answersMap = (() => {
+                                        const map = {};
+                                        (currentSectionResult?.answers || []).forEach(a => {
+                                            map[a.questionId] = a.userAnswer;
+                                        });
+                                        return map;
+                                    })();
+
+                                    const evaluationResult = {
+                                        evaluatedAnswers: currentSectionResult?.answers || []
+                                    };
 
                                     return (
                                         <div className="prose prose-slate max-w-none">
@@ -562,7 +642,32 @@ const ReviewDetail = () => {
                                                 <h3 className="text-2xl font-black tracking-tight mb-6 text-slate-700">{titleText}</h3>
                                             )}
 
-                                            <div dangerouslySetInnerHTML={{ __html: contentHTML }} className="text-lg leading-relaxed text-base-content/80 text-justify select-text" />
+                                            <ReadingPassageRenderer
+                                                passageContent={contentText}
+                                                questions={currentSectionData?.questions || []}
+                                                answers={answersMap}
+                                                onAnswerChange={() => {}}
+                                                submitted={true}
+                                                result={evaluationResult}
+                                                clickedOption={null}
+                                                setClickedOption={null}
+                                                className="text-lg leading-relaxed text-base-content/80 text-justify select-text"
+                                            />
+ 
+                                            {/* Matching Grid Questions inline below the reading passage */}
+                                            {groupedItems.filter(item => item.visuals?.some(vg => vg.type === 'matching-grid-group')).map((groupEntry, geIdx) => {
+                                                return groupEntry.visuals.filter(vg => vg.type === 'matching-grid-group').map((vg, vgIdx) => (
+                                                    <div key={`grid-left-${geIdx}-${vgIdx}`} className="p-6 bg-slate-50 border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs mt-8 font-sans">
+                                                        <h3 className="text-sm font-black uppercase tracking-widest text-primary/70 pl-2">
+                                                            Matching Table
+                                                        </h3>
+                                                        <ReviewMatchingGrid
+                                                            items={vg.items}
+                                                            options={vg.options}
+                                                        />
+                                                    </div>
+                                                ));
+                                            })}
                                         </div>
                                     );
                                 })()}
@@ -612,26 +717,23 @@ const ReviewDetail = () => {
                                                 <p className="whitespace-pre-line">{currentSectionData.passages[activePassageTab].instructions}</p>
                                             </div>
                                         )}
-                                        {(() => {
-                                            const groups = groupReviewAnswers(currentSectionResult.answers, currentSectionData, activeTab, activePassageTab);
-                                            const groupedItems = groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups, currentSectionData?.questions);
-                                            return (
-                                                <GroupedReviewQuestionsRenderer
-                                                    groupedItems={groupedItems}
-                                                    allQuestions={currentSectionData?.questions || []}
-                                                    answersMap={(() => {
-                                                        const map = {};
-                                                        (currentSectionResult?.answers || []).forEach(a => {
-                                                            map[a.questionId] = a.userAnswer;
-                                                        });
-                                                        return map;
-                                                    })()}
-                                                    evaluationResult={{
-                                                        evaluatedAnswers: currentSectionResult?.answers || []
-                                                    }}
-                                                />
-                                            );
-                                        })()}
+                                        <GroupedReviewQuestionsRenderer
+                                            groupedItems={groupedItems}
+                                            allQuestions={currentSectionData?.questions || []}
+                                            answersMap={(() => {
+                                                const map = {};
+                                                (currentSectionResult?.answers || []).forEach(a => {
+                                                    map[a.questionId] = a.userAnswer;
+                                                });
+                                                return map;
+                                            })()}
+                                            evaluationResult={{
+                                                evaluatedAnswers: currentSectionResult?.answers || []
+                                            }}
+                                            activeTab={activeTab}
+                                            currentSectionData={currentSectionData}
+                                            activePassageTab={activePassageTab}
+                                        />
                                     </>
                                 ) : (
                                     <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm space-y-6">

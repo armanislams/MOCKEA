@@ -3,12 +3,22 @@ import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { PiNotePencil } from "react-icons/pi";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
+import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
 
 
 const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, data }) => {
+    const firstQ = questions[0];
+    const infoText = firstQ?.info;
+
     return (
-        <div className="overflow-x-auto my-6 border border-base-200 rounded-3xl bg-white p-6 shadow-xs ml-14">
-            <table className="w-full text-left border-collapse text-sm">
+        <div className="space-y-4 w-full">
+            {infoText && (
+                <div className="p-5 bg-white border border-slate-200 rounded-3xl text-sm text-slate-700 leading-relaxed shadow-xs whitespace-pre-line">
+                    {infoText}
+                </div>
+            )}
+            <div className="overflow-x-auto my-6 border border-base-200 rounded-3xl bg-white p-6 shadow-xs ml-14">
+                <table className="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr className="bg-slate-50 text-slate-800 font-bold border-b border-slate-200">
                         <th className="p-4 font-black text-xs uppercase tracking-widest text-slate-500">
@@ -54,6 +64,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, dat
                     })}
                 </tbody>
             </table>
+        </div>
         </div>
     );
 };
@@ -314,6 +325,50 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
 };
 
 const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offset, data, clickedOption, setClickedOption }) => {
+    const renderedInlineIds = useMemo(() => {
+        const ids = new Set();
+        if (!data) return ids;
+
+        const passages = data.passages || [];
+        passages.forEach(p => {
+            if (!p.content) return;
+            const matches = p.content.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = data.questions?.find((item, idx) => {
+                    const questionNum = (offset || 0) + idx + 1;
+                    const localIndex = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        localIndex.toString() === matchKey ||
+                        item.id.replace(/^r/, "") === matchKey
+                    );
+                });
+                if (q) ids.add(q.id);
+            });
+        });
+
+        if (data.passage) {
+            const matches = data.passage.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = data.questions?.find((item, idx) => {
+                    const questionNum = (offset || 0) + idx + 1;
+                    const localIndex = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        localIndex.toString() === matchKey ||
+                        item.id.replace(/^r/, "") === matchKey
+                    );
+                });
+                if (q) ids.add(q.id);
+            });
+        }
+        return ids;
+    }, [data, offset]);
+
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -321,24 +376,14 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 
                 const children = groupEntry.visuals.map((vg, vgIdx) => {
                     if (vg.type === 'matching-grid-group') {
-                        return (
-                            <div key={`grid-${geIdx}-${vgIdx}`} className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white shadow-xs">
-                                <h3 className="text-lg font-black uppercase tracking-widest text-primary/40 pl-2">
-                                    Matching Grid
-                                </h3>
-                                <MatchingGridRenderer
-                                    questions={vg.questions}
-                                    options={vg.options}
-                                    answers={answers}
-                                    onAnswerChange={onAnswerChange}
-                                    offset={offset}
-                                    data={data}
-                                />
-                            </div>
-                        );
+                        return null; // completely hide matching grid from the right panel!
                     }
 
                     const q = vg.question;
+                    if (renderedInlineIds.has(q.id)) {
+                        return null;
+                    }
+
                     const idx = data.questions.findIndex(item => item.id === q.id);
                     const isFlowChart = q.type === 'flow-chart-completion';
                     const nextIsFlowChart = vgIdx < groupEntry.visuals.length - 1 && groupEntry.visuals[vgIdx + 1]?.question?.type === 'flow-chart-completion';
@@ -371,7 +416,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                             )}
                         </div>
                     );
-                });
+                }).filter(Boolean);
 
                 if (isGroup) {
                     const header = groupEntry.header;
@@ -423,6 +468,14 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
         const first = dragDropQuestions[0];
         return first?.options?.filter(Boolean) || [];
     }, [dragDropQuestions]);
+ 
+    const groupedItems = useMemo(() => {
+        if (!data) return [];
+        const groups = groupQuestions(data.questions || []);
+        return groupVisualsByQuestionGroups(groups, data.questionGroups, 0, data.questions || []);
+    }, [data]);
+ 
+    const hasMultipleGroups = data?.questionGroups?.length > 1;
 
     const lastShownRef = useRef(0);
     const prevDataRef = useRef(data);
@@ -560,20 +613,30 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
 
     const passageElement = useMemo(() => {
         if (!data) return null;
-        const contentHTML = (data.passages && data.passages.length > 0)
-            ? convertMarkdownContentToHtml(data.passages[activePassageTab]?.content || "")
-            : convertMarkdownContentToHtml(data.passage || data.sections?.[0]?.content || "No passage content available.");
+        const contentText = (data.passages && data.passages.length > 0)
+            ? (data.passages[activePassageTab]?.content || "")
+            : (data.passage || data.sections?.[0]?.content || "No passage content available.");
 
-        return (
+        return ( 
             <div 
                 data-passage-container="true"
                 onMouseUp={handleTextSelection}
                 onPointerUp={handleTextSelection}
-                className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
-                dangerouslySetInnerHTML={{ __html: contentHTML }}
-            />
+            >
+                <ReadingPassageRenderer
+                    passageContent={contentText}
+                    questions={data.questions || []}
+                    answers={answers}
+                    onAnswerChange={onAnswerChange}
+                    submitted={undefined}
+                    result={null}
+                    clickedOption={clickedOption}
+                    setClickedOption={setClickedOption}
+                    className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
+                />
+            </div>
         );
-    }, [data, activePassageTab]);
+    }, [data, activePassageTab, answers, clickedOption]);
 
     const activeQuestionsIdxs = data?.questions
         ?.map((q, idx) => ({ q, idx, passageIndex: getQuestionPassageIndex(q, data?.questionGroups, idx) })) || [];
@@ -621,6 +684,31 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                         )}
 
                         {passageElement}
+ 
+                        {/* Matching Grid Questions inline below the reading passage */}
+                        {groupedItems.filter(item => item.visuals?.some(vg => vg.type === 'matching-grid-group')).map((groupEntry, geIdx) => {
+                            return groupEntry.visuals.filter(vg => vg.type === 'matching-grid-group').map((vg, vgIdx) => {
+                                // Check if this matching grid belongs to the active passage tab
+                                const qIdx = data.questions.findIndex(item => item.id === vg.questions[0].id);
+                                const qPassageIndex = getQuestionPassageIndex(vg.questions[0], data.questionGroups, qIdx);
+                                if (qPassageIndex !== activePassageTab) return null;
+ 
+                                return (
+                                    <div key={`grid-left-${geIdx}-${vgIdx}`} className="p-6 bg-slate-50 border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs mt-8">
+                                        <h3 className="text-sm font-black uppercase tracking-widest text-primary/70 pl-2">
+                                            Matching Table
+                                        </h3>
+                                        <MatchingGridRenderer
+                                            questions={vg.questions}
+                                            options={vg.options}
+                                            answers={answers}
+                                            onAnswerChange={onAnswerChange}
+                                            data={data}
+                                        />
+                                    </div>
+                                );
+                            });
+                        })}
                     </div>
                 </div>
 
@@ -677,21 +765,15 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                         </header>
 
                         <div className="space-y-8">
-                            {(() => {
-                                const groups = groupQuestions(data?.questions || []);
-                                const groupedItems = groupVisualsByQuestionGroups(groups, data?.questionGroups, 0, data?.questions || []);
-                                return (
-                                    <GroupedQuestionsRenderer
-                                        groupedItems={groupedItems}
-                                        answers={answers}
-                                        onAnswerChange={onAnswerChange}
-                                        offset={0}
-                                        data={data}
-                                        clickedOption={clickedOption}
-                                        setClickedOption={setClickedOption}
-                                    />
-                                );
-                            })()}
+                            <GroupedQuestionsRenderer
+                                groupedItems={groupedItems}
+                                answers={answers}
+                                onAnswerChange={onAnswerChange}
+                                offset={0}
+                                data={data}
+                                clickedOption={clickedOption}
+                                setClickedOption={setClickedOption}
+                            />
                         </div>
                     </div>
 
@@ -704,7 +786,9 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                             <p className="text-[10px] text-slate-400 font-bold leading-snug text-center">
                                 Drag or click to place.
                             </p>
-                            <div className="flex flex-col gap-2">
+                            <div className={`flex flex-col gap-2 pr-1 custom-scrollbar ${
+                                hasMultipleGroups ? "max-h-[300px] overflow-y-auto" : ""
+                            }`}>
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
                                     const label = `${letter}. ${opt}`;

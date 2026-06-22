@@ -28,6 +28,19 @@ export const QuestionTypeExtras = ({ q, onUpdate, onAddOption, onUpdateOption, o
     if (NEEDS_OPTIONS.includes(q.type)) {
         return (
             <div className="bg-base-100 p-4 rounded-2xl space-y-3">
+                {q.type === "matching-grid" && (
+                    <div className="form-control w-full">
+                        <label className="label py-1">
+                            <span className="label-text font-black text-[10px] uppercase tracking-widest text-base-content/50">Info / Passage Text (Legend)</span>
+                        </label>
+                        <textarea
+                            className="textarea textarea-bordered w-full rounded-xl text-xs font-semibold min-h-[5rem]"
+                            placeholder="Enter paragraph descriptions or list options legend mapping (e.g. A. option A text, B. option B text...)"
+                            value={q.info || ""}
+                            onChange={(e) => onUpdate(q.id, "info", e.target.value)}
+                        />
+                    </div>
+                )}
                 <span className="text-[10px] font-black uppercase tracking-widest text-base-content/50">
                     Options
                 </span>
