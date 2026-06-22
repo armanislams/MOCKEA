@@ -109,7 +109,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     <PiBookOpen className="text-primary w-4 h-4" />
                                     <span className="text-xs font-black uppercase tracking-widest text-primary">Group {gIdx + 1}</span>
                                 </div>
-                                <div className="grid md:grid-cols-5 gap-3">
+                                <div className={`grid gap-3 ${testType === "listening" ? "grid-cols-2 md:grid-cols-5" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-6"}`}>
                                     {/* From Q# */}
                                     <div>
                                         <label className="label"><span className="label-text font-semibold text-xs">From Q#</span></label>
@@ -139,22 +139,79 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         />
                                     </div>
                                     {/* Target Passage */}
+                                    {testType !== "listening" && (
+                                        <div>
+                                            <label className="label"><span className="label-text font-semibold text-xs">Target Passage</span></label>
+                                            <select
+                                                className="select select-bordered w-full rounded-2xl text-sm font-semibold"
+                                                value={group.passageIndex || 0}
+                                                onChange={(e) => {
+                                                    const upd = [...(formData.questionGroups || [])];
+                                                    upd[gIdx] = { ...upd[gIdx], passageIndex: parseInt(e.target.value) };
+                                                    patch({ questionGroups: upd });
+                                                }}
+                                            >
+                                                {(formData.passages || []).map((p, pIdx) => (
+                                                    <option key={pIdx} value={pIdx}>
+                                                        Passage {pIdx + 1}: {p.title || "(Untitled)"}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+                                    {/* Group Question Type */}
                                     <div>
-                                        <label className="label"><span className="label-text font-semibold text-xs">Target Passage</span></label>
+                                        <label className="label"><span className="label-text font-semibold text-xs">Group Question Type</span></label>
                                         <select
-                                            className="select select-bordered w-full rounded-2xl text-sm font-semibold"
-                                            value={group.passageIndex || 0}
+                                            className="select select-bordered w-full rounded-2xl text-sm font-bold bg-primary/5 text-primary border-primary/20"
+                                            value={(() => {
+                                                const fromQ = Number(group.fromQuestion) || 1;
+                                                return formData.questions?.[fromQ - 1]?.type || "";
+                                            })()}
                                             onChange={(e) => {
-                                                const upd = [...(formData.questionGroups || [])];
-                                                upd[gIdx] = { ...upd[gIdx], passageIndex: parseInt(e.target.value) };
-                                                patch({ questionGroups: upd });
+                                                const selectedType = e.target.value;
+                                                const fromQ = Number(group.fromQuestion) || 1;
+                                                const toQ = Number(group.toQuestion) || 1;
+                                                
+                                                const updatedQuestions = formData.questions.map((q, idx) => {
+                                                    const questionNum = idx + 1;
+                                                    if (questionNum >= fromQ && questionNum <= toQ) {
+                                                        let updatedQ = { ...q, type: selectedType };
+                                                        if (selectedType === "true-false") {
+                                                            updatedQ.options = ["True", "False", "Not Given"];
+                                                        } else if (selectedType === "yes-no") {
+                                                            updatedQ.options = ["Yes", "No", "Not Given"];
+                                                        } else if (selectedType === "matching-grid") {
+                                                            updatedQ.options = ["A", "B", "C"];
+                                                        } else if (selectedType === "drag-drop-completion") {
+                                                            const firstDD = formData.questions.find(item => item.type === "drag-drop-completion");
+                                                            if (firstDD) {
+                                                                updatedQ.options = [...firstDD.options];
+                                                            }
+                                                        }
+                                                        return updatedQ;
+                                                    }
+                                                    return q;
+                                                });
+                                                
+                                                patch({ questions: updatedQuestions });
                                             }}
                                         >
-                                            {(formData.passages || []).map((p, pIdx) => (
-                                                <option key={pIdx} value={pIdx}>
-                                                    Passage {pIdx + 1}: {p.title || "(Untitled)"}
-                                                </option>
-                                            ))}
+                                            <option value="">— Select Type —</option>
+                                            <option value="short-answer">Short Answer / Form Fill</option>
+                                            <option value="sentence-completion">Sentence Completion</option>
+                                            <option value="summary-completion">Summary Completion</option>
+                                            <option value="table-completion">Table Completion</option>
+                                            <option value="flow-chart-completion">Flow Chart Completion</option>
+                                            <option value="drag-drop-completion">Drag and Drop Completion</option>
+                                            <option value="multiple-choice">Multiple Choice</option>
+                                            <option value="true-false">True / False / Not Given</option>
+                                            <option value="yes-no">Yes / No / Not Given</option>
+                                            <option value="matching">Matching</option>
+                                            <option value="heading-matching">Heading Matching</option>
+                                            <option value="matching-grid">Matching Grid</option>
+                                            <option value="map-labelling">Map Labelling</option>
+                                            <option value="diagram-labelling">Diagram Labelling</option>
                                         </select>
                                     </div>
                                     {/* Group Title */}

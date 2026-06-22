@@ -130,7 +130,7 @@ const convertMarkdownTablesToHtml = (text) => {
     return hasWrapper ? `<div class="${wrapperClass}">${finalHtml}</div>` : finalHtml;
 };
 
-const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700" }) => {
+const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700 whitespace-pre-line" }) => {
     const containerRef = useRef(null);
 
     const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
