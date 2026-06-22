@@ -130,21 +130,31 @@ export function useQuestionFormState(initialData = initialForm()) {
     }, []);
 
     const updateQuestionField = useCallback((id, field, value) => {
-        // Auto-populate default options when type changes to true-false, yes-no, or matching-grid
-        if (field === "type") {
+        setFormData((prev) => {
             let updates = { [field]: value };
-            if (value === "true-false") {
-                updates.options = ["True", "False", "Not Given"];
-            } else if (value === "yes-no") {
-                updates.options = ["Yes", "No", "Not Given"];
-            } else if (value === "matching-grid") {
-                updates.options = ["A", "B", "C"];
+            if (field === "type") {
+                if (value === "true-false") {
+                    updates.options = ["True", "False", "Not Given"];
+                } else if (value === "yes-no") {
+                    updates.options = ["Yes", "No", "Not Given"];
+                } else if (value === "matching-grid") {
+                    updates.options = ["A", "B", "C"];
+                } else if (value === "drag-drop-completion") {
+                    const firstDD = prev.questions.find(q => q.type === "drag-drop-completion");
+                    if (firstDD) {
+                        updates.options = [...firstDD.options];
+                    }
+                }
             }
-            patchQuestion(id, updates);
-        } else {
-            patchQuestion(id, { [field]: value });
-        }
-    }, [patchQuestion]);
+            
+            return {
+                ...prev,
+                questions: prev.questions.map((q) =>
+                    q.id === id ? { ...q, ...updates } : q
+                ),
+            };
+        });
+    }, []);
 
     const handleAddOption = useCallback((qId) => {
         setFormData((prev) => {
@@ -153,11 +163,17 @@ export function useQuestionFormState(initialData = initialForm()) {
             const nextValue = targetQuestion.type === "matching-grid"
                 ? String.fromCharCode(65 + targetQuestion.options.length)
                 : "";
+            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+            const newOptions = [...targetQuestion.options, nextValue];
+
             return {
                 ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === qId ? { ...q, options: [...q.options, nextValue] } : q
-                ),
+                questions: prev.questions.map((q) => {
+                    if (isDragDrop && q.type === "drag-drop-completion") {
+                        return { ...q, options: newOptions };
+                    }
+                    return q.id === qId ? { ...q, options: newOptions } : q;
+                }),
             };
         });
     }, []);
@@ -168,11 +184,16 @@ export function useQuestionFormState(initialData = initialForm()) {
             if (!targetQuestion) return prev;
             const opts = [...targetQuestion.options];
             opts[idx] = value;
+            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+
             return {
                 ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === qId ? { ...q, options: opts } : q
-                ),
+                questions: prev.questions.map((q) => {
+                    if (isDragDrop && q.type === "drag-drop-completion") {
+                        return { ...q, options: opts };
+                    }
+                    return q.id === qId ? { ...q, options: opts } : q;
+                }),
             };
         });
     }, []);
@@ -182,11 +203,16 @@ export function useQuestionFormState(initialData = initialForm()) {
             const targetQuestion = prev.questions.find((q) => q.id === qId);
             if (!targetQuestion) return prev;
             const opts = targetQuestion.options.filter((_, i) => i !== idx);
+            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+
             return {
                 ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === qId ? { ...q, options: opts } : q
-                ),
+                questions: prev.questions.map((q) => {
+                    if (isDragDrop && q.type === "drag-drop-completion") {
+                        return { ...q, options: opts };
+                    }
+                    return q.id === qId ? { ...q, options: opts } : q;
+                }),
             };
         });
     }, []);
