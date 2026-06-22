@@ -157,7 +157,7 @@ const convertMarkdownTablesToHtml = (text) => {
  * Renders the passage text and replaces ___[number]___ placeholders with React inline inputs.
  * If no placeholders are present, it renders the raw HTML.
  */
-const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, className = "leading-relaxed text-slate-700" }) => {
+const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700" }) => {
     const containerRef = useRef(null);
 
     const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
@@ -190,7 +190,49 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             const isCorrect = evaluation?.isCorrect;
             
             const isMockTest = submitted === undefined;
-            
+            const isDragDrop = q.type === 'drag-drop-completion';
+
+            if (isDragDrop) {
+                if (submitted) {
+                    let borderClass = isCorrect ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-red-400 bg-red-50 text-red-700";
+                    let badge = isCorrect
+                        ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✓</span>`
+                        : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>`;
+                    let correctAnswerHtml = !isCorrect 
+                        ? `<span class="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">✓ ${q.correctAnswer}</span>`
+                        : "";
+                    const titleAttr = !isCorrect ? `Correct Answer: ${q.correctAnswer}` : "";
+                    
+                    return `
+                        <span class="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
+                            <span class="text-red-600 font-black mr-0.5 flex-shrink-0">(${labelNum})</span>
+                            <span 
+                                class="inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 rounded-xl text-xs font-black align-middle ${borderClass}"
+                                data-q-id="${qId}"
+                                title="${titleAttr}"
+                            >
+                                ${answers[qId] || "No Answer"}
+                            </span>
+                            ${badge}
+                            ${correctAnswerHtml}
+                        </span>
+                    `.trim();
+                } else {
+                    return `
+                        <span class="inline-flex items-baseline mx-0.5 relative group align-baseline">
+                            <span class="text-red-600 font-black mr-0.5 flex-shrink-0">(${labelNum})</span>
+                            <span 
+                                class="drag-drop-target inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 border-dashed border-slate-400 rounded-xl bg-slate-50/50 hover:bg-slate-100/50 hover:border-primary/40 cursor-pointer select-none transition-all text-xs font-bold text-slate-500 align-middle"
+                                data-q-id="${qId}"
+                                data-q-num="${labelNum}"
+                            >
+                                Drop here
+                            </span>
+                        </span>
+                    `.trim();
+                }
+            }
+
             let inputClass = "inline-flex items-baseline gap-0.5 text-sm font-bold bg-transparent outline-none transition-all";
             if (submitted) {
                 inputClass += isCorrect
@@ -241,28 +283,99 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
                     input.value = value;
                 }
             });
+
+            const targets = containerRef.current.querySelectorAll('.drag-drop-target[data-q-id]');
+            targets.forEach(target => {
+                const qId = target.getAttribute('data-q-id');
+                const qNum = target.getAttribute('data-q-num');
+                const value = answers[qId] || "";
+                if (value) {
+                    target.innerHTML = `<span class="text-slate-800 font-black mx-1 font-sans">${value}</span> <button class="clear-btn text-slate-400 hover:text-error ml-1.5 text-sm font-black" data-q-id="${qId}">×</button>`;
+                    target.classList.remove('border-dashed', 'text-slate-500', 'bg-slate-50/50');
+                    target.classList.add('border-solid', 'border-primary', 'bg-white');
+                } else {
+                    target.innerHTML = `Drop here`;
+                    target.classList.remove('border-solid', 'border-primary', 'bg-white');
+                    target.classList.add('border-dashed', 'text-slate-500', 'bg-slate-50/50');
+                }
+            });
         }
     }, [answers, processedPassage]);
 
     const onAnswerChangeRef = useRef(onAnswerChange);
+    const clickedOptionRef = useRef(clickedOption);
+    const setClickedOptionRef = useRef(setClickedOption);
+
     useEffect(() => {
         onAnswerChangeRef.current = onAnswerChange;
-    }, [onAnswerChange]);
+        clickedOptionRef.current = clickedOption;
+        setClickedOptionRef.current = setClickedOption;
+    }, [onAnswerChange, clickedOption, setClickedOption]);
 
     useEffect(() => {
         const handleInput = (e) => {
-            if (e.target && e.target.hasAttribute('data-q-id')) {
+            if (e.target && e.target.hasAttribute('data-q-id') && e.target.tagName === 'INPUT') {
                 const qId = e.target.getAttribute('data-q-id');
                 onAnswerChangeRef.current(qId, e.target.value);
             }
         };
+
+        const handleDragOver = (e) => {
+            const target = e.target.closest('.drag-drop-target');
+            if (target) {
+                e.preventDefault();
+            }
+        };
+
+        const handleDrop = (e) => {
+            const target = e.target.closest('.drag-drop-target');
+            if (target) {
+                e.preventDefault();
+                const qId = target.getAttribute('data-q-id');
+                const val = e.dataTransfer.getData("text/plain");
+                if (qId && val) {
+                    onAnswerChangeRef.current(qId, val);
+                }
+            }
+        };
+
+        const handleClick = (e) => {
+            const clearBtn = e.target.closest('.clear-btn');
+            if (clearBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                const qId = clearBtn.getAttribute('data-q-id');
+                if (qId) {
+                    onAnswerChangeRef.current(qId, "");
+                }
+                return;
+            }
+
+            const target = e.target.closest('.drag-drop-target');
+            if (target) {
+                const qId = target.getAttribute('data-q-id');
+                if (qId && clickedOptionRef.current) {
+                    onAnswerChangeRef.current(qId, clickedOptionRef.current);
+                    if (setClickedOptionRef.current) {
+                        setClickedOptionRef.current(null);
+                    }
+                }
+            }
+        };
+
         const container = containerRef.current;
         if (container) {
             container.addEventListener('input', handleInput);
+            container.addEventListener('dragover', handleDragOver);
+            container.addEventListener('drop', handleDrop);
+            container.addEventListener('click', handleClick);
         }
         return () => {
             if (container) {
                 container.removeEventListener('input', handleInput);
+                container.removeEventListener('dragover', handleDragOver);
+                container.removeEventListener('drop', handleDrop);
+                container.removeEventListener('click', handleClick);
             }
         };
     }, []);
@@ -786,11 +899,85 @@ const groupQuestions = (questions) => {
 // ─── Question Router ─────────────────────────────────────────────────────────
 
 
+const DragDropRenderer = ({ q, idx, offset = 0, submitted, evaluation, answers, onAnswerChange, clickedOption, setClickedOption }) => {
+    const isCorrect = evaluation?.isCorrect;
+    const value = answers[q.id] || "";
+
+    return (
+        <div className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+            submitted
+                ? isCorrect ? "bg-emerald-50/40 border-emerald-200" : "bg-red-50/40 border-red-200"
+                : "bg-slate-50/40 border-slate-200"
+        }`}>
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-xs text-slate-700 flex-shrink-0">
+                    {offset + idx + 1}
+                </div>
+                <span className="font-semibold text-sm text-slate-700">{q.question}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+                <div
+                    onDragOver={(e) => !submitted && e.preventDefault()}
+                    onDrop={(e) => {
+                        if (submitted) return;
+                        e.preventDefault();
+                        const val = e.dataTransfer.getData("text/plain");
+                        if (val) onAnswerChange(q.id, val);
+                    }}
+                    onClick={() => {
+                        if (submitted) return;
+                        if (clickedOption) {
+                            onAnswerChange(q.id, clickedOption);
+                            if (setClickedOption) setClickedOption(null);
+                        }
+                    }}
+                    className={`min-w-36 h-10 px-4 border-2 border-dashed rounded-xl flex items-center justify-center text-xs font-bold transition-all bg-white ${
+                        submitted
+                            ? isCorrect ? "border-emerald-400 text-emerald-700 bg-emerald-50" : "border-red-400 text-red-700 bg-red-50"
+                            : value
+                            ? "border-primary text-slate-800 font-black cursor-pointer"
+                            : "border-slate-300 text-slate-400 hover:border-primary/40 cursor-pointer bg-slate-50/50"
+                    }`}
+                >
+                    {value || "Drop answer here"}
+                    {!submitted && value && (
+                        <button 
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onAnswerChange(q.id, "");
+                            }}
+                            className="ml-2 text-slate-400 hover:text-error text-sm font-black"
+                        >
+                            ×
+                        </button>
+                    )}
+                </div>
+                {submitted && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {isCorrect
+                            ? <PiCheckCircleFill className="text-emerald-500 text-2xl flex-shrink-0" />
+                            : <PiXCircleFill className="text-red-500 text-2xl flex-shrink-0" />
+                        }
+                        {!isCorrect && (
+                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1 flex-shrink-0">
+                                ✓ {q.correctAnswer}
+                            </span>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 /** Picks the right renderer based on question type */
-const QuestionRenderer = ({ q, idx, offset = 0, submitted, result, answers, onAnswerChange }) => {
+const QuestionRenderer = ({ q, idx, offset = 0, submitted, result, answers, onAnswerChange, clickedOption, setClickedOption }) => {
     const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === q.id);
     const props      = { q, idx, offset, submitted, evaluation, answers, onAnswerChange };
 
+    if (q.type === "drag-drop-completion")       return <DragDropRenderer {...props} clickedOption={clickedOption} setClickedOption={setClickedOption} />;
     if (COMPLETION_TYPES.has(q.type))           return <CompletionRenderer {...props} />;
     if (["multiple-choice","true-false","yes-no"].includes(q.type)) return <McqRenderer {...props} />;
     if (["matching","heading-matching","matching-grid"].includes(q.type)) return <MatchingRenderer {...props} />;
@@ -951,7 +1138,7 @@ const GroupedContainer = ({ header, children }) => {
     );
 };
 
-const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, submitted, result, offset, activeSet }) => {
+const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, submitted, result, offset, activeSet, clickedOption, setClickedOption }) => {
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -987,22 +1174,37 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, submi
 
                     const q = vg.question;
                     const idx = activeSet.questions.findIndex(item => item.id === q.id);
+                    const isFlowChart = q.type === 'flow-chart-completion';
+                    const nextIsFlowChart = vgIdx < groupEntry.visuals.length - 1 && groupEntry.visuals[vgIdx + 1]?.question?.type === 'flow-chart-completion';
+
                     return (
                         <motion.div
                             key={q.id}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.04 }}
+                            className="w-full space-y-4"
                         >
-                            <QuestionRenderer
-                                q={q}
-                                idx={idx}
-                                offset={offset}
-                                submitted={submitted}
-                                result={result}
-                                answers={answers}
-                                onAnswerChange={onAnswerChange}
-                            />
+                            <div className={isFlowChart ? "bg-slate-50/50 border border-dashed border-slate-300 p-6 rounded-3xl max-w-lg mx-auto text-center shadow-xs" : ""}>
+                                <QuestionRenderer
+                                    q={q}
+                                    idx={idx}
+                                    offset={offset}
+                                    submitted={submitted}
+                                    result={result}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                />
+                            </div>
+                            {isFlowChart && nextIsFlowChart && (
+                                <div className="flex justify-center my-3 text-slate-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6 animate-bounce">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                                    </svg>
+                                </div>
+                            )}
                         </motion.div>
                     );
                 });
@@ -1038,9 +1240,16 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, submi
  *   result         — evaluation result or null
  */
 const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, result }) => {
+    const [clickedOption, setClickedOption] = useState(null);
     const part = activeSet?.listeningPart || 1;
     const meta = PART_META[part] || PART_META[1];
     const offset = (part - 1) * 10;
+
+    const dragDropQuestions = useMemo(() => activeSet?.questions?.filter(q => q.type === 'drag-drop-completion') || [], [activeSet?.questions]);
+    const sharedOptions = useMemo(() => {
+        const first = dragDropQuestions[0];
+        return first?.options?.filter(Boolean) || [];
+    }, [dragDropQuestions]);
 
     const renderedInlineIds = useMemo(() => {
         if (!activeSet.passage) return new Set();
@@ -1134,6 +1343,8 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                                     submitted={submitted}
                                     result={result}
                                     offset={offset}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
                                 />
                             )}
                         </div>
@@ -1153,9 +1364,51 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                             result={result}
                             offset={offset}
                             activeSet={activeSet}
+                            clickedOption={clickedOption}
+                            setClickedOption={setClickedOption}
                         />
                     );
                 })()}
+
+                {sharedOptions.length > 0 && (
+                    <div className="sticky bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 p-4 shadow-xl z-20 space-y-2 rounded-t-3xl mt-6">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
+                            Drag and drop or click to select an option to fill each blank
+                        </p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {sharedOptions.map((opt, i) => {
+                                const letter = String.fromCharCode(65 + i);
+                                const label = `${letter}. ${opt}`;
+                                // Check if this option is already placed in answers
+                                const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                const isSelected = clickedOption === label;
+                                return (
+                                    <div
+                                        key={i}
+                                        draggable={!isPlaced}
+                                        onDragStart={(e) => {
+                                            e.dataTransfer.setData("text/plain", label);
+                                        }}
+                                        onClick={() => {
+                                            if (!isPlaced) {
+                                                setClickedOption(isSelected ? null : label);
+                                            }
+                                        }}
+                                        className={`px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all cursor-pointer select-none ${
+                                            isPlaced
+                                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                : isSelected
+                                                ? "bg-primary border-primary text-white shadow-lg scale-105"
+                                                : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95"
+                                        }`}
+                                    >
+                                        {label}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

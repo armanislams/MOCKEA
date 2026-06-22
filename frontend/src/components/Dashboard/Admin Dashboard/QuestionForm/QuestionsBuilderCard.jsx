@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { 
     PiPlusCircle, 
     PiPlus, 
     PiBookOpen, 
-    PiTrash 
+    PiTrash,
+    PiInfo
 } from "react-icons/pi";
 import { QuestionTypeSelect, QuestionTypeExtras } from "./QuestionTypeFields";
 import { NEEDS_OPTIONS } from "./questionFormConstants";
@@ -21,6 +23,8 @@ export default function QuestionsBuilderCard({
 }) {
     if (testType === "writing" || testType === "speaking") return null;
 
+    const [showGuide, setShowGuide] = useState(false);
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -37,6 +41,67 @@ export default function QuestionsBuilderCard({
                 >
                     <PiPlus /> Add Question
                 </button>
+            </div>
+
+            <div className="collapse bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 rounded-3xl shadow-xs">
+                <input 
+                    type="checkbox" 
+                    className="peer" 
+                    checked={showGuide} 
+                    onChange={() => setShowGuide(!showGuide)} 
+                /> 
+                <div className="collapse-title flex items-center gap-2 text-slate-700 font-extrabold text-sm cursor-pointer hover:bg-slate-200/40 transition-colors">
+                    <PiInfo className="text-primary w-5 h-5" />
+                    <span>Admin Guide: Question Types & Formatting Reference</span>
+                    <span className="badge badge-sm font-black ml-auto bg-slate-200/80 border-none text-slate-500 uppercase tracking-widest text-[9px] px-2.5 py-2">
+                        {showGuide ? "Hide Guide" : "Show Guide"}
+                    </span>
+                </div>
+                <div className="collapse-content bg-white border-t border-slate-200/50 p-6 space-y-4">
+                    <div className="grid md:grid-cols-2 gap-6 text-xs text-slate-600 leading-relaxed font-medium">
+                        {/* Drag & Drop Card */}
+                        <div className="space-y-2.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                            <h4 className="font-black text-sm text-primary uppercase tracking-wider">
+                                Drag & Drop Completion
+                            </h4>
+                            <p>
+                                Lets students drag options from a shared pool and drop them into inline gaps within text/passages.
+                            </p>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li>
+                                    <strong>Inline Gaps:</strong> In the passage content, place <code>___[Num]___</code> (e.g. <code>___1___</code> or <code>___2___</code>) where drop targets should go.
+                                </li>
+                                <li>
+                                    <strong>Options Pool:</strong> Under the question, add the options (e.g., <code>A. option text</code>). Repeat the same pool list for all questions in the block.
+                                </li>
+                                <li>
+                                    <strong>Answers:</strong> Set the exact choice text as the correct answer.
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Flowchart Card */}
+                        <div className="space-y-2.5 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                            <h4 className="font-black text-sm text-emerald-700 uppercase tracking-wider">
+                                Flowchart Completion
+                            </h4>
+                            <p>
+                                Automatically groups questions of this type into a visual, vertically connected flow diagram layout.
+                            </p>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li>
+                                    <strong>Visual Connections:</strong> Centered boxes will be rendered and connected by downward arrows (↓).
+                                </li>
+                                <li>
+                                    <strong>Labels:</strong> Use the <code>Question / Label</code> field to describe each step in the flowchart.
+                                </li>
+                                <li>
+                                    <strong>Question Groups:</strong> Ensure questions are grouped in a matching Question Group sequence to organize the flowchart layout.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {formData.questions?.map((q, index) => {

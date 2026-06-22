@@ -27,6 +27,7 @@ export const QUESTION_TYPE_GROUPS = [
             { value: "summary-completion",    label: "Summary Completion" },
             { value: "table-completion",      label: "Table Completion" },
             { value: "flow-chart-completion", label: "Flow-chart Completion" },
+            { value: "drag-drop-completion",   label: "Drag and Drop Completion" },
         ],
     },
     {
@@ -58,7 +59,7 @@ export const QUESTION_TYPE_GROUPS = [
 ];
 
 // Which types need options array
-export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid"];
+export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid", "drag-drop-completion"];
 // Which types need matchingPairs
 export const NEEDS_PAIRS = ["matching", "heading-matching"];
 // Which types need a per-question image URL

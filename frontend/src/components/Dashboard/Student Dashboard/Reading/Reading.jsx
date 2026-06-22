@@ -109,7 +109,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
     );
 };
 
-const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer }) => {
+const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer, clickedOption, setClickedOption }) => {
     return (
         <div className={`space-y-4 p-6 rounded-3xl transition-all ${
             submitted 
@@ -128,7 +128,52 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
 
             <p className="font-bold text-slate-700 leading-snug">{q.question}</p>
 
-            {q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
+            {q.type === 'drag-drop-completion' ? (
+                <div className="space-y-2">
+                    <div 
+                        onDragOver={(e) => !submitted && e.preventDefault()}
+                        onDrop={(e) => {
+                            if (submitted) return;
+                            e.preventDefault();
+                            const val = e.dataTransfer.getData("text/plain");
+                            if (val) handleAnswerChange(q.id, val);
+                        }}
+                        onClick={() => {
+                            if (submitted) return;
+                            if (clickedOption) {
+                                handleAnswerChange(q.id, clickedOption);
+                                if (setClickedOption) setClickedOption(null);
+                            }
+                        }}
+                        className={`min-w-40 h-12 px-4 border-2 border-dashed rounded-2xl flex items-center justify-center text-sm font-bold transition-all bg-white ${
+                            submitted
+                                ? isCorrect ? "border-success text-success bg-success/5" : "border-error text-error bg-error/5"
+                                : answers[q.id]
+                                ? "border-primary text-slate-800 font-black cursor-pointer shadow-xs"
+                                : "border-slate-300 text-slate-400 hover:border-primary/40 cursor-pointer bg-slate-50/50"
+                        }`}
+                    >
+                        {answers[q.id] || "Drop answer here"}
+                        {!submitted && answers[q.id] && (
+                            <button 
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAnswerChange(q.id, "");
+                                }}
+                                className="ml-2.5 text-slate-400 hover:text-error text-lg font-black"
+                            >
+                                ×
+                            </button>
+                        )}
+                    </div>
+                    {submitted && !isCorrect && (
+                        <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
+                            <PiCheckCircleFill /> Correct: {correctAnswer}
+                        </div>
+                    )}
+                </div>
+            ) : q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
                 <div className="grid gap-3">
                     {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
                         <label 
@@ -294,7 +339,7 @@ const GroupedContainer = ({ header, children }) => {
     );
 };
 
-const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, submitted, result, activeSet }) => {
+const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, submitted, result, activeSet, clickedOption, setClickedOption }) => {
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -323,22 +368,38 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                     const q = vg.question;
                     const idx = activeSet.questions.findIndex(item => item.id === q.id);
                     const isCorrect = submitted && result?.evaluatedAnswers?.find(a => a.questionId === q.id)?.isCorrect;
+                    const isFlowChart = q.type === 'flow-chart-completion';
+                    const nextIsFlowChart = vgIdx < groupEntry.visuals.length - 1 && groupEntry.visuals[vgIdx + 1]?.question?.type === 'flow-chart-completion';
 
                     return (
-                        <div 
-                            key={q.id || idx} 
-                            id={`question-${idx}`}
-                            className="space-y-4 scroll-mt-6 animate-fadeIn"
-                        >
-                            <QuestionRenderer
-                                q={q}
-                                idx={idx}
-                                submitted={submitted}
-                                answers={answers}
-                                handleAnswerChange={handleAnswerChange}
-                                isCorrect={isCorrect}
-                                correctAnswer={q.correctAnswer}
-                            />
+                        <div key={q.id || idx} className="space-y-4">
+                            <div 
+                                id={`question-${idx}`}
+                                className={`space-y-4 p-6 rounded-3xl border transition-all scroll-mt-6 animate-fadeIn ${
+                                    isFlowChart 
+                                    ? "bg-slate-50/50 border-dashed border-slate-300 max-w-lg mx-auto text-center shadow-xs" 
+                                    : "border-base-200 bg-white hover:border-primary/30"
+                                }`}
+                            >
+                                <QuestionRenderer
+                                    q={q}
+                                    idx={idx}
+                                    submitted={submitted}
+                                    answers={answers}
+                                    handleAnswerChange={handleAnswerChange}
+                                    isCorrect={isCorrect}
+                                    correctAnswer={q.correctAnswer}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                />
+                            </div>
+                            {isFlowChart && nextIsFlowChart && (
+                                <div className="flex justify-center my-3 text-slate-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6 animate-bounce">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                                    </svg>
+                                </div>
+                            )}
                         </div>
                     );
                 });
@@ -512,6 +573,18 @@ const Reading = () => {
     () => readingSets.find((set) => set._id === selectedSetId) || null,
     [readingSets, selectedSetId],
   );
+
+  const [clickedOption, setClickedOption] = useState(null);
+
+  const dragDropQuestions = useMemo(() => activeSet?.questions?.filter(q => q.type === 'drag-drop-completion') || [], [activeSet?.questions]);
+  const sharedOptions = useMemo(() => {
+      const first = dragDropQuestions[0];
+      return first?.options?.filter(Boolean) || [];
+  }, [dragDropQuestions]);
+
+  useEffect(() => {
+      setClickedOption(null);
+  }, [selectedSetId]);
 
   const { timeLeft, fmtTime } = useCountdown(3600, !!selectedSetId, submitted);
 
@@ -835,9 +908,52 @@ const Reading = () => {
                                     submitted={submitted}
                                     result={result}
                                     activeSet={activeSet}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
                                 />
                             );
                         })()}
+
+                        {sharedOptions.length > 0 && (
+                            <div className="bg-slate-50 border border-slate-200/80 p-5 shadow-inner space-y-3 rounded-2xl">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
+                                    Drag and drop or click to select an option to fill each blank
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {sharedOptions.map((opt, i) => {
+                                        const letter = String.fromCharCode(65 + i);
+                                        const label = `${letter}. ${opt}`;
+                                        const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                        const isSelected = clickedOption === label;
+                                        return (
+                                            <div
+                                                key={i}
+                                                draggable={!isPlaced && !submitted}
+                                                onDragStart={(e) => {
+                                                    if (submitted) return;
+                                                    e.dataTransfer.setData("text/plain", label);
+                                                }}
+                                                onClick={() => {
+                                                    if (submitted) return;
+                                                    if (!isPlaced) {
+                                                        setClickedOption(isSelected ? null : label);
+                                                    }
+                                                }}
+                                                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
+                                                    isPlaced
+                                                        ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                        : isSelected
+                                                        ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                        : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
+                                                }`}
+                                            >
+                                                {label}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         {!submitted && (
                             <button 

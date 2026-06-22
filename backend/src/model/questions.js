@@ -16,6 +16,7 @@ const QuestionItemSchema = new mongoose.Schema(
                 "summary-completion",     // Paragraph with numbered gaps
                 "table-completion",       // Table grid with editable cells
                 "flow-chart-completion",  // Flow chart with gaps
+                "drag-drop-completion",   // Drag and drop completion fill-in
 
                 // ── Selection (IELTS + PTE) ──────────────────────────
                 "multiple-choice",        // MCQ with radio options

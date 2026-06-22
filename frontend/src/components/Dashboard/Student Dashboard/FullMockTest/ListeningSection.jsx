@@ -130,7 +130,7 @@ const convertMarkdownTablesToHtml = (text) => {
     return hasWrapper ? `<div class="${wrapperClass}">${finalHtml}</div>` : finalHtml;
 };
 
-const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, className = "leading-relaxed text-slate-700" }) => {
+const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700" }) => {
     const containerRef = useRef(null);
 
     const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
@@ -163,7 +163,45 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             const isCorrect = evaluation?.isCorrect;
             
             const isMockTest = submitted === undefined;
-            
+            const isDragDrop = q.type === 'drag-drop-completion';
+
+            if (isDragDrop) {
+                if (submitted) {
+                    let borderClass = isCorrect ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-red-400 bg-red-50 text-red-700";
+                    let badge = isCorrect
+                        ? `<span class="badge badge-success text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 inline-flex items-center justify-center ml-1">✓</span>`
+                        : `<span class="badge badge-error text-[10px] text-white font-bold p-1 rounded-full w-5 h-5 inline-flex items-center justify-center ml-1">✗</span>`;
+                    let correctAnswerHtml = !isCorrect 
+                        ? `<span class="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">✓ ${q.correctAnswer}</span>`
+                        : "";
+                    const titleAttr = !isCorrect ? `Correct Answer: ${q.correctAnswer}` : "";
+                    
+                    return `
+                        <span class="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
+                            <span 
+                                class="inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 rounded-xl text-xs font-black align-middle ${borderClass}"
+                                data-q-id="${qId}"
+                                title="${titleAttr}"
+                            >
+                                (${labelNum}) ${answers[qId] || "No Answer"}
+                            </span>
+                            ${badge}
+                            ${correctAnswerHtml}
+                        </span>
+                    `.trim();
+                } else {
+                    return `
+                        <span 
+                            class="drag-drop-target inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 border-dashed border-slate-400 rounded-xl bg-slate-50/50 hover:bg-slate-100/50 hover:border-primary/40 cursor-pointer select-none transition-all text-xs font-bold text-slate-500 align-middle mx-1.5"
+                            data-q-id="${qId}"
+                            data-q-num="${labelNum}"
+                        >
+                            (${labelNum}) Drop here
+                        </span>
+                    `.trim();
+                }
+            }
+
             let inputClass = "inline-block px-3 py-1 text-sm font-bold bg-white border-2 border-slate-400 rounded-lg outline-none transition-all text-center focus:ring-2 focus:ring-primary/20 w-36";
             if (isMockTest) {
                 inputClass = "inline-block h-10 px-3 py-1 rounded-xl w-36 font-bold border border-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm text-center outline-none bg-white transition-all";
@@ -217,28 +255,99 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
                     input.value = value;
                 }
             });
+
+            const targets = containerRef.current.querySelectorAll('.drag-drop-target[data-q-id]');
+            targets.forEach(target => {
+                const qId = target.getAttribute('data-q-id');
+                const qNum = target.getAttribute('data-q-num');
+                const value = answers[qId] || "";
+                if (value) {
+                    target.innerHTML = `(${qNum}) <span class="text-slate-800 font-black mx-1 font-sans">${value}</span> <button class="clear-btn text-slate-400 hover:text-error ml-1.5 text-sm font-black" data-q-id="${qId}">×</button>`;
+                    target.classList.remove('border-dashed', 'text-slate-500', 'bg-slate-50/50');
+                    target.classList.add('border-solid', 'border-primary', 'bg-white');
+                } else {
+                    target.innerHTML = `(${qNum}) Drop here`;
+                    target.classList.remove('border-solid', 'border-primary', 'bg-white');
+                    target.classList.add('border-dashed', 'text-slate-500', 'bg-slate-50/50');
+                }
+            });
         }
     }, [answers, processedPassage]);
 
     const onAnswerChangeRef = useRef(onAnswerChange);
+    const clickedOptionRef = useRef(clickedOption);
+    const setClickedOptionRef = useRef(setClickedOption);
+
     useEffect(() => {
         onAnswerChangeRef.current = onAnswerChange;
-    }, [onAnswerChange]);
+        clickedOptionRef.current = clickedOption;
+        setClickedOptionRef.current = setClickedOption;
+    }, [onAnswerChange, clickedOption, setClickedOption]);
 
     useEffect(() => {
         const handleInput = (e) => {
-            if (e.target && e.target.hasAttribute('data-q-id')) {
+            if (e.target && e.target.hasAttribute('data-q-id') && e.target.tagName === 'INPUT') {
                 const qId = e.target.getAttribute('data-q-id');
                 onAnswerChangeRef.current(qId, e.target.value);
             }
         };
+
+        const handleDragOver = (e) => {
+            const target = e.target.closest('.drag-drop-target');
+            if (target) {
+                e.preventDefault();
+            }
+        };
+
+        const handleDrop = (e) => {
+            const target = e.target.closest('.drag-drop-target');
+            if (target) {
+                e.preventDefault();
+                const qId = target.getAttribute('data-q-id');
+                const val = e.dataTransfer.getData("text/plain");
+                if (qId && val) {
+                    onAnswerChangeRef.current(qId, val);
+                }
+            }
+        };
+
+        const handleClick = (e) => {
+            const clearBtn = e.target.closest('.clear-btn');
+            if (clearBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                const qId = clearBtn.getAttribute('data-q-id');
+                if (qId) {
+                    onAnswerChangeRef.current(qId, "");
+                }
+                return;
+            }
+
+            const target = e.target.closest('.drag-drop-target');
+            if (target) {
+                const qId = target.getAttribute('data-q-id');
+                if (qId && clickedOptionRef.current) {
+                    onAnswerChangeRef.current(qId, clickedOptionRef.current);
+                    if (setClickedOptionRef.current) {
+                        setClickedOptionRef.current(null);
+                    }
+                }
+            }
+        };
+
         const container = containerRef.current;
         if (container) {
             container.addEventListener('input', handleInput);
+            container.addEventListener('dragover', handleDragOver);
+            container.addEventListener('drop', handleDrop);
+            container.addEventListener('click', handleClick);
         }
         return () => {
             if (container) {
                 container.removeEventListener('input', handleInput);
+                container.removeEventListener('dragover', handleDragOver);
+                container.removeEventListener('drop', handleDrop);
+                container.removeEventListener('click', handleClick);
             }
         };
     }, []);
@@ -486,7 +595,124 @@ const GroupedContainer = ({ header, children }) => {
     );
 };
 
-const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offset, data }) => {
+const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption }) => {
+    return (
+        <div className="space-y-4">
+            {q.type === 'true-false' && (
+                <div className="flex flex-wrap gap-2">
+                    {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
+                        <button 
+                            key={opt}
+                            type="button"
+                            onClick={() => onAnswerChange(q.id, opt)}
+                            className={`px-5 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                                answers[q.id] === opt 
+                                ? "bg-primary border-primary text-white" 
+                                : "bg-white border-base-200 hover:border-primary/40"
+                            }`}
+                        >
+                            {opt}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {q.type === 'multiple-choice' && (
+                <div className="space-y-2">
+                    {q.options?.filter(opt => opt && opt.trim() !== "").map((opt, optIdx) => (
+                        <button 
+                            key={optIdx}
+                            type="button"
+                            onClick={() => onAnswerChange(q.id, opt)}
+                            className={`w-full text-left px-5 py-3 rounded-xl text-xs font-bold border-2 transition-all flex items-center gap-3 ${
+                                answers[q.id] === opt 
+                                ? "bg-primary border-primary text-white" 
+                                : "bg-white border-base-200 hover:border-primary/40"
+                            }`}
+                        >
+                            <span className="w-6 h-6 rounded bg-base-200 text-base-content/40 flex items-center justify-center font-bold">
+                                {String.fromCharCode(65 + optIdx)}
+                            </span>
+                            {opt}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {(q.type === 'matching' || q.type === 'heading-matching') && (
+                <div>
+                    <select
+                        value={answers[q.id] || ""}
+                        onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                        className="select select-bordered border-slate-400 w-full rounded-xl font-bold bg-white focus:border-primary text-xs h-10 text-slate-800"
+                    >
+                        <option value="">— Select a match —</option>
+                        {((q.options?.length && q.options.some(opt => opt && opt.trim() !== ""))
+                            ? q.options.filter(opt => opt && opt.trim() !== "")
+                            : (q.matchingPairs || []).map((p) => p.value).filter(Boolean)
+                        ).map((opt, optIdx) => (
+                            <option key={optIdx} value={opt}>{opt}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+            {q.type === 'drag-drop-completion' && (
+                <div 
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        const val = e.dataTransfer.getData("text/plain");
+                        if (val) onAnswerChange(q.id, val);
+                    }}
+                    className="flex items-center justify-center gap-2"
+                >
+                    <span className="text-xs font-bold text-slate-500">Answer:</span>
+                    <div 
+                        onClick={() => {
+                            if (clickedOption) {
+                                onAnswerChange(q.id, clickedOption);
+                                if (setClickedOption) setClickedOption(null);
+                            }
+                        }}
+                        className={`min-w-36 h-10 px-4 border-2 border-dashed rounded-xl flex items-center justify-center text-xs font-bold transition-all cursor-pointer bg-slate-50/50 ${
+                            answers[q.id]
+                            ? "border-primary text-slate-800 bg-white font-black"
+                            : "border-slate-300 text-slate-400 hover:border-primary/40"
+                        }`}
+                    >
+                        {answers[q.id] || "Drop answer here"}
+                        {answers[q.id] && (
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAnswerChange(q.id, "");
+                                }}
+                                className="ml-2 text-slate-400 hover:text-error text-sm font-black"
+                            >
+                                ×
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || q.type === 'drag-drop-completion') && (
+                <div>
+                    <input 
+                        type="text" 
+                        className="input input-bordered border-slate-400 w-full rounded-xl font-bold bg-white focus:border-primary text-xs h-10 text-slate-800"
+                        placeholder="Type your answer here..."
+                        value={answers[q.id] || ""}
+                        onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
+
+const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offset, data, clickedOption, setClickedOption }) => {
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -513,28 +739,46 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
 
                     const q = vg.question;
                     const idx = data.questions.findIndex(item => item.id === q.id);
+                    const isFlowChart = q.type === 'flow-chart-completion';
+                    const nextIsFlowChart = vgIdx < groupEntry.visuals.length - 1 && groupEntry.visuals[vgIdx + 1]?.question?.type === 'flow-chart-completion';
+
                     return (
-                        <div 
-                            key={q.id || idx} 
-                            id={`question-${idx}`}
-                            className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white hover:border-primary/30 transition-colors scroll-mt-6"
-                        >
-                            <div className="flex items-start gap-4">
-                                <div className="flex-none w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
-                                    {offset + idx + 1}
-                                </div>
-                                <div className="flex-1 space-y-4">
-                                    <p className="text-lg font-semibold leading-snug">
-                                        {q.question}
-                                    </p>
-                                    
-                                    <QuestionRenderer
-                                        q={q}
-                                        answers={answers}
-                                        onAnswerChange={onAnswerChange}
-                                    />
+                        <div key={q.id || idx} className="space-y-4">
+                            <div 
+                                id={`question-${idx}`}
+                                className={`p-6 rounded-3xl border transition-all scroll-mt-6 ${
+                                    isFlowChart 
+                                    ? "bg-slate-50/50 border-dashed border-slate-300 max-w-lg mx-auto text-center shadow-xs" 
+                                    : "border-base-200 bg-white hover:border-primary/30"
+                                }`}
+                            >
+                                <div className={`flex items-start gap-4 ${isFlowChart ? "flex-col items-center text-center" : ""}`}>
+                                    <div className="flex-none w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                                        {offset + idx + 1}
+                                    </div>
+                                    <div className="flex-1 space-y-4 w-full">
+                                        <p className="text-lg font-semibold leading-snug">
+                                            {q.question}
+                                        </p>
+                                        
+                                        <QuestionRenderer
+                                            q={q}
+                                            idx={idx}
+                                            answers={answers}
+                                            onAnswerChange={onAnswerChange}
+                                            clickedOption={clickedOption}
+                                            setClickedOption={setClickedOption}
+                                        />
+                                    </div>
                                 </div>
                             </div>
+                            {isFlowChart && nextIsFlowChart && (
+                                <div className="flex justify-center my-3 text-slate-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6 animate-bounce">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                                    </svg>
+                                </div>
+                            )}
                         </div>
                     );
                 });
@@ -560,8 +804,16 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
 const ListeningSection = ({ data, answers, onAnswerChange }) => {
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [clickedOption, setClickedOption] = useState(null);
+
     const passage = data?.passage;
     const questions = data?.questions;
+
+    const dragDropQuestions = useMemo(() => questions?.filter(q => q.type === 'drag-drop-completion') || [], [questions]);
+    const sharedOptions = useMemo(() => {
+        const first = dragDropQuestions[0];
+        return first?.options?.filter(Boolean) || [];
+    }, [dragDropQuestions]);
     const offset = ((data?.listeningPart || 1) - 1) * 10;
 
     const renderedInlineIds = useMemo(() => {
@@ -747,6 +999,8 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                                 answers={answers}
                                 onAnswerChange={onAnswerChange}
                                 offset={offset}
+                                clickedOption={clickedOption}
+                                setClickedOption={setClickedOption}
                             />
                         </div>
                     )}
@@ -761,9 +1015,51 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                                 onAnswerChange={onAnswerChange}
                                 offset={offset}
                                 data={data}
+                                clickedOption={clickedOption}
+                                setClickedOption={setClickedOption}
                             />
                         );
                     })()}
+
+                    {sharedOptions.length > 0 && (
+                        <div className="sticky bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 p-4 shadow-xl z-20 space-y-2 rounded-t-3xl mt-6">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
+                                Drag and drop or click to select an option to fill each blank
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {sharedOptions.map((opt, i) => {
+                                    const letter = String.fromCharCode(65 + i);
+                                    const label = `${letter}. ${opt}`;
+                                    // Check if this option is already placed in answers
+                                    const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                    const isSelected = clickedOption === label;
+                                    return (
+                                        <div
+                                            key={i}
+                                            draggable={!isPlaced}
+                                            onDragStart={(e) => {
+                                                e.dataTransfer.setData("text/plain", label);
+                                            }}
+                                            onClick={() => {
+                                                if (!isPlaced) {
+                                                    setClickedOption(isSelected ? null : label);
+                                                }
+                                            }}
+                                            className={`px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all cursor-pointer select-none ${
+                                                isPlaced
+                                                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                    : isSelected
+                                                    ? "bg-primary border-primary text-white shadow-lg scale-105"
+                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95"
+                                            }`}
+                                        >
+                                            {label}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

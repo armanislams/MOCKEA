@@ -84,7 +84,7 @@ const groupQuestions = (questions) => {
     return groups;
 };
 
-const QuestionRenderer = ({ q, idx, answers, onAnswerChange }) => {
+const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption }) => {
     return (
         <div id={`question-${idx}`} className="space-y-4 scroll-mt-6">
             <div className="flex items-start gap-4">
@@ -163,7 +163,48 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange }) => {
                 </div>
             )}
 
-            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching') && (
+            {q.type === 'drag-drop-completion' && (
+                <div 
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        const val = e.dataTransfer.getData("text/plain");
+                        if (val) onAnswerChange(q.id, val);
+                    }}
+                    className="ml-14 flex items-center gap-3"
+                >
+                    <span className="text-sm font-bold text-slate-500">Answer:</span>
+                    <div 
+                        onClick={() => {
+                            if (clickedOption) {
+                                onAnswerChange(q.id, clickedOption);
+                                if (setClickedOption) setClickedOption(null);
+                            }
+                        }}
+                        className={`min-w-40 h-12 px-4 border-2 border-dashed rounded-2xl flex items-center justify-center text-sm font-bold transition-all bg-white ${
+                            answers[q.id]
+                            ? "border-primary text-slate-800 bg-white font-black cursor-pointer shadow-xs"
+                            : "border-slate-300 text-slate-400 hover:border-primary/40 cursor-pointer bg-slate-50/50"
+                        }`}
+                    >
+                        {answers[q.id] || "Drop answer here"}
+                        {answers[q.id] && (
+                            <button 
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAnswerChange(q.id, "");
+                                }}
+                                className="ml-2.5 text-slate-400 hover:text-error text-lg font-black"
+                            >
+                                ×
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || q.type === 'drag-drop-completion') && (
                 <div className="ml-14">
                     <input 
                         type="text" 
@@ -270,7 +311,7 @@ const GroupedContainer = ({ header, children }) => {
     );
 };
 
-const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offset, data }) => {
+const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offset, data, clickedOption, setClickedOption }) => {
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -297,18 +338,35 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
 
                     const q = vg.question;
                     const idx = data.questions.findIndex(item => item.id === q.id);
+                    const isFlowChart = q.type === 'flow-chart-completion';
+                    const nextIsFlowChart = vgIdx < groupEntry.visuals.length - 1 && groupEntry.visuals[vgIdx + 1]?.question?.type === 'flow-chart-completion';
+
                     return (
-                        <div 
-                            key={q.id || idx} 
-                            id={`question-${idx}`}
-                            className="space-y-4 p-6 rounded-3xl border border-base-200 bg-white hover:border-primary/30 transition-colors scroll-mt-6"
-                        >
-                            <QuestionRenderer
-                                q={q}
-                                idx={idx}
-                                answers={answers}
-                                onAnswerChange={onAnswerChange}
-                            />
+                        <div key={q.id || idx} className="space-y-4">
+                            <div 
+                                id={`question-${idx}`}
+                                className={`space-y-4 p-6 rounded-3xl border transition-all scroll-mt-6 ${
+                                    isFlowChart 
+                                    ? "bg-slate-50/50 border-dashed border-slate-300 max-w-lg mx-auto text-center shadow-xs" 
+                                    : "border-base-200 bg-white hover:border-primary/30"
+                                }`}
+                            >
+                                <QuestionRenderer
+                                    q={q}
+                                    idx={idx}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                />
+                            </div>
+                            {isFlowChart && nextIsFlowChart && (
+                                <div className="flex justify-center my-3 text-slate-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6 animate-bounce">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                                    </svg>
+                                </div>
+                            )}
                         </div>
                     );
                 });
@@ -336,6 +394,14 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
        const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
     const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
     const [activePassageTab, setActivePassageTab] = useState(0);
+    const [clickedOption, setClickedOption] = useState(null);
+
+    const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion') || [], [data?.questions]);
+    const sharedOptions = useMemo(() => {
+        const first = dragDropQuestions[0];
+        return first?.options?.filter(Boolean) || [];
+    }, [dragDropQuestions]);
+
     const lastShownRef = useRef(0);
     const prevDataRef = useRef(data);
 
@@ -601,9 +667,51 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                     onAnswerChange={onAnswerChange}
                                     offset={0}
                                     data={data}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
                                 />
                             );
                         })()}
+
+                        {sharedOptions.length > 0 && (
+                            <div className="sticky bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 p-4 shadow-xl z-20 space-y-2 rounded-t-3xl mt-6">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
+                                    Drag and drop or click to select an option to fill each blank
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {sharedOptions.map((opt, i) => {
+                                        const letter = String.fromCharCode(65 + i);
+                                        const label = `${letter}. ${opt}`;
+                                        // Check if this option is already placed in answers
+                                        const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                        const isSelected = clickedOption === label;
+                                        return (
+                                            <div
+                                                key={i}
+                                                draggable={!isPlaced}
+                                                onDragStart={(e) => {
+                                                    e.dataTransfer.setData("text/plain", label);
+                                                }}
+                                                onClick={() => {
+                                                    if (!isPlaced) {
+                                                        setClickedOption(isSelected ? null : label);
+                                                    }
+                                                }}
+                                                className={`px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all cursor-pointer select-none ${
+                                                    isPlaced
+                                                        ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                        : isSelected
+                                                        ? "bg-primary border-primary text-white shadow-lg scale-105"
+                                                        : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95"
+                                                }`}
+                                            >
+                                                {label}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
