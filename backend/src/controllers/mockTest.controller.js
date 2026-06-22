@@ -3,6 +3,38 @@ import MockTestResult from '../model/mockTestResult.js';
 import User from '../model/user.js';
 import { cache } from '../utils/cache.js';
 
+const cleanAnswer = (str) => {
+    if (!str) return "";
+    return str.toLowerCase().trim()
+        .replace(/^[a-z]\s*[\.\-\)]\s+/, "")
+        .replace(/^[a-z]\s*[\.\-\)]\s*$/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+};
+
+const getLetterPrefix = (str) => {
+    if (!str) return "";
+    const match = str.trim().match(/^([a-z])\s*[\.\-\)]\s*/i);
+    return match ? match[1].toLowerCase() : "";
+};
+
+const isAnswerMatching = (correct, user) => {
+    if (!correct || !user) return false;
+    const correctStr = correct.toLowerCase().trim();
+    const userStr = user.toLowerCase().trim();
+    if (correctStr === userStr) return true;
+    
+    const correctClean = cleanAnswer(correct);
+    const userClean = cleanAnswer(user);
+    if (correctClean && userClean && correctClean === userClean) return true;
+    
+    const correctLetter = getLetterPrefix(correct);
+    const userLetter = getLetterPrefix(user);
+    if (correctLetter && correctLetter === userStr) return true;
+    if (userLetter && userLetter === correctStr) return true;
+    return false;
+};
+
 // Get all mock tests (Library)
 export const getAllMockTests = async (req, res) => {
     try {
@@ -229,7 +261,7 @@ export const finalizeTest = async (req, res) => {
                 section.answers = section.answers.map(ans => {
                     const originalQ = questionSet.questions.find(q => q.id === ans.questionId);
                     const hasCorrectAnswer = originalQ && originalQ.correctAnswer != null;
-                    const isCorrect = hasCorrectAnswer && originalQ.correctAnswer.toLowerCase().trim() === (ans.userAnswer || '').toLowerCase().trim();
+                    const isCorrect = hasCorrectAnswer && isAnswerMatching(originalQ.correctAnswer, ans.userAnswer || '');
                     if (isCorrect) correctCount++;
                     
                     return {

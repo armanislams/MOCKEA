@@ -157,6 +157,34 @@ const convertMarkdownTablesToHtml = (text) => {
  * Renders the passage text and replaces ___[number]___ placeholders with React inline inputs.
  * If no placeholders are present, it renders the raw HTML.
  */
+const formatFlowChartPassage = (text) => {
+    if (!text || !text.includes("↓")) return text;
+
+    // Check if it has HTML paragraphs
+    if (/<p>/.test(text)) {
+        // 1. Replace paragraphs containing only ↓
+        let html = text.replace(/<p>\s*↓\s*<\/p>/g, '<div class="text-center text-slate-400 font-black text-xl my-2">↓</div>');
+        
+        // 2. Replace other paragraphs with cards
+        html = html.replace(/<p>([\s\S]*?)<\/p>/g, (match, content) => {
+            const trimmed = content.trim();
+            if (trimmed === "" || trimmed.startsWith("<div") || trimmed === "↓") return match;
+            return `<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs text-center font-semibold text-slate-700 max-w-lg mx-auto my-3">${content}</div>`;
+        });
+        return html;
+    } else {
+        // Plain text split by newlines and arrows
+        const segments = text.split(/\s*↓\s*/);
+        const cards = segments.map((seg) => {
+            const trimmed = seg.trim();
+            if (!trimmed) return "";
+            return `<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs text-center font-semibold text-slate-700 max-w-lg mx-auto my-3">${trimmed}</div>`;
+        }).filter(Boolean);
+        
+        return cards.join('\n<div class="text-center text-slate-400 font-black text-xl my-2">↓</div>\n');
+    }
+};
+
 const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700 whitespace-pre-line" }) => {
     const containerRef = useRef(null);
 
@@ -164,7 +192,8 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
     const resultKey = useMemo(() => result ? JSON.stringify(result.evaluatedAnswers?.map(a => `${a.questionId}:${a.isCorrect}`)) : "", [result]);
 
     const processedPassage = useMemo(() => {
-        const text = convertMarkdownTablesToHtml(collapseListeningExampleBlocks(passage));
+        let text = convertMarkdownTablesToHtml(collapseListeningExampleBlocks(passage));
+        text = formatFlowChartPassage(text);
         const hasInlinePlaceholders = /___([\w-]+)___/.test(text);
         if (!hasInlinePlaceholders) {
             return text;
@@ -977,7 +1006,9 @@ const QuestionRenderer = ({ q, idx, offset = 0, submitted, result, answers, onAn
     const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === q.id);
     const props      = { q, idx, offset, submitted, evaluation, answers, onAnswerChange };
 
-    if (q.type === "drag-drop-completion")       return <DragDropRenderer {...props} clickedOption={clickedOption} setClickedOption={setClickedOption} />;
+    if (q.type === "drag-drop-completion" || (q.type === "flow-chart-completion" && q.options && q.options.filter(Boolean).length > 0)) {
+        return <DragDropRenderer {...props} clickedOption={clickedOption} setClickedOption={setClickedOption} />;
+    }
     if (COMPLETION_TYPES.has(q.type))           return <CompletionRenderer {...props} />;
     if (["multiple-choice","true-false","yes-no"].includes(q.type)) return <McqRenderer {...props} />;
     if (["matching","heading-matching","matching-grid"].includes(q.type)) return <MatchingRenderer {...props} />;
@@ -1239,13 +1270,16 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, submi
  *   submitted      — boolean
  *   result         — evaluation result or null
  */
-const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, result }) => {
-    const [clickedOption, setClickedOption] = useState(null);
+const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, result, clickedOption: propClickedOption, setClickedOption: propSetClickedOption }) => {
+    const [localClickedOption, localSetClickedOption] = useState(null);
+    const clickedOption = propClickedOption !== undefined ? propClickedOption : localClickedOption;
+    const setClickedOption = propSetClickedOption !== undefined ? propSetClickedOption : localSetClickedOption;
     const part = activeSet?.listeningPart || 1;
     const meta = PART_META[part] || PART_META[1];
     const offset = (part - 1) * 10;
 
-    const dragDropQuestions = useMemo(() => activeSet?.questions?.filter(q => q.type === 'drag-drop-completion') || [], [activeSet?.questions]);
+    const hasPassage = activeSet?.passage && activeSet.passage.trim() !== "";
+    const dragDropQuestions = useMemo(() => activeSet?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [activeSet?.questions]);
     const sharedOptions = useMemo(() => {
         const first = dragDropQuestions[0];
         return first?.options?.filter(Boolean) || [];
@@ -1351,6 +1385,9 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                     );
                 })()}
 
+
+
+
                 {/* ── Questions ───────────────────────────────────────── */}
                 {remainingQuestions.length > 0 && (() => {
                     const groups = groupQuestions(remainingQuestions);
@@ -1370,45 +1407,9 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                     );
                 })()}
 
-                {sharedOptions.length > 0 && (
-                    <div className="sticky bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 p-4 shadow-xl z-20 space-y-2 rounded-t-3xl mt-6">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
-                            Drag and drop or click to select an option to fill each blank
-                        </p>
-                        <div className="flex flex-wrap justify-center gap-2">
-                            {sharedOptions.map((opt, i) => {
-                                const letter = String.fromCharCode(65 + i);
-                                const label = `${letter}. ${opt}`;
-                                // Check if this option is already placed in answers
-                                const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
-                                const isSelected = clickedOption === label;
-                                return (
-                                    <div
-                                        key={i}
-                                        draggable={!isPlaced}
-                                        onDragStart={(e) => {
-                                            e.dataTransfer.setData("text/plain", label);
-                                        }}
-                                        onClick={() => {
-                                            if (!isPlaced) {
-                                                setClickedOption(isSelected ? null : label);
-                                            }
-                                        }}
-                                        className={`px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all cursor-pointer select-none ${
-                                            isPlaced
-                                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
-                                                : isSelected
-                                                ? "bg-primary border-primary text-white shadow-lg scale-105"
-                                                : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95"
-                                        }`}
-                                    >
-                                        {label}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
+
+
+
             </div>
         </div>
     );

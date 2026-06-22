@@ -49,6 +49,11 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const [loading, setLoading] = useState(!preloadedSet); // skip loader if data already provided
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
   const { answers, setAnswers, handleAnswerChange } = useAnswers({});
+  const [clickedOption, setClickedOption] = useState(null);
+
+  useEffect(() => {
+    setClickedOption(null);
+  }, [selectedSetId]);
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
@@ -71,6 +76,12 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     () => preloadedSet || listeningSets.find((set) => set._id === selectedSetId) || null,
     [preloadedSet, listeningSets, selectedSetId],
   );
+
+  const dragDropQuestions = useMemo(() => activeSet?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [activeSet?.questions]);
+  const sharedOptions = useMemo(() => {
+      const first = dragDropQuestions[0];
+      return first?.options?.filter(Boolean) || [];
+  }, [dragDropQuestions]);
 
     const { timeLeft, fmtTime: fmtCountdown, resetCountdown } = useCountdown(0, !!activeSet && duration > 0, submitted);
 
@@ -558,6 +569,8 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                 onAnswerChange={handleAnswerChange}
                                 submitted={submitted}
                                 result={result}
+                                clickedOption={clickedOption}
+                                setClickedOption={setClickedOption}
                             />
                             {!submitted && (
                                 <button
@@ -673,6 +686,49 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
             {/* Sidebar Widgets */}
             <div className="lg:col-span-4 space-y-8 sticky top-36">
+                {/* Options Pool */}
+                {sharedOptions.length > 0 && (
+                    <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-base-content/30">Answers Bank</h3>
+                        <p className="text-xs text-slate-400 font-bold leading-snug">
+                            Drag an option or click to select, then click a blank in the flowchart to place it.
+                        </p>
+                        <div className="flex flex-col gap-2">
+                            {sharedOptions.map((opt, i) => {
+                                const letter = String.fromCharCode(65 + i);
+                                const label = `${letter}. ${opt}`;
+                                const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                const isSelected = clickedOption === label;
+                                return (
+                                    <div
+                                        key={i}
+                                        draggable={!isPlaced && !submitted}
+                                        onDragStart={(e) => {
+                                            if (submitted) return;
+                                            e.dataTransfer.setData("text/plain", label);
+                                        }}
+                                        onClick={() => {
+                                            if (submitted) return;
+                                            if (!isPlaced) {
+                                                setClickedOption(isSelected ? null : label);
+                                            }
+                                        }}
+                                        className={`px-4 py-3 rounded-xl text-xs font-bold border transition-all select-none text-center ${
+                                            isPlaced
+                                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                : isSelected
+                                                ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
+                                        }`}
+                                    >
+                                        {label}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 {/* Navigator */}
                 <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-base-content/30 mb-6">Unit Navigator</h3>

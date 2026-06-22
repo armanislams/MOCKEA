@@ -110,6 +110,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
 };
 
 const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer, clickedOption, setClickedOption }) => {
+    const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
     return (
         <div className={`space-y-4 p-6 rounded-3xl transition-all ${
             submitted 
@@ -128,7 +129,7 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
 
             <p className="font-bold text-slate-700 leading-snug">{q.question}</p>
 
-            {q.type === 'drag-drop-completion' ? (
+            {isDragDrop ? (
                 <div className="space-y-2">
                     <div 
                         onDragOver={(e) => !submitted && e.preventDefault()}
@@ -576,7 +577,7 @@ const Reading = () => {
 
   const [clickedOption, setClickedOption] = useState(null);
 
-  const dragDropQuestions = useMemo(() => activeSet?.questions?.filter(q => q.type === 'drag-drop-completion') || [], [activeSet?.questions]);
+  const dragDropQuestions = useMemo(() => activeSet?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [activeSet?.questions]);
   const sharedOptions = useMemo(() => {
       const first = dragDropQuestions[0];
       return first?.options?.filter(Boolean) || [];
@@ -890,11 +891,53 @@ const Reading = () => {
 
             {/* Questions Side */}
             <div className="lg:col-span-2 space-y-6">
-                <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
+                <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar relative">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-black tracking-tight">Question Panel</h2>
                         <PiBookOpenFill className="text-2xl text-primary/20" />
                     </div>
+
+                    {/* Options Pool sticky at the top of the questions card */}
+                    {sharedOptions.length > 0 && (
+                        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-xs border-b border-slate-200/60 pb-4 mb-6 pt-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
+                                Drag or click to select an option to fill each blank
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {sharedOptions.map((opt, i) => {
+                                    const letter = String.fromCharCode(65 + i);
+                                    const label = `${letter}. ${opt}`;
+                                    const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                    const isSelected = clickedOption === label;
+                                    return (
+                                        <div
+                                            key={i}
+                                            draggable={!isPlaced && !submitted}
+                                            onDragStart={(e) => {
+                                                if (submitted) return;
+                                                e.dataTransfer.setData("text/plain", label);
+                                            }}
+                                            onClick={() => {
+                                                if (submitted) return;
+                                                if (!isPlaced) {
+                                                    setClickedOption(isSelected ? null : label);
+                                                }
+                                            }}
+                                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
+                                                isPlaced
+                                                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                    : isSelected
+                                                    ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
+                                            }`}
+                                        >
+                                            {label}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-10">
                         {(() => {
@@ -914,46 +957,7 @@ const Reading = () => {
                             );
                         })()}
 
-                        {sharedOptions.length > 0 && (
-                            <div className="bg-slate-50 border border-slate-200/80 p-5 shadow-inner space-y-3 rounded-2xl">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
-                                    Drag and drop or click to select an option to fill each blank
-                                </p>
-                                <div className="flex flex-wrap justify-center gap-2">
-                                    {sharedOptions.map((opt, i) => {
-                                        const letter = String.fromCharCode(65 + i);
-                                        const label = `${letter}. ${opt}`;
-                                        const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
-                                        const isSelected = clickedOption === label;
-                                        return (
-                                            <div
-                                                key={i}
-                                                draggable={!isPlaced && !submitted}
-                                                onDragStart={(e) => {
-                                                    if (submitted) return;
-                                                    e.dataTransfer.setData("text/plain", label);
-                                                }}
-                                                onClick={() => {
-                                                    if (submitted) return;
-                                                    if (!isPlaced) {
-                                                        setClickedOption(isSelected ? null : label);
-                                                    }
-                                                }}
-                                                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
-                                                    isPlaced
-                                                        ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
-                                                        : isSelected
-                                                        ? "bg-primary border-primary text-white shadow-md scale-105"
-                                                        : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
-                                                }`}
-                                            >
-                                                {label}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
+
 
                         {!submitted && (
                             <button 

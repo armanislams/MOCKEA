@@ -353,7 +353,34 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     onChange={(e) => patch({ passage: e.target.value })}
                                 />
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Insert gap:</span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Insert:</span>
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const ta = document.getElementById("listening-passage-textarea");
+                                            const arrow = "↓";
+                                            if (ta) {
+                                                const start = ta.selectionStart;
+                                                const end = ta.selectionEnd;
+                                                const text = formData.passage || "";
+                                                const newText = text.substring(0, start) + arrow + text.substring(end);
+                                                patch({ passage: newText });
+                                                setTimeout(() => {
+                                                    ta.focus();
+                                                    ta.selectionStart = ta.selectionEnd = start + arrow.length;
+                                                }, 0);
+                                            } else {
+                                                patch({ passage: (formData.passage || "") + arrow });
+                                            }
+                                        }}
+                                        className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer flex items-center gap-1"
+                                        title="Insert flowchart arrow (↓) at cursor"
+                                    >
+                                        <span>↓</span> Arrow
+                                    </button>
+
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2">Gap:</span>
                                     {(formData.questions || []).map((q, idx) => {
                                         const num = idx + 1;
                                         const id = q.id || `l${num}`;

@@ -85,6 +85,7 @@ const groupQuestions = (questions) => {
 };
 
 const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption }) => {
+    const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
     return (
         <div id={`question-${idx}`} className="space-y-4 scroll-mt-6">
             <div className="flex items-start gap-4">
@@ -163,7 +164,7 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 </div>
             )}
 
-            {q.type === 'drag-drop-completion' && (
+            {isDragDrop && (
                 <div 
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
@@ -204,7 +205,7 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 </div>
             )}
 
-            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || q.type === 'drag-drop-completion') && (
+            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || isDragDrop) && (
                 <div className="ml-14">
                     <input 
                         type="text" 
@@ -396,7 +397,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
     const [activePassageTab, setActivePassageTab] = useState(0);
     const [clickedOption, setClickedOption] = useState(null);
 
-    const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion') || [], [data?.questions]);
+    const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [data?.questions]);
     const sharedOptions = useMemo(() => {
         const first = dragDropQuestions[0];
         return first?.options?.filter(Boolean) || [];
@@ -644,75 +645,77 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                 </div>
             </div>
 
-            {/* Right Pane: Questions */}
             <div className="w-1/2 overflow-y-auto p-12 bg-base-100">
-                <div className="max-w-xl mx-auto space-y-12">
-                    <header className="space-y-4">
-                        <div className="flex items-center gap-2 text-primary">
-                            <PiNotePencil className="w-6 h-6" />
-                            <h2 className="text-xl font-black uppercase tracking-widest">Questions {minQuestionNum}–{maxQuestionNum}</h2>
-                        </div>
-                        {/* No global instructions header anymore - handled per group below */}
-
-                    </header>
-
-                    <div className="space-y-8">
-                        {(() => {
-                            const groups = groupQuestions(data?.questions || []);
-                            const groupedItems = groupVisualsByQuestionGroups(groups, data?.questionGroups, 0, data?.questions || []);
-                            return (
-                                <GroupedQuestionsRenderer
-                                    groupedItems={groupedItems}
-                                    answers={answers}
-                                    onAnswerChange={onAnswerChange}
-                                    offset={0}
-                                    data={data}
-                                    clickedOption={clickedOption}
-                                    setClickedOption={setClickedOption}
-                                />
-                            );
-                        })()}
-
-                        {sharedOptions.length > 0 && (
-                            <div className="sticky bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 p-4 shadow-xl z-20 space-y-2 rounded-t-3xl mt-6">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
-                                    Drag and drop or click to select an option to fill each blank
-                                </p>
-                                <div className="flex flex-wrap justify-center gap-2">
-                                    {sharedOptions.map((opt, i) => {
-                                        const letter = String.fromCharCode(65 + i);
-                                        const label = `${letter}. ${opt}`;
-                                        // Check if this option is already placed in answers
-                                        const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
-                                        const isSelected = clickedOption === label;
-                                        return (
-                                            <div
-                                                key={i}
-                                                draggable={!isPlaced}
-                                                onDragStart={(e) => {
-                                                    e.dataTransfer.setData("text/plain", label);
-                                                }}
-                                                onClick={() => {
-                                                    if (!isPlaced) {
-                                                        setClickedOption(isSelected ? null : label);
-                                                    }
-                                                }}
-                                                className={`px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all cursor-pointer select-none ${
-                                                    isPlaced
-                                                        ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
-                                                        : isSelected
-                                                        ? "bg-primary border-primary text-white shadow-lg scale-105"
-                                                        : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95"
-                                                }`}
-                                            >
-                                                {label}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                <div className="max-w-3xl mx-auto flex gap-8 items-start">
+                    <div className="flex-1 min-w-0 space-y-12">
+                        <header className="space-y-4">
+                            <div className="flex items-center gap-2 text-primary">
+                                <PiNotePencil className="w-6 h-6" />
+                                <h2 className="text-xl font-black uppercase tracking-widest">Questions {minQuestionNum}–{maxQuestionNum}</h2>
                             </div>
-                        )}
+                        </header>
+
+                        <div className="space-y-8">
+                            {(() => {
+                                const groups = groupQuestions(data?.questions || []);
+                                const groupedItems = groupVisualsByQuestionGroups(groups, data?.questionGroups, 0, data?.questions || []);
+                                return (
+                                    <GroupedQuestionsRenderer
+                                        groupedItems={groupedItems}
+                                        answers={answers}
+                                        onAnswerChange={onAnswerChange}
+                                        offset={0}
+                                        data={data}
+                                        clickedOption={clickedOption}
+                                        setClickedOption={setClickedOption}
+                                    />
+                                );
+                            })()}
+                        </div>
                     </div>
+
+                    {/* Options pool placed as a sticky right sidebar next to the flowchart/questions */}
+                    {sharedOptions.length > 0 && (
+                        <div className="w-56 shrink-0 sticky top-0 bg-slate-50 border border-slate-200/80 rounded-3xl p-6 space-y-4 shadow-xs">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
+                                Answers Bank
+                            </p>
+                            <p className="text-[10px] text-slate-400 font-bold leading-snug text-center">
+                                Drag or click to place.
+                            </p>
+                            <div className="flex flex-col gap-2">
+                                {sharedOptions.map((opt, i) => {
+                                    const letter = String.fromCharCode(65 + i);
+                                    const label = `${letter}. ${opt}`;
+                                    const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                    const isSelected = clickedOption === label;
+                                    return (
+                                        <div
+                                            key={i}
+                                            draggable={!isPlaced}
+                                            onDragStart={(e) => {
+                                                e.dataTransfer.setData("text/plain", label);
+                                            }}
+                                            onClick={() => {
+                                                if (!isPlaced) {
+                                                    setClickedOption(isSelected ? null : label);
+                                                }
+                                            }}
+                                            className={`px-4 py-3 rounded-xl text-xs font-bold border transition-all select-none text-center ${
+                                                isPlaced
+                                                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                    : isSelected
+                                                    ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
+                                            }`}
+                                        >
+                                            {label}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
             {/* Floating Highlight Action Toolbar */}

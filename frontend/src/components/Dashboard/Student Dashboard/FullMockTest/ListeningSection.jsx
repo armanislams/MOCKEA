@@ -130,6 +130,34 @@ const convertMarkdownTablesToHtml = (text) => {
     return hasWrapper ? `<div class="${wrapperClass}">${finalHtml}</div>` : finalHtml;
 };
 
+const formatFlowChartPassage = (text) => {
+    if (!text || !text.includes("↓")) return text;
+
+    // Check if it has HTML paragraphs
+    if (/<p>/.test(text)) {
+        // 1. Replace paragraphs containing only ↓
+        let html = text.replace(/<p>\s*↓\s*<\/p>/g, '<div class="text-center text-slate-400 font-black text-xl my-2">↓</div>');
+        
+        // 2. Replace other paragraphs with cards
+        html = html.replace(/<p>([\s\S]*?)<\/p>/g, (match, content) => {
+            const trimmed = content.trim();
+            if (trimmed === "" || trimmed.startsWith("<div") || trimmed === "↓") return match;
+            return `<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs text-center font-semibold text-slate-700 max-w-lg mx-auto my-3">${content}</div>`;
+        });
+        return html;
+    } else {
+        // Plain text split by newlines and arrows
+        const segments = text.split(/\s*↓\s*/);
+        const cards = segments.map((seg) => {
+            const trimmed = seg.trim();
+            if (!trimmed) return "";
+            return `<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs text-center font-semibold text-slate-700 max-w-lg mx-auto my-3">${trimmed}</div>`;
+        }).filter(Boolean);
+        
+        return cards.join('\n<div class="text-center text-slate-400 font-black text-xl my-2">↓</div>\n');
+    }
+};
+
 const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700 whitespace-pre-line" }) => {
     const containerRef = useRef(null);
 
@@ -137,7 +165,8 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
     const resultKey = useMemo(() => result ? JSON.stringify(result.evaluatedAnswers?.map(a => `${a.questionId}:${a.isCorrect}`)) : "", [result]);
 
     const processedPassage = useMemo(() => {
-        const text = convertMarkdownTablesToHtml(collapseListeningExampleBlocks(passage));
+        let text = convertMarkdownTablesToHtml(collapseListeningExampleBlocks(passage));
+        text = formatFlowChartPassage(text);
         const hasInlinePlaceholders = /___([\w-]+)___/.test(text);
         if (!hasInlinePlaceholders) {
             return text;
@@ -596,6 +625,7 @@ const GroupedContainer = ({ header, children }) => {
 };
 
 const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption }) => {
+    const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
     return (
         <div className="space-y-4">
             {q.type === 'true-false' && (
@@ -657,7 +687,7 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 </div>
             )}
 
-            {q.type === 'drag-drop-completion' && (
+            {isDragDrop && (
                 <div 
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
@@ -697,7 +727,7 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 </div>
             )}
 
-            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || q.type === 'drag-drop-completion') && (
+            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || isDragDrop) && (
                 <div>
                     <input 
                         type="text" 
@@ -808,8 +838,9 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
 
     const passage = data?.passage;
     const questions = data?.questions;
+    const hasPassage = passage && passage.trim() !== "";
 
-    const dragDropQuestions = useMemo(() => questions?.filter(q => q.type === 'drag-drop-completion') || [], [questions]);
+    const dragDropQuestions = useMemo(() => questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [questions]);
     const sharedOptions = useMemo(() => {
         const first = dragDropQuestions[0];
         return first?.options?.filter(Boolean) || [];
@@ -977,60 +1008,65 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
 
             {/* Right Pane: Questions */}
             <div className="w-1/2 overflow-y-auto p-12 bg-base-100">
-                <div className="max-w-xl mx-auto space-y-12">
-                    <header className="space-y-4">
-                        <div className="flex items-center gap-3 text-primary">
-                            <PiEar className="w-8 h-8" />
-                            <h2 className="text-2xl font-black uppercase tracking-widest">Questions {offset + 1}–{offset + (data?.questions?.length || 10)}</h2>
-                        </div>
-                    </header>
+                <div className="max-w-3xl mx-auto flex gap-8 items-start">
+                    <div className="flex-1 min-w-0 space-y-12">
+                        <header className="space-y-4">
+                            <div className="flex items-center gap-3 text-primary">
+                                <PiEar className="w-8 h-8" />
+                                <h2 className="text-2xl font-black uppercase tracking-widest">Questions {offset + 1}–{offset + (data?.questions?.length || 10)}</h2>
+                            </div>
+                        </header>
 
-                    {/* ── Reference Media ─────────────────────────────── */}
-                    {data?.images?.[0] && (
-                        <ReferenceMediaRenderer url={data.images[0]} />
-                    )}
+                        {/* ── Reference Media ─────────────────────────────── */}
+                        {data?.images?.[0] && (
+                            <ReferenceMediaRenderer url={data.images[0]} />
+                        )}
 
-                    {/* ── Passage (HTML with Inline Inputs) ── */}
-                    {data?.passage && data.passage.trim() !== "" && (
-                        <div className="p-8 rounded-[2rem] border border-base-200 bg-white shadow-xs prose prose-sm max-w-none">
-                            <InlinePassage
-                                passage={data.passage}
-                                questions={data.questions || EMPTY_ARRAY}
-                                answers={answers}
-                                onAnswerChange={onAnswerChange}
-                                offset={offset}
-                                clickedOption={clickedOption}
-                                setClickedOption={setClickedOption}
-                            />
-                        </div>
-                    )}
+                        {/* ── Passage (HTML with Inline Inputs) ── */}
+                        {hasPassage && (
+                            <div className="p-8 rounded-[2rem] border border-base-200 bg-white shadow-xs prose prose-sm max-w-none">
+                                <InlinePassage
+                                    passage={data.passage}
+                                    questions={data.questions || EMPTY_ARRAY}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    offset={offset}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                />
+                            </div>
+                        )}
 
-                    {remainingQuestions.length > 0 && (() => {
-                        const groups = groupQuestions(remainingQuestions);
-                        const groupedItems = groupVisualsByQuestionGroups(groups, data.questionGroups, offset, data.questions);
-                        return (
-                            <GroupedQuestionsRenderer
-                                groupedItems={groupedItems}
-                                answers={answers}
-                                onAnswerChange={onAnswerChange}
-                                offset={offset}
-                                data={data}
-                                clickedOption={clickedOption}
-                                setClickedOption={setClickedOption}
-                            />
-                        );
-                    })()}
+                        {remainingQuestions.length > 0 && (() => {
+                            const groups = groupQuestions(remainingQuestions);
+                            const groupedItems = groupVisualsByQuestionGroups(groups, data.questionGroups, offset, data.questions);
+                            return (
+                                <GroupedQuestionsRenderer
+                                    groupedItems={groupedItems}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    offset={offset}
+                                    data={data}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                />
+                            );
+                        })()}
+                    </div>
 
+                    {/* Options pool placed as a sticky right sidebar next to the flowchart/questions */}
                     {sharedOptions.length > 0 && (
-                        <div className="sticky bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 p-4 shadow-xl z-20 space-y-2 rounded-t-3xl mt-6">
+                        <div className="w-56 shrink-0 sticky top-0 bg-slate-50 border border-slate-200/80 rounded-3xl p-6 space-y-4 shadow-xs">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
-                                Drag and drop or click to select an option to fill each blank
+                                Answers Bank
                             </p>
-                            <div className="flex flex-wrap justify-center gap-2">
+                            <p className="text-[10px] text-slate-400 font-bold leading-snug text-center">
+                                Drag or click to place.
+                            </p>
+                            <div className="flex flex-col gap-2">
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
                                     const label = `${letter}. ${opt}`;
-                                    // Check if this option is already placed in answers
                                     const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
                                     const isSelected = clickedOption === label;
                                     return (
@@ -1045,12 +1081,12 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                                                     setClickedOption(isSelected ? null : label);
                                                 }
                                             }}
-                                            className={`px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all cursor-pointer select-none ${
+                                            className={`px-4 py-3 rounded-xl text-xs font-bold border transition-all select-none text-center ${
                                                 isPlaced
                                                     ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
                                                     : isSelected
-                                                    ? "bg-primary border-primary text-white shadow-lg scale-105"
-                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95"
+                                                    ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
                                             }`}
                                         >
                                             {label}

@@ -12,6 +12,38 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
     });
 }
 
+const cleanAnswer = (str) => {
+    if (!str) return "";
+    return str.toLowerCase().trim()
+        .replace(/^[a-z]\s*[\.\-\)]\s+/, "")
+        .replace(/^[a-z]\s*[\.\-\)]\s*$/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+};
+
+const getLetterPrefix = (str) => {
+    if (!str) return "";
+    const match = str.trim().match(/^([a-z])\s*[\.\-\)]\s*/i);
+    return match ? match[1].toLowerCase() : "";
+};
+
+const isAnswerMatching = (correct, user) => {
+    if (!correct || !user) return false;
+    const correctStr = correct.toLowerCase().trim();
+    const userStr = user.toLowerCase().trim();
+    if (correctStr === userStr) return true;
+    
+    const correctClean = cleanAnswer(correct);
+    const userClean = cleanAnswer(user);
+    if (correctClean && userClean && correctClean === userClean) return true;
+    
+    const correctLetter = getLetterPrefix(correct);
+    const userLetter = getLetterPrefix(user);
+    if (correctLetter && correctLetter === userStr) return true;
+    if (userLetter && userLetter === correctStr) return true;
+    return false;
+};
+
 const getCloudinaryPublicId = (url) => {
     try {
         const parts = url.split('/upload/');
@@ -367,7 +399,7 @@ export const evaluateQuestions = async (req, res) => {
 
         const evaluatedAnswers = set.questions.map(q => {
             const userAnswer = answers[q.id] || "";
-            const isCorrect = q.correctAnswer.toLowerCase().trim() === userAnswer.toLowerCase().trim();
+            const isCorrect = isAnswerMatching(q.correctAnswer, userAnswer);
             if (isCorrect) correctCount++;
             
             return {
