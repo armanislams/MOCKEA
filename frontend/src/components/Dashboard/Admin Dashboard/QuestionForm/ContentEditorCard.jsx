@@ -73,76 +73,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     <p className="text-[11px] text-slate-500 font-semibold mt-1">
                                         Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>. Empty lines create paragraph breaks.
                                     </p>
-                                    {/* Inline gap helpers for Reading */}
-                                    {(() => {
-                                        const inlineGroups = (formData.questionGroups || []).filter(g => {
-                                            return (g.passageIndex || 0) === pIdx;
-                                        });
 
-                                        if (inlineGroups.length === 0) return null;
-
-                                        return (
-                                            <div className="mt-2 space-y-2">
-                                                {inlineGroups.map((g) => {
-                                                    const fromQ = Number(g.fromQuestion) || 1;
-                                                    const toQ = Number(g.toQuestion) || 1;
-                                                    const actualGroupIdx = (formData.questionGroups || []).indexOf(g) + 1;
-
-                                                    return (
-                                                        <div key={actualGroupIdx} className="flex flex-wrap items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl animate-fadeIn">
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">
-                                                                Group {actualGroupIdx} Inline Gap:
-                                                            </span>
-                                                            {(() => {
-                                                                const buttons = [];
-                                                                for (let num = fromQ; num <= toQ; num++) {
-                                                                    const alreadyInserted = (passage.content || "").includes(`___${num}___`);
-                                                                    buttons.push(
-                                                                        <button
-                                                                            key={num}
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const ta = document.getElementById(`reading-passage-textarea-${pIdx}`);
-                                                                                const placeholder = `___${num}___`;
-                                                                                if (ta) {
-                                                                                    const start = ta.selectionStart;
-                                                                                    const end = ta.selectionEnd;
-                                                                                    const text = passage.content || "";
-                                                                                    const newText = text.substring(0, start) + placeholder + text.substring(end);
-                                                                                    
-                                                                                    const updated = [...formData.passages];
-                                                                                    updated[pIdx].content = newText;
-                                                                                    patch({ passages: updated });
-                                                                                    
-                                                                                    setTimeout(() => {
-                                                                                        ta.focus();
-                                                                                        ta.selectionStart = ta.selectionEnd = start + placeholder.length;
-                                                                                    }, 0);
-                                                                                } else {
-                                                                                    const updated = [...formData.passages];
-                                                                                    updated[pIdx].content = (passage.content || "") + placeholder;
-                                                                                    patch({ passages: updated });
-                                                                                }
-                                                                            }}
-                                                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
-                                                                                alreadyInserted
-                                                                                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
-                                                                                    : "bg-white text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
-                                                                            }`}
-                                                                            title={alreadyInserted ? `Q${num} already in passage` : `Insert ___${num}___ at cursor`}
-                                                                        >
-                                                                            Q{num}
-                                                                        </button>
-                                                                    );
-                                                                }
-                                                                return buttons;
-                                                            })()}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        );
-                                    })()}
                                 </div>
                             </div>
                         ))}
@@ -372,97 +303,101 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                             patch({ questionGroups: upd });
                                         }}
                                     />
-                                    {group.rightSideQuestion && (
-                                        <div className="flex flex-wrap items-center gap-2 mt-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Insert:</span>
-                                            
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const ta = document.getElementById(`group-instructions-textarea-${gIdx}`);
-                                                    const arrow = "↓";
-                                                    if (ta) {
-                                                        const start = ta.selectionStart;
-                                                        const end = ta.selectionEnd;
-                                                        const text = group.instructions || "";
-                                                        const newText = text.substring(0, start) + arrow + text.substring(end);
-                                                        
-                                                        const upd = [...(formData.questionGroups || [])];
-                                                        upd[gIdx] = { ...upd[gIdx], instructions: newText };
-                                                        patch({ questionGroups: upd });
-                                                        
-                                                        setTimeout(() => {
-                                                            ta.focus();
-                                                            ta.selectionStart = ta.selectionEnd = start + arrow.length;
-                                                        }, 0);
-                                                    } else {
-                                                        const upd = [...(formData.questionGroups || [])];
-                                                        upd[gIdx] = { ...upd[gIdx], instructions: (group.instructions || "") + arrow };
-                                                        patch({ questionGroups: upd });
-                                                    }
-                                                }}
-                                                className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer flex items-center gap-1"
-                                                title="Insert flowchart arrow (↓) at cursor"
-                                            >
-                                                <span>↓</span> Arrow
-                                            </button>
+                                    {(() => {
+                                        const fromQ = Number(group.fromQuestion) || 1;
+                                        const firstQ = formData.questions?.[fromQ - 1];
+                                        if (firstQ?.type === "matching-grid") return null;
 
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2 select-none">Gap:</span>
-                                            {(() => {
-                                                const fromQ = Number(group.fromQuestion) || 1;
-                                                const toQ = Number(group.toQuestion) || 1;
-                                                const buttons = [];
-                                                for (let num = fromQ; num <= toQ; num++) {
-                                                    const alreadyInserted = (group.instructions || "").includes(`___${num}___`);
-                                                    buttons.push(
-                                                        <button
-                                                            key={num}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const ta = document.getElementById(`group-instructions-textarea-${gIdx}`);
-                                                                const placeholder = `___${num}___`;
-                                                                if (ta) {
-                                                                    const start = ta.selectionStart;
-                                                                    const end = ta.selectionEnd;
-                                                                    const text = group.instructions || "";
-                                                                    const newText = text.substring(0, start) + placeholder + text.substring(end);
-                                                                    
-                                                                    const upd = [...(formData.questionGroups || [])];
-                                                                    upd[gIdx] = { ...upd[gIdx], instructions: newText };
-                                                                    patch({ questionGroups: upd });
-                                                                    
-                                                                    setTimeout(() => {
-                                                                        ta.focus();
-                                                                        ta.selectionStart = ta.selectionEnd = start + placeholder.length;
-                                                                    }, 0);
-                                                                } else {
-                                                                    const upd = [...(formData.questionGroups || [])];
-                                                                    upd[gIdx] = { ...upd[gIdx], instructions: (group.instructions || "") + placeholder };
-                                                                    patch({ questionGroups: upd });
-                                                                }
-                                                            }}
-                                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
-                                                                alreadyInserted
-                                                                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
-                                                                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
-                                                            }`}
-                                                            title={alreadyInserted ? `Q${num} already in instructions` : `Insert ___${num}___ at cursor`}
-                                                        >
-                                                            Q{num}
-                                                        </button>
-                                                    );
-                                                }
-                                                return buttons;
-                                            })()}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                                        return (
+                                            <div className="flex flex-wrap items-center gap-2 mt-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl animate-fadeIn">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Insert:</span>
+                                                
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const ta = document.getElementById(`group-instructions-textarea-${gIdx}`);
+                                                        const arrow = "↓";
+                                                        if (ta) {
+                                                            const start = ta.selectionStart;
+                                                            const end = ta.selectionEnd;
+                                                            const text = group.instructions || "";
+                                                            const newText = text.substring(0, start) + arrow + text.substring(end);
+                                                            
+                                                            const upd = [...(formData.questionGroups || [])];
+                                                            upd[gIdx] = { ...upd[gIdx], instructions: newText };
+                                                            patch({ questionGroups: upd });
+                                                            
+                                                            setTimeout(() => {
+                                                                ta.focus();
+                                                                ta.selectionStart = ta.selectionEnd = start + arrow.length;
+                                                            }, 0);
+                                                        } else {
+                                                            const upd = [...(formData.questionGroups || [])];
+                                                            upd[gIdx] = { ...upd[gIdx], instructions: (group.instructions || "") + arrow };
+                                                            patch({ questionGroups: upd });
+                                                        }
+                                                    }}
+                                                    className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer flex items-center gap-1"
+                                                    title="Insert flowchart arrow (↓) at cursor"
+                                                >
+                                                    <span>↓</span> Arrow
+                                                </button>
+
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2 select-none">Gap:</span>
+                                                {(() => {
+                                                    const toQ = Number(group.toQuestion) || 1;
+                                                    const buttons = [];
+                                                    for (let num = fromQ; num <= toQ; num++) {
+                                                        const alreadyInserted = (group.instructions || "").includes(`___${num}___`);
+                                                        buttons.push(
+                                                            <button
+                                                                key={num}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const ta = document.getElementById(`group-instructions-textarea-${gIdx}`);
+                                                                    const placeholder = `___${num}___`;
+                                                                    if (ta) {
+                                                                        const start = ta.selectionStart;
+                                                                        const end = ta.selectionEnd;
+                                                                        const text = group.instructions || "";
+                                                                        const newText = text.substring(0, start) + placeholder + text.substring(end);
+                                                                        
+                                                                        const upd = [...(formData.questionGroups || [])];
+                                                                        upd[gIdx] = { ...upd[gIdx], instructions: newText };
+                                                                        patch({ questionGroups: upd });
+                                                                        
+                                                                        setTimeout(() => {
+                                                                            ta.focus();
+                                                                            ta.selectionStart = ta.selectionEnd = start + placeholder.length;
+                                                                        }, 0);
+                                                                    } else {
+                                                                        const upd = [...(formData.questionGroups || [])];
+                                                                        upd[gIdx] = { ...upd[gIdx], instructions: (group.instructions || "") + placeholder };
+                                                                        patch({ questionGroups: upd });
+                                                                    }
+                                                                }}
+                                                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                                    alreadyInserted
+                                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
+                                                                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
+                                                                }`}
+                                                                title={alreadyInserted ? `Q${num} already in instructions` : `Insert ___${num}___ at cursor`}
+                                                            >
+                                                                Q{num}
+                                                            </button>
+                                                        );
+                                                    }
+                                                     return buttons;
+                                                 })()}
+                                             </div>
+                                         );
+                                     })()}
+                                 </div>
+                             </div>
                         ))}
                     </div>
                 </div>
             )}
-
             {/* Listening */}
             {testType === "listening" && (
                 <div className="space-y-5">

@@ -317,6 +317,14 @@ const GroupedReviewQuestionsRenderer = ({
             checkText(currentSectionData.instructions);
         }
 
+        // Scan question group instructions for both reading and listening
+        const qGroups = currentSectionData.questionGroups || [];
+        qGroups.forEach(g => {
+            if (g.instructions && !/^\|.+\|$/m.test(g.instructions)) {
+                checkText(g.instructions);
+            }
+        });
+
         return ids;
     }, [currentSectionData, allQuestions, activeTab, activePassageTab]);
 
@@ -379,11 +387,22 @@ const GroupedReviewQuestionsRenderer = ({
 
                 if (isGroup) {
                     const header = groupEntry.header;
+                    const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
+                    const hasInlineInstructions = header?.instructions && 
+                                                  /___([\w-]+)___/.test(header.instructions) && 
+                                                  !/^\|.+\|$/m.test(header.instructions);
+
+                    if (activeTab === 'reading') {
+                        if (isMatchingGrid || hasInlineInstructions) {
+                            return null; // hide entirely from the right pane for reading
+                        }
+                    }
+
                     const hasTable = header?.rightSideQuestion || (header?.instructions && 
                                      /___([\w-]+)___/.test(header.instructions) && 
                                      /^\|.+\|$/m.test(header.instructions));
 
-                    if (children.length === 0 && !hasTable) {
+                    if (children.length === 0 && !hasTable && !hasInlineInstructions) {
                         return null;
                     }
 
@@ -391,7 +410,7 @@ const GroupedReviewQuestionsRenderer = ({
                         <GroupedContainer 
                             key={`group-${geIdx}`} 
                             header={header}
-                            hideInstructions={hasTable}
+                            hideInstructions={hasTable || hasInlineInstructions}
                         >
                             {hasTable ? (
                                 <TableCompletionRenderer
@@ -402,6 +421,20 @@ const GroupedReviewQuestionsRenderer = ({
                                     submitted={true}
                                     result={evaluationResult}
                                 />
+                            ) : hasInlineInstructions ? (
+                                <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                    <ReadingPassageRenderer
+                                        passageContent={header.instructions}
+                                        questions={allQuestions || []}
+                                        answers={answersMap || {}}
+                                        onAnswerChange={() => {}}
+                                        submitted={true}
+                                        result={evaluationResult}
+                                        clickedOption={null}
+                                        setClickedOption={null}
+                                        className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                    />
+                                </div>
                             ) : (
                                 children
                             )}
@@ -658,20 +691,68 @@ const ReviewDetail = () => {
                                                 className="text-lg leading-relaxed text-base-content/80 text-justify select-text"
                                             />
  
-                                            {/* Matching Grid Questions inline below the reading passage */}
-                                            {groupedItems.filter(item => item.visuals?.some(vg => vg.type === 'matching-grid-group')).map((groupEntry, geIdx) => {
-                                                return groupEntry.visuals.filter(vg => vg.type === 'matching-grid-group').map((vg, vgIdx) => (
-                                                    <div key={`grid-left-${geIdx}-${vgIdx}`} className="p-6 bg-slate-50 border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs mt-8 font-sans">
-                                                        <h3 className="text-sm font-black uppercase tracking-widest text-primary/70 pl-2">
-                                                            Matching Table
-                                                        </h3>
-                                                        <ReviewMatchingGrid
-                                                            items={vg.items}
-                                                            options={vg.options}
-                                                        />
-                                                    </div>
-                                                ));
-                                            })}
+                                            {/* Interactive Left-pane Question Groups (matching-grid, inline gap, drag-n-drop) */}
+                                             {groupedItems.filter(groupEntry => {
+                                                 if (groupEntry.type !== 'group') return false;
+                                                 
+                                                 // Check active passage tab mapping
+                                                 const firstQ = groupEntry.visuals[0]?.type === 'matching-grid-group' 
+                                                     ? groupEntry.visuals[0].questions[0] 
+                                                     : groupEntry.visuals[0]?.question;
+                                                 if (!firstQ) return false;
+                                                 
+                                                 const qIdx = currentSectionData.questions.findIndex(item => item.id === firstQ.id);
+                                                 const qPassageIndex = getQuestionPassageIndex(firstQ, currentSectionData.questionGroups, qIdx);
+                                                 if (qPassageIndex !== activePassageTab) return false;
+
+                                                 const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
+                                                 const hasInlineInstructions = groupEntry.header?.instructions && 
+                                                                               /___([\w-]+)___/.test(groupEntry.header.instructions) && 
+                                                                               !/^\|.+\|$/m.test(groupEntry.header.instructions);
+                                                 return isMatchingGrid || hasInlineInstructions;
+                                             }).map((groupEntry, geIdx) => {
+                                                 const header = groupEntry.header;
+                                                 const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
+                                                 const hasInlineInstructions = header?.instructions && 
+                                                                               /___([\w-]+)___/.test(header.instructions) && 
+                                                                               !/^\|.+\|$/m.test(header.instructions);
+
+                                                 return (
+                                                     <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
+                                                         <GroupedContainer header={header} hideInstructions={hasInlineInstructions}>
+                                                             {isMatchingGrid && groupEntry.visuals.map((vg, vgIdx) => {
+                                                                 if (vg.type !== 'matching-grid-group') return null;
+                                                                 return (
+                                                                     <div key={`grid-left-${vgIdx}`} className="p-6 bg-white border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs">
+                                                                         <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
+                                                                             Matching Table
+                                                                         </h3>
+                                                                         <ReviewMatchingGrid
+                                                                             items={vg.items}
+                                                                             options={vg.options}
+                                                                         />
+                                                                     </div>
+                                                                 );
+                                                             })}
+                                                             {hasInlineInstructions && (
+                                                                 <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                                                     <ReadingPassageRenderer
+                                                                         passageContent={header.instructions}
+                                                                         questions={currentSectionData.questions || []}
+                                                                         answers={answersMap}
+                                                                         onAnswerChange={() => {}}
+                                                                         submitted={true}
+                                                                         result={evaluationResult}
+                                                                         clickedOption={null}
+                                                                         setClickedOption={null}
+                                                                         className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                                                     />
+                                                                 </div>
+                                                             )}
+                                                         </GroupedContainer>
+                                                     </div>
+                                                 );
+                                             })}
                                         </div>
                                     );
                                 })()}

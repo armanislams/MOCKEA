@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo, useEffect, memo } from "react";
 import { PiEar, PiPlayCircle, PiPauseCircle } from "react-icons/pi";
 import { collapseListeningExampleBlocks } from "../../../../utils/listeningPassage";
+import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
 
 const EMPTY_ARRAY = [];
 
@@ -592,7 +593,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
     return grouped;
 };
 
-const GroupedContainer = ({ header, children }) => {
+const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
         <div className="card p-8 rounded-[3rem] border border-slate-200 bg-slate-50/20 space-y-6 shadow-xs w-full">
             {header && (
@@ -620,7 +621,7 @@ const GroupedContainer = ({ header, children }) => {
                             </a>
                         )}
                     </div>
-                    {header.instructions && (
+                    {header.instructions && !hideInstructions && (
                         <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
                             {header.instructions}
                         </div>
@@ -824,9 +825,41 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 });
 
                 if (isGroup) {
+                    const header = groupEntry.header;
+                    const hasTable = header?.instructions && 
+                                     /___([\w-]+)___/.test(header.instructions) && 
+                                     /^\|.+\|$/m.test(header.instructions);
+                    const hasInlineInstructions = header?.instructions && 
+                                                  /___([\w-]+)___/.test(header.instructions) && 
+                                                  !/^\|.+\|$/m.test(header.instructions);
+
                     return (
-                        <GroupedContainer key={`group-${geIdx}`} header={groupEntry.header}>
-                            {children}
+                        <GroupedContainer key={`group-${geIdx}`} header={header} hideInstructions={hasTable || hasInlineInstructions}>
+                            {hasTable ? (
+                                <TableCompletionRenderer
+                                    instructions={header.instructions}
+                                    allQuestions={data?.questions || []}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    offset={offset}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                />
+                            ) : hasInlineInstructions ? (
+                                <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                    <InlinePassage
+                                        passage={header.instructions}
+                                        questions={data?.questions || []}
+                                        answers={answers}
+                                        onAnswerChange={onAnswerChange}
+                                        offset={offset}
+                                        clickedOption={clickedOption}
+                                        setClickedOption={setClickedOption}
+                                    />
+                                </div>
+                            ) : (
+                                children
+                            )}
                         </GroupedContainer>
                     );
                 }
@@ -858,27 +891,37 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
     const offset = ((data?.listeningPart || 1) - 1) * 10;
 
     const renderedInlineIds = useMemo(() => {
-        if (!passage) return new Set();
-        const matches = passage.match(/___([\w-]+)___/g) || [];
         const ids = new Set();
         
-        matches.forEach(m => {
-            const matchKey = m.replace(/___/g, "").trim();
-            const q = questions?.find((item, idx) => {
-                const questionNum = offset + idx + 1;
-                const localIndex = idx + 1;
-                return (
-                    item.id === matchKey ||
-                    questionNum.toString() === matchKey ||
-                    localIndex.toString() === matchKey
-                );
+        const scanText = (text) => {
+            if (!text) return;
+            const matches = text.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = questions?.find((item, idx) => {
+                    const questionNum = offset + idx + 1;
+                    const localIndex = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        localIndex.toString() === matchKey
+                    );
+                });
+                if (q) {
+                    ids.add(q.id);
+                }
             });
-            if (q) {
-                ids.add(q.id);
+        };
+
+        scanText(passage);
+        data?.questionGroups?.forEach(g => {
+            if (g.instructions && !/^\|.+\|$/m.test(g.instructions)) {
+                scanText(g.instructions);
             }
         });
+
         return ids;
-    }, [passage, questions, offset]);
+    }, [passage, questions, offset, data?.questionGroups]);
 
     const remainingQuestions = useMemo(() => {
         return questions?.filter(q => !renderedInlineIds.has(q.id)) || [];

@@ -366,6 +366,29 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 if (q) ids.add(q.id);
             });
         }
+
+        if (data.questionGroups) {
+            data.questionGroups.forEach(g => {
+                if (!g.instructions) return;
+                if (/^\|.+\|$/m.test(g.instructions)) return; // Skip tables
+                const matches = g.instructions.match(/___([\w-]+)___/g) || [];
+                matches.forEach(m => {
+                    const matchKey = m.replace(/___/g, "").trim();
+                    const q = data.questions?.find((item, idx) => {
+                        const questionNum = (offset || 0) + idx + 1;
+                        const localIndex = idx + 1;
+                        return (
+                            item.id === matchKey ||
+                            questionNum.toString() === matchKey ||
+                            localIndex.toString() === matchKey ||
+                            item.id.replace(/^r/, "") === matchKey
+                        );
+                    });
+                    if (q) ids.add(q.id);
+                });
+            });
+        }
+
         return ids;
     }, [data, offset]);
 
@@ -376,7 +399,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 
                 const children = groupEntry.visuals.map((vg, vgIdx) => {
                     if (vg.type === 'matching-grid-group') {
-                        return null; // completely hide matching grid from the right panel!
+                        return null; 
                     }
 
                     const q = vg.question;
@@ -420,6 +443,15 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
 
                 if (isGroup) {
                     const header = groupEntry.header;
+                    const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
+                    const hasInlineInstructions = header?.instructions && 
+                                                  /___([\w-]+)___/.test(header.instructions) && 
+                                                  !/^\|.+\|$/m.test(header.instructions);
+                    
+                    if (isMatchingGrid || hasInlineInstructions) {
+                        return null; // hide entirely from the right pane
+                    }
+
                     const hasTable = header?.rightSideQuestion || (header?.instructions && 
                                      /___([\w-]+)___/.test(header.instructions) && 
                                      /^\|.+\|$/m.test(header.instructions));
@@ -689,29 +721,70 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
 
                         {passageElement}
  
-                        {/* Matching Grid Questions inline below the reading passage */}
-                        {groupedItems.filter(item => item.visuals?.some(vg => vg.type === 'matching-grid-group')).map((groupEntry, geIdx) => {
-                            return groupEntry.visuals.filter(vg => vg.type === 'matching-grid-group').map((vg, vgIdx) => {
-                                // Check if this matching grid belongs to the active passage tab
-                                const qIdx = data.questions.findIndex(item => item.id === vg.questions[0].id);
-                                const qPassageIndex = getQuestionPassageIndex(vg.questions[0], data.questionGroups, qIdx);
-                                if (qPassageIndex !== activePassageTab) return null;
- 
-                                return (
-                                    <div key={`grid-left-${geIdx}-${vgIdx}`} className="p-6 bg-slate-50 border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs mt-8">
-                                        <h3 className="text-sm font-black uppercase tracking-widest text-primary/70 pl-2">
-                                            Matching Table
-                                        </h3>
-                                        <MatchingGridRenderer
-                                            questions={vg.questions}
-                                            options={vg.options}
-                                            answers={answers}
-                                            onAnswerChange={onAnswerChange}
-                                            data={data}
-                                        />
-                                    </div>
-                                );
-                            });
+                        {/* Interactive Left-pane Question Groups (matching-grid, inline gap, drag-n-drop) */}
+                        {groupedItems.filter(groupEntry => {
+                            if (groupEntry.type !== 'group') return false;
+                            
+                            // Check active passage tab mapping
+                            const firstQ = groupEntry.visuals[0]?.type === 'matching-grid-group' 
+                                ? groupEntry.visuals[0].questions[0] 
+                                : groupEntry.visuals[0]?.question;
+                            if (!firstQ) return false;
+                            
+                            const qIdx = data.questions.findIndex(item => item.id === firstQ.id);
+                            const qPassageIndex = getQuestionPassageIndex(firstQ, data.questionGroups, qIdx);
+                            if (qPassageIndex !== activePassageTab) return false;
+
+                            const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
+                            const hasInlineInstructions = groupEntry.header?.instructions && 
+                                                          /___([\w-]+)___/.test(groupEntry.header.instructions) && 
+                                                          !/^\|.+\|$/m.test(groupEntry.header.instructions);
+                            return isMatchingGrid || hasInlineInstructions;
+                        }).map((groupEntry, geIdx) => {
+                            const header = groupEntry.header;
+                            const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
+                            const hasInlineInstructions = header?.instructions && 
+                                                          /___([\w-]+)___/.test(header.instructions) && 
+                                                          !/^\|.+\|$/m.test(header.instructions);
+
+                            return (
+                                <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
+                                    <GroupedContainer header={header} hideInstructions={hasInlineInstructions}>
+                                        {isMatchingGrid && groupEntry.visuals.map((vg, vgIdx) => {
+                                            if (vg.type !== 'matching-grid-group') return null;
+                                            return (
+                                                <div key={`grid-left-${vgIdx}`} className="p-6 bg-white border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs">
+                                                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
+                                                        Matching Table
+                                                    </h3>
+                                                    <MatchingGridRenderer
+                                                        questions={vg.questions}
+                                                        options={vg.options}
+                                                        answers={answers}
+                                                        onAnswerChange={onAnswerChange}
+                                                        data={data}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                        {hasInlineInstructions && (
+                                            <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                                <ReadingPassageRenderer
+                                                    passageContent={header.instructions}
+                                                    questions={data.questions || []}
+                                                    answers={answers}
+                                                    onAnswerChange={onAnswerChange}
+                                                    submitted={undefined}
+                                                    result={null}
+                                                    clickedOption={clickedOption}
+                                                    setClickedOption={setClickedOption}
+                                                    className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                                />
+                                            </div>
+                                        )}
+                                    </GroupedContainer>
+                                </div>
+                            );
                         })}
                     </div>
                 </div>
