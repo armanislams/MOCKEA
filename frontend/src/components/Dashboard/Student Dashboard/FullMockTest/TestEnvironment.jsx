@@ -535,7 +535,7 @@ const TestEnvironment = () => {
             listeningSections.forEach(sec => {
                 const qs = sec.questions || [];
                 total += qs.length;
-                answered += qs.filter(q => !!(listeningAnswers[`${sec._id}_${q.id}`] || listeningAnswers[q.id || q._id])).length;
+                answered += qs.filter(q => !!(listeningAnswers[`${sec._id}_${q.id}`])).length;
             });
             return { total, answered };
         }
@@ -547,7 +547,7 @@ const TestEnvironment = () => {
             readingSections.forEach(sec => {
                 const qs = sec.questions || [];
                 total += qs.length;
-                answered += qs.filter(q => !!(readingAnswers[`${sec._id}_${q.id}`] || readingAnswers[q.id || q._id])).length;
+                answered += qs.filter(q => !!(readingAnswers[`${sec._id}_${q.id}`])).length;
             });
             return { total, answered };
         }
@@ -740,14 +740,14 @@ const TestEnvironment = () => {
                                 const sectionList = currentModuleIdx === 0 ? test.sections?.listening : test.sections?.reading;
                                 const section = sectionList?.[item.secIdx];
                                 const secId = section?._id;
-                                const isAnswered = !!(sectionAnswers?.[`${secId}_${item.q.id}`] || sectionAnswers?.[item.q.id]);
+                                const isAnswered = secId ? !!(sectionAnswers?.[`${secId}_${item.q.id}`]) : false;
                                 const isCurrentSection = currentModuleIdx === 0 
                                     ? item.secIdx === listeningPartIdx 
                                     : item.secIdx === readingSectionIdx;
                                 
                                 return (
                                     <button 
-                                        key={item.q.id || i} 
+                                        key={`${item.secIdx}_${item.q.id}_${i}`} 
                                         onClick={() => handlePaletteClick(item)}
                                         className={`w-7 h-7 md:w-8 md:h-8 rounded-xl text-[10px] md:text-xs font-black transition-all border border-b-2 ${
                                             isAnswered 
