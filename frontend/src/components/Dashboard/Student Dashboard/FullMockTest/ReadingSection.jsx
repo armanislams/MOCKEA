@@ -6,7 +6,7 @@ import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
 import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
 
 
-const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, data }) => {
+const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, data, offset = 0 }) => {
     const firstQ = questions[0];
     const infoText = firstQ?.info;
 
@@ -40,7 +40,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, dat
                             <tr key={q.id} className="hover:bg-slate-50/50 transition-colors" id={`question-${idx}`}>
                                 <td className="p-4 font-semibold text-slate-700 flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs flex-shrink-0">
-                                        {idx + 1}
+                                        {(offset || 0) + idx + 1}
                                     </div>
                                     <span>{q.question}</span>
                                 </td>
@@ -444,13 +444,23 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 if (isGroup) {
                     const header = groupEntry.header;
                     const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                    const hasInlineInstructions = header?.instructions && 
-                                                  /___([\w-]+)___/.test(header.instructions) && 
-                                                  !/^\|.+\|$/m.test(header.instructions);
-                    const hasTable = header?.rightSideQuestion || (header?.instructions && 
-                                     /___([\w-]+)___/.test(header.instructions) && 
+                    const hasTable = header?.rightSideQuestion || (header?.instructions &&
+                                     /___([\w-]+)___/.test(header.instructions) &&
                                      /^\|.+\|$/m.test(header.instructions));
-                    
+
+                    // hasInlineInstructions: instructions contain ___N___ AND at least one of
+                    // this group's questions is actually embedded (rendered inline) in the passage.
+                    // If blanks only appear in the instruction label list (not in passage), show questions normally.
+                    const instructionHasBlanks = header?.instructions &&
+                                                 /___([\w-]+)___/.test(header.instructions) &&
+                                                 !hasTable;
+                    const groupQIds = groupEntry.visuals
+                        .filter(vg => vg.type !== 'matching-grid-group')
+                        .map(vg => vg.question?.id)
+                        .filter(Boolean);
+                    const anyGroupQInline = groupQIds.some(id => renderedInlineIds.has(id));
+                    const hasInlineInstructions = instructionHasBlanks && anyGroupQInline;
+
                     if (isMatchingGrid || hasInlineInstructions || hasTable) {
                         return null; // hide entirely from the right pane
                     }
@@ -817,22 +827,57 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                             if (showPassageTabs && qPassageIndex !== activePassageTab) return false;
 
                             const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                            const hasInlineInstructions = groupEntry.header?.instructions && 
-                                                          /___([\w-]+)___/.test(groupEntry.header.instructions) && 
-                                                          !/^\|.+\|$/m.test(groupEntry.header.instructions);
-                            const hasTable = groupEntry.header?.rightSideQuestion || (groupEntry.header?.instructions && 
-                                             /___([\w-]+)___/.test(groupEntry.header.instructions) && 
+                            const hasTableLeft = groupEntry.header?.rightSideQuestion || (groupEntry.header?.instructions &&
+                                             /___([\w-]+)___/.test(groupEntry.header.instructions) &&
                                              /^\|.+\|$/m.test(groupEntry.header.instructions));
-                            return isMatchingGrid || hasInlineInstructions || hasTable;
+                            const instructionHasBlanksLeft = groupEntry.header?.instructions &&
+                                                              /___([\w-]+)___/.test(groupEntry.header.instructions) &&
+                                                              !hasTableLeft;
+                            const groupQIdsLeft = groupEntry.visuals
+                                .filter(vg => vg.type !== 'matching-grid-group')
+                                .map(vg => vg.question?.id)
+                                .filter(Boolean);
+                            // Only treat as inline if the passage actually contains blanks for these questions
+                            const passageContent = (data.passages || []).map(p => p.content || '').join('') + (data.passage || '');
+                            const anyQInlineLeft = groupQIdsLeft.some(id => {
+                                const q = data.questions?.find(item => item.id === id);
+                                if (!q) return false;
+                                const qIdx = data.questions.indexOf(q);
+                                const globalNum = (activeSectionOffset || 0) + qIdx + 1;
+                                const localNum = qIdx + 1;
+                                return passageContent.includes(`___${id}___`) ||
+                                       passageContent.includes(`___${globalNum}___`) ||
+                                       passageContent.includes(`___${localNum}___`) ||
+                                       passageContent.includes(`___${id.replace(/^r/, '')}___`);
+                            });
+                            const hasInlineInstructionsLeft = instructionHasBlanksLeft && anyQInlineLeft;
+                            return isMatchingGrid || hasInlineInstructionsLeft || hasTableLeft;
                         }).map((groupEntry, geIdx) => {
                             const header = groupEntry.header;
                             const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                            const hasInlineInstructions = header?.instructions && 
-                                                          /___([\w-]+)___/.test(header.instructions) && 
-                                                          !/^\|.+\|$/m.test(header.instructions);
-                            const hasTable = header?.rightSideQuestion || (header?.instructions && 
-                                             /___([\w-]+)___/.test(header.instructions) && 
+                            const hasTable = header?.rightSideQuestion || (header?.instructions &&
+                                             /___([\w-]+)___/.test(header.instructions) &&
                                              /^\|.+\|$/m.test(header.instructions));
+                            const instructionHasBlanks2 = header?.instructions &&
+                                                          /___([\w-]+)___/.test(header.instructions) &&
+                                                          !hasTable;
+                            const groupQIds2 = groupEntry.visuals
+                                .filter(vg => vg.type !== 'matching-grid-group')
+                                .map(vg => vg.question?.id)
+                                .filter(Boolean);
+                            const passageContent2 = (data.passages || []).map(p => p.content || '').join('') + (data.passage || '');
+                            const anyQInline2 = groupQIds2.some(id => {
+                                const q = data.questions?.find(item => item.id === id);
+                                if (!q) return false;
+                                const qIdx2 = data.questions.indexOf(q);
+                                const globalNum2 = (activeSectionOffset || 0) + qIdx2 + 1;
+                                const localNum2 = qIdx2 + 1;
+                                return passageContent2.includes(`___${id}___`) ||
+                                       passageContent2.includes(`___${globalNum2}___`) ||
+                                       passageContent2.includes(`___${localNum2}___`) ||
+                                       passageContent2.includes(`___${id.replace(/^r/, '')}___`);
+                            });
+                            const hasInlineInstructions = instructionHasBlanks2 && anyQInline2;
 
                             return (
                                 <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
