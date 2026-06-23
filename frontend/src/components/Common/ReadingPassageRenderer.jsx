@@ -14,7 +14,8 @@ const ReadingPassageRenderer = memo(({
     result,
     clickedOption,
     setClickedOption,
-    className = "text-lg leading-relaxed text-slate-600 text-justify select-text"
+    className = "text-lg leading-relaxed text-slate-600 text-justify select-text",
+    offset = 0
 }) => {
     const containerRef = useRef(null);
 
@@ -33,7 +34,7 @@ const ReadingPassageRenderer = memo(({
         return html.replace(/___([\w-]+)___/g, (match, matchKey) => {
             // Find question in the entire set
             const q = questions.find((item, idx) => {
-                const questionNum = idx + 1;
+                const questionNum = (offset || 0) + idx + 1;
                 return (
                     item.id === matchKey ||
                     questionNum.toString() === matchKey ||
@@ -43,7 +44,7 @@ const ReadingPassageRenderer = memo(({
             if (!q) return match;
 
             const qIndexInSet = questions.indexOf(q);
-            const labelNum = qIndexInSet + 1;
+            const labelNum = (offset || 0) + qIndexInSet + 1;
             const qId = q.id;
 
             const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === qId);
@@ -132,7 +133,7 @@ const ReadingPassageRenderer = memo(({
                 </span>
             `.trim();
         });
-    }, [passageContent, questionsKey, submitted, resultKey]);
+    }, [passageContent, questionsKey, submitted, resultKey, offset]);
 
     useEffect(() => {
         if (containerRef.current) {

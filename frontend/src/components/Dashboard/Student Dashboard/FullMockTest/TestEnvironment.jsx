@@ -458,20 +458,28 @@ const TestEnvironment = () => {
     const { total: totalQuestions, answered: answeredQuestions } = useMemo(() => {
         if (!test) return { total: 0, answered: 0 };
         if (currentModuleIdx === 0) {
-            const questions = test.sections?.listening?.[0]?.questions || [];
+            const listeningSections = test.sections?.listening || [];
+            let total = 0;
+            let answered = 0;
             const listeningAnswers = answers.listening || {};
-            return {
-                total: questions.length,
-                answered: questions.filter(q => !!listeningAnswers[q.id || q._id]).length
-            };
+            listeningSections.forEach(sec => {
+                const qs = sec.questions || [];
+                total += qs.length;
+                answered += qs.filter(q => !!listeningAnswers[q.id || q._id]).length;
+            });
+            return { total, answered };
         }
         if (currentModuleIdx === 1) {
-            const questions = test.sections?.reading?.[0]?.questions || [];
+            const readingSections = test.sections?.reading || [];
+            let total = 0;
+            let answered = 0;
             const readingAnswers = answers.reading || {};
-            return {
-                total: questions.length,
-                answered: questions.filter(q => !!readingAnswers[q.id || q._id]).length
-            };
+            readingSections.forEach(sec => {
+                const qs = sec.questions || [];
+                total += qs.length;
+                answered += qs.filter(q => !!readingAnswers[q.id || q._id]).length;
+            });
+            return { total, answered };
         }
         if (currentModuleIdx === 2) {
             const writingData = test.sections?.writing?.[0];
@@ -610,16 +618,16 @@ const TestEnvironment = () => {
             </header>
 
             <main className="flex-1 overflow-hidden relative">
-                {currentModuleIdx === 0 && test?.sections?.listening?.[0] && (
+                {currentModuleIdx === 0 && test?.sections?.listening?.length > 0 && (
                     <ListeningSection 
-                        data={test.sections.listening[0]} 
+                        sections={test.sections.listening} 
                         answers={answers.listening || {}} 
                         onAnswerChange={handleAnswerChange} 
                     />
                 )}
-                {currentModuleIdx === 1 && test?.sections?.reading?.[0] && (
+                {currentModuleIdx === 1 && test?.sections?.reading?.length > 0 && (
                     <ReadingSection 
-                        data={test.sections.reading[0]} 
+                        sections={test.sections.reading} 
                         answers={answers.reading || {}} 
                         onAnswerChange={handleAnswerChange} 
                     />

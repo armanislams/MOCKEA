@@ -254,12 +254,19 @@ export const finalizeTest = async (req, res) => {
 
         for (let section of result.sectionResults) {
             if (['reading', 'listening'].includes(section.sectionType)) {
-                const questionSet = result.testId.sections[section.sectionType][0];
-                if (!questionSet) continue;
-
+                const questionSets = result.testId.sections[section.sectionType] || [];
+                
                 let correctCount = 0;
                 section.answers = section.answers.map(ans => {
-                    const originalQ = questionSet.questions.find(q => q.id === ans.questionId);
+                    let originalQ = null;
+                    for (const qSet of questionSets) {
+                        const found = qSet.questions.find(q => q.id === ans.questionId);
+                        if (found) {
+                            originalQ = found;
+                            break;
+                        }
+                    }
+                    
                     const hasCorrectAnswer = originalQ && originalQ.correctAnswer != null;
                     const isCorrect = hasCorrectAnswer && isAnswerMatching(originalQ.correctAnswer, ans.userAnswer || '');
                     if (isCorrect) correctCount++;

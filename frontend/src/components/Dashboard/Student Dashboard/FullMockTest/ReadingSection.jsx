@@ -492,11 +492,41 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
 };
 
 
-const ReadingSection = ({ data, answers, onAnswerChange }) => {
-       const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
+const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionIdx, setActiveSectionIdx }) => {
+    const data = sections[activeSectionIdx];
+    const [toolbar, setToolbar] = useState({ show: false, x: 0, y: 0, range: null });
     const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
     const [activePassageTab, setActivePassageTab] = useState(0);
     const [clickedOption, setClickedOption] = useState(null);
+
+    const sectionOffsets = useMemo(() => {
+        const offsets = [];
+        let currentOffset = 0;
+        sections.forEach((sec) => {
+            offsets.push(currentOffset);
+            currentOffset += sec.questions?.length || 0;
+        });
+        return offsets;
+    }, [sections]);
+
+    const activeSectionOffset = sectionOffsets[activeSectionIdx] || 0;
+
+    const unifiedQuestions = useMemo(() => {
+        const list = [];
+        sections.forEach((sec, secIdx) => {
+            const secOffset = sectionOffsets[secIdx] || 0;
+            const qs = sec.questions || [];
+            qs.forEach((q, qIdx) => {
+                list.push({
+                    q,
+                    secIdx,
+                    localIdx: qIdx,
+                    displayNum: secOffset + qIdx + 1
+                });
+            });
+        });
+        return list;
+    }, [sections, sectionOffsets]);
 
     const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [data?.questions]);
     const sharedOptions = useMemo(() => {
@@ -507,8 +537,8 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
     const groupedItems = useMemo(() => {
         if (!data) return [];
         const groups = groupQuestions(data.questions || []);
-        return groupVisualsByQuestionGroups(groups, data.questionGroups, 0, data.questions || []);
-    }, [data]);
+        return groupVisualsByQuestionGroups(groups, data.questionGroups, activeSectionOffset, data.questions || []);
+    }, [data, activeSectionOffset]);
  
     const hasMultipleGroups = data?.questionGroups?.length > 1;
 
@@ -668,55 +698,80 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                     clickedOption={clickedOption}
                     setClickedOption={setClickedOption}
                     className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
+                    offset={activeSectionOffset}
                 />
             </div>
         );
-    }, [data, activePassageTab, answers, clickedOption]);
+    }, [data, activePassageTab, answers, clickedOption, activeSectionOffset]);
 
-    const activeQuestionsIdxs = data?.questions
-        ?.map((q, idx) => ({ q, idx, passageIndex: getQuestionPassageIndex(q, data?.questionGroups, idx) })) || [];
-    const minQuestionNum = activeQuestionsIdxs.length > 0 ? 1 : 1;
-    const maxQuestionNum = activeQuestionsIdxs.length > 0 ? activeQuestionsIdxs.length : 1;
+    const minQuestionNum = activeSectionOffset + 1;
+    const maxQuestionNum = activeSectionOffset + (data?.questions?.length || 0);
 
-    return (
-        <div className="flex h-full overflow-hidden bg-white">
-            {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
-            <div className="w-[45%] flex flex-col h-full border-r border-base-200">
-                <div className="flex-1 overflow-y-auto p-12">
-                    <div className="max-w-2xl mx-auto space-y-8">
-                        <header className="space-y-2 font-sans">
-                            <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Part 1</p>
-                            <h1 className="text-4xl font-extrabold tracking-tight">{data?.passageTitle || data?.title}</h1>
-                            <p className="text-base-content/60 italic leading-relaxed text-lg">
-                                An exploration of the ancient origins and development of map-making, highlighting key innovations and their impact on navigation, exploration, and understanding of the world.
-                            </p>
-                        </header>
-
-                        {data?.passages && data.passages.length > 0 && (
-                            <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto select-none">
-                                {data.passages.map((p, idx) => (
-                                    <button
-                                        key={idx}
-                                        type="button"
-                                        onClick={() => {
-                                            setActivePassageTab(idx);
-                                        }}
-                                        className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
-                                            activePassageTab === idx
-                                                ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
-                                                : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
-                                        }`}
-                                    >
-                                        Passage {idx + 1}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                        {data?.passages && data.passages.length > 0 && data.passages[activePassageTab] && (
-                            <h3 className="text-2xl font-black tracking-tight mb-6 text-slate-700 font-sans">
-                                {data.passages[activePassageTab].title}
-                            </h3>
-                        )}
+        const showSectionTabs = sections.length > 1;
+        const showPassageTabs = !showSectionTabs && data?.passages && data.passages.length > 0;
+    
+        return (
+            <div className="flex h-full overflow-hidden bg-white">
+                {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
+                <div className="w-[45%] flex flex-col h-full border-r border-base-200">
+                    <div className="flex-1 overflow-y-auto p-12">
+                        <div className="max-w-2xl mx-auto space-y-8">
+                            <header className="space-y-2 font-sans">
+                                <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Part {activeSectionIdx + 1}</p>
+                                <h1 className="text-4xl font-extrabold tracking-tight">{data?.passageTitle || data?.title}</h1>
+                                {data?.description && (
+                                    <p className="text-base-content/60 italic leading-relaxed text-lg">
+                                        {data.description}
+                                    </p>
+                                )}
+                            </header>
+    
+                            {showSectionTabs && (
+                                <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto select-none">
+                                    {sections.map((sec, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveSectionIdx(idx);
+                                            }}
+                                            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
+                                                activeSectionIdx === idx
+                                                    ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
+                                                    : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                            }`}
+                                        >
+                                            Passage {idx + 1}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+    
+                            {showPassageTabs && (
+                                <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto select-none">
+                                    {data.passages.map((p, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => {
+                                                setActivePassageTab(idx);
+                                            }}
+                                            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
+                                                activePassageTab === idx
+                                                    ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
+                                                    : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                            }`}
+                                        >
+                                            Passage {idx + 1}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {showPassageTabs && data.passages[activePassageTab] && (
+                                <h3 className="text-2xl font-black tracking-tight mb-6 text-slate-700 font-sans">
+                                    {data.passages[activePassageTab].title}
+                                </h3>
+                            )}
 
                         {passageElement}
  
@@ -732,7 +787,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                             
                             const qIdx = data.questions.findIndex(item => item.id === firstQ.id);
                             const qPassageIndex = getQuestionPassageIndex(firstQ, data.questionGroups, qIdx);
-                            if (qPassageIndex !== activePassageTab) return false;
+                            if (showPassageTabs && qPassageIndex !== activePassageTab) return false;
 
                             const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
                             const hasInlineInstructions = groupEntry.header?.instructions && 
@@ -767,6 +822,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                                         options={vg.options}
                                                         answers={answers}
                                                         onAnswerChange={onAnswerChange}
+                                                        offset={activeSectionOffset}
                                                         data={data}
                                                     />
                                                 </div>
@@ -782,6 +838,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                                 result={null}
                                                 clickedOption={clickedOption}
                                                 setClickedOption={setClickedOption}
+                                                offset={activeSectionOffset}
                                             />
                                         )}
                                         {hasInlineInstructions && (
@@ -796,6 +853,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                                     clickedOption={clickedOption}
                                                     setClickedOption={setClickedOption}
                                                     className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                                    offset={activeSectionOffset}
                                                 />
                                             </div>
                                         )}
@@ -804,49 +862,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                             );
                         })}
                     </div>
-                </div>
-
-                {/* Sticky Question Palette */}
-                <div className="p-6 border-t border-base-200 bg-white">
-                    <div className="max-w-2xl mx-auto flex flex-col gap-3">
-                        <span className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Question Palette</span>
-                        <div className="flex flex-wrap gap-2">
-                            {data?.questions?.map((q, i) => {
-                                const isAnswered = !!answers[q.id];
-                                const qPassageIndex = getQuestionPassageIndex(q, data?.questionGroups, i);
-                                return (
-                                    <button 
-                                        key={q.id || i} 
-                                        onClick={() => {
-                                            if (data?.passages && data.passages.length > 0 && activePassageTab !== qPassageIndex) {
-                                                setActivePassageTab(qPassageIndex);
-                                                setTimeout(() => {
-                                                    const element = document.getElementById(`question-${i}`);
-                                                    if (element) {
-                                                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                    }
-                                                }, 100);
-                                            } else {
-                                                const element = document.getElementById(`question-${i}`);
-                                                if (element) {
-                                                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                }
-                                            }
-                                        }}
-                                        className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
-                                            isAnswered 
-                                            ? "bg-primary text-white border-primary-dark shadow-lg shadow-primary/20" 
-                                            : "bg-base-200 border-base-300 hover:bg-base-300"
-                                        }`}
-                                    >
-                                        {i + 1}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            </div>  </div>
 
             <div className="w-[55%] overflow-y-auto p-12 bg-base-100">
                 <div className="max-w-3xl mx-auto flex gap-8 items-start">
@@ -863,7 +879,7 @@ const ReadingSection = ({ data, answers, onAnswerChange }) => {
                                 groupedItems={groupedItems}
                                 answers={answers}
                                 onAnswerChange={onAnswerChange}
-                                offset={0}
+                                offset={activeSectionOffset}
                                 data={data}
                                 clickedOption={clickedOption}
                                 setClickedOption={setClickedOption}

@@ -874,10 +874,20 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
     );
 };
 
-const ListeningSection = ({ data, answers, onAnswerChange }) => {
+const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartIdx, setActivePartIdx }) => {
+    const data = sections[activePartIdx];
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [clickedOption, setClickedOption] = useState(null);
+
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.load();
+            setIsPlaying(false);
+            setCurrentTime(0);
+        }
+    }, [activePartIdx]);
 
     const passage = data?.passage;
     const questions = data?.questions;
@@ -888,7 +898,24 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
         const first = dragDropQuestions[0];
         return first?.options?.filter(Boolean) || [];
     }, [dragDropQuestions]);
-    const offset = ((data?.listeningPart || 1) - 1) * 10;
+    const offset = ((data?.listeningPart || (activePartIdx + 1)) - 1) * 10;
+
+    const unifiedQuestions = useMemo(() => {
+        const list = [];
+        sections.forEach((sec, secIdx) => {
+            const secOffset = ((sec?.listeningPart || (secIdx + 1)) - 1) * 10;
+            const qs = sec.questions || [];
+            qs.forEach((q, qIdx) => {
+                list.push({
+                    q,
+                    secIdx,
+                    localIdx: qIdx,
+                    displayNum: secOffset + qIdx + 1
+                });
+            });
+        });
+        return list;
+    }, [sections]);
 
     const renderedInlineIds = useMemo(() => {
         const ids = new Set();
@@ -977,6 +1004,25 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                             <h1 className="text-3xl font-extrabold tracking-tight">Audio — Section {data?.title || "1"}</h1>
                         </header>
 
+                        {sections.length > 1 && (
+                            <div className="flex border-b border-slate-200 gap-2 overflow-x-auto select-none pb-2">
+                                {sections.map((sec, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => setActivePartIdx(idx)}
+                                        className={`px-5 py-2.5 font-black text-xs uppercase tracking-widest border-b-2 transition-all whitespace-nowrap ${
+                                            activePartIdx === idx
+                                                ? "border-primary text-primary bg-primary/5 rounded-t-xl"
+                                                : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                        }`}
+                                    >
+                                        Part {idx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Audio control card */}
                         <div className="p-8 rounded-[2.5rem] bg-white border border-base-200 shadow-sm space-y-6">
                             <div className="flex items-center gap-4">
@@ -1028,35 +1074,6 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
                     </div>
                 </div>
 
-                {/* Sticky Question Palette */}
-                <div className="p-6 border-t border-base-200 bg-white">
-                    <div className="max-w-2xl mx-auto flex flex-col gap-3">
-                        <span className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Question Palette</span>
-                        <div className="flex flex-wrap gap-2">
-                            {data?.questions?.map((q, i) => {
-                                const isAnswered = !!answers[q.id];
-                                return (
-                                    <button 
-                                        key={q.id || i} 
-                                        onClick={() => {
-                                            const element = document.getElementById(`question-${i}`);
-                                            if (element) {
-                                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                            }
-                                        }}
-                                        className={`w-9 h-9 rounded-xl text-xs font-bold transition-all border-b-2 ${
-                                            isAnswered 
-                                            ? "bg-primary text-white border-primary-dark shadow-lg shadow-primary/20" 
-                                            : "bg-base-200 border-base-300 hover:bg-base-300"
-                                        }`}
-                                    >
-                                        {offset + i + 1}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* Right Pane: Questions */}

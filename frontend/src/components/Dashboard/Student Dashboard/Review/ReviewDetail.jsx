@@ -145,13 +145,15 @@ const ReviewMatchingGrid = ({ items, options }) => {
     );
 };
 
-const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassageTab) => {
+const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassageTab, isSectionTab = false) => {
     const mapped = answers.map((ans, idx) => {
         const originalQ = currentSectionData?.questions?.find(q => q.id === ans.questionId);
         const qIdx = currentSectionData?.questions?.findIndex(q => q.id === ans.questionId);
         
-        // Filter by passage if reading
-        if (activeTab === 'reading' && currentSectionData?.passages && currentSectionData.passages.length > 0) {
+        if (!originalQ) return null;
+        
+        // Filter by passage if reading and it's a single question set containing multiple passages
+        if (activeTab === 'reading' && !isSectionTab && currentSectionData?.passages && currentSectionData.passages.length > 0) {
             const qPassageIndex = getQuestionPassageIndex(originalQ, currentSectionData?.questionGroups, qIdx);
             if (qPassageIndex !== activePassageTab) return null;
         }
@@ -283,7 +285,8 @@ const GroupedReviewQuestionsRenderer = ({
     evaluationResult,
     activeTab,
     currentSectionData,
-    activePassageTab
+    activePassageTab,
+    offset = 0
 }) => {
     const renderedInlineIds = useMemo(() => {
         const ids = new Set();
@@ -295,7 +298,7 @@ const GroupedReviewQuestionsRenderer = ({
             matches.forEach(m => {
                 const matchKey = m.replace(/___/g, "").trim();
                 const q = allQuestions.find((item, idx) => {
-                    const questionNum = idx + 1;
+                    const questionNum = (offset || 0) + idx + 1;
                     return (
                         item.id === matchKey ||
                         questionNum.toString() === matchKey ||
@@ -326,7 +329,7 @@ const GroupedReviewQuestionsRenderer = ({
         });
 
         return ids;
-    }, [currentSectionData, allQuestions, activeTab, activePassageTab]);
+    }, [currentSectionData, allQuestions, activeTab, activePassageTab, offset]);
 
     return (
         <div className="space-y-8">
@@ -353,6 +356,8 @@ const GroupedReviewQuestionsRenderer = ({
                     if (q && renderedInlineIds.has(q.id)) {
                         return null;
                     }
+                    const qIdx = currentSectionData?.questions?.findIndex(item => item.id === q.id);
+                    const displayNum = qIdx !== -1 ? ((offset || 0) + qIdx + 1) : (originalIdx + 1);
                     return (
                         <div key={originalIdx} className={`card p-4 rounded-3xl border shadow-sm transition-all ${
                             ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
@@ -360,7 +365,7 @@ const GroupedReviewQuestionsRenderer = ({
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{originalIdx + 1}</span>
+                                        <span className="w-8 h-8 rounded-xl bg-white border border-base-300 flex items-center justify-center font-black text-sm shadow-sm">{displayNum}</span>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-base-content/30">Question Analysis</span>
                                     </div>
                                     
@@ -420,6 +425,7 @@ const GroupedReviewQuestionsRenderer = ({
                                     onAnswerChange={() => {}}
                                     submitted={true}
                                     result={evaluationResult}
+                                    offset={offset}
                                 />
                             ) : hasInlineInstructions ? (
                                 <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
@@ -433,6 +439,7 @@ const GroupedReviewQuestionsRenderer = ({
                                         clickedOption={null}
                                         setClickedOption={null}
                                         className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                        offset={offset}
                                     />
                                 </div>
                             ) : (
@@ -472,14 +479,28 @@ const ReviewDetail = () => {
         }
     });
 
+    const sectionsList = useMemo(() => {
+        return result?.testId?.sections?.[activeTab] || [];
+    }, [result, activeTab]);
+
+    const currentSectionData = sectionsList[activePassageTab] || sectionsList[0];
+
+    const activeSectionOffset = useMemo(() => {
+        let currentOffset = 0;
+        for (let i = 0; i < activePassageTab; i++) {
+            currentOffset += sectionsList[i]?.questions?.length || 0;
+        }
+        return currentOffset;
+    }, [sectionsList, activePassageTab]);
+
     const currentSectionResult = result?.sectionResults?.find(s => s.sectionType === activeTab);
-    const currentSectionData = result?.testId?.sections?.[activeTab]?.[0];
  
     const groupedItems = useMemo(() => {
         if (!currentSectionResult || !currentSectionData) return [];
-        const groups = groupReviewAnswers(currentSectionResult.answers, currentSectionData, activeTab, activePassageTab);
+        const isSectionTab = sectionsList.length > 1;
+        const groups = groupReviewAnswers(currentSectionResult.answers, currentSectionData, activeTab, activePassageTab, isSectionTab);
         return groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups, currentSectionData?.questions);
-    }, [currentSectionResult, currentSectionData, activeTab, activePassageTab]);
+    }, [currentSectionResult, currentSectionData, activeTab, activePassageTab, sectionsList]);
 
     if (isLoading) return <div className="flex items-center justify-center h-screen"><span className="loading loading-spinner loading-lg text-primary" /></div>;
     if (!result) return <div className="p-10 text-center">Result not found.</div>;
@@ -631,13 +652,21 @@ const ReviewDetail = () => {
                             {/* Left: Passage / Content */}
                             <div className={`card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm ${['listening', 'writing'].includes(activeTab) ? "w-full" : "sticky top-28 h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar"}`}>
                                 {activeTab === 'reading' && (() => {
-                                    const hasMultiplePassages = currentSectionData?.passages && currentSectionData.passages.length > 0;
-                                    const contentText = hasMultiplePassages
-                                        ? (currentSectionData.passages[activePassageTab]?.content || "")
-                                        : (currentSectionData?.passage || currentSectionData?.content || "No content available.");
-                                    const titleText = hasMultiplePassages
-                                        ? currentSectionData.passages[activePassageTab]?.title || ""
-                                        : currentSectionData?.title || "";
+                                    const showSectionTabs = sectionsList.length > 1;
+                                    const showPassageTabs = !showSectionTabs && currentSectionData?.passages && currentSectionData.passages.length > 0;
+                                    const hasMultiplePassages = showSectionTabs || showPassageTabs;
+
+                                    const contentText = showSectionTabs
+                                        ? (currentSectionData?.passage || currentSectionData?.content || "")
+                                        : (showPassageTabs
+                                            ? (currentSectionData.passages[activePassageTab]?.content || "")
+                                            : (currentSectionData?.passage || currentSectionData?.content || "No content available."));
+
+                                    const titleText = showSectionTabs
+                                        ? currentSectionData?.title || ""
+                                        : (showPassageTabs
+                                            ? currentSectionData.passages[activePassageTab]?.title || ""
+                                            : currentSectionData?.title || "");
 
                                     const answersMap = (() => {
                                         const map = {};
@@ -658,7 +687,7 @@ const ReviewDetail = () => {
                                             {/* Passage selection tabs */}
                                             {hasMultiplePassages && (
                                                 <div className="flex border-b border-base-200 mb-8 gap-2 overflow-x-auto">
-                                                    {currentSectionData.passages.map((p, idx) => (
+                                                    {(showSectionTabs ? sectionsList : currentSectionData.passages).map((p, idx) => (
                                                         <button
                                                             key={idx}
                                                             type="button"
@@ -779,6 +808,25 @@ const ReviewDetail = () => {
 
                                     return (
                                         <div className="space-y-8">
+                                            {sectionsList.length > 1 && (
+                                                <div className="flex border-b border-base-200 mb-6 gap-2 overflow-x-auto">
+                                                    {sectionsList.map((sec, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            type="button"
+                                                            onClick={() => setActivePassageTab(idx)}
+                                                            className={`px-5 py-2.5 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
+                                                                activePassageTab === idx
+                                                                    ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
+                                                                    : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                                            }`}
+                                                        >
+                                                            Part {idx + 1}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            
                                             <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-200 rounded-[2rem] space-y-4">
                                                 <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-2xl text-purple-600">
                                                     <PiEarFill />
@@ -805,6 +853,7 @@ const ReviewDetail = () => {
                                                         clickedOption={null}
                                                         setClickedOption={null}
                                                         className="text-lg leading-relaxed text-base-content/80 text-justify select-text"
+                                                        offset={activeSectionOffset}
                                                     />
                                                 </div>
                                             )}
@@ -864,6 +913,7 @@ const ReviewDetail = () => {
                                             activeTab={activeTab}
                                             currentSectionData={currentSectionData}
                                             activePassageTab={activePassageTab}
+                                            offset={activeSectionOffset}
                                         />
                                     </>
                                 ) : (

@@ -11,7 +11,7 @@ const formatInlineBullets = (str) => {
     return formatted;
 };
 
-const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption) => {
+const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset = 0) => {
     if (!cellText) return "";
     
     // Split by placeholders like ___1___ or ___question-id___
@@ -27,7 +27,7 @@ const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, subm
         const matchKey = match[1];
         // Find question in the entire test set that matches the placeholder index or ID
         const q = allQuestions.find((item, idx) => {
-            const questionNum = idx + 1;
+            const questionNum = (offset || 0) + idx + 1;
             return (
                 item.id === matchKey ||
                 questionNum.toString() === matchKey
@@ -37,7 +37,7 @@ const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, subm
         if (!q) return <span key={index}>{part}</span>;
 
         const qIndexInSet = allQuestions.indexOf(q);
-        const labelNum = qIndexInSet + 1;
+        const labelNum = (offset || 0) + qIndexInSet + 1;
         const qId = q.id;
         const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === qId);
         const isCorrect = evaluation?.isCorrect;
@@ -152,7 +152,8 @@ export default function TableCompletionRenderer({
     submitted, 
     result, 
     clickedOption, 
-    setClickedOption 
+    setClickedOption,
+    offset = 0
 }) {
     const { introText, tableRows, outroText } = useMemo(() => {
         if (!instructions) return { introText: "", tableRows: null, outroText: "" };
@@ -216,7 +217,7 @@ export default function TableCompletionRenderer({
                         <tr className="bg-slate-900 border-b border-slate-700">
                             {tableRows[0]?.cells.map((cell, ci) => (
                                 <th key={ci} className="text-white font-black text-xs uppercase tracking-widest px-5 py-4 border border-slate-700">
-                                    {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption)}
+                                    {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset)}
                                 </th>
                             ))}
                         </tr>
@@ -226,7 +227,7 @@ export default function TableCompletionRenderer({
                             <tr key={ri} className={ri % 2 === 1 ? "bg-slate-50/50 hover:bg-slate-50 transition-colors" : "bg-white hover:bg-slate-50 transition-colors"}>
                                 {row.cells.map((cell, ci) => (
                                     <td key={ci} className="px-5 py-4 border border-slate-200 text-slate-700 leading-relaxed font-medium align-top">
-                                        {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption)}
+                                        {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset)}
                                     </td>
                                 ))}
                             </tr>
