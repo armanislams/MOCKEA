@@ -969,10 +969,10 @@ const Reading = () => {
             </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 h-[calc(100vh-140px)] min-h-0">
             {/* Passage Side */}
-            <div className="lg:col-span-3 space-y-6">
-                <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
+            <div className="lg:col-span-3 h-full min-h-0">
+                <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar">
                     <div className="prose prose-slate max-w-none">
                         <h2 className="text-3xl font-black tracking-tight mb-8 text-slate-800">{activeSet.title}</h2>
                         {activeSet.passages && activeSet.passages.length > 0 && (
@@ -1074,8 +1074,8 @@ const Reading = () => {
             </div>
 
             {/* Questions Side */}
-            <div className="lg:col-span-2 space-y-6">
-                <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar relative">
+            <div className="lg:col-span-2 h-full min-h-0">
+                <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar relative">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-black tracking-tight">Question Panel</h2>
                         <PiBookOpenFill className="text-2xl text-primary/20" />
@@ -1088,7 +1088,7 @@ const Reading = () => {
                                 Drag or click to select an option to fill each blank
                             </p>
                             <div className={`flex flex-wrap justify-center gap-2 pr-1 custom-scrollbar ${
-                                hasMultipleGroups ? "max-h-[140px] overflow-y-auto" : ""
+                                hasMultipleGroups ? "max-h-[320px] overflow-y-auto" : ""
                             }`}>
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
