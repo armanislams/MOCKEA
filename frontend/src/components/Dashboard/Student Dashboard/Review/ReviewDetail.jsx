@@ -383,6 +383,10 @@ const GroupedReviewQuestionsRenderer = ({
                                      /___([\w-]+)___/.test(header.instructions) && 
                                      /^\|.+\|$/m.test(header.instructions));
 
+                    if (children.length === 0 && !hasTable) {
+                        return null;
+                    }
+
                     return (
                         <GroupedContainer 
                             key={`group-${geIdx}`} 

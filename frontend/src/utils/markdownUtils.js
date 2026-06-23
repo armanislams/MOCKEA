@@ -91,6 +91,7 @@ export const convertMarkdownContentToHtml = (rawText) => {
 
   while (index < lines.length) {
     if (lines[index].trim() === "") {
+      htmlParts.push('<div class="h-4"></div>');
       index += 1;
       continue;
     }
