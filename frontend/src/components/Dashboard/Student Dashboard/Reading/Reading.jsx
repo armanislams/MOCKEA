@@ -313,7 +313,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
 
 const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
-        <div className="card p-8 rounded-[3rem] border border-slate-200 bg-slate-50/20 space-y-6 shadow-xs w-full mb-6">
+        <div className="card p-5 rounded-[2rem] border border-slate-200 bg-slate-50/20 space-y-5 shadow-xs w-full mb-6">
             {header && (
                 <div className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-5 py-3 rounded-r-2xl">
@@ -439,7 +439,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                         <div key={q.id || idx} className="space-y-4 animate-fadeIn">
                             <div 
                                 id={`question-${idx}`}
-                                className={`space-y-4 p-6 rounded-3xl border transition-all scroll-mt-6 ${
+                                className={`space-y-4 p-4 rounded-3xl border transition-all scroll-mt-6 ${
                                     isFlowChart 
                                     ? "bg-slate-50/50 border-dashed border-slate-300 max-w-lg mx-auto text-center shadow-xs" 
                                     : "border-base-200 bg-white hover:border-primary/30"
@@ -1075,21 +1075,19 @@ const Reading = () => {
 
             {/* Questions Side */}
             <div className="lg:col-span-2 h-full min-h-0">
-                <div className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar relative">
+                <div className="card bg-white p-5 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar relative">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-black tracking-tight">Question Panel</h2>
                         <PiBookOpenFill className="text-2xl text-primary/20" />
                     </div>
 
-                    {/* Options Pool sticky at the top of the questions card */}
+                    {/* Options Pool at the top of the questions card (scrolls with content) */}
                     {sharedOptions.length > 0 && (
-                        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-xs border-b border-slate-200/60 pb-4 mb-6 pt-2">
+                        <div className="border-b border-slate-200/60 pb-4 mb-6 pt-2">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
                                 Drag or click to select an option to fill each blank
                             </p>
-                            <div className={`flex flex-wrap justify-center gap-2 pr-1 custom-scrollbar ${
-                                hasMultipleGroups ? "max-h-[320px] overflow-y-auto" : ""
-                            }`}>
+                            <div className="flex flex-wrap justify-center gap-2 pr-1">
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
                                     const label = `${letter}. ${opt}`;

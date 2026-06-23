@@ -1139,7 +1139,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
 
 const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
-        <div className="card p-8 rounded-[3rem] border border-slate-200/80 bg-slate-50/20 space-y-6 shadow-xs w-full">
+        <div className="card p-5 rounded-[2rem] border border-slate-200 bg-slate-50/20 space-y-5 shadow-xs w-full">
             {header && (
                 <div className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-5 py-3 rounded-r-2xl">
