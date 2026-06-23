@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
     PiBookOpen, 
     PiEar, 
@@ -24,6 +24,7 @@ import alerts from "../../../utils/alerts";
 const ManageQuestions = () => {
     const axiosSecure = useAxiosSecure();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
     const [filterType, setFilterType] = useState("all");
@@ -48,6 +49,8 @@ const ManageQuestions = () => {
         mutationFn: (id) => axiosSecure.delete(`/questions/${id}`),
         onSuccess: () => {
             alerts.success("Deleted!", "The question has been removed from the bank.");
+            queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-questions-for-bundle"] });
             refetch();
         }
     });

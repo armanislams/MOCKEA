@@ -58,7 +58,7 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
     return (
         <div className="flex h-full overflow-hidden bg-white">
             {/* Left Pane: Prompt & References */}
-            <div className="w-1/2 flex flex-col h-full border-r border-slate-200 bg-slate-50/20">
+            <div className="w-[40%] flex flex-col h-full border-r border-slate-200 bg-slate-50/20">
                 <div className="flex-1 overflow-y-auto p-12">
                     <div className="max-w-2xl mx-auto space-y-8">
                         <header className="space-y-2">
@@ -165,7 +165,7 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
             </div>
 
             {/* Right Pane: Writing Canvas */}
-            <div className="w-1/2 flex flex-col p-12 bg-white">
+            <div className="w-[60%] flex flex-col p-12 bg-white">
                 <div className="flex-1 flex flex-col space-y-6 max-w-2xl w-full mx-auto">
                     {/* Header Controls inside right pane */}
                     <div className="flex items-center justify-between">

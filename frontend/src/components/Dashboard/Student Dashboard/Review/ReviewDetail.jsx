@@ -472,11 +472,8 @@ const ReviewDetail = () => {
         }
     });
 
-    if (isLoading) return <div className="flex items-center justify-center h-screen"><span className="loading loading-spinner loading-lg text-primary" /></div>;
-    if (!result) return <div className="p-10 text-center">Result not found.</div>;
-
-    const currentSectionResult = result.sectionResults.find(s => s.sectionType === activeTab);
-    const currentSectionData = result.testId?.sections?.[activeTab]?.[0];
+    const currentSectionResult = result?.sectionResults?.find(s => s.sectionType === activeTab);
+    const currentSectionData = result?.testId?.sections?.[activeTab]?.[0];
  
     const groupedItems = useMemo(() => {
         if (!currentSectionResult || !currentSectionData) return [];
@@ -484,11 +481,14 @@ const ReviewDetail = () => {
         return groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups, currentSectionData?.questions);
     }, [currentSectionResult, currentSectionData, activeTab, activePassageTab]);
 
+    if (isLoading) return <div className="flex items-center justify-center h-screen"><span className="loading loading-spinner loading-lg text-primary" /></div>;
+    if (!result) return <div className="p-10 text-center">Result not found.</div>;
+
     return (
         <div className="min-h-screen bg-base-200 pb-20">
             {/* Header */}
             <div className="bg-white border-b border-base-300 sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <div className="w-full px-8 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-6">
                         <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle">
                             <PiArrowLeftBold className="w-6 h-6" />
@@ -519,7 +519,7 @@ const ReviewDetail = () => {
                 </div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-6 pt-10" role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+            <main className="w-full px-8 pt-10" role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
                 {!currentSectionResult ? (
                     <div className="card bg-white p-20 text-center space-y-4 rounded-[3rem] border border-base-300 shadow-sm">
                         <PiInfoFill className="text-5xl text-base-content/10 mx-auto" />
@@ -627,9 +627,9 @@ const ReviewDetail = () => {
                         })()}
 
                         {/* Detail Review Content */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                        <div className={['listening', 'writing'].includes(activeTab) ? "w-full space-y-8" : "grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"}>
                             {/* Left: Passage / Content */}
-                            <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm sticky top-28 h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
+                            <div className={`card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm ${['listening', 'writing'].includes(activeTab) ? "w-full" : "sticky top-28 h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar"}`}>
                                 {activeTab === 'reading' && (() => {
                                     const hasMultiplePassages = currentSectionData?.passages && currentSectionData.passages.length > 0;
                                     const contentText = hasMultiplePassages
@@ -763,15 +763,54 @@ const ReviewDetail = () => {
                                         </div>
                                     );
                                 })()}
-                                {activeTab === 'listening' && (
-                                    <div className="flex flex-col items-center justify-center h-full space-y-8">
-                                        <div className="w-32 h-32 rounded-full bg-purple-100 flex items-center justify-center text-5xl text-purple-600 animate-pulse">
-                                            <PiEarFill />
+                                {activeTab === 'listening' && (() => {
+                                    const hasPassage = currentSectionData?.passage && currentSectionData.passage.trim() !== "";
+                                    const answersMap = (() => {
+                                        const map = {};
+                                        (currentSectionResult?.answers || []).forEach(a => {
+                                            map[a.questionId] = a.userAnswer;
+                                        });
+                                        return map;
+                                    })();
+
+                                    const evaluationResult = {
+                                        evaluatedAnswers: currentSectionResult?.answers || []
+                                    };
+
+                                    return (
+                                        <div className="space-y-8">
+                                            <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-200 rounded-[2rem] space-y-4">
+                                                <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-2xl text-purple-600">
+                                                    <PiEarFill />
+                                                </div>
+                                                <audio controls src={currentSectionData?.audioUrl} className="w-full" />
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Section Recording Player</p>
+                                            </div>
+
+                                            {currentSectionData?.images?.filter(img => img && img.trim() !== "").map((img, i) => (
+                                                <div key={i} className="rounded-3xl overflow-hidden border border-base-300 bg-base-100 p-4">
+                                                    <img src={img} alt={`Listening Reference Map or Diagram ${i+1}`} className="w-full h-auto object-contain max-h-[400px] mx-auto" />
+                                                </div>
+                                            ))}
+
+                                            {hasPassage && (
+                                                <div className="prose prose-slate max-w-none">
+                                                    <ReadingPassageRenderer
+                                                        passageContent={currentSectionData.passage}
+                                                        questions={currentSectionData?.questions || []}
+                                                        answers={answersMap}
+                                                        onAnswerChange={() => {}}
+                                                        submitted={true}
+                                                        result={evaluationResult}
+                                                        clickedOption={null}
+                                                        setClickedOption={null}
+                                                        className="text-lg leading-relaxed text-base-content/80 text-justify select-text"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
-                                        <audio controls src={currentSectionData?.audioUrl} className="w-full max-w-md" />
-                                        <p className="text-center text-base-content/40 font-bold uppercase tracking-widest">Section Recording Player</p>
-                                    </div>
-                                )}
+                                    );
+                                })()}
                                 {activeTab === 'writing' && (
                                     <div className="space-y-6">
                                         <h2 className="text-2xl font-black uppercase tracking-tighter text-primary">Writing Task Prompt</h2>

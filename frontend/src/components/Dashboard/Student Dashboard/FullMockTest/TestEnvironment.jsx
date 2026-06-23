@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import useAnswers from "../../../../hooks/useAnswers";
 import useCountdown from "../../../../hooks/useCountdown";
 import { useParams, useNavigate } from "react-router";
@@ -31,18 +31,42 @@ const TestEnvironment = () => {
     });
     
     // Lazy initializers for crash recovery
-    const { answers, handleAnswerChange } = useAnswers(() => {
+    const [answers, setAnswers] = useState(() => {
         try {
             const cached = localStorage.getItem(`test_cache_${id}`);
-            return cached ? JSON.parse(cached).answers : {};
-        } catch { return {}; }
+            if (cached) {
+                const parsed = JSON.parse(cached).answers;
+                if (parsed && !parsed.listening && !parsed.reading && !parsed.writing && !parsed.speaking) {
+                    return {
+                        listening: parsed,
+                        reading: parsed,
+                        writing: parsed,
+                        speaking: parsed
+                    };
+                }
+                return parsed || { listening: {}, reading: {}, writing: {}, speaking: {} };
+            }
+            return { listening: {}, reading: {}, writing: {}, speaking: {} };
+        } catch { return { listening: {}, reading: {}, writing: {}, speaking: {} }; }
     });
+
     const [currentModuleIdx, setCurrentModuleIdx] = useState(() => {
         try {
             const cached = localStorage.getItem(`test_cache_${id}`);
             return cached ? JSON.parse(cached).currentModuleIdx : 0;
         } catch { return 0; }
     });
+
+    const handleAnswerChange = useCallback((qId, val) => {
+        const sectionType = ['listening', 'reading', 'writing', 'speaking'][currentModuleIdx];
+        setAnswers((prev) => ({
+            ...prev,
+            [sectionType]: {
+                ...(prev[sectionType] || {}),
+                [qId]: val
+            }
+        }));
+    }, [currentModuleIdx]);
     const { timeLeft, setTimeLeft, fmtTime: formatTime } = useCountdown(
         () => {
             try {
@@ -114,11 +138,13 @@ const TestEnvironment = () => {
 
     const handleSaveProgress = async () => {
         if (!test || !resultId) return;
+        const sectionType = ['listening', 'reading', 'writing', 'speaking'][currentModuleIdx];
+        const sectionAnswers = answers[sectionType] || {};
         try {
             await axiosSecure.post("/mock-tests/submit-section", {
                 resultId,
-                sectionType: ['listening', 'reading', 'writing', 'speaking'][currentModuleIdx],
-                answers,
+                sectionType,
+                answers: sectionAnswers,
                 timeTaken: (test.totalDuration * 60) - timeLeft
             });
         } catch (err) {
@@ -166,12 +192,14 @@ const TestEnvironment = () => {
     };
 
     const handleExitTest = async () => {
-        const hasAnswers = Object.keys(answers).some(key => {
-            const val = answers[key];
-            if (typeof val === 'string') {
-                return val.trim() !== "";
-            }
-            return val !== undefined && val !== null;
+        const hasAnswers = Object.values(answers).some(secAnswers => {
+            if (!secAnswers || typeof secAnswers !== 'object') return false;
+            return Object.values(secAnswers).some(val => {
+                if (typeof val === 'string') {
+                    return val.trim() !== "";
+                }
+                return val !== undefined && val !== null;
+            });
         });
 
         const result = hasAnswers
@@ -431,23 +459,26 @@ const TestEnvironment = () => {
         if (!test) return { total: 0, answered: 0 };
         if (currentModuleIdx === 0) {
             const questions = test.sections?.listening?.[0]?.questions || [];
+            const listeningAnswers = answers.listening || {};
             return {
                 total: questions.length,
-                answered: questions.filter(q => !!answers[q.id || q._id]).length
+                answered: questions.filter(q => !!listeningAnswers[q.id || q._id]).length
             };
         }
         if (currentModuleIdx === 1) {
             const questions = test.sections?.reading?.[0]?.questions || [];
+            const readingAnswers = answers.reading || {};
             return {
                 total: questions.length,
-                answered: questions.filter(q => !!answers[q.id || q._id]).length
+                answered: questions.filter(q => !!readingAnswers[q.id || q._id]).length
             };
         }
         if (currentModuleIdx === 2) {
             const writingData = test.sections?.writing?.[0];
             if (!writingData) return { total: 0, answered: 0 };
             
-            const rawText = answers[writingData._id] || "";
+            const writingAnswers = answers.writing || {};
+            const rawText = writingAnswers[writingData._id] || "";
             let hasT1;
             let hasT2;
             
@@ -476,9 +507,10 @@ const TestEnvironment = () => {
         if (currentModuleIdx === 3) {
             const speakingData = test.sections?.speaking?.[0];
             if (!speakingData) return { total: 0, answered: 0 };
-            const p1 = answers[speakingData._id + '_part1_completed'] === 'completed' ? 1 : 0;
-            const p2 = answers[speakingData._id + '_part2_completed'] === 'completed' ? 1 : 0;
-            const p3 = answers[speakingData._id + '_part3_completed'] === 'completed' ? 1 : 0;
+            const speakingAnswers = answers.speaking || {};
+            const p1 = speakingAnswers[speakingData._id + '_part1_completed'] === 'completed' ? 1 : 0;
+            const p2 = speakingAnswers[speakingData._id + '_part2_completed'] === 'completed' ? 1 : 0;
+            const p3 = speakingAnswers[speakingData._id + '_part3_completed'] === 'completed' ? 1 : 0;
             return {
                 total: 3,
                 answered: p1 + p2 + p3
@@ -581,28 +613,28 @@ const TestEnvironment = () => {
                 {currentModuleIdx === 0 && test?.sections?.listening?.[0] && (
                     <ListeningSection 
                         data={test.sections.listening[0]} 
-                        answers={answers} 
+                        answers={answers.listening || {}} 
                         onAnswerChange={handleAnswerChange} 
                     />
                 )}
                 {currentModuleIdx === 1 && test?.sections?.reading?.[0] && (
                     <ReadingSection 
                         data={test.sections.reading[0]} 
-                        answers={answers} 
+                        answers={answers.reading || {}} 
                         onAnswerChange={handleAnswerChange} 
                     />
                 )}
                 {currentModuleIdx === 2 && test?.sections?.writing?.[0] && (
                     <WritingSection 
                         data={test.sections.writing[0]} 
-                        answers={answers} 
+                        answers={answers.writing || {}} 
                         onAnswerChange={handleAnswerChange} 
                     />
                 )}
                 {currentModuleIdx === 3 && test?.sections?.speaking?.[0] && (
                     <SpeakingSection 
                         data={test.sections.speaking[0]} 
-                        answers={answers}
+                        answers={answers.speaking || {}}
                         onAnswerChange={handleAnswerChange}
                     />
                 )}

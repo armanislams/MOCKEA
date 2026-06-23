@@ -969,7 +969,7 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
     return (
         <div className="flex h-full overflow-hidden bg-white">
             {/* Left Pane: Audio Control & Instructions with Sticky Palette */}
-            <div className="w-1/2 flex flex-col h-full border-r border-base-200 bg-base-50/10">
+            <div className="w-[38%] flex flex-col h-full border-r border-base-200 bg-base-50/10">
                 <div className="flex-1 overflow-y-auto p-12 space-y-8">
                     <div className="max-w-2xl mx-auto space-y-6">
                         <header className="space-y-2">
@@ -1060,7 +1060,7 @@ const ListeningSection = ({ data, answers, onAnswerChange }) => {
             </div>
 
             {/* Right Pane: Questions */}
-            <div className="w-1/2 overflow-y-auto p-12 bg-base-100">
+            <div className="w-[70%] overflow-y-auto p-12 bg-base-100">
                 <div className="max-w-3xl mx-auto flex gap-8 items-start">
                     <div className="flex-1 min-w-0 space-y-12">
                         <header className="space-y-4">

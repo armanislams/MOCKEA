@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { 
     PiFiles, 
@@ -10,7 +10,7 @@ import {
     PiPlus,
     PiCheckCircle
 } from "react-icons/pi";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import { DEFAULT_MOCK_TEST_DURATION_MINUTES } from "../../../constants";
 
@@ -21,8 +21,10 @@ const EXAM_COLORS = {
 };
 
 const CreateMockTest = () => {
+    const { id } = useParams();
     const axiosSecure = useAxiosSecure();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -38,6 +40,34 @@ const CreateMockTest = () => {
         }
     });
 
+    const { data: testData, isLoading: isTestLoading } = useQuery({
+        queryKey: ["admin-mock-test-detail", id],
+        queryFn: async () => {
+            const res = await axiosSecure.get(`/mock-tests/${id}`);
+            return res.data.test;
+        },
+        enabled: !!id
+    });
+
+    useEffect(() => {
+        if (testData) {
+            setFormData({
+                title: testData.title || "",
+                description: testData.description || "",
+                planType: testData.planType || "free",
+                examType: testData.examType || "IELTS",
+                isPublic: !!testData.isPublic,
+                totalDuration: testData.totalDuration || DEFAULT_MOCK_TEST_DURATION_MINUTES,
+                sections: {
+                    reading: testData.sections?.reading?.map(q => q._id || q.id || q) || [],
+                    listening: testData.sections?.listening?.map(q => q._id || q.id || q) || [],
+                    writing: testData.sections?.writing?.map(q => q._id || q.id || q) || [],
+                    speaking: testData.sections?.speaking?.map(q => q._id || q.id || q) || []
+                }
+            });
+        }
+    }, [testData]);
+
     const { data: questions = [] } = useQuery({
         queryKey: ["admin-questions-for-bundle"],
         queryFn: async () => {
@@ -47,9 +77,16 @@ const CreateMockTest = () => {
     });
 
     const mutation = useMutation({
-        mutationFn: (data) => axiosSecure.post("/mock-tests/create", data),
+        mutationFn: (data) => {
+            if (id) {
+                return axiosSecure.put(`/mock-tests/${id}`, data);
+            }
+            return axiosSecure.post("/mock-tests/create", data);
+        },
         onSuccess: () => {
-            toast.success("Mock Test created successfully!");
+            toast.success(id ? "Mock Test updated successfully!" : "Mock Test created successfully!");
+            queryClient.invalidateQueries({ queryKey: ["admin-mock-tests"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-mock-test-detail", id] });
             navigate("/dashboard/admin/manage-mock-tests");
         }
     });
@@ -97,11 +134,19 @@ const CreateMockTest = () => {
         }
     };
 
+    if (id && isTestLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <span className="loading loading-spinner loading-lg text-primary" />
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
             <header className="flex flex-col gap-2">
                 <p className="text-sm uppercase tracking-[0.3em] text-primary font-semibold">Admin Panel</p>
-                <h1 className="text-3xl font-bold flex items-center gap-2"><PiFiles className="text-primary" /> Create Full Mock Test</h1>
+                <h1 className="text-3xl font-bold flex items-center gap-2"><PiFiles className="text-primary" /> {id ? "Edit Full Mock Test" : "Create Full Mock Test"}</h1>
                 <p className="text-base-content/60">Bundle multiple question sets into a complete mock exam. Questions are filtered by exam program.</p>
             </header>
 
@@ -242,8 +287,8 @@ const CreateMockTest = () => {
                         className="btn btn-primary btn-lg rounded-2xl px-12 gap-3 shadow-lg shadow-primary/20"
                         disabled={mutation.isPending}
                     >
-                        {mutation.isPending ? <span className="loading loading-spinner" /> : <PiPlus className="w-6 h-6" />}
-                        Create Mock Test
+                        {mutation.isPending ? <span className="loading loading-spinner" /> : (id ? <PiCheckCircle className="w-6 h-6" /> : <PiPlus className="w-6 h-6" />)}
+                        {id ? "Save Mock Test" : "Create Mock Test"}
                     </button>
                 </div>
             </form>

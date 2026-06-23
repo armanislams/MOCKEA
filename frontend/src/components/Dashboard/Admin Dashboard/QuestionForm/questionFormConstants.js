@@ -92,7 +92,7 @@ export const makeQuestion = (testType = "listening") => {
 };
 
 // ─── Initial form state ───────────────────────────────────────────────────────
-export const initialForm = () => ({
+export const initialForm = (testType = "reading") => ({
     title: "",
     instructions: "",
     passage: "",
@@ -113,5 +113,5 @@ export const initialForm = () => ({
     forPlanType: "free",
     isPublic: false,
     isMockOnly: false,
-    questions: [makeQuestion("listening")],
+    questions: [makeQuestion(testType)],
 });

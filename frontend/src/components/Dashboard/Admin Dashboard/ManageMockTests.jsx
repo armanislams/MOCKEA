@@ -110,7 +110,7 @@ const ManageMockTests = () => {
                                 </div>
 
                                 <HoverActions
-                                    onEdit={() => {}} // Visual placeholder as edit route is not defined
+                                    onEdit={() => navigate(`/dashboard/admin/edit-mock-test/${test._id}`)}
                                     onDelete={() => handleDelete(test._id)}
                                     className="flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4"
                                 />

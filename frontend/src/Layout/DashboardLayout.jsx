@@ -16,7 +16,7 @@ const DashboardLayout = () => {
   const { role, roleLoading, isError } = useRole();
   const navigate = useNavigate();
   const { isFullscreen } = useFullscreen();
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1024);
 
   useEffect(() => {
     if (isError) {
@@ -72,29 +72,31 @@ const DashboardLayout = () => {
       <input id="dashboard-drawer" type="checkbox" className="drawer-toggle" checked={isDrawerOpen} onChange={(e) => setIsDrawerOpen(e.target.checked)} />
       <div className="drawer-content flex flex-col h-full overflow-hidden bg-base-200">
         {/* Page content here */}
-        {/* <div className="w-full navbar bg-base-100 lg:hidden shadow-sm">
-          <div className="flex-none">
-            <label
-              htmlFor="dashboard-drawer"
-              className="btn btn-square btn-ghost drawer-button"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                className="inline-block w-6 h-6 stroke-current"
+        {!isFullscreen && (
+          <div className="w-full navbar bg-base-100 lg:hidden shadow-sm shrink-0">
+            <div className="flex-none">
+              <label
+                htmlFor="dashboard-drawer"
+                className="btn btn-square btn-ghost drawer-button"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                ></path>
-              </svg>
-            </label>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  className="inline-block w-6 h-6 stroke-current"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  ></path>
+                </svg>
+              </label>
+            </div>
+            <Logo />
           </div>
-          <Logo/>
-        </div> */}
+        )}
 
         <div className={`w-full flex-1 overflow-y-auto ${isFullscreen ? "p-0" : "p-4 md:p-8"}`}>
           <Outlet />

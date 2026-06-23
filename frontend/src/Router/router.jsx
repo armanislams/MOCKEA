@@ -243,6 +243,14 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: "admin/edit-mock-test/:id",
+            element: (
+              <AdminRoutes>
+                {withSuspense(CreateMockTest)}
+              </AdminRoutes>
+            ),
+          },
+          {
             path: "admin/add-questions",
             element: (
               <AdminRoutes>

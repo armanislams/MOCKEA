@@ -661,14 +661,25 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                                         );
                                     })}
                                 </div>
-                                <button
-                                    type="button"
-                                    disabled={part1QuestionIdx === part1Questions.length - 1 || isRecording || isSaving || isUploading}
-                                    onClick={() => setPart1QuestionIdx(prev => prev + 1)}
-                                    className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
-                                >
-                                    Next →
-                                </button>
+                                {part1QuestionIdx === part1Questions.length - 1 ? (
+                                    <button
+                                        type="button"
+                                        disabled={isRecording || isSaving || isUploading}
+                                        onClick={() => setActivePart(2)}
+                                        className="btn btn-primary rounded-xl px-4 h-10 font-bold text-xs uppercase text-white shadow-md shadow-primary/20"
+                                    >
+                                        Next Part →
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        disabled={isRecording || isSaving || isUploading}
+                                        onClick={() => setPart1QuestionIdx(prev => prev + 1)}
+                                        className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                                    >
+                                        Next →
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )}
@@ -695,6 +706,29 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Question Nav Dots & Arrows */}
+                            <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    disabled={isRecording || isSaving || isUploading}
+                                    onClick={() => setActivePart(1)}
+                                    className="btn btn-ghost border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl px-4 h-10 font-bold text-xs uppercase"
+                                >
+                                    ← Back
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-400">Part 2 of 3</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    disabled={isRecording || isSaving || isUploading}
+                                    onClick={() => setActivePart(3)}
+                                    className="btn btn-primary rounded-xl px-4 h-10 font-bold text-xs uppercase text-white shadow-md shadow-primary/20"
+                                >
+                                    Next Part →
+                                </button>
                             </div>
                         </div>
                     )}

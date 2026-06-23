@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -53,7 +53,7 @@ export default function QuestionSetForm({ mode = "add", questionId }) {
         );
     }
 
-    return <QuestionSetFormContent mode="add" initialData={initialForm()} />;
+    return <QuestionSetFormContent mode="add" initialData={initialForm("reading")} />;
 }
 
 function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType }) {
@@ -75,6 +75,21 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
         updatePair,
     } = useQuestionFormState(initialData);
 
+    useEffect(() => {
+        if (mode === "add") {
+            const prefix = testType === "listening" ? "l" : testType === "reading" ? "r" : "q";
+            const firstQuestion = formData.questions?.[0];
+            if (firstQuestion && !firstQuestion.id.startsWith(prefix)) {
+                patch({
+                    questions: formData.questions.map((q, idx) => ({
+                        ...q,
+                        id: `${prefix}${idx + 1}`
+                    }))
+                });
+            }
+        }
+    }, [testType, mode, patch, formData.questions]);
+
     const isIeltsListening =
         testType === "listening" &&
         (formData.examType === "IELTS" || formData.examType === "BOTH");
@@ -90,12 +105,13 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
         onSuccess: (res) => {
             toast.success(res.data.message || `Question set ${mode === "edit" ? "updated" : "saved"} successfully!`);
             queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-questions-for-bundle"] });
             if (mode === "edit") {
                 queryClient.invalidateQueries({ queryKey: ["admin-question", id] });
                 navigate("/dashboard/admin/manage-questions");
             } else {
                 // reset form in add mode
-                patch(initialForm());
+                patch(initialForm(testType));
             }
         },
         onError: (err) => {

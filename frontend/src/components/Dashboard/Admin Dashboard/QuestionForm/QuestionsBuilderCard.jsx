@@ -36,7 +36,7 @@ export default function QuestionsBuilderCard({
                 </h2>
                 <button
                     type="button"
-                    onClick={handleAddQuestion}
+                    onClick={() => handleAddQuestion(testType)}
                     className="btn btn-primary btn-sm rounded-full gap-2"
                 >
                     <PiPlus /> Add Question

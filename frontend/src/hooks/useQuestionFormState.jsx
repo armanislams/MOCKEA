@@ -100,7 +100,7 @@ export function parseQuestionToState(fetchedQuestion) {
     };
 }
 
-export function useQuestionFormState(initialData = initialForm()) {
+export function useQuestionFormState(initialData = initialForm("reading")) {
     const [formData, setFormData] = useState(initialData);
 
     const patch = useCallback((updates) => {
@@ -116,10 +116,10 @@ export function useQuestionFormState(initialData = initialForm()) {
         }));
     }, []);
 
-    const handleAddQuestion = useCallback(() => {
+    const handleAddQuestion = useCallback((testType) => {
         setFormData((prev) => ({
             ...prev,
-            questions: [...prev.questions, makeQuestion(prev.testType || "listening")],
+            questions: [...prev.questions, makeQuestion(testType || "listening")],
         }));
     }, []);
 
