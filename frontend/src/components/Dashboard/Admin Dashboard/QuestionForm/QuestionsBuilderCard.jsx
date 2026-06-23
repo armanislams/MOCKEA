@@ -59,23 +59,23 @@ export default function QuestionsBuilderCard({
                 </div>
                 <div className="collapse-content bg-white border-t border-slate-200/50 p-6 space-y-4">
                     <div className="grid md:grid-cols-3 gap-6 text-xs text-slate-600 leading-relaxed font-medium">
-                        {/* Drag & Drop Card */}
+                        {/* Drag & Drop / Inline Passage Card */}
                         <div className="space-y-2.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">
                             <h4 className="font-black text-sm text-primary uppercase tracking-wider">
-                                Drag & Drop Completion
+                                Inline Passage Questions
                             </h4>
                             <p>
-                                Lets students drag options from a shared pool and drop them into inline gaps within text/passages.
+                                Lets students complete interactive blanks directly inside the passage text (just like the Listening section).
                             </p>
                             <ul className="list-disc pl-5 space-y-1">
                                 <li>
-                                    <strong>Inline Gaps:</strong> In the passage content, place <code>___[Num]___</code> (e.g. <code>___1___</code> or <code>___2___</code>) where drop targets should go.
+                                    <strong>Inline Gaps:</strong> In the passage content, place <code>___[Num]___</code> (e.g. <code>___1___</code>) where you want the interactive input/dropzone.
                                 </li>
                                 <li>
-                                    <strong>Options Pool:</strong> Under the question, add the options (e.g., <code>A. option text</code>). Repeat the same pool list for all questions in the block.
+                                    <strong>Drag &amp; Drop:</strong> Set the question type to <em>Drag and Drop Completion</em> to render drop targets linked to a shared options pool.
                                 </li>
                                 <li>
-                                    <strong>Answers:</strong> Set the exact choice text as the correct answer.
+                                    <strong>Text Inputs:</strong> Set the question type to <em>Short Answer</em> or <em>Sentence Completion</em> to render standard fill-in-the-blank text inputs inside the passage.
                                 </li>
                             </ul>
                         </div>

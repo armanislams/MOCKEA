@@ -73,20 +73,17 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     <p className="text-[11px] text-slate-500 font-semibold mt-1">
                                         Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>. Empty lines create paragraph breaks.
                                     </p>
-                                    {/* Drag-drop gap helpers for Reading */}
+                                    {/* Inline gap helpers for Reading */}
                                     {(() => {
-                                        const dragDropGroups = (formData.questionGroups || []).filter(g => {
-                                            if ((g.passageIndex || 0) !== pIdx) return false;
-                                            const fromQ = Number(g.fromQuestion) || 1;
-                                            const type = formData.questions?.[fromQ - 1]?.type || "";
-                                            return type === "drag-drop-completion";
+                                        const inlineGroups = (formData.questionGroups || []).filter(g => {
+                                            return (g.passageIndex || 0) === pIdx;
                                         });
 
-                                        if (dragDropGroups.length === 0) return null;
+                                        if (inlineGroups.length === 0) return null;
 
                                         return (
                                             <div className="mt-2 space-y-2">
-                                                {dragDropGroups.map((g) => {
+                                                {inlineGroups.map((g) => {
                                                     const fromQ = Number(g.fromQuestion) || 1;
                                                     const toQ = Number(g.toQuestion) || 1;
                                                     const actualGroupIdx = (formData.questionGroups || []).indexOf(g) + 1;
@@ -94,7 +91,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                     return (
                                                         <div key={actualGroupIdx} className="flex flex-wrap items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl animate-fadeIn">
                                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">
-                                                                Group {actualGroupIdx} Drag &amp; Drop Gap:
+                                                                Group {actualGroupIdx} Inline Gap:
                                                             </span>
                                                             {(() => {
                                                                 const buttons = [];
