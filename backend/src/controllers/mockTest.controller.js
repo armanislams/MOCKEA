@@ -259,8 +259,18 @@ export const finalizeTest = async (req, res) => {
                 let correctCount = 0;
                 section.answers = section.answers.map(ans => {
                     let originalQ = null;
+                    const parts = ans.questionId.split('_');
+                    const firstPart = parts[0];
+                    const hasMatchingQSet = questionSets.some(qSet => qSet._id.toString() === firstPart);
+
+                    const qSetId = hasMatchingQSet ? firstPart : null;
+                    const localQId = hasMatchingQSet ? parts.slice(1).join('_') : ans.questionId;
+
                     for (const qSet of questionSets) {
-                        const found = qSet.questions.find(q => q.id === ans.questionId);
+                        if (hasMatchingQSet && qSet._id.toString() !== qSetId) {
+                            continue;
+                        }
+                        const found = qSet.questions.find(q => q.id === localQId);
                         if (found) {
                             originalQ = found;
                             break;

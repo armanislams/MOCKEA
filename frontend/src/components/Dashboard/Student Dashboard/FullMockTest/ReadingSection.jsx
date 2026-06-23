@@ -499,6 +499,24 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
     const [activePassageTab, setActivePassageTab] = useState(0);
     const [clickedOption, setClickedOption] = useState(null);
 
+    const handleLocalAnswerChange = useCallback((qId, val) => {
+        if (!data?._id) {
+            onAnswerChange(qId, val);
+            return;
+        }
+        onAnswerChange(`${data._id}_${qId}`, val);
+    }, [data?._id, onAnswerChange]);
+
+    const scopedAnswers = useMemo(() => {
+        if (!data?._id) return answers;
+        const scoped = {};
+        data.questions?.forEach(q => {
+            const scopedKey = `${data._id}_${q.id}`;
+            scoped[q.id] = answers[scopedKey] !== undefined ? answers[scopedKey] : answers[q.id];
+        });
+        return scoped;
+    }, [data?._id, data?.questions, answers]);
+
     const sectionOffsets = useMemo(() => {
         const offsets = [];
         let currentOffset = 0;
@@ -691,8 +709,8 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                 <ReadingPassageRenderer
                     passageContent={contentText}
                     questions={data.questions || []}
-                    answers={answers}
-                    onAnswerChange={onAnswerChange}
+                    answers={scopedAnswers}
+                    onAnswerChange={handleLocalAnswerChange}
                     submitted={undefined}
                     result={null}
                     clickedOption={clickedOption}
@@ -820,8 +838,8 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                                     <MatchingGridRenderer
                                                         questions={vg.questions}
                                                         options={vg.options}
-                                                        answers={answers}
-                                                        onAnswerChange={onAnswerChange}
+                                                        answers={scopedAnswers}
+                                                        onAnswerChange={handleLocalAnswerChange}
                                                         offset={activeSectionOffset}
                                                         data={data}
                                                     />
@@ -832,8 +850,8 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                             <TableCompletionRenderer
                                                 instructions={header.instructions}
                                                 allQuestions={data.questions || []}
-                                                answers={answers}
-                                                onAnswerChange={onAnswerChange}
+                                                answers={scopedAnswers}
+                                                onAnswerChange={handleLocalAnswerChange}
                                                 submitted={undefined}
                                                 result={null}
                                                 clickedOption={clickedOption}
@@ -846,8 +864,8 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                                 <ReadingPassageRenderer
                                                     passageContent={header.instructions}
                                                     questions={data.questions || []}
-                                                    answers={answers}
-                                                    onAnswerChange={onAnswerChange}
+                                                    answers={scopedAnswers}
+                                                    onAnswerChange={handleLocalAnswerChange}
                                                     submitted={undefined}
                                                     result={null}
                                                     clickedOption={clickedOption}
@@ -877,8 +895,8 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                         <div className="space-y-8">
                             <GroupedQuestionsRenderer
                                 groupedItems={groupedItems}
-                                answers={answers}
-                                onAnswerChange={onAnswerChange}
+                                answers={scopedAnswers}
+                                onAnswerChange={handleLocalAnswerChange}
                                 offset={activeSectionOffset}
                                 data={data}
                                 clickedOption={clickedOption}
@@ -902,7 +920,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
                                     const label = `${letter}. ${opt}`;
-                                    const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                    const isPlaced = Object.values(scopedAnswers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
                                     const isSelected = clickedOption === label;
                                     return (
                                         <div

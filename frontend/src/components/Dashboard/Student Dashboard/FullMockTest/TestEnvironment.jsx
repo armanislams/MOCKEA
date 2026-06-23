@@ -24,6 +24,15 @@ const TestEnvironment = () => {
     const navigate = useNavigate();
     const axiosSecure = useAxiosSecure();
 
+    // 1. Fetch Test Data
+    const { data: test, isLoading } = useQuery({
+        queryKey: ["test-session", id],
+        queryFn: async () => {
+            const res = await axiosSecure.get(`/mock-tests/${id}`);
+            return res.data.test;
+        }
+    });
+
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isStarted, setIsStarted] = useState(() => !!localStorage.getItem(`test_cache_${id}`));
     const [isTerminating] = useState(() => {
@@ -57,6 +66,14 @@ const TestEnvironment = () => {
         } catch { return 0; }
     });
 
+    const [listeningPartIdx, setListeningPartIdx] = useState(0);
+    const [readingSectionIdx, setReadingSectionIdx] = useState(0);
+
+    useEffect(() => {
+        setListeningPartIdx(0);
+        setReadingSectionIdx(0);
+    }, [currentModuleIdx]);
+
     const handleAnswerChange = useCallback((qId, val) => {
         const sectionType = ['listening', 'reading', 'writing', 'speaking'][currentModuleIdx];
         setAnswers((prev) => ({
@@ -77,6 +94,66 @@ const TestEnvironment = () => {
         isStarted && isFullscreen && !isTerminating,
         false
     );
+
+    const unifiedQuestions = useMemo(() => {
+        if (!test) return [];
+        const list = [];
+        if (currentModuleIdx === 0) {
+            const listeningSections = test.sections?.listening || [];
+            listeningSections.forEach((sec, secIdx) => {
+                const secOffset = ((sec?.listeningPart || (secIdx + 1)) - 1) * 10;
+                const qs = sec.questions || [];
+                qs.forEach((q, qIdx) => {
+                    list.push({
+                        q,
+                        secIdx,
+                        localIdx: qIdx,
+                        displayNum: secOffset + qIdx + 1
+                    });
+                });
+            });
+        } else if (currentModuleIdx === 1) {
+            const readingSections = test.sections?.reading || [];
+            let currentOffset = 0;
+            readingSections.forEach((sec, secIdx) => {
+                const qs = sec.questions || [];
+                qs.forEach((q, qIdx) => {
+                    list.push({
+                        q,
+                        secIdx,
+                        localIdx: qIdx,
+                        displayNum: currentOffset + qIdx + 1
+                    });
+                });
+                currentOffset += qs.length;
+            });
+        }
+        return list;
+    }, [test, currentModuleIdx]);
+
+    const handlePaletteClick = useCallback((item) => {
+        if (currentModuleIdx === 0) {
+            if (item.secIdx !== listeningPartIdx) {
+                setListeningPartIdx(item.secIdx);
+            }
+            setTimeout(() => {
+                const element = document.getElementById(`question-${item.localIdx}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        } else if (currentModuleIdx === 1) {
+            if (item.secIdx !== readingSectionIdx) {
+                setReadingSectionIdx(item.secIdx);
+            }
+            setTimeout(() => {
+                const element = document.getElementById(`question-${item.localIdx}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+    }, [currentModuleIdx, listeningPartIdx, readingSectionIdx]);
 
     const [tabSwitches, setTabSwitches] = useState(() => {
         try {
@@ -297,14 +374,7 @@ const TestEnvironment = () => {
         }
     }, [id, isTerminating, axiosSecure, navigate]);
 
-    // 1. Fetch Test Data
-    const { data: test, isLoading } = useQuery({
-        queryKey: ["test-session", id],
-        queryFn: async () => {
-            const res = await axiosSecure.get(`/mock-tests/${id}`);
-            return res.data.test;
-        }
-    });
+
 
     // 2. Initialize Test Session
     useEffect(() => {
@@ -465,7 +535,7 @@ const TestEnvironment = () => {
             listeningSections.forEach(sec => {
                 const qs = sec.questions || [];
                 total += qs.length;
-                answered += qs.filter(q => !!listeningAnswers[q.id || q._id]).length;
+                answered += qs.filter(q => !!(listeningAnswers[`${sec._id}_${q.id}`] || listeningAnswers[q.id || q._id])).length;
             });
             return { total, answered };
         }
@@ -477,7 +547,7 @@ const TestEnvironment = () => {
             readingSections.forEach(sec => {
                 const qs = sec.questions || [];
                 total += qs.length;
-                answered += qs.filter(q => !!readingAnswers[q.id || q._id]).length;
+                answered += qs.filter(q => !!(readingAnswers[`${sec._id}_${q.id}`] || readingAnswers[q.id || q._id])).length;
             });
             return { total, answered };
         }
@@ -623,6 +693,8 @@ const TestEnvironment = () => {
                         sections={test.sections.listening} 
                         answers={answers.listening || {}} 
                         onAnswerChange={handleAnswerChange} 
+                        activePartIdx={listeningPartIdx}
+                        setActivePartIdx={setListeningPartIdx}
                     />
                 )}
                 {currentModuleIdx === 1 && test?.sections?.reading?.length > 0 && (
@@ -630,6 +702,8 @@ const TestEnvironment = () => {
                         sections={test.sections.reading} 
                         answers={answers.reading || {}} 
                         onAnswerChange={handleAnswerChange} 
+                        activeSectionIdx={readingSectionIdx}
+                        setActiveSectionIdx={setReadingSectionIdx}
                     />
                 )}
                 {currentModuleIdx === 2 && test?.sections?.writing?.[0] && (
@@ -648,15 +722,50 @@ const TestEnvironment = () => {
                 )}
             </main>
 
-            <footer className="bg-white border-t border-base-300 h-20 px-8 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
-                <div className="flex items-center gap-6">
+            <footer className="bg-white border-t border-base-300 min-h-20 py-3 px-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
+                <div className="flex items-center gap-6 flex-shrink-0">
                     <div className="text-left">
                         <p className="text-[10px] font-black text-base-content/30 uppercase tracking-widest leading-none mb-1">Current Section Progress</p>
                         <p className="text-base font-bold text-primary">{answeredQuestions} of {totalQuestions} Answered</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-8">
+                {/* Global Question Palette in the bottom bar */}
+                {(currentModuleIdx === 0 || currentModuleIdx === 1) && (
+                    <div className="flex flex-col gap-1 items-center justify-center py-1">
+                        <span className="text-[9px] font-black text-base-content/30 uppercase tracking-widest leading-none mb-0.5">Question Palette</span>
+                        <div className="flex flex-wrap justify-center gap-1.5 max-w-xl md:max-w-3xl">
+                            {unifiedQuestions.map((item, i) => {
+                                const sectionAnswers = currentModuleIdx === 0 ? answers.listening : answers.reading;
+                                const sectionList = currentModuleIdx === 0 ? test.sections?.listening : test.sections?.reading;
+                                const section = sectionList?.[item.secIdx];
+                                const secId = section?._id;
+                                const isAnswered = !!(sectionAnswers?.[`${secId}_${item.q.id}`] || sectionAnswers?.[item.q.id]);
+                                const isCurrentSection = currentModuleIdx === 0 
+                                    ? item.secIdx === listeningPartIdx 
+                                    : item.secIdx === readingSectionIdx;
+                                
+                                return (
+                                    <button 
+                                        key={item.q.id || i} 
+                                        onClick={() => handlePaletteClick(item)}
+                                        className={`w-7 h-7 md:w-8 md:h-8 rounded-xl text-[10px] md:text-xs font-black transition-all border border-b-2 ${
+                                            isAnswered 
+                                            ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 
+                                            : isCurrentSection
+                                            ? "bg-base-300 border-base-400 text-base-content"
+                                            : "bg-base-100 border-base-200 text-base-content/70 hover:bg-base-200"
+                                        }`}
+                                    >
+                                        {item.displayNum}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-8 flex-shrink-0">
                     <button 
                         onClick={answeredQuestions < totalQuestions ? handleTerminateTestClick : handleNextModule}
                         className={`btn btn-lg rounded-2xl px-10 h-14 text-sm font-black shadow-xl flex items-center gap-3 group ${

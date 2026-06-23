@@ -147,8 +147,12 @@ const ReviewMatchingGrid = ({ items, options }) => {
 
 const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassageTab, isSectionTab = false) => {
     const mapped = answers.map((ans, idx) => {
-        const originalQ = currentSectionData?.questions?.find(q => q.id === ans.questionId);
-        const qIdx = currentSectionData?.questions?.findIndex(q => q.id === ans.questionId);
+        const parts = ans.questionId.split('_');
+        const isScoped = parts.length > 1 && currentSectionData?._id && parts[0] === currentSectionData._id.toString();
+        const localQId = isScoped ? parts.slice(1).join('_') : ans.questionId;
+
+        const originalQ = currentSectionData?.questions?.find(q => q.id === localQId || q.id === ans.questionId);
+        const qIdx = currentSectionData?.questions?.findIndex(q => q.id === localQId || q.id === ans.questionId);
         
         if (!originalQ) return null;
         
@@ -672,12 +676,29 @@ const ReviewDetail = () => {
                                         const map = {};
                                         (currentSectionResult?.answers || []).forEach(a => {
                                             map[a.questionId] = a.userAnswer;
+                                            const parts = a.questionId.split('_');
+                                            if (parts.length > 1) {
+                                                map[parts.slice(1).join('_')] = a.userAnswer;
+                                            }
                                         });
                                         return map;
                                     })();
 
                                     const evaluationResult = {
-                                        evaluatedAnswers: currentSectionResult?.answers || []
+                                        evaluatedAnswers: (() => {
+                                            const list = [];
+                                            (currentSectionResult?.answers || []).forEach(a => {
+                                                list.push(a);
+                                                const parts = a.questionId.split('_');
+                                                if (parts.length > 1) {
+                                                    list.push({
+                                                        ...a,
+                                                        questionId: parts.slice(1).join('_')
+                                                    });
+                                                }
+                                            });
+                                            return list;
+                                        })()
                                     };
 
                                     return (
@@ -798,12 +819,29 @@ const ReviewDetail = () => {
                                         const map = {};
                                         (currentSectionResult?.answers || []).forEach(a => {
                                             map[a.questionId] = a.userAnswer;
+                                            const parts = a.questionId.split('_');
+                                            if (parts.length > 1) {
+                                                map[parts.slice(1).join('_')] = a.userAnswer;
+                                            }
                                         });
                                         return map;
                                     })();
 
                                     const evaluationResult = {
-                                        evaluatedAnswers: currentSectionResult?.answers || []
+                                        evaluatedAnswers: (() => {
+                                            const list = [];
+                                            (currentSectionResult?.answers || []).forEach(a => {
+                                                list.push(a);
+                                                const parts = a.questionId.split('_');
+                                                if (parts.length > 1) {
+                                                    list.push({
+                                                        ...a,
+                                                        questionId: parts.slice(1).join('_')
+                                                    });
+                                                }
+                                            });
+                                            return list;
+                                        })()
                                     };
 
                                     return (
@@ -904,11 +942,28 @@ const ReviewDetail = () => {
                                                 const map = {};
                                                 (currentSectionResult?.answers || []).forEach(a => {
                                                     map[a.questionId] = a.userAnswer;
+                                                    const parts = a.questionId.split('_');
+                                                    if (parts.length > 1) {
+                                                        map[parts.slice(1).join('_')] = a.userAnswer;
+                                                    }
                                                 });
                                                 return map;
                                             })()}
                                             evaluationResult={{
-                                                evaluatedAnswers: currentSectionResult?.answers || []
+                                                evaluatedAnswers: (() => {
+                                                    const list = [];
+                                                    (currentSectionResult?.answers || []).forEach(a => {
+                                                        list.push(a);
+                                                        const parts = a.questionId.split('_');
+                                                        if (parts.length > 1) {
+                                                            list.push({
+                                                                ...a,
+                                                                questionId: parts.slice(1).join('_')
+                                                            });
+                                                        }
+                                                    });
+                                                    return list;
+                                                })()
                                             }}
                                             activeTab={activeTab}
                                             currentSectionData={currentSectionData}

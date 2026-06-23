@@ -880,6 +880,24 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
     const [isPlaying, setIsPlaying] = useState(false);
     const [clickedOption, setClickedOption] = useState(null);
 
+    const handleLocalAnswerChange = useCallback((qId, val) => {
+        if (!data?._id) {
+            onAnswerChange(qId, val);
+            return;
+        }
+        onAnswerChange(`${data._id}_${qId}`, val);
+    }, [data?._id, onAnswerChange]);
+
+    const scopedAnswers = useMemo(() => {
+        if (!data?._id) return answers;
+        const scoped = {};
+        data.questions?.forEach(q => {
+            const scopedKey = `${data._id}_${q.id}`;
+            scoped[q.id] = answers[scopedKey] !== undefined ? answers[scopedKey] : answers[q.id];
+        });
+        return scoped;
+    }, [data?._id, data?.questions, answers]);
+
     useEffect(() => {
         if (audioRef.current) {
             audioRef.current.pause();
@@ -1098,8 +1116,8 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                                 <InlinePassage
                                     passage={data.passage}
                                     questions={data.questions || EMPTY_ARRAY}
-                                    answers={answers}
-                                    onAnswerChange={onAnswerChange}
+                                    answers={scopedAnswers}
+                                    onAnswerChange={handleLocalAnswerChange}
                                     offset={offset}
                                     clickedOption={clickedOption}
                                     setClickedOption={setClickedOption}
@@ -1113,8 +1131,8 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                             return (
                                 <GroupedQuestionsRenderer
                                     groupedItems={groupedItems}
-                                    answers={answers}
-                                    onAnswerChange={onAnswerChange}
+                                    answers={scopedAnswers}
+                                    onAnswerChange={handleLocalAnswerChange}
                                     offset={offset}
                                     data={data}
                                     clickedOption={clickedOption}
@@ -1137,7 +1155,7 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
                                     const label = `${letter}. ${opt}`;
-                                    const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                    const isPlaced = Object.values(scopedAnswers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
                                     const isSelected = clickedOption === label;
                                     return (
                                         <div
