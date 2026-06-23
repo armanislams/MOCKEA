@@ -659,12 +659,12 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                         <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">
                             Part 2: Long Turn (Cue Card Prompt)
                         </h3>
-                        <div className="form-control">
+                        <div className="form-control w-full">
                             <label className="label">
                                 <span className="label-text font-semibold text-xs text-slate-600">Cue Card Topic Prompt</span>
                             </label>
                             <textarea
-                                className="textarea textarea-bordered rounded-2xl h-28 text-sm bg-white font-medium"
+                                className="textarea textarea-bordered w-full rounded-2xl h-28 text-sm bg-white font-medium"
                                 placeholder="Describe a historical building you have visited. You should say..."
                                 value={formData.speakingPrompt}
                                 onChange={(e) => patch({ speakingPrompt: e.target.value })}
