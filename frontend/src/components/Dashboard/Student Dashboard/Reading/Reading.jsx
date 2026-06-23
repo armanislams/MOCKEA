@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import useAnswers from "../../../../hooks/useAnswers";
 import useCountdown from "../../../../hooks/useCountdown";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
@@ -6,7 +6,6 @@ import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
-import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion } from "framer-motion";
@@ -474,14 +473,13 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                     const hasInlineInstructions = header?.instructions && 
                                                   /___([\w-]+)___/.test(header.instructions) && 
                                                   !/^\|.+\|$/m.test(header.instructions);
-                    
-                    if (isMatchingGrid || hasInlineInstructions) {
-                        return null; // hide entirely from the right pane
-                    }
-
                     const hasTable = header?.rightSideQuestion || (header?.instructions && 
                                      /___([\w-]+)___/.test(header.instructions) && 
                                      /^\|.+\|$/m.test(header.instructions));
+                    
+                    if (isMatchingGrid || hasInlineInstructions || hasTable) {
+                        return null; // hide entirely from the right pane
+                    }
 
                     if (children.length === 0 && !hasTable) {
                         return null;
@@ -530,6 +528,7 @@ const Reading = () => {
 
   const [readingSets, setReadingSets] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");
+  const [prevSelectedSetId, setPrevSelectedSetId] = useState("");
   const { answers, setAnswers, handleAnswerChange } = useAnswers({});
   const [loading, setLoading] = useState(true);
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
@@ -555,7 +554,7 @@ const Reading = () => {
     return () => document.removeEventListener("pointerdown", handleGlobalClick);
   }, [toolbar.show, activeNote.show]);
 
-  const handleTextSelection = (e) => {
+  const handleTextSelection = useCallback((e) => {
     const container = e.currentTarget;
     
     setTimeout(() => {
@@ -588,7 +587,7 @@ const Reading = () => {
         console.debug("Highlight range capture skipped:", err);
       }
     }, 80);
-  };
+  }, []);
 
   const applyHighlight = (colorClass) => {
     if (!toolbar.range) return;
@@ -687,11 +686,10 @@ const Reading = () => {
       return groupVisualsByQuestionGroups(groups, activeSet.questionGroups, 0, activeSet.questions || []);
   }, [activeSet]);
  
-  const hasMultipleGroups = activeSet?.questionGroups?.length > 1;
-
-  useEffect(() => {
+  if (selectedSetId !== prevSelectedSetId) {
+      setPrevSelectedSetId(selectedSetId);
       setClickedOption(null);
-  }, [selectedSetId]);
+  }
 
   const { timeLeft, fmtTime } = useCountdown(3600, !!selectedSetId, submitted);
 
@@ -720,7 +718,7 @@ const Reading = () => {
         />
       </div>
     );
-  }, [activeSet, activePassageTab, answers, submitted, result, clickedOption]);
+  }, [activeSet, activePassageTab, answers, submitted, result, clickedOption, handleAnswerChange, handleTextSelection]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1020,17 +1018,23 @@ const Reading = () => {
                             const hasInlineInstructions = groupEntry.header?.instructions && 
                                                           /___([\w-]+)___/.test(groupEntry.header.instructions) && 
                                                           !/^\|.+\|$/m.test(groupEntry.header.instructions);
-                            return isMatchingGrid || hasInlineInstructions;
+                            const hasTable = groupEntry.header?.rightSideQuestion || (groupEntry.header?.instructions && 
+                                             /___([\w-]+)___/.test(groupEntry.header.instructions) && 
+                                             /^\|.+\|$/m.test(groupEntry.header.instructions));
+                            return isMatchingGrid || hasInlineInstructions || hasTable;
                         }).map((groupEntry, geIdx) => {
                             const header = groupEntry.header;
                             const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
                             const hasInlineInstructions = header?.instructions && 
                                                           /___([\w-]+)___/.test(header.instructions) && 
                                                           !/^\|.+\|$/m.test(header.instructions);
+                            const hasTable = header?.rightSideQuestion || (header?.instructions && 
+                                             /___([\w-]+)___/.test(header.instructions) && 
+                                             /^\|.+\|$/m.test(header.instructions));
 
                             return (
                                 <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
-                                    <GroupedContainer header={header} hideInstructions={hasInlineInstructions}>
+                                    <GroupedContainer header={header} hideInstructions={hasInlineInstructions || hasTable}>
                                         {isMatchingGrid && groupEntry.visuals.map((vg, vgIdx) => {
                                             if (vg.type !== 'matching-grid-group') return null;
                                             return (
@@ -1050,6 +1054,18 @@ const Reading = () => {
                                                 </div>
                                             );
                                         })}
+                                        {hasTable && (
+                                            <TableCompletionRenderer
+                                                instructions={header.instructions}
+                                                allQuestions={activeSet.questions || []}
+                                                answers={answers}
+                                                onAnswerChange={handleAnswerChange}
+                                                submitted={submitted}
+                                                result={result}
+                                                clickedOption={clickedOption}
+                                                setClickedOption={setClickedOption}
+                                            />
+                                        )}
                                         {hasInlineInstructions && (
                                             <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
                                                 <ReadingPassageRenderer

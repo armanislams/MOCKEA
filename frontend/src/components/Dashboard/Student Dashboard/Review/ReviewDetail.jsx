@@ -392,15 +392,15 @@ const GroupedReviewQuestionsRenderer = ({
                                                   /___([\w-]+)___/.test(header.instructions) && 
                                                   !/^\|.+\|$/m.test(header.instructions);
 
-                    if (activeTab === 'reading') {
-                        if (isMatchingGrid || hasInlineInstructions) {
-                            return null; // hide entirely from the right pane for reading
-                        }
-                    }
-
                     const hasTable = header?.rightSideQuestion || (header?.instructions && 
                                      /___([\w-]+)___/.test(header.instructions) && 
                                      /^\|.+\|$/m.test(header.instructions));
+
+                    if (activeTab === 'reading') {
+                        if (isMatchingGrid || hasInlineInstructions || hasTable) {
+                            return null; // hide entirely from the right pane for reading
+                        }
+                    }
 
                     if (children.length === 0 && !hasTable && !hasInlineInstructions) {
                         return null;
@@ -697,29 +697,26 @@ const ReviewDetail = () => {
                                                  
                                                  // Check active passage tab mapping
                                                  const firstQ = groupEntry.visuals[0]?.type === 'matching-grid-group' 
-                                                     ? groupEntry.visuals[0].questions[0] 
-                                                     : groupEntry.visuals[0]?.question;
+                                                     ? groupEntry.visuals[0].items[0].q 
+                                                     : groupEntry.visuals[0]?.item?.q;
                                                  if (!firstQ) return false;
                                                  
                                                  const qIdx = currentSectionData.questions.findIndex(item => item.id === firstQ.id);
                                                  const qPassageIndex = getQuestionPassageIndex(firstQ, currentSectionData.questionGroups, qIdx);
-                                                 if (qPassageIndex !== activePassageTab) return false;
-
-                                                 const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                                                 const hasInlineInstructions = groupEntry.header?.instructions && 
-                                                                               /___([\w-]+)___/.test(groupEntry.header.instructions) && 
-                                                                               !/^\|.+\|$/m.test(groupEntry.header.instructions);
-                                                 return isMatchingGrid || hasInlineInstructions;
+                                                 return qPassageIndex === activePassageTab;
                                              }).map((groupEntry, geIdx) => {
                                                  const header = groupEntry.header;
                                                  const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
                                                  const hasInlineInstructions = header?.instructions && 
                                                                                /___([\w-]+)___/.test(header.instructions) && 
                                                                                !/^\|.+\|$/m.test(header.instructions);
-
+                                                 const hasTable = header?.rightSideQuestion || (header?.instructions && 
+                                                                  /___([\w-]+)___/.test(header.instructions) && 
+                                                                  /^\|.+\|$/m.test(header.instructions));
+ 
                                                  return (
                                                      <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
-                                                         <GroupedContainer header={header} hideInstructions={hasInlineInstructions}>
+                                                         <GroupedContainer header={header} hideInstructions={hasInlineInstructions || hasTable}>
                                                              {isMatchingGrid && groupEntry.visuals.map((vg, vgIdx) => {
                                                                  if (vg.type !== 'matching-grid-group') return null;
                                                                  return (
@@ -734,6 +731,16 @@ const ReviewDetail = () => {
                                                                      </div>
                                                                  );
                                                              })}
+                                                             {hasTable && (
+                                                                 <TableCompletionRenderer
+                                                                     instructions={header.instructions}
+                                                                     allQuestions={currentSectionData.questions || []}
+                                                                     answers={answersMap || {}}
+                                                                     onAnswerChange={() => {}}
+                                                                     submitted={true}
+                                                                     result={evaluationResult}
+                                                                 />
+                                                             )}
                                                              {hasInlineInstructions && (
                                                                  <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
                                                                      <ReadingPassageRenderer
