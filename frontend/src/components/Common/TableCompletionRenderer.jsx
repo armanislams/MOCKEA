@@ -28,9 +28,12 @@ const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, subm
         // Find question in the entire test set that matches the placeholder index or ID
         const q = allQuestions.find((item, idx) => {
             const questionNum = (offset || 0) + idx + 1;
+            const localIndex = idx + 1;
             return (
                 item.id === matchKey ||
-                questionNum.toString() === matchKey
+                questionNum.toString() === matchKey ||
+                localIndex.toString() === matchKey ||
+                item.id.replace(/^r/, "") === matchKey
             );
         });
 

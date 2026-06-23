@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, memo } from "react";
+import { useState, useRef, useMemo, useEffect, memo, useCallback } from "react";
 import { PiEar, PiPlayCircle, PiPauseCircle } from "react-icons/pi";
 import { collapseListeningExampleBlocks } from "../../../../utils/listeningPassage";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
@@ -905,6 +905,8 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
             setIsPlaying(false);
             setCurrentTime(0);
         }
+        const rightContainer = document.querySelector(".w-\\[70\\%\\]");
+        if (rightContainer) rightContainer.scrollTop = 0;
     }, [activePartIdx]);
 
     const passage = data?.passage;
@@ -1140,6 +1142,23 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                                 />
                             );
                         })()}
+
+                        {activePartIdx < sections.length - 1 && (
+                            <div className="flex justify-end pt-8">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setActivePartIdx(activePartIdx + 1);
+                                    }}
+                                    className="btn btn-primary rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest shadow-md shadow-primary/10 flex items-center gap-2 hover:scale-105 transition-transform"
+                                >
+                                    Go to Part {activePartIdx + 2}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Options pool placed as a sticky right sidebar next to the flowchart/questions */}

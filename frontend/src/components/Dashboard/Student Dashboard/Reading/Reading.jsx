@@ -276,9 +276,9 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
             const vg = visualGroups[i];
             const firstQ = vg.type === 'matching-grid-group' ? vg.questions[0] : vg.question;
             const firstQIdx = questions.findIndex(item => item.id === firstQ.id);
-            const globalQNum = offset + firstQIdx + 1;
+            const localQNum = firstQIdx + 1;
 
-            if (globalQNum >= fromQ && globalQNum <= toQ) {
+            if (localQNum >= fromQ && localQNum <= toQ) {
                 groupVisuals.push(vg);
                 assignedVisuals.add(i);
             }
@@ -488,7 +488,11 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                     return (
                         <GroupedContainer 
                             key={`group-${geIdx}`} 
-                            header={header}
+                            header={{
+                                ...header,
+                                fromQuestion: Number(header.fromQuestion),
+                                toQuestion: Number(header.toQuestion)
+                            }}
                             hideInstructions={hasTable}
                         >
                             {hasTable ? (
@@ -1034,7 +1038,14 @@ const Reading = () => {
 
                             return (
                                 <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
-                                    <GroupedContainer header={header} hideInstructions={hasInlineInstructions || hasTable}>
+                                    <GroupedContainer 
+                                         header={{
+                                             ...header,
+                                             fromQuestion: Number(header.fromQuestion),
+                                             toQuestion: Number(header.toQuestion)
+                                         }} 
+                                         hideInstructions={hasInlineInstructions || hasTable}
+                                    >
                                         {isMatchingGrid && groupEntry.visuals.map((vg, vgIdx) => {
                                             if (vg.type !== 'matching-grid-group') return null;
                                             return (

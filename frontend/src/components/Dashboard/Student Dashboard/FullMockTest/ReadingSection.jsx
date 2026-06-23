@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { PiNotePencil } from "react-icons/pi";
@@ -248,9 +248,9 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
             const vg = visualGroups[i];
             const firstQ = vg.type === 'matching-grid-group' ? vg.questions[0] : vg.question;
             const firstQIdx = questions.findIndex(item => item.id === firstQ.id);
-            const globalQNum = offset + firstQIdx + 1;
+            const localQNum = firstQIdx + 1;
 
-            if (globalQNum >= fromQ && globalQNum <= toQ) {
+            if (localQNum >= fromQ && localQNum <= toQ) {
                 groupVisuals.push(vg);
                 assignedVisuals.add(i);
             }
@@ -462,7 +462,11 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                     return (
                         <GroupedContainer 
                             key={`group-${geIdx}`} 
-                            header={header}
+                            header={{
+                                ...header,
+                                fromQuestion: (offset || 0) + Number(header.fromQuestion),
+                                toQuestion: (offset || 0) + Number(header.toQuestion)
+                            }}
                             hideInstructions={hasTable}
                         >
                             {hasTable ? (
@@ -473,6 +477,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                                     onAnswerChange={onAnswerChange}
                                     clickedOption={clickedOption}
                                     setClickedOption={setClickedOption}
+                                    offset={offset}
                                 />
                             ) : (
                                 children
@@ -568,7 +573,11 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
             prevDataRef.current = data;
             setActivePassageTab(0);
         }
-    }, [data]);
+        const rightContainer = document.querySelector(".w-\\[55\\%\\]");
+        if (rightContainer) rightContainer.scrollTop = 0;
+        const leftContainer = document.querySelector(".w-\\[45\\%\\] .overflow-y-auto");
+        if (leftContainer) leftContainer.scrollTop = 0;
+    }, [data, activePassageTab]);
 
     useEffect(() => {
         const handleGlobalClick = (e) => {
@@ -827,7 +836,14 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
 
                             return (
                                 <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
-                                    <GroupedContainer header={header} hideInstructions={hasInlineInstructions || hasTable}>
+                                    <GroupedContainer 
+                                        header={{
+                                            ...header,
+                                            fromQuestion: (activeSectionOffset || 0) + Number(header.fromQuestion),
+                                            toQuestion: (activeSectionOffset || 0) + Number(header.toQuestion)
+                                        }} 
+                                        hideInstructions={hasInlineInstructions || hasTable}
+                                    >
                                         {isMatchingGrid && groupEntry.visuals.map((vg, vgIdx) => {
                                             if (vg.type !== 'matching-grid-group') return null;
                                             return (
@@ -903,6 +919,39 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                 setClickedOption={setClickedOption}
                             />
                         </div>
+
+                        {showSectionTabs && activeSectionIdx < sections.length - 1 && (
+                            <div className="flex justify-end pt-8">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setActiveSectionIdx(activeSectionIdx + 1);
+                                    }}
+                                    className="btn btn-primary rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest shadow-md shadow-primary/10 flex items-center gap-2 hover:scale-105 transition-transform"
+                                >
+                                    Go to Passage {activeSectionIdx + 2}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
+                        {showPassageTabs && activePassageTab < data.passages.length - 1 && (
+                            <div className="flex justify-end pt-8">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setActivePassageTab(activePassageTab + 1);
+                                    }}
+                                    className="btn btn-primary rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest shadow-md shadow-primary/10 flex items-center gap-2 hover:scale-105 transition-transform"
+                                >
+                                    Go to Passage {activePassageTab + 2}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Options pool placed as a sticky right sidebar next to the flowchart/questions */}

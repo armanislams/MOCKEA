@@ -206,9 +206,9 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, questions) =
 
             const vg = visualGroups[i];
             const firstItem = vg.type === 'matching-grid-group' ? vg.items[0] : vg.item;
-            const globalQNum = firstItem.originalIdx + 1;
+            const localQNum = firstItem.qIdx + 1;
 
-            if (globalQNum >= fromQ && globalQNum <= toQ) {
+            if (localQNum >= fromQ && localQNum <= toQ) {
                 groupVisuals.push(vg);
                 assignedVisuals.add(i);
             }
@@ -303,9 +303,11 @@ const GroupedReviewQuestionsRenderer = ({
                 const matchKey = m.replace(/___/g, "").trim();
                 const q = allQuestions.find((item, idx) => {
                     const questionNum = (offset || 0) + idx + 1;
+                    const localIndex = idx + 1;
                     return (
                         item.id === matchKey ||
                         questionNum.toString() === matchKey ||
+                        localIndex.toString() === matchKey ||
                         item.id.replace(/^r/, "") === matchKey
                     );
                 });
@@ -418,7 +420,11 @@ const GroupedReviewQuestionsRenderer = ({
                     return (
                         <GroupedContainer 
                             key={`group-${geIdx}`} 
-                            header={header}
+                            header={{
+                                ...header,
+                                fromQuestion: (offset || 0) + Number(header.fromQuestion),
+                                toQuestion: (offset || 0) + Number(header.toQuestion)
+                            }}
                             hideInstructions={hasTable || hasInlineInstructions}
                         >
                             {hasTable ? (
@@ -766,7 +772,14 @@ const ReviewDetail = () => {
  
                                                  return (
                                                      <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
-                                                         <GroupedContainer header={header} hideInstructions={hasInlineInstructions || hasTable}>
+                                                         <GroupedContainer 
+                                                            header={{
+                                                                ...header,
+                                                                fromQuestion: (activeSectionOffset || 0) + Number(header.fromQuestion),
+                                                                toQuestion: (activeSectionOffset || 0) + Number(header.toQuestion)
+                                                            }} 
+                                                            hideInstructions={hasInlineInstructions || hasTable}
+                                                        >
                                                              {isMatchingGrid && groupEntry.visuals.map((vg, vgIdx) => {
                                                                  if (vg.type !== 'matching-grid-group') return null;
                                                                  return (

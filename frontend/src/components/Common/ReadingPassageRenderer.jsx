@@ -35,9 +35,11 @@ const ReadingPassageRenderer = memo(({
             // Find question in the entire set
             const q = questions.find((item, idx) => {
                 const questionNum = (offset || 0) + idx + 1;
+                const localIndex = idx + 1;
                 return (
                     item.id === matchKey ||
                     questionNum.toString() === matchKey ||
+                    localIndex.toString() === matchKey ||
                     item.id.replace(/^r/, "") === matchKey // Support matching "1" to "r1"
                 );
             });
