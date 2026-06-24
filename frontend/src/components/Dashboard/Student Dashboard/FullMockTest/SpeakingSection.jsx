@@ -464,7 +464,8 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
     };
 
     // Upload to Cloudinary helper
-    const uploadToCloudinary = async (blob) => {
+    const uploadToCloudinary = async (blob, _retryCount = 0) => {
+        const MAX_RETRIES = 3;
         setIsUploading(true);
         try {
             // 1. Fetch secure upload signature from backend
@@ -503,6 +504,12 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
             }
             toast.success("Recording uploaded and saved successfully!");
         } catch (err) {
+            if (err?.response?.status === 429 && _retryCount < MAX_RETRIES) {
+                const delay = Math.pow(2, _retryCount) * 1000;
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                setIsUploading(false);
+                return uploadToCloudinary(blob, _retryCount + 1);
+            }
             console.error("Upload failed:", err);
             toast.error("Failed to upload recording to server. Please try again.");
         } finally {

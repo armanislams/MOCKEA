@@ -478,25 +478,35 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     }
   }, [prepTime, isPrepPhase]);
 
-  const uploadToCloudinary = async (blob, filename) => {
-    // 1. Fetch secure upload signature from backend
-    const signatureRes = await axiosSecure.get('/submissions/upload-signature');
-    const { signature, timestamp, folder, apiKey, cloudName } = signatureRes.data;
+  const uploadToCloudinary = async (blob, filename, _retryCount = 0) => {
+    const MAX_RETRIES = 3;
+    try {
+      // 1. Fetch secure upload signature from backend
+      const signatureRes = await axiosSecure.get('/submissions/upload-signature');
+      const { signature, timestamp, folder, apiKey, cloudName } = signatureRes.data;
 
-    // 2. Perform direct-to-cloud signed upload
-    const formData = new FormData();
-    formData.append("file", blob, filename);
-    formData.append("api_key", apiKey);
-    formData.append("timestamp", timestamp);
-    formData.append("signature", signature);
-    formData.append("folder", folder);
+      // 2. Perform direct-to-cloud signed upload
+      const formData = new FormData();
+      formData.append("file", blob, filename);
+      formData.append("api_key", apiKey);
+      formData.append("timestamp", timestamp);
+      formData.append("signature", signature);
+      formData.append("folder", folder);
 
-    const response = await axios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
-      formData,
-    );
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
+        formData,
+      );
 
-    return response.data.secure_url;
+      return response.data.secure_url;
+    } catch (err) {
+      if (err?.response?.status === 429 && _retryCount < MAX_RETRIES) {
+        const delay = Math.pow(2, _retryCount) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return uploadToCloudinary(blob, filename, _retryCount + 1);
+      }
+      throw err;
+    }
   };
 
   const handleSubmitSpeaking = async () => {
@@ -578,14 +588,30 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
         return;
       }
 
-      await axiosSecure.post("/submissions/submit", {
-        questionSetId: activeSet._id,
-        testType: "speaking",
-        title: activeSet.title,
-        content: combinedContent,
-        userName: userData?.name || user?.displayName || user?.email?.split('@')[0] || "Student",
-        userEmail: user?.email,
-      });
+      const MAX_SUBMIT_RETRIES = 3;
+      let lastErr;
+      for (let attempt = 0; attempt <= MAX_SUBMIT_RETRIES; attempt++) {
+        try {
+          await axiosSecure.post("/submissions/submit", {
+            questionSetId: activeSet._id,
+            testType: "speaking",
+            title: activeSet.title,
+            content: combinedContent,
+            userName: userData?.name || user?.displayName || user?.email?.split('@')[0] || "Student",
+            userEmail: user?.email,
+          });
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (err?.response?.status === 429 && attempt < MAX_SUBMIT_RETRIES) {
+            await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 1000));
+          } else {
+            throw err;
+          }
+        }
+      }
+      if (lastErr) throw lastErr;
 
       toast.success("Speaking practice test submitted successfully!");
       setSubmitted(true);

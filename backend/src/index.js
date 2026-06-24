@@ -47,8 +47,13 @@ app.use(express.json());
 app.use(sanitizeMiddleware);
 // app.use(express.urlencoded({ extended: true }));
 
-// Apply global rate limiting to all public and private API routes (60 requests per minute per IP)
-app.use("/api", apiRateLimiter(60, 60 * 1000));
+// Apply global rate limiting to all public and private API routes (120 requests per minute per IP)
+// Skip rate limiting for upload-signature — it is a lightweight signing-key fetch
+// that is called once per recording (up to 11× in a speaking test).
+app.use("/api", (req, res, next) => {
+  if (req.path === "/submissions/upload-signature") return next();
+  return apiRateLimiter(120, 60 * 1000)(req, res, next);
+});
 
 
 app.use("/api/user", userRouter);
