@@ -462,8 +462,16 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                     const anyGroupQInline = groupQIds.some(id => renderedInlineIds.has(id));
                     const hasInlineInstructions = instructionHasBlanks && anyGroupQInline;
 
-                    if (isMatchingGrid || hasInlineInstructions || hasTable) {
-                        return null; // hide entirely from the right pane
+                    if (isMatchingGrid || hasTable) {
+                        return null; // hide entirely from the right pane — shown in left pane
+                    }
+
+                    // For hasInlineInstructions groups: individual questions are filtered
+                    // via renderedInlineIds (line 406) — questions NOT embedded in the
+                    // instructions will still be rendered here. Only return null if every
+                    // question in this group is inline-embedded (children will be empty).
+                    if (hasInlineInstructions && children.length === 0) {
+                        return null;
                     }
 
                     if (children.length === 0 && !hasTable) {
@@ -917,6 +925,60 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                                 offset={activeSectionOffset}
                                             />
                                         )}
+                                        {hasInlineInstructions && (() => {
+                                            // Find questions in this group that are NOT embedded
+                                            // as ___N___ placeholders in the instructions.
+                                            // These must still be rendered so students can answer them.
+                                            const embeddedIds = new Set();
+                                            const placeholderMatches = (header.instructions || "").match(/___([\w-]+)___/g) || [];
+                                            placeholderMatches.forEach(m => {
+                                                const matchKey = m.replace(/___/g, "").trim();
+                                                const q = data.questions?.find((item, idx) => {
+                                                    const questionNum = (activeSectionOffset || 0) + idx + 1;
+                                                    const localIndex = idx + 1;
+                                                    return (
+                                                        item.id === matchKey ||
+                                                        questionNum.toString() === matchKey ||
+                                                        localIndex.toString() === matchKey ||
+                                                        item.id.replace(/^r/, "") === matchKey
+                                                    );
+                                                });
+                                                if (q) embeddedIds.add(q.id);
+                                            });
+
+                                            const leftoverVisuals = groupEntry.visuals.filter(
+                                                vg => vg.type !== 'matching-grid-group' && vg.question && !embeddedIds.has(vg.question.id)
+                                            );
+
+                                            if (leftoverVisuals.length === 0) return null;
+
+                                            return (
+                                                <div className="mt-4 space-y-4">
+                                                    {leftoverVisuals.map(vg => {
+                                                        const q = vg.question;
+                                                        const idx = data.questions.findIndex(item => item.id === q.id);
+                                                        return (
+                                                            <div
+                                                                key={q.id}
+                                                                id={`question-${idx}`}
+                                                                className="p-4 rounded-3xl border border-base-200 bg-white hover:border-primary/30 scroll-mt-6"
+                                                            >
+                                                                <QuestionRenderer
+                                                                    q={q}
+                                                                    idx={idx}
+                                                                    answers={scopedAnswers}
+                                                                    onAnswerChange={handleLocalAnswerChange}
+                                                                    clickedOption={clickedOption}
+                                                                    setClickedOption={setClickedOption}
+                                                                    offset={activeSectionOffset}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })()}
+                                        {/* Original inline instructions renderer */}
                                         {hasInlineInstructions && (
                                             <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
                                                 <ReadingPassageRenderer
