@@ -25,12 +25,20 @@ const TestEnvironment = () => {
     const axiosSecure = useAxiosSecure();
 
     // 1. Fetch Test Data
+    // staleTime: Infinity + refetchOnWindowFocus: false prevents React Query from
+    // performing background refetches when the user focuses the window/an input.
+    // A refetch would create new object references for `test`, which propagates down
+    // to ReadingSection's `data` prop, causing passageElement to recompute,
+    // which replaces dangerouslySetInnerHTML content and destroys inline input focus.
     const { data: test, isLoading } = useQuery({
         queryKey: ["test-session", id],
         queryFn: async () => {
             const res = await axiosSecure.get(`/mock-tests/${id}`);
             return res.data.test;
-        }
+        },
+        staleTime: Infinity,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
     });
 
     const [isFullscreen, setIsFullscreen] = useState(false);

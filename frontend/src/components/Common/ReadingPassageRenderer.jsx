@@ -1,13 +1,250 @@
-import React, { useMemo, useEffect, useRef, memo } from "react";
+import React, { useMemo, useEffect, useRef, memo, useCallback } from "react";
 import { convertMarkdownContentToHtml } from "../../utils/markdownUtils.js";
 
 const DEBOUNCE_MS = 400;
 
 /**
- * Renders the Reading passage content and dynamically replaces ___N___ placeholders
- * with interactive drag-and-drop zones or inline text inputs, binding them to React state.
+ * Splits HTML content into segments: plain HTML parts and inline placeholders.
+ * Returns an array of { type: 'html'|'placeholder', content, matchKey }
  */
-const ReadingPassageRenderer = memo(({
+function splitIntoSegments(html) {
+    const segments = [];
+    const regex = /___([\w-]+)___/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(html)) !== null) {
+        if (match.index > lastIndex) {
+            segments.push({ type: "html", content: html.slice(lastIndex, match.index) });
+        }
+        segments.push({ type: "placeholder", matchKey: match[1] });
+        lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < html.length) {
+        segments.push({ type: "html", content: html.slice(lastIndex) });
+    }
+
+    return segments;
+}
+
+/**
+ * Finds a question by the placeholder matchKey, supporting id, global number, local index,
+ * and numeric ID stripping (e.g. "r1" → "1").
+ */
+function findQuestion(questions, matchKey, offset) {
+    return questions.find((item, idx) => {
+        const questionNum = (offset || 0) + idx + 1;
+        const localIndex = idx + 1;
+        return (
+            item.id === matchKey ||
+            questionNum.toString() === matchKey ||
+            localIndex.toString() === matchKey ||
+            item.id.replace(/^r/, "") === matchKey
+        );
+    });
+}
+
+/** A stable drag-drop target rendered as a real React element (no innerHTML mutation). */
+const DragDropTarget = memo(function DragDropTarget({
+    qId, labelNum, value, onAnswerChange, submitted, isCorrect, correctAnswer, isMockTest,
+    clickedOption, setClickedOption, lastInteractionRef,
+}) {
+    const isDebounced = useCallback((id) => {
+        if (!id || !lastInteractionRef) return false;
+        const now = Date.now();
+        const last = lastInteractionRef.current.get(id) || 0;
+        if (now - last < DEBOUNCE_MS) return true;
+        lastInteractionRef.current.set(id, now);
+        return false;
+    }, [lastInteractionRef]);
+
+    const handleDragOver = useCallback((e) => e.preventDefault(), []);
+
+    const handleDrop = useCallback((e) => {
+        if (submitted) return;
+        e.preventDefault();
+        const val = e.dataTransfer.getData("text/plain");
+        if (val && !isDebounced(qId)) {
+            onAnswerChange(qId, val);
+        }
+    }, [submitted, qId, onAnswerChange, isDebounced]);
+
+    const handleClick = useCallback(() => {
+        if (submitted) return;
+        if (clickedOption && !isDebounced(qId)) {
+            onAnswerChange(qId, clickedOption);
+            if (setClickedOption) setClickedOption(null);
+        }
+    }, [submitted, clickedOption, qId, onAnswerChange, setClickedOption, isDebounced]);
+
+    const handleClear = useCallback((e) => {
+        e.stopPropagation();
+        onAnswerChange(qId, "");
+    }, [qId, onAnswerChange]);
+
+    if (submitted) {
+        const borderClass = isCorrect
+            ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+            : "border-red-400 bg-red-50 text-red-700";
+        return (
+            <span className="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
+                <span className="text-primary font-black mr-0.5 flex-shrink-0">({labelNum})</span>
+                <span
+                    className={`inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 rounded-xl text-xs font-black align-middle ${borderClass}`}
+                    data-q-id={qId}
+                    title={!isCorrect ? `Correct Answer: ${correctAnswer}` : ""}
+                >
+                    {value || "No Answer"}
+                </span>
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold ml-1 flex-shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-red-500"}`}>
+                    {isCorrect ? "✓" : "✗"}
+                </span>
+                {!isCorrect && (
+                    <span className="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">
+                        ✓ {correctAnswer}
+                    </span>
+                )}
+            </span>
+        );
+    }
+
+    return (
+        <span className="inline-flex items-baseline mx-0.5 relative group align-baseline">
+            <span className="text-primary font-black mr-0.5 flex-shrink-0">({labelNum})</span>
+            <span
+                className={`inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 rounded-xl text-xs font-bold align-middle cursor-pointer select-none transition-all ${
+                    value
+                        ? "border-solid border-primary bg-white text-slate-800 font-black shadow-xs"
+                        : "border-dashed border-slate-400 bg-slate-50/50 hover:bg-slate-100/50 hover:border-primary/40 text-slate-500"
+                }`}
+                data-q-id={qId}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onClick={handleClick}
+            >
+                {value ? (
+                    <>
+                        <span className="text-slate-800 font-black mx-1 font-sans">{value}</span>
+                        <button
+                            type="button"
+                            className="clear-btn text-slate-400 hover:text-error ml-1.5 text-sm font-black"
+                            onClick={handleClear}
+                        >
+                            ×
+                        </button>
+                    </>
+                ) : (
+                    "Drop here"
+                )}
+            </span>
+        </span>
+    );
+});
+
+/** A stable inline text input rendered as a real React controlled element. */
+const InlineTextInput = memo(function InlineTextInput({
+    qId, labelNum, value, onAnswerChange, submitted, isCorrect, correctAnswer, isMockTest,
+}) {
+    const handleChange = useCallback((e) => {
+        onAnswerChange(qId, e.target.value);
+    }, [qId, onAnswerChange]);
+
+    let inputClass = "inline-flex items-baseline gap-0.5 text-sm font-bold bg-transparent outline-none transition-all w-28 border-b-2 border-dashed focus:border-primary pb-0.5 text-center placeholder:text-slate-400 placeholder:font-normal placeholder:text-sm";
+
+    if (submitted) {
+        inputClass += isCorrect ? " text-emerald-700 border-emerald-400" : " text-red-700 border-red-400";
+    } else {
+        inputClass += " border-slate-400";
+    }
+
+    return (
+        <span className="inline-flex items-baseline mx-0.5 relative group align-baseline">
+            <span className="text-primary font-black mr-0.5 flex-shrink-0">({labelNum})</span>
+            <input
+                type="text"
+                value={value}
+                onChange={handleChange}
+                disabled={!isMockTest && submitted}
+                placeholder="________"
+                className={inputClass}
+                title={(!isMockTest && submitted && !isCorrect) ? `Correct Answer: ${correctAnswer}` : ""}
+            />
+            {!isMockTest && submitted && (
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold ml-1 flex-shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-red-500"}`}>
+                    {isCorrect ? "✓" : "✗"}
+                </span>
+            )}
+            {!isMockTest && submitted && !isCorrect && (
+                <span className="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">
+                    ✓ {correctAnswer}
+                </span>
+            )}
+        </span>
+    );
+});
+
+/**
+ * Renders a single segment: either raw HTML or an interactive inline element.
+ * Memoized so it only re-renders when its own props change.
+ */
+const Segment = memo(function Segment({
+    segment, questions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset, lastInteractionRef,
+}) {
+    if (segment.type === "html") {
+        return <span dangerouslySetInnerHTML={{ __html: segment.content }} />;
+    }
+
+    // Placeholder segment — find the matching question
+    const q = findQuestion(questions, segment.matchKey, offset);
+    if (!q) return <span>{`___${segment.matchKey}___`}</span>;
+
+    const qIndexInSet = questions.indexOf(q);
+    const labelNum = (offset || 0) + qIndexInSet + 1;
+    const qId = q.id;
+    const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === qId);
+    const isCorrect = evaluation?.isCorrect;
+    const isMockTest = submitted === undefined;
+    const value = answers[qId] || "";
+
+    if (q.type === "drag-drop-completion") {
+        return (
+            <DragDropTarget
+                qId={qId}
+                labelNum={labelNum}
+                value={value}
+                onAnswerChange={onAnswerChange}
+                submitted={submitted}
+                isCorrect={isCorrect}
+                correctAnswer={q.correctAnswer}
+                isMockTest={isMockTest}
+                clickedOption={clickedOption}
+                setClickedOption={setClickedOption}
+                lastInteractionRef={lastInteractionRef}
+            />
+        );
+    }
+
+    return (
+        <InlineTextInput
+            qId={qId}
+            labelNum={labelNum}
+            value={value}
+            onAnswerChange={onAnswerChange}
+            submitted={submitted}
+            isCorrect={isCorrect}
+            correctAnswer={q.correctAnswer}
+            isMockTest={isMockTest}
+        />
+    );
+});
+
+/**
+ * Renders Reading passage content, replacing ___N___ placeholders with real React
+ * interactive elements (controlled inputs / drag-drop zones). Uses no dangerouslySetInnerHTML
+ * for interactive parts, eliminating all DOM-mutation focus and scroll issues.
+ */
+const ReadingPassageRenderer = memo(function ReadingPassageRenderer({
     passageContent,
     questions,
     answers,
@@ -17,268 +254,51 @@ const ReadingPassageRenderer = memo(({
     clickedOption,
     setClickedOption,
     className = "text-lg leading-relaxed text-slate-600 text-justify select-text",
-    offset = 0
-}) => {
-    const containerRef = useRef(null);
+    offset = 0,
+}) {
     const lastInteractionRef = useRef(new Map());
 
-    const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
-    const resultKey = useMemo(() => result ? JSON.stringify(result.evaluatedAnswers?.map(a => `${a.questionId}:${a.isCorrect}`)) : "", [result]);
-
-    const processedHtml = useMemo(() => {
+    // Convert markdown → HTML once (stable unless passage/questions/submit state change)
+    const baseHtml = useMemo(() => {
         if (!passageContent) return "";
-        let html = convertMarkdownContentToHtml(passageContent);
+        return convertMarkdownContentToHtml(passageContent);
+    }, [passageContent]);
 
-        const hasInlinePlaceholders = /___([\w-]+)___/.test(html);
-        if (!hasInlinePlaceholders) {
-            return html;
-        }
+    const hasInlinePlaceholders = useMemo(() => /___[\w-]+___/.test(baseHtml), [baseHtml]);
 
-        return html.replace(/___([\w-]+)___/g, (match, matchKey) => {
-            // Find question in the entire set
-            const q = questions.find((item, idx) => {
-                const questionNum = (offset || 0) + idx + 1;
-                const localIndex = idx + 1;
-                return (
-                    item.id === matchKey ||
-                    questionNum.toString() === matchKey ||
-                    localIndex.toString() === matchKey ||
-                    item.id.replace(/^r/, "") === matchKey // Support matching "1" to "r1"
-                );
-            });
-            if (!q) return match;
+    // Split HTML into segments only when passage content changes — NOT on answer changes
+    const segments = useMemo(() => {
+        if (!hasInlinePlaceholders) return null;
+        return splitIntoSegments(baseHtml);
+    }, [baseHtml, hasInlinePlaceholders]);
 
-            const qIndexInSet = questions.indexOf(q);
-            const labelNum = (offset || 0) + qIndexInSet + 1;
-            const qId = q.id;
+    // Stable key list so Segment children only remount when questions set changes
+    const questionsKey = useMemo(() => questions.map((q) => q.id).join(","), [questions]);
 
-            const evaluation = result?.evaluatedAnswers?.find((a) => a.questionId === qId);
-            const isCorrect = evaluation?.isCorrect;
-            
-            const isMockTest = submitted === undefined;
-            const isDragDrop = q.type === 'drag-drop-completion';
+    if (!hasInlinePlaceholders || !segments) {
+        // Pure HTML passage — no interactive elements needed
+        return <div className={className} dangerouslySetInnerHTML={{ __html: baseHtml }} />;
+    }
 
-            if (isDragDrop) {
-                if (submitted) {
-                    let borderClass = isCorrect ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-red-400 bg-red-50 text-red-700";
-                    let badge = isCorrect
-                        ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✓</span>`
-                        : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>`;
-                    let correctAnswerHtml = !isCorrect 
-                        ? `<span class="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">✓ ${q.correctAnswer}</span>`
-                        : "";
-                    const titleAttr = !isCorrect ? `Correct Answer: ${q.correctAnswer}` : "";
-                    
-                    return `
-                        <span class="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
-                            <span class="text-primary font-black mr-0.5 flex-shrink-0">(${labelNum})</span>
-                            <span 
-                                class="inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 rounded-xl text-xs font-black align-middle ${borderClass}"
-                                data-q-id="${qId}"
-                                title="${titleAttr}"
-                            >
-                                ${answers[qId] || "No Answer"}
-                            </span>
-                            ${badge}
-                            ${correctAnswerHtml}
-                        </span>
-                    `.trim();
-                } else {
-                    return `
-                        <span class="inline-flex items-baseline mx-0.5 relative group align-baseline">
-                            <span class="text-primary font-black mr-0.5 flex-shrink-0">(${labelNum})</span>
-                            <span 
-                                class="drag-drop-target inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 border-dashed border-slate-400 rounded-xl bg-slate-50/50 hover:bg-slate-100/50 hover:border-primary/40 cursor-pointer select-none transition-all text-xs font-bold text-slate-500 align-middle"
-                                data-q-id="${qId}"
-                                data-q-num="${labelNum}"
-                            >
-                                Drop here
-                            </span>
-                        </span>
-                    `.trim();
-                }
-            }
-
-            // Fallback: Inline text inputs
-            let inputClass = "inline-flex items-baseline gap-0.5 text-sm font-bold bg-transparent outline-none transition-all";
-            if (submitted) {
-                inputClass += isCorrect
-                    ? " text-emerald-700"
-                    : " text-red-700";
-            }
-
-            let badgeHtml = "";
-            if (!isMockTest && submitted) {
-                badgeHtml = isCorrect
-                    ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✓</span>`
-                    : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold ml-1 flex-shrink-0">✗</span>`;
-            }
-
-            let correctAnswerHtml = "";
-            if (!isMockTest && submitted && !isCorrect) {
-                correctAnswerHtml = `<span class="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">✓ ${q.correctAnswer}</span>`;
-            }
-
-            const titleAttr = (!isMockTest && submitted && !isCorrect) ? `Correct Answer: ${q.correctAnswer}` : "";
-
-            return `
-                <span class="inline-flex items-baseline mx-0.5 relative group align-baseline">
-                    <span class="text-primary font-black mr-0.5 flex-shrink-0">(${labelNum})</span>
-                    <input
-                        type="text"
-                        data-q-id="${qId}"
-                        ${(!isMockTest && submitted) ? "disabled" : ""}
-                        placeholder="________"
-                        value=""
-                        class="${inputClass} w-28 border-b-2 border-dashed border-slate-400 focus:border-primary pb-0.5 text-center placeholder:text-slate-400 placeholder:font-normal placeholder:text-sm ${submitted ? (isCorrect ? "border-emerald-400" : "border-red-400") : ""}"
-                        title="${titleAttr}"
-                    />
-                    ${badgeHtml}
-                    ${correctAnswerHtml}
-                </span>
-            `.trim();
-        });
-    }, [passageContent, questionsKey, submitted, resultKey, offset]);
-
-    useEffect(() => {
-        if (containerRef.current) {
-            const inputs = containerRef.current.querySelectorAll('input[data-q-id]');
-            inputs.forEach(input => {
-                const qId = input.getAttribute('data-q-id');
-                const value = answers[qId] || "";
-                if (input.value !== value) {
-                    input.value = value;
-                }
-            });
-
-            const targets = containerRef.current.querySelectorAll('.drag-drop-target[data-q-id]');
-            targets.forEach(target => {
-                const qId = target.getAttribute('data-q-id');
-                const value = answers[qId] || "";
-                if (value) {
-                    target.innerHTML = `<span class="text-slate-800 font-black mx-1 font-sans">${value}</span> <button class="clear-btn text-slate-400 hover:text-error ml-1.5 text-sm font-black" data-q-id="${qId}">×</button>`;
-                    target.classList.remove('border-dashed', 'text-slate-500', 'bg-slate-50/50');
-                    target.classList.add('border-solid', 'border-primary', 'bg-white');
-                } else {
-                    target.innerHTML = `Drop here`;
-                    target.classList.remove('border-solid', 'border-primary', 'bg-white');
-                    target.classList.add('border-dashed', 'text-slate-500', 'bg-slate-50/50');
-                }
-            });
-        }
-    }, [answers, processedHtml]);
-
-    const onAnswerChangeRef = useRef(onAnswerChange);
-    const clickedOptionRef = useRef(clickedOption);
-    const setClickedOptionRef = useRef(setClickedOption);
-
-    useEffect(() => {
-        onAnswerChangeRef.current = onAnswerChange;
-        clickedOptionRef.current = clickedOption;
-        setClickedOptionRef.current = setClickedOption;
-    }, [onAnswerChange, clickedOption, setClickedOption]);
-
-    useEffect(() => {
-        const isDebounced = (qId) => {
-            if (!qId) return false;
-            const now = Date.now();
-            const last = lastInteractionRef.current.get(qId) || 0;
-            if (now - last < DEBOUNCE_MS) return true;
-            lastInteractionRef.current.set(qId, now);
-            return false;
-        };
-
-        const flashDebounced = (el) => {
-            if (!el) return;
-            el.style.opacity = "0.5";
-            el.style.pointerEvents = "none";
-            setTimeout(() => {
-                el.style.opacity = "";
-                el.style.pointerEvents = "";
-            }, DEBOUNCE_MS);
-        };
-
-        const handleInput = (e) => {
-            if (e.target && e.target.hasAttribute('data-q-id') && e.target.tagName === 'INPUT') {
-                const qId = e.target.getAttribute('data-q-id');
-                onAnswerChangeRef.current(qId, e.target.value);
-            }
-        };
-
-        const handleDragOver = (e) => {
-            const target = e.target.closest('.drag-drop-target');
-            if (target) {
-                e.preventDefault();
-            }
-        };
-
-        const handleDrop = (e) => {
-            const target = e.target.closest('.drag-drop-target');
-            if (target) {
-                e.preventDefault();
-                const qId = target.getAttribute('data-q-id');
-                const val = e.dataTransfer.getData("text/plain");
-                if (qId && val) {
-                    if (isDebounced(qId)) {
-                        flashDebounced(target);
-                        return;
-                    }
-                    onAnswerChangeRef.current(qId, val);
-                }
-            }
-        };
-
-        const handleClick = (e) => {
-            const clearBtn = e.target.closest('.clear-btn');
-            if (clearBtn) {
-                e.stopPropagation();
-                e.preventDefault();
-                const qId = clearBtn.getAttribute('data-q-id');
-                if (qId) {
-                    onAnswerChangeRef.current(qId, "");
-                }
-                return;
-            }
-
-            const target = e.target.closest('.drag-drop-target');
-            if (target) {
-                const qId = target.getAttribute('data-q-id');
-                if (qId && clickedOptionRef.current) {
-                    if (isDebounced(qId)) {
-                        flashDebounced(target);
-                        return;
-                    }
-                    onAnswerChangeRef.current(qId, clickedOptionRef.current);
-                    if (setClickedOptionRef.current) {
-                        setClickedOptionRef.current(null);
-                    }
-                }
-            }
-        };
-
-        const container = containerRef.current;
-        if (container) {
-            container.addEventListener('input', handleInput);
-            container.addEventListener('dragover', handleDragOver);
-            container.addEventListener('drop', handleDrop);
-            container.addEventListener('click', handleClick);
-        }
-        return () => {
-            if (container) {
-                container.removeEventListener('input', handleInput);
-                container.removeEventListener('dragover', handleDragOver);
-                container.removeEventListener('drop', handleDrop);
-                container.removeEventListener('click', handleClick);
-            }
-        };
-    }, []);
-
+    // Passage with interactive inline elements — render as real React tree
     return (
-        <div
-            ref={containerRef}
-            dangerouslySetInnerHTML={{ __html: processedHtml }}
-            className={className}
-        />
+        <div className={className}>
+            {segments.map((seg, i) => (
+                <Segment
+                    key={`${questionsKey}-${i}`}
+                    segment={seg}
+                    questions={questions}
+                    answers={answers}
+                    onAnswerChange={onAnswerChange}
+                    submitted={submitted}
+                    result={result}
+                    clickedOption={clickedOption}
+                    setClickedOption={setClickedOption}
+                    offset={offset}
+                    lastInteractionRef={lastInteractionRef}
+                />
+            ))}
+        </div>
     );
 });
 

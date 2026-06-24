@@ -472,7 +472,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
 
                     return (
                         <GroupedContainer 
-                            key={`group-${geIdx}`} 
+                            key={`group-${header?.fromQuestion || geIdx}-${header?.toQuestion || geIdx}`} 
                             header={{
                                 ...header,
                                 fromQuestion: (offset || 0) + Number(header.fromQuestion),
@@ -498,7 +498,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 }
 
                 return (
-                    <div key={`ungrouped-${geIdx}`} className="space-y-8">
+                    <div key={`ungrouped-${groupEntry.visuals[0]?.question?.id || geIdx}`} className="space-y-8">
                         {children}
                     </div>
                 );
@@ -580,18 +580,14 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
     const hasMultipleGroups = data?.questionGroups?.length > 1;
 
     const lastShownRef = useRef(0);
-    const prevDataRef = useRef(data);
 
     useEffect(() => {
-        if (prevDataRef.current !== data) {
-            prevDataRef.current = data;
-            setActivePassageTab(0);
-            const rightContainer = document.querySelector(".w-\\[55\\%\\]");
-            if (rightContainer) rightContainer.scrollTop = 0;
-            const leftContainer = document.querySelector(".w-\\[45\\%\\] .overflow-y-auto");
-            if (leftContainer) leftContainer.scrollTop = 0;
-        }
-    }, [data]);
+        setActivePassageTab(0);
+        const rightContainer = document.querySelector(".w-\\[55\\%\\]");
+        if (rightContainer) rightContainer.scrollTop = 0;
+        const leftContainer = document.querySelector(".w-\\[45\\%\\] .overflow-y-auto");
+        if (leftContainer) leftContainer.scrollTop = 0;
+    }, [activeSectionIdx]);
 
     useEffect(() => {
         const handleGlobalClick = (e) => {
@@ -632,6 +628,12 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
         }
     }, []);
 
+    // Use a ref for toolbar.show so handleTextSelection stays stable (no new
+    // function reference on every toolbar state change), preventing passageElement
+    // from getting a new handler reference unnecessarily.
+    const toolbarShowRef = useRef(toolbar.show);
+    useEffect(() => { toolbarShowRef.current = toolbar.show; }, [toolbar.show]);
+
     const handleTextSelection = useCallback((e) => {
         const container = e.currentTarget;
         
@@ -641,7 +643,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                 if (Date.now() - lastShownRef.current < 300) {
                     return;
                 }
-                if (toolbar.show) {
+                if (toolbarShowRef.current) {
                     setToolbar((prev) => ({ ...prev, show: false }));
                 }
                 return;
@@ -665,7 +667,10 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                 console.debug("Highlight range capture skipped:", err);
             }
         }, 80);
-    }, [toolbar.show]);
+    // Stable callback — reads toolbar.show via ref to avoid stale closures
+    // without adding it to the deps array (which would recreate this fn on every
+    // toolbar state change and risk triggering useMemo recomputes downstream).
+    }, []);
 
     const applyHighlight = (colorClass) => {
         if (!toolbar.range) return;
@@ -740,34 +745,13 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
         setActiveNote({ show: false, text: "", element: null, x: 0, y: 0 });
     };
 
-    const passageElement = useMemo(() => {
-        if (!data) return null;
-        const contentText = (data.passages && data.passages.length > 0)
+    // Derive passage content outside useMemo so it updates when data/tab changes
+    const passageContentText = useMemo(() => {
+        if (!data) return "";
+        return (data.passages && data.passages.length > 0)
             ? (data.passages[activePassageTab]?.content || "")
             : (data.passage || data.sections?.[0]?.content || "No passage content available.");
-
-        return ( 
-            <div 
-                ref={passageContainerRef}
-                data-passage-container="true"
-                onMouseUp={handleTextSelection}
-                onPointerUp={handleTextSelection}
-            >
-                <ReadingPassageRenderer
-                    passageContent={contentText}
-                    questions={data.questions || []}
-                    answers={scopedAnswers}
-                    onAnswerChange={handleLocalAnswerChange}
-                    submitted={undefined}
-                    result={null}
-                    clickedOption={clickedOption}
-                    setClickedOption={setClickedOption}
-                    className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
-                    offset={activeSectionOffset}
-                />
-            </div>
-        );
-    }, [data, activePassageTab, activeSectionOffset]);
+    }, [data, activePassageTab]);
 
     const minQuestionNum = activeSectionOffset + 1;
     const maxQuestionNum = activeSectionOffset + (data?.questions?.length || 0);
@@ -838,7 +822,27 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                 </h3>
                             )}
 
-                        {passageElement}
+                        {data && (
+                            <div 
+                                ref={passageContainerRef}
+                                data-passage-container="true"
+                                onMouseUp={handleTextSelection}
+                                onPointerUp={handleTextSelection}
+                            >
+                                <ReadingPassageRenderer
+                                    passageContent={passageContentText}
+                                    questions={data.questions || []}
+                                    answers={scopedAnswers}
+                                    onAnswerChange={handleLocalAnswerChange}
+                                    submitted={undefined}
+                                    result={null}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                    className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:text-base-content/80 prose-headings:font-black font-serif text-xl space-y-6 select-text"
+                                    offset={activeSectionOffset}
+                                />
+                            </div>
+                        )}
  
                         {/* Interactive Left-pane Question Groups (matching-grid, inline gap, drag-n-drop) */}
                         {groupedItems.filter(groupEntry => {
@@ -873,7 +877,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                              /^\|.+\|$/m.test(header.instructions));
 
                             return (
-                                <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
+                                <div key={`left-group-${header?.fromQuestion || geIdx}-${header?.toQuestion || geIdx}`} className="mt-8 font-sans">
                                     <GroupedContainer 
                                         header={{
                                             ...header,
