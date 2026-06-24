@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { convertMarkdownContentToHtml } from "../../utils/markdownUtils.js";
 
 const DEBOUNCE_MS = 500;
@@ -43,8 +43,7 @@ const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, subm
             return (
                 item.id === matchKey ||
                 questionNum.toString() === matchKey ||
-                localIndex.toString() === matchKey ||
-                item.id.replace(/^r/, "") === matchKey
+                localIndex.toString() === matchKey
             );
         });
 

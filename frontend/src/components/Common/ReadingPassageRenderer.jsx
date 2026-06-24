@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef, memo, useCallback } from "react";
+import { useMemo, useRef, memo, useCallback } from "react";
 import { convertMarkdownContentToHtml } from "../../utils/markdownUtils.js";
 
 const DEBOUNCE_MS = 400;
@@ -39,15 +39,14 @@ function findQuestion(questions, matchKey, offset) {
         return (
             item.id === matchKey ||
             questionNum.toString() === matchKey ||
-            localIndex.toString() === matchKey ||
-            item.id.replace(/^r/, "") === matchKey
+            localIndex.toString() === matchKey
         );
     });
 }
 
 /** A stable drag-drop target rendered as a real React element (no innerHTML mutation). */
 const DragDropTarget = memo(function DragDropTarget({
-    qId, labelNum, value, onAnswerChange, submitted, isCorrect, correctAnswer, isMockTest,
+    qId, labelNum, value, onAnswerChange, submitted, isCorrect, correctAnswer,
     clickedOption, setClickedOption, lastInteractionRef,
 }) {
     const isDebounced = useCallback((id) => {

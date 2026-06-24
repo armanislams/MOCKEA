@@ -367,8 +367,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                     const questionNum = idx + 1;
                     return (
                         item.id === matchKey ||
-                        questionNum.toString() === matchKey ||
-                        item.id.replace(/^r/, "") === matchKey
+                        questionNum.toString() === matchKey
                     );
                 });
                 if (q) ids.add(q.id);
@@ -383,8 +382,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                     const questionNum = idx + 1;
                     return (
                         item.id === matchKey ||
-                        questionNum.toString() === matchKey ||
-                        item.id.replace(/^r/, "") === matchKey
+                        questionNum.toString() === matchKey
                     );
                 });
                 if (q) ids.add(q.id);
@@ -402,8 +400,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                         const questionNum = idx + 1;
                         return (
                             item.id === matchKey ||
-                            questionNum.toString() === matchKey ||
-                            item.id.replace(/^r/, "") === matchKey
+                            questionNum.toString() === matchKey
                         );
                     });
                     if (q) ids.add(q.id);

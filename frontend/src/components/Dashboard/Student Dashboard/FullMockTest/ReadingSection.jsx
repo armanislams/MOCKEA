@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { PiNotePencil } from "react-icons/pi";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
@@ -341,8 +340,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                     return (
                         item.id === matchKey ||
                         questionNum.toString() === matchKey ||
-                        localIndex.toString() === matchKey ||
-                        item.id.replace(/^r/, "") === matchKey
+                        localIndex.toString() === matchKey
                     );
                 });
                 if (q) ids.add(q.id);
@@ -359,8 +357,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                     return (
                         item.id === matchKey ||
                         questionNum.toString() === matchKey ||
-                        localIndex.toString() === matchKey ||
-                        item.id.replace(/^r/, "") === matchKey
+                        localIndex.toString() === matchKey
                     );
                 });
                 if (q) ids.add(q.id);
@@ -380,8 +377,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                         return (
                             item.id === matchKey ||
                             questionNum.toString() === matchKey ||
-                            localIndex.toString() === matchKey ||
-                            item.id.replace(/^r/, "") === matchKey
+                            localIndex.toString() === matchKey
                         );
                     });
                     if (q) ids.add(q.id);
@@ -462,16 +458,8 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                     const anyGroupQInline = groupQIds.some(id => renderedInlineIds.has(id));
                     const hasInlineInstructions = instructionHasBlanks && anyGroupQInline;
 
-                    if (isMatchingGrid || hasTable) {
-                        return null; // hide entirely from the right pane — shown in left pane
-                    }
-
-                    // For hasInlineInstructions groups: individual questions are filtered
-                    // via renderedInlineIds (line 406) — questions NOT embedded in the
-                    // instructions will still be rendered here. Only return null if every
-                    // question in this group is inline-embedded (children will be empty).
-                    if (hasInlineInstructions && children.length === 0) {
-                        return null;
+                    if (isMatchingGrid || hasInlineInstructions || hasTable) {
+                        return null; // hide entirely from right pane — shown in left pane
                     }
 
                     if (children.length === 0 && !hasTable) {
@@ -532,7 +520,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
             return;
         }
         onAnswerChange(`${data._id}_${qId}`, val);
-    }, [data?._id, onAnswerChange]);
+    }, [data, onAnswerChange]);
 
     const scopedAnswers = useMemo(() => {
         if (!data?._id) return answers;
@@ -542,7 +530,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
             scoped[q.id] = answers[scopedKey] !== undefined ? answers[scopedKey] : answers[q.id];
         });
         return scoped;
-    }, [data?._id, data?.questions, answers]);
+    }, [data, answers]);
 
     const sectionOffsets = useMemo(() => {
         const offsets = [];
@@ -555,23 +543,6 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
     }, [sections]);
 
     const activeSectionOffset = sectionOffsets[activeSectionIdx] || 0;
-
-    const unifiedQuestions = useMemo(() => {
-        const list = [];
-        sections.forEach((sec, secIdx) => {
-            const secOffset = sectionOffsets[secIdx] || 0;
-            const qs = sec.questions || [];
-            qs.forEach((q, qIdx) => {
-                list.push({
-                    q,
-                    secIdx,
-                    localIdx: qIdx,
-                    displayNum: secOffset + qIdx + 1
-                });
-            });
-        });
-        return list;
-    }, [sections, sectionOffsets]);
 
     const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [data?.questions]);
     const sharedOptions = useMemo(() => {
@@ -588,9 +559,13 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
     const hasMultipleGroups = data?.questionGroups?.length > 1;
 
     const lastShownRef = useRef(0);
+    const prevSectionIdxRef = useRef(activeSectionIdx);
 
     useEffect(() => {
-        setActivePassageTab(0);
+        if (prevSectionIdxRef.current !== activeSectionIdx) {
+            prevSectionIdxRef.current = activeSectionIdx;
+            setActivePassageTab(0);
+        }
         const rightContainer = document.querySelector(".w-\\[55\\%\\]");
         if (rightContainer) rightContainer.scrollTop = 0;
         const leftContainer = document.querySelector(".w-\\[45\\%\\] .overflow-y-auto");
@@ -925,10 +900,26 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                                 offset={activeSectionOffset}
                                             />
                                         )}
+                                        {/* Inline instructions renderer — always first */}
+                                        {hasInlineInstructions && (
+                                            <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                                <ReadingPassageRenderer
+                                                    passageContent={header.instructions}
+                                                    questions={data.questions || []}
+                                                    answers={scopedAnswers}
+                                                    onAnswerChange={handleLocalAnswerChange}
+                                                    submitted={undefined}
+                                                    result={null}
+                                                    clickedOption={clickedOption}
+                                                    setClickedOption={setClickedOption}
+                                                    className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                                    offset={activeSectionOffset}
+                                                />
+                                            </div>
+                                        )}
+                                        {/* Leftover questions: in this group but NOT matched by any ___N___ placeholder.
+                                            Rendered below the inline instructions so they are never lost. */}
                                         {hasInlineInstructions && (() => {
-                                            // Find questions in this group that are NOT embedded
-                                            // as ___N___ placeholders in the instructions.
-                                            // These must still be rendered so students can answer them.
                                             const embeddedIds = new Set();
                                             const placeholderMatches = (header.instructions || "").match(/___([\w-]+)___/g) || [];
                                             placeholderMatches.forEach(m => {
@@ -939,8 +930,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                                     return (
                                                         item.id === matchKey ||
                                                         questionNum.toString() === matchKey ||
-                                                        localIndex.toString() === matchKey ||
-                                                        item.id.replace(/^r/, "") === matchKey
+                                                        localIndex.toString() === matchKey
                                                     );
                                                 });
                                                 if (q) embeddedIds.add(q.id);
@@ -978,23 +968,6 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                                 </div>
                                             );
                                         })()}
-                                        {/* Original inline instructions renderer */}
-                                        {hasInlineInstructions && (
-                                            <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
-                                                <ReadingPassageRenderer
-                                                    passageContent={header.instructions}
-                                                    questions={data.questions || []}
-                                                    answers={scopedAnswers}
-                                                    onAnswerChange={handleLocalAnswerChange}
-                                                    submitted={undefined}
-                                                    result={null}
-                                                    clickedOption={clickedOption}
-                                                    setClickedOption={setClickedOption}
-                                                    className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
-                                                    offset={activeSectionOffset}
-                                                />
-                                            </div>
-                                        )}
                                     </GroupedContainer>
                                 </div>
                             );

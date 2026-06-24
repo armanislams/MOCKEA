@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
@@ -13,7 +13,6 @@ import {
     PiXCircleFill, 
     PiInfoFill,
     PiClockFill,
-    PiBookOpenFill,
     PiEarFill,
     PiPencilLineFill,
     PiMicrophoneStageFill
@@ -93,7 +92,7 @@ const ReviewMatchingGrid = ({ items, options }) => {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                    {items.map(({ ans, q, qIdx, originalIdx }) => {
+                    {items.map(({ ans, q, originalIdx }) => {
                         const selectedVal = ans.userAnswer || "";
                         return (
                             <tr key={ans.questionId} className="hover:bg-slate-50/50 transition-colors">
@@ -191,7 +190,7 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
     return groups;
 };
 
-const groupVisualsByQuestionGroups = (visualGroups, questionGroups, questions) => {
+const groupVisualsByQuestionGroups = (visualGroups, questionGroups) => {
     const grouped = [];
     const assignedVisuals = new Set();
     const sortedGroups = [...(questionGroups || [])].sort((a, b) => Number(a.fromQuestion) - Number(b.fromQuestion));
@@ -307,8 +306,7 @@ const GroupedReviewQuestionsRenderer = ({
                     return (
                         item.id === matchKey ||
                         questionNum.toString() === matchKey ||
-                        localIndex.toString() === matchKey ||
-                        item.id.replace(/^r/, "") === matchKey
+                        localIndex.toString() === matchKey
                     );
                 });
                 if (q) ids.add(q.id);
@@ -476,9 +474,13 @@ const ReviewDetail = () => {
     const axiosSecure = useAxiosSecure();
     const [activeTab, setActiveTab] = useState("reading");
     const [activePassageTab, setActivePassageTab] = useState(0);
+    const prevActiveTabRef = useRef(activeTab);
 
     useEffect(() => {
-        setActivePassageTab(0);
+        if (prevActiveTabRef.current !== activeTab) {
+            prevActiveTabRef.current = activeTab;
+            setActivePassageTab(0);
+        }
     }, [activeTab]);
 
     const { data: result, isLoading } = useQuery({
@@ -509,7 +511,7 @@ const ReviewDetail = () => {
         if (!currentSectionResult || !currentSectionData) return [];
         const isSectionTab = sectionsList.length > 1;
         const groups = groupReviewAnswers(currentSectionResult.answers, currentSectionData, activeTab, activePassageTab, isSectionTab);
-        return groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups, currentSectionData?.questions);
+        return groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups);
     }, [currentSectionResult, currentSectionData, activeTab, activePassageTab, sectionsList]);
 
     if (isLoading) return <div className="flex items-center justify-center h-screen"><span className="loading loading-spinner loading-lg text-primary" /></div>;
