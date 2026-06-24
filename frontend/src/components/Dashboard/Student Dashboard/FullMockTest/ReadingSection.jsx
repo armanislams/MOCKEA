@@ -586,12 +586,12 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
         if (prevDataRef.current !== data) {
             prevDataRef.current = data;
             setActivePassageTab(0);
+            const rightContainer = document.querySelector(".w-\\[55\\%\\]");
+            if (rightContainer) rightContainer.scrollTop = 0;
+            const leftContainer = document.querySelector(".w-\\[45\\%\\] .overflow-y-auto");
+            if (leftContainer) leftContainer.scrollTop = 0;
         }
-        const rightContainer = document.querySelector(".w-\\[55\\%\\]");
-        if (rightContainer) rightContainer.scrollTop = 0;
-        const leftContainer = document.querySelector(".w-\\[45\\%\\] .overflow-y-auto");
-        if (leftContainer) leftContainer.scrollTop = 0;
-    }, [data, activePassageTab]);
+    }, [data]);
 
     useEffect(() => {
         const handleGlobalClick = (e) => {
@@ -632,18 +632,18 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
         }
     }, []);
 
-    const handleTextSelection = (e) => {
+    const handleTextSelection = useCallback((e) => {
         const container = e.currentTarget;
         
         setTimeout(() => {
             const selection = window.getSelection();
             if (!selection || selection.isCollapsed || selection.toString().trim() === "") {
-                // If the toolbar was shown very recently (within 300ms), ignore the collapsed check
-                // to prevent trackpad pointer-up bounces/micro-clicks from hiding the toolbar.
                 if (Date.now() - lastShownRef.current < 300) {
                     return;
                 }
-                setToolbar((prev) => ({ ...prev, show: false }));
+                if (toolbar.show) {
+                    setToolbar((prev) => ({ ...prev, show: false }));
+                }
                 return;
             }
 
@@ -665,7 +665,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                 console.debug("Highlight range capture skipped:", err);
             }
         }, 80);
-    };
+    }, [toolbar.show]);
 
     const applyHighlight = (colorClass) => {
         if (!toolbar.range) return;
@@ -767,7 +767,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                 />
             </div>
         );
-    }, [data, activePassageTab, answers, clickedOption, activeSectionOffset]);
+    }, [data, activePassageTab, activeSectionOffset]);
 
     const minQuestionNum = activeSectionOffset + 1;
     const maxQuestionNum = activeSectionOffset + (data?.questions?.length || 0);

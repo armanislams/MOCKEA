@@ -1,5 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { convertMarkdownContentToHtml } from "../../utils/markdownUtils.js";
+
+const DEBOUNCE_MS = 500;
 
 const formatInlineBullets = (str) => {
     if (!str) return str;
@@ -11,8 +13,17 @@ const formatInlineBullets = (str) => {
     return formatted;
 };
 
-const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset = 0) => {
+const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset = 0, lastInteractionRef = null) => {
     if (!cellText) return "";
+
+    const isDebounced = (qId) => {
+        if (!qId || !lastInteractionRef) return false;
+        const now = Date.now();
+        const last = lastInteractionRef.current.get(qId) || 0;
+        if (now - last < DEBOUNCE_MS) return true;
+        lastInteractionRef.current.set(qId, now);
+        return false;
+    };
     
     // Split by placeholders like ___1___ or ___question-id___
     const parts = cellText.split(/(___[\w-]+___)/g);
@@ -63,11 +74,15 @@ const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, subm
                             if (submitted) return;
                             e.preventDefault();
                             const val = e.dataTransfer.getData("text/plain");
-                            if (val) onAnswerChange(qId, val);
+                            if (val) {
+                                if (isDebounced(qId)) return;
+                                onAnswerChange(qId, val);
+                            }
                         }}
                         onClick={() => {
                             if (submitted) return;
                             if (clickedOption) {
+                                if (isDebounced(qId)) return;
                                 onAnswerChange(qId, clickedOption);
                                 if (setClickedOption) setClickedOption(null);
                             }
@@ -120,7 +135,9 @@ const renderCellContent = (cellText, allQuestions, answers, onAnswerChange, subm
                     type="text"
                     disabled={submitted}
                     value={value}
-                    onChange={(e) => onAnswerChange(qId, e.target.value)}
+                    onChange={(e) => {
+                        onAnswerChange(qId, e.target.value);
+                    }}
                     placeholder="________"
                     className={`inline-flex bg-transparent border-b-2 border-dashed focus:border-primary outline-none text-xs font-bold text-center pb-0.5 placeholder:text-slate-400 transition-colors w-28 align-middle ${
                         submitted
@@ -158,6 +175,8 @@ export default function TableCompletionRenderer({
     setClickedOption,
     offset = 0
 }) {
+    const lastInteractionRef = useRef(new Map());
+
     const { introText, tableRows, outroText } = useMemo(() => {
         if (!instructions) return { introText: "", tableRows: null, outroText: "" };
         
@@ -220,7 +239,7 @@ export default function TableCompletionRenderer({
                         <tr className="bg-slate-900 border-b border-slate-700">
                             {tableRows[0]?.cells.map((cell, ci) => (
                                 <th key={ci} className="text-white font-black text-xs uppercase tracking-widest px-5 py-4 border border-slate-700">
-                                    {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset)}
+                                    {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset, lastInteractionRef)}
                                 </th>
                             ))}
                         </tr>
@@ -230,7 +249,7 @@ export default function TableCompletionRenderer({
                             <tr key={ri} className={ri % 2 === 1 ? "bg-slate-50/50 hover:bg-slate-50 transition-colors" : "bg-white hover:bg-slate-50 transition-colors"}>
                                 {row.cells.map((cell, ci) => (
                                     <td key={ci} className="px-5 py-4 border border-slate-200 text-slate-700 leading-relaxed font-medium align-top">
-                                        {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset)}
+                                        {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset, lastInteractionRef)}
                                     </td>
                                 ))}
                             </tr>

@@ -1,6 +1,8 @@
 import React, { useMemo, useEffect, useRef, memo } from "react";
 import { convertMarkdownContentToHtml } from "../../utils/markdownUtils.js";
 
+const DEBOUNCE_MS = 400;
+
 /**
  * Renders the Reading passage content and dynamically replaces ___N___ placeholders
  * with interactive drag-and-drop zones or inline text inputs, binding them to React state.
@@ -18,6 +20,7 @@ const ReadingPassageRenderer = memo(({
     offset = 0
 }) => {
     const containerRef = useRef(null);
+    const lastInteractionRef = useRef(new Map());
 
     const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
     const resultKey = useMemo(() => result ? JSON.stringify(result.evaluatedAnswers?.map(a => `${a.questionId}:${a.isCorrect}`)) : "", [result]);
@@ -176,6 +179,25 @@ const ReadingPassageRenderer = memo(({
     }, [onAnswerChange, clickedOption, setClickedOption]);
 
     useEffect(() => {
+        const isDebounced = (qId) => {
+            if (!qId) return false;
+            const now = Date.now();
+            const last = lastInteractionRef.current.get(qId) || 0;
+            if (now - last < DEBOUNCE_MS) return true;
+            lastInteractionRef.current.set(qId, now);
+            return false;
+        };
+
+        const flashDebounced = (el) => {
+            if (!el) return;
+            el.style.opacity = "0.5";
+            el.style.pointerEvents = "none";
+            setTimeout(() => {
+                el.style.opacity = "";
+                el.style.pointerEvents = "";
+            }, DEBOUNCE_MS);
+        };
+
         const handleInput = (e) => {
             if (e.target && e.target.hasAttribute('data-q-id') && e.target.tagName === 'INPUT') {
                 const qId = e.target.getAttribute('data-q-id');
@@ -197,6 +219,10 @@ const ReadingPassageRenderer = memo(({
                 const qId = target.getAttribute('data-q-id');
                 const val = e.dataTransfer.getData("text/plain");
                 if (qId && val) {
+                    if (isDebounced(qId)) {
+                        flashDebounced(target);
+                        return;
+                    }
                     onAnswerChangeRef.current(qId, val);
                 }
             }
@@ -218,6 +244,10 @@ const ReadingPassageRenderer = memo(({
             if (target) {
                 const qId = target.getAttribute('data-q-id');
                 if (qId && clickedOptionRef.current) {
+                    if (isDebounced(qId)) {
+                        flashDebounced(target);
+                        return;
+                    }
                     onAnswerChangeRef.current(qId, clickedOptionRef.current);
                     if (setClickedOptionRef.current) {
                         setClickedOptionRef.current(null);

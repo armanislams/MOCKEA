@@ -159,8 +159,11 @@ const formatFlowChartPassage = (text) => {
     }
 };
 
+const DEBOUNCE_MS = 400;
+
 const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700 whitespace-pre-line" }) => {
     const containerRef = useRef(null);
+    const lastInteractionRef = useRef(new Map());
 
     const questionsKey = useMemo(() => questions.map(q => q.id).join(","), [questions]);
     const resultKey = useMemo(() => result ? JSON.stringify(result.evaluatedAnswers?.map(a => `${a.questionId}:${a.isCorrect}`)) : "", [result]);
@@ -315,6 +318,25 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
     }, [onAnswerChange, clickedOption, setClickedOption]);
 
     useEffect(() => {
+        const isDebounced = (qId) => {
+            if (!qId) return false;
+            const now = Date.now();
+            const last = lastInteractionRef.current.get(qId) || 0;
+            if (now - last < DEBOUNCE_MS) return true;
+            lastInteractionRef.current.set(qId, now);
+            return false;
+        };
+
+        const flashDebounced = (el) => {
+            if (!el) return;
+            el.style.opacity = "0.5";
+            el.style.pointerEvents = "none";
+            setTimeout(() => {
+                el.style.opacity = "";
+                el.style.pointerEvents = "";
+            }, DEBOUNCE_MS);
+        };
+
         const handleInput = (e) => {
             if (e.target && e.target.hasAttribute('data-q-id') && e.target.tagName === 'INPUT') {
                 const qId = e.target.getAttribute('data-q-id');
@@ -336,6 +358,10 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
                 const qId = target.getAttribute('data-q-id');
                 const val = e.dataTransfer.getData("text/plain");
                 if (qId && val) {
+                    if (isDebounced(qId)) {
+                        flashDebounced(target);
+                        return;
+                    }
                     onAnswerChangeRef.current(qId, val);
                 }
             }
@@ -357,6 +383,10 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             if (target) {
                 const qId = target.getAttribute('data-q-id');
                 if (qId && clickedOptionRef.current) {
+                    if (isDebounced(qId)) {
+                        flashDebounced(target);
+                        return;
+                    }
                     onAnswerChangeRef.current(qId, clickedOptionRef.current);
                     if (setClickedOptionRef.current) {
                         setClickedOptionRef.current(null);
