@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { PiLockFill } from "react-icons/pi";
 import useAxios from "../../hooks/useAxios";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import MobileWarningModal from "../Common/MobileWarningModal";
 import Speaking from "../Dashboard/Student Dashboard/Speaking/Speaking";
 import Listening from "../Dashboard/Student Dashboard/Listening/Listening";
 import Login from "../Auth/Login";
@@ -53,9 +55,12 @@ function InlineAuthModal({ onClose, onSuccess }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function GuestTestEnvironment() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const axiosPublic = useAxios();
+  const isMobile = useIsMobile();
 
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [mobileWarningDismissed, setMobileWarningDismissed] = useState(!isMobile);
 
   // Fetch the public question set
   const { data: test, isLoading, error } = useQuery({
@@ -99,6 +104,14 @@ export default function GuestTestEnvironment() {
 
   return (
     <>
+      {isMobile && !mobileWarningDismissed && (
+        <MobileWarningModal
+          isOpen={true}
+          onExit={() => navigate("/free-practice")}
+          onProceed={() => setMobileWarningDismissed(true)}
+        />
+      )}
+
       {showAuthModal && (
         <InlineAuthModal
           onClose={() => setShowAuthModal(false)}
@@ -107,10 +120,12 @@ export default function GuestTestEnvironment() {
       )}
 
       {/* Render the real Speaking or Listening component */}
-      {test.testType === "speaking" ? (
-        <Speaking preloadedSet={test} onSubmitGuest={handleGuestSubmit} />
-      ) : (
-        <Listening preloadedSet={test} onSubmitGuest={handleGuestSubmit} />
+      {(!isMobile || mobileWarningDismissed) && (
+        test.testType === "speaking" ? (
+          <Speaking preloadedSet={test} onSubmitGuest={handleGuestSubmit} />
+        ) : (
+          <Listening preloadedSet={test} onSubmitGuest={handleGuestSubmit} />
+        )
       )}
     </>
   );
