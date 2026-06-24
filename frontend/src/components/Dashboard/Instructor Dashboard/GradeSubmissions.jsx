@@ -734,7 +734,7 @@ const GradeSubmissions = () => {
                                             if (!part) return null;
                                             const match = part.items.find(item => {
                                                 const cleanItemQ = item.question.toLowerCase().replace(/[^a-z0-9]/g, "");
-                                                const cleanTargetQ = qText.toLowerCase().replace(/[^a-z0-9]/g, "");
+                                                const cleanTargetQ = (qText || "").split("\n")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
                                                 return cleanItemQ === cleanTargetQ || item.label.includes((qIndex + 1).toString());
                                             });
                                             return match?.audioUrl || null;
