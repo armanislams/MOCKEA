@@ -96,13 +96,13 @@ const groupQuestions = (questions) => {
     return groups;
 };
 
-const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption }) => {
+const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption, offset = 0 }) => {
     const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
     return (
         <div id={`question-${idx}`} className="space-y-4 scroll-mt-6">
             <div className="flex items-start gap-4">
                 <div className="flex-none w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black">
-                    {idx + 1}
+                    {offset + idx + 1}
                 </div>
                 <p className="text-lg font-medium pt-1">
                     {q.question}
@@ -428,6 +428,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                                     onAnswerChange={onAnswerChange}
                                     clickedOption={clickedOption}
                                     setClickedOption={setClickedOption}
+                                    offset={offset}
                                 />
                             </div>
                             {isFlowChart && nextIsFlowChart && (
@@ -513,6 +514,9 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
     const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
     const [activePassageTab, setActivePassageTab] = useState(0);
     const [clickedOption, setClickedOption] = useState(null);
+    const [showJumpToPassage, setShowJumpToPassage] = useState(false);
+    const leftPaneScrollRef = useRef(null);
+    const passageContainerRef = useRef(null);
 
     const handleLocalAnswerChange = useCallback((qId, val) => {
         if (!data?._id) {
@@ -604,6 +608,29 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
         document.addEventListener("pointerdown", handleGlobalClick);
         return () => document.removeEventListener("pointerdown", handleGlobalClick);
     }, [toolbar.show, activeNote.show]);
+
+    useEffect(() => {
+        const scrollContainer = leftPaneScrollRef.current;
+        const passageEl = passageContainerRef.current;
+        if (!scrollContainer || !passageEl) return;
+
+        const checkVisibility = () => {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const passageRect = passageEl.getBoundingClientRect();
+            setShowJumpToPassage(passageRect.bottom < containerRect.top + 60);
+        };
+
+        scrollContainer.addEventListener("scroll", checkVisibility, { passive: true });
+        checkVisibility();
+        return () => scrollContainer.removeEventListener("scroll", checkVisibility);
+    }, [data, activePassageTab]);
+
+    const scrollToPassage = useCallback(() => {
+        const passageEl = passageContainerRef.current;
+        if (passageEl) {
+            passageEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }, []);
 
     const handleTextSelection = (e) => {
         const container = e.currentTarget;
@@ -721,6 +748,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
 
         return ( 
             <div 
+                ref={passageContainerRef}
                 data-passage-container="true"
                 onMouseUp={handleTextSelection}
                 onPointerUp={handleTextSelection}
@@ -751,7 +779,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
             <div className="flex h-full overflow-hidden bg-white">
                 {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
                 <div className="w-[45%] flex flex-col h-full border-r border-base-200">
-                    <div className="flex-1 overflow-y-auto p-12">
+                    <div ref={leftPaneScrollRef} className="flex-1 overflow-y-auto p-12">
                         <div className="max-w-2xl mx-auto space-y-8">
                             <header className="space-y-2 font-sans">
                                 <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Part {activeSectionIdx + 1}</p>
@@ -827,57 +855,22 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                             if (showPassageTabs && qPassageIndex !== activePassageTab) return false;
 
                             const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                            const hasTableLeft = groupEntry.header?.rightSideQuestion || (groupEntry.header?.instructions &&
-                                             /___([\w-]+)___/.test(groupEntry.header.instructions) &&
+                            const hasInlineInstructions = groupEntry.header?.instructions && 
+                                                          /___([\w-]+)___/.test(groupEntry.header.instructions) && 
+                                                          !/^\|.+\|$/m.test(groupEntry.header.instructions);
+                            const hasTable = groupEntry.header?.rightSideQuestion || (groupEntry.header?.instructions && 
+                                             /___([\w-]+)___/.test(groupEntry.header.instructions) && 
                                              /^\|.+\|$/m.test(groupEntry.header.instructions));
-                            const instructionHasBlanksLeft = groupEntry.header?.instructions &&
-                                                              /___([\w-]+)___/.test(groupEntry.header.instructions) &&
-                                                              !hasTableLeft;
-                            const groupQIdsLeft = groupEntry.visuals
-                                .filter(vg => vg.type !== 'matching-grid-group')
-                                .map(vg => vg.question?.id)
-                                .filter(Boolean);
-                            // Only treat as inline if the passage actually contains blanks for these questions
-                            const passageContent = (data.passages || []).map(p => p.content || '').join('') + (data.passage || '');
-                            const anyQInlineLeft = groupQIdsLeft.some(id => {
-                                const q = data.questions?.find(item => item.id === id);
-                                if (!q) return false;
-                                const qIdx = data.questions.indexOf(q);
-                                const globalNum = (activeSectionOffset || 0) + qIdx + 1;
-                                const localNum = qIdx + 1;
-                                return passageContent.includes(`___${id}___`) ||
-                                       passageContent.includes(`___${globalNum}___`) ||
-                                       passageContent.includes(`___${localNum}___`) ||
-                                       passageContent.includes(`___${id.replace(/^r/, '')}___`);
-                            });
-                            const hasInlineInstructionsLeft = instructionHasBlanksLeft && anyQInlineLeft;
-                            return isMatchingGrid || hasInlineInstructionsLeft || hasTableLeft;
+                            return isMatchingGrid || hasInlineInstructions || hasTable;
                         }).map((groupEntry, geIdx) => {
                             const header = groupEntry.header;
                             const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                            const hasTable = header?.rightSideQuestion || (header?.instructions &&
-                                             /___([\w-]+)___/.test(header.instructions) &&
+                            const hasInlineInstructions = header?.instructions && 
+                                                          /___([\w-]+)___/.test(header.instructions) && 
+                                                          !/^\|.+\|$/m.test(header.instructions);
+                            const hasTable = header?.rightSideQuestion || (header?.instructions && 
+                                             /___([\w-]+)___/.test(header.instructions) && 
                                              /^\|.+\|$/m.test(header.instructions));
-                            const instructionHasBlanks2 = header?.instructions &&
-                                                          /___([\w-]+)___/.test(header.instructions) &&
-                                                          !hasTable;
-                            const groupQIds2 = groupEntry.visuals
-                                .filter(vg => vg.type !== 'matching-grid-group')
-                                .map(vg => vg.question?.id)
-                                .filter(Boolean);
-                            const passageContent2 = (data.passages || []).map(p => p.content || '').join('') + (data.passage || '');
-                            const anyQInline2 = groupQIds2.some(id => {
-                                const q = data.questions?.find(item => item.id === id);
-                                if (!q) return false;
-                                const qIdx2 = data.questions.indexOf(q);
-                                const globalNum2 = (activeSectionOffset || 0) + qIdx2 + 1;
-                                const localNum2 = qIdx2 + 1;
-                                return passageContent2.includes(`___${id}___`) ||
-                                       passageContent2.includes(`___${globalNum2}___`) ||
-                                       passageContent2.includes(`___${localNum2}___`) ||
-                                       passageContent2.includes(`___${id.replace(/^r/, '')}___`);
-                            });
-                            const hasInlineInstructions = instructionHasBlanks2 && anyQInline2;
 
                             return (
                                 <div key={`left-group-${geIdx}`} className="mt-8 font-sans">
@@ -943,7 +936,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                     </div>
                             </div>  </div>
 
-            <div className="w-[55%] overflow-y-auto p-12 bg-base-100">
+            <div className="w-[55%] overflow-y-auto p-12 bg-base-100 relative">
                 <div className="max-w-3xl mx-auto flex gap-8 items-start">
                     <div className="flex-1 min-w-0 space-y-12">
                         <header className="space-y-4">
@@ -1044,6 +1037,18 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                         </div>
                     )}
                 </div>
+                {showJumpToPassage && (
+                    <button
+                        type="button"
+                        onClick={scrollToPassage}
+                        className="sticky bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-2.5 bg-slate-900/90 text-white text-xs font-black uppercase tracking-widest rounded-full shadow-2xl backdrop-blur-md border border-white/10 hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                        </svg>
+                        Jump to Passage
+                    </button>
+                )}
             </div>
             {/* Floating Highlight Action Toolbar */}
             {toolbar.show && (
