@@ -97,7 +97,7 @@ export const initialForm = (testType = "reading") => ({
     instructions: "",
     passage: "",
     passages: [{ title: "", content: "" }],
-    questionGroups: [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0, linkUrl: "" }],
+    questionGroups: [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0, linkUrl: "", rightSideQuestion: false }],
     audioUrl: "",
     speakingPrompt: "",
     speakingPart1Questions: [""],

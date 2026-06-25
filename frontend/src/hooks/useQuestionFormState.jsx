@@ -62,8 +62,9 @@ export function parseQuestionToState(fetchedQuestion) {
             toQuestion: g.toQuestion || 1,
             passageIndex: g.passageIndex || 0,
             linkUrl: g.linkUrl || "",
+            rightSideQuestion: g.rightSideQuestion || false,
         }))
-        : [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0, linkUrl: "" }];
+        : [{ title: "", instructions: "", fromQuestion: 1, toQuestion: 13, passageIndex: 0, linkUrl: "", rightSideQuestion: false }];
 
     return {
         title: fetchedQuestion.title || "",

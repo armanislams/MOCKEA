@@ -196,7 +196,7 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             const isCorrect = evaluation?.isCorrect;
             
             const isMockTest = submitted === undefined;
-            const isDragDrop = q.type === 'drag-drop-completion';
+            const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
 
             if (isDragDrop) {
                 if (submitted) {
@@ -597,7 +597,8 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
             }
         }
 
-        if (groupVisuals.length > 0) {
+        const hasInlineInstructions = qg.instructions && /___([\w-]+)___/.test(qg.instructions) && !/^\|.+\|$/m.test(qg.instructions);
+        if (groupVisuals.length > 0 || hasInlineInstructions) {
             grouped.push({
                 type: 'group',
                 header: qg,

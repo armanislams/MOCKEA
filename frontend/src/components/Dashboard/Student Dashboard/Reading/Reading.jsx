@@ -1076,6 +1076,46 @@ const Reading = () => {
                                         )}
                                         {hasInlineInstructions && (
                                             <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                                {sharedOptions.length > 0 && groupEntry.visuals.some(vg => vg.question?.type === 'drag-drop-completion') && (
+                                                    <div className="border-b border-slate-200/60 pb-4 mb-6 pt-2">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
+                                                            Drag or click to select an option to fill each blank
+                                                        </p>
+                                                        <div className="flex flex-wrap justify-center gap-2 pr-1">
+                                                            {sharedOptions.map((opt, i) => {
+                                                                const letter = String.fromCharCode(65 + i);
+                                                                const label = `${letter}. ${opt}`;
+                                                                const isPlaced = Object.values(answers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                                                const isSelected = clickedOption === label;
+                                                                return (
+                                                                    <div
+                                                                        key={i}
+                                                                        draggable={!isPlaced && !submitted}
+                                                                        onDragStart={(e) => {
+                                                                            if (submitted) return;
+                                                                            e.dataTransfer.setData("text/plain", label);
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            if (submitted) return;
+                                                                            if (!isPlaced) {
+                                                                                setClickedOption(isSelected ? null : label);
+                                                                            }
+                                                                        }}
+                                                                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
+                                                                            isPlaced
+                                                                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                                                : isSelected
+                                                                                ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                                                : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
+                                                                        }`}
+                                                                    >
+                                                                        {label}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 <ReadingPassageRenderer
                                                     passageContent={header.instructions}
                                                     questions={activeSet.questions || []}
