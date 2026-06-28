@@ -256,8 +256,8 @@ export const finalizeTest = async (req, res) => {
             if (['reading', 'listening'].includes(section.sectionType)) {
                 const questionSets = result.testId.sections[section.sectionType] || [];
                 
-                let correctCount = 0;
-                section.answers = section.answers.map(ans => {
+                // Map all answers to include their original question details first
+                const mappedAnswers = section.answers.map(ans => {
                     let originalQ = null;
                     const parts = ans.questionId.split('_');
                     const firstPart = parts[0];
@@ -276,18 +276,82 @@ export const finalizeTest = async (req, res) => {
                             break;
                         }
                     }
-                    
-                    const hasCorrectAnswer = originalQ && originalQ.correctAnswer != null;
-                    const isCorrect = hasCorrectAnswer && isAnswerMatching(originalQ.correctAnswer, ans.userAnswer || '');
-                    if (isCorrect) correctCount++;
-                    
-                    return {
-                        ...ans,
-                        isCorrect,
-                        correctAnswer: originalQ?.correctAnswer
-                    };
+                    return { ans, originalQ };
                 });
 
+                // Group consecutive multiple-selection questions that share the same question text
+                const groups = [];
+                let currentGroup = null;
+
+                for (let i = 0; i < mappedAnswers.length; i++) {
+                    const item = mappedAnswers[i];
+                    const q = item.originalQ;
+
+                    if (q && q.type === 'multiple-selection') {
+                        const qText = q.question ? q.question.trim().toLowerCase() : "";
+                        if (currentGroup && currentGroup.qText === qText) {
+                            currentGroup.items.push(item);
+                        } else {
+                            currentGroup = {
+                                type: 'multiple-selection',
+                                qText,
+                                items: [item]
+                            };
+                            groups.push(currentGroup);
+                        }
+                    } else {
+                        currentGroup = null;
+                        groups.push({
+                            type: 'single',
+                            item
+                        });
+                    }
+                }
+
+                // Grade each group
+                let correctCount = 0;
+                const finalAnswers = [];
+
+                for (const group of groups) {
+                    if (group.type === 'multiple-selection') {
+                        const correctAnswers = group.items.map(it => it.originalQ?.correctAnswer).filter(Boolean);
+                        const cleanCorrectAnswers = correctAnswers.map(ans => ans.toLowerCase().trim());
+
+                        group.items.forEach(it => {
+                            const userAns = (it.ans.userAnswer || "").toLowerCase().trim();
+                            let isCorrect = false;
+
+                            if (userAns) {
+                                const matchIdx = cleanCorrectAnswers.findIndex(cAns => {
+                                    return isAnswerMatching(cAns, userAns);
+                                });
+                                if (matchIdx !== -1) {
+                                    isCorrect = true;
+                                    cleanCorrectAnswers.splice(matchIdx, 1);
+                                }
+                            }
+
+                            if (isCorrect) correctCount++;
+                            finalAnswers.push({
+                                ...it.ans,
+                                isCorrect,
+                                correctAnswer: it.originalQ?.correctAnswer
+                            });
+                        });
+                    } else {
+                        const it = group.item;
+                        const hasCorrectAnswer = it.originalQ && it.originalQ.correctAnswer != null;
+                        const isCorrect = hasCorrectAnswer && isAnswerMatching(it.originalQ.correctAnswer, it.ans.userAnswer || '');
+                        if (isCorrect) correctCount++;
+                        finalAnswers.push({
+                            ...it.ans,
+                            isCorrect,
+                            correctAnswer: it.originalQ?.correctAnswer
+                        });
+                    }
+                }
+
+                section.answers = finalAnswers;
                 section.score = correctCount;
                 section.isGraded = true;
             }

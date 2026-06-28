@@ -22,6 +22,7 @@ const QuestionItemSchema = new mongoose.Schema(
                 "multiple-choice",        // MCQ with radio options
                 "true-false",             // True / False / Not Given
                 "yes-no",                 // Yes / No / Not Given
+                "multiple-selection",     // Choose multiple options (checkboxes)
 
                 // ── Matching (IELTS + PTE) ───────────────────────────
                 "matching",               // Match items to a list
@@ -45,6 +46,10 @@ const QuestionItemSchema = new mongoose.Schema(
         options: {
             type: [String],
             default: [],
+        },
+        maxSelections: {
+            type: Number,
+            default: 1,
         },
         // For matching types: list of key-value pairs
         matchingPairs: [{

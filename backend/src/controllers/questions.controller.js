@@ -397,18 +397,82 @@ export const evaluateQuestions = async (req, res) => {
         let correctCount = 0;
         const totalQuestions = set.questions.length;
 
-        const evaluatedAnswers = set.questions.map(q => {
+        const mappedQuestions = set.questions.map(q => {
             const userAnswer = answers[q.id] || "";
-            const isCorrect = isAnswerMatching(q.correctAnswer, userAnswer);
-            if (isCorrect) correctCount++;
-            
-            return {
-                questionId: q.id,
-                userAnswer,
-                correctAnswer: q.correctAnswer,
-                isCorrect
-            };
+            return { q, userAnswer };
         });
+
+        // Group consecutive multiple-selection questions that share the same question text
+        const groups = [];
+        let currentGroup = null;
+
+        for (let i = 0; i < mappedQuestions.length; i++) {
+            const item = mappedQuestions[i];
+            const q = item.q;
+
+            if (q && q.type === 'multiple-selection') {
+                const qText = q.question ? q.question.trim().toLowerCase() : "";
+                if (currentGroup && currentGroup.qText === qText) {
+                    currentGroup.items.push(item);
+                } else {
+                    currentGroup = {
+                        type: 'multiple-selection',
+                        qText,
+                        items: [item]
+                    };
+                    groups.push(currentGroup);
+                }
+            } else {
+                currentGroup = null;
+                groups.push({
+                    type: 'single',
+                    item
+                });
+            }
+        }
+
+        // Grade each group
+        const evaluatedAnswers = [];
+
+        for (const group of groups) {
+            if (group.type === 'multiple-selection') {
+                const correctAnswers = group.items.map(it => it.q.correctAnswer).filter(Boolean);
+                const cleanCorrectAnswers = correctAnswers.map(ans => ans.toLowerCase().trim());
+
+                group.items.forEach(it => {
+                    const userAns = (it.userAnswer || "").toLowerCase().trim();
+                    let isCorrect = false;
+
+                    if (userAns) {
+                        const matchIdx = cleanCorrectAnswers.findIndex(cAns => {
+                            return isAnswerMatching(cAns, userAns);
+                        });
+                        if (matchIdx !== -1) {
+                            isCorrect = true;
+                            cleanCorrectAnswers.splice(matchIdx, 1);
+                        }
+                    }
+
+                    if (isCorrect) correctCount++;
+                    evaluatedAnswers.push({
+                        questionId: it.q.id,
+                        userAnswer: it.userAnswer,
+                        correctAnswer: it.q.correctAnswer,
+                        isCorrect
+                    });
+                });
+            } else {
+                const it = group.item;
+                const isCorrect = isAnswerMatching(it.q.correctAnswer, it.userAnswer);
+                if (isCorrect) correctCount++;
+                evaluatedAnswers.push({
+                    questionId: it.q.id,
+                    userAnswer: it.userAnswer,
+                    correctAnswer: it.q.correctAnswer,
+                    isCorrect
+                });
+            }
+        }
 
         const score = Math.round((correctCount / totalQuestions) * 100);
 

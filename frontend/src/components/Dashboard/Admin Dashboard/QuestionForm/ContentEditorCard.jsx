@@ -208,6 +208,8 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                             updatedQ.options = ["Yes", "No", "Not Given"];
                                                         } else if (selectedType === "matching-grid") {
                                                             updatedQ.options = ["A", "B", "C"];
+                                                        } else if (selectedType === "multiple-selection") {
+                                                            updatedQ.options = ["A", "B", "C", "D", "E"];
                                                         } else if (selectedType === "drag-drop-completion") {
                                                             const firstDD = currentQuestions.find(item => item.type === "drag-drop-completion");
                                                             if (firstDD) {
@@ -230,6 +232,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                             <option value="flow-chart-completion">Flow Chart Completion</option>
                                             <option value="drag-drop-completion">Drag and Drop Completion</option>
                                             <option value="multiple-choice">Multiple Choice</option>
+                                            <option value="multiple-selection">Multiple Selection</option>
                                             <option value="true-false">True / False / Not Given</option>
                                             <option value="yes-no">Yes / No / Not Given</option>
                                             <option value="matching">Matching</option>

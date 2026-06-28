@@ -238,9 +238,14 @@ const groupQuestions = (questions, questionGroups, offset = 0, allQuestions = []
     let currentGridGroup = null;
     let currentGroupId = null;
     let currentOptionsKey = null;
+    let currentSelectionGroup = null;
+    let currentSelectionQuestionText = null;
 
     for (const q of questions) {
         if (q.type === 'matching-grid') {
+            currentSelectionGroup = null;
+            currentSelectionQuestionText = null;
+
             let groupId = 'no-group';
             if (questionGroups && allQuestions && allQuestions.length > 0) {
                 const qIdx = allQuestions.findIndex(item => item.id === q.id);
@@ -272,10 +277,33 @@ const groupQuestions = (questions, questionGroups, offset = 0, allQuestions = []
                 currentOptionsKey = optionsKey;
                 groups.push(currentGridGroup);
             }
+        } else if (q.type === 'multiple-selection') {
+            currentGridGroup = null;
+            currentGroupId = null;
+            currentOptionsKey = null;
+
+            const cleanOptions = (q.options || []).filter(o => o && o.trim() !== "");
+            const optionsKey = cleanOptions.join('|');
+            const qText = q.question ? q.question.trim().toLowerCase() : "";
+
+            if (currentSelectionGroup && currentSelectionQuestionText === qText && currentSelectionGroup.optionsKey === optionsKey) {
+                currentSelectionGroup.questions.push(q);
+            } else {
+                currentSelectionGroup = {
+                    type: 'multiple-selection-group',
+                    options: cleanOptions,
+                    optionsKey: optionsKey,
+                    questions: [q]
+                };
+                currentSelectionQuestionText = qText;
+                groups.push(currentSelectionGroup);
+            }
         } else {
             currentGridGroup = null;
             currentGroupId = null;
             currentOptionsKey = null;
+            currentSelectionGroup = null;
+            currentSelectionQuestionText = null;
             groups.push({
                 type: 'single',
                 question: q
@@ -283,6 +311,83 @@ const groupQuestions = (questions, questionGroups, offset = 0, allQuestions = []
         }
     }
     return groups;
+};
+
+const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange, offset = 0, data }) => {
+    const firstQ = questions[0];
+    const questionNumbers = questions.map(q => {
+        const idx = data.questions.findIndex(item => item.id === q.id);
+        return offset + idx + 1;
+    });
+
+    const isAllChecked = (opt) => {
+        return questions.some(q => answers[q.id] === opt);
+    };
+
+    const handleCheckboxChange = (opt) => {
+        const currentlySelected = questions.map(q => answers[q.id]).filter(Boolean);
+        const alreadySelectedIdx = currentlySelected.indexOf(opt);
+
+        if (alreadySelectedIdx !== -1) {
+            const newSelection = currentlySelected.filter(val => val !== opt);
+            questions.forEach((q, idx) => {
+                onAnswerChange(q.id, newSelection[idx] || "");
+            });
+        } else {
+            if (currentlySelected.length < questions.length) {
+                const newSelection = [...currentlySelected, opt];
+                questions.forEach((q, idx) => {
+                    onAnswerChange(q.id, newSelection[idx] || "");
+                });
+            }
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center gap-3">
+                <div className="flex gap-1.5 flex-wrap">
+                    {questionNumbers.map(num => (
+                        <div key={num} className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs">
+                            {num}
+                        </div>
+                    ))}
+                </div>
+                <p className="text-sm font-bold text-slate-800">
+                    {firstQ.question}
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2.5 pl-2">
+                {options.map((opt, optIdx) => {
+                    const isChecked = isAllChecked(opt);
+                    const letter = String.fromCharCode(65 + optIdx);
+                    
+                    return (
+                        <label 
+                            key={optIdx} 
+                            className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
+                                isChecked 
+                                ? "border-primary bg-primary/5 text-primary font-bold" 
+                                : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                            }`}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleCheckboxChange(opt)}
+                                className="checkbox checkbox-primary checkbox-sm rounded-lg"
+                            />
+                            <span className="text-xs font-black w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">
+                                {letter}
+                            </span>
+                            <span className="text-xs">{opt}</span>
+                        </label>
+                    );
+                })}
+            </div>
+        </div>
+    );
 };
 
 const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, questions) => {
@@ -298,8 +403,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
         for (let i = 0; i < visualGroups.length; i++) {
             if (assignedVisuals.has(i)) continue;
 
-            const vg = visualGroups[i];
-            const firstQ = vg.type === 'matching-grid-group' ? vg.questions[0] : vg.question;
+            const firstQ = (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') ? vg.questions[0] : vg.question;
             const firstQIdx = questions.findIndex(item => item.id === firstQ.id);
             const localQNum = firstQIdx + 1;
 
@@ -446,6 +550,21 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                         return null; 
                     }
 
+                    if (vg.type === 'multiple-selection-group') {
+                        return (
+                            <div key={`selection-${geIdx}-${vgIdx}`} className="space-y-4 p-4 rounded-3xl border border-base-200 bg-white shadow-xs">
+                                <MultipleSelectionRenderer
+                                    questions={vg.questions}
+                                    options={vg.options}
+                                    answers={answers}
+                                    onAnswerChange={handleAnswerChange}
+                                    offset={0}
+                                    data={activeSet}
+                                />
+                            </div>
+                        );
+                    }
+
                     const q = vg.question;
                     if (renderedInlineIds.has(q.id)) {
                         return null;
@@ -491,17 +610,18 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
 
                 if (isGroup) {
                     const header = groupEntry.header;
-                    const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                    const hasInlineInstructions = header?.instructions && 
-                                                  /___([\w-]+)___/.test(header.instructions) && 
-                                                  !/^\|.+\|$/m.test(header.instructions);
-                    const hasTable = header?.rightSideQuestion || (header?.instructions && 
-                                     /___([\w-]+)___/.test(header.instructions) && 
-                                     /^\|.+\|$/m.test(header.instructions));
-                    
-                    if (isMatchingGrid || hasInlineInstructions || hasTable) {
-                        return null; // hide entirely from the right pane
-                    }
+                    const groupQIds = [];
+                    groupEntry.visuals.forEach(vg => {
+                        if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
+                            if (vg.questions) {
+                                vg.questions.forEach(q => groupQIds.push(q.id));
+                            }
+                        } else if (vg.question) {
+                            groupQIds.push(vg.question.id);
+                        }
+                    });
+                    const anyGroupQInline = groupQIds.some(id => renderedInlineIds.has(id));
+                    const hasInlineInstructions = instructionHasBlanks && anyGroupQInline;
 
                     if (children.length === 0 && !hasTable) {
                         return null;

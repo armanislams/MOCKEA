@@ -37,6 +37,7 @@ export const QUESTION_TYPE_GROUPS = [
             { value: "multiple-choice", label: "Multiple Choice (MCQ)" },
             { value: "true-false",      label: "True / False / Not Given" },
             { value: "yes-no",          label: "Yes / No / Not Given" },
+            { value: "multiple-selection", label: "Multiple Selection" },
         ],
     },
     {
@@ -59,7 +60,7 @@ export const QUESTION_TYPE_GROUPS = [
 ];
 
 // Which types need options array
-export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid", "drag-drop-completion"];
+export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid", "drag-drop-completion", "multiple-selection"];
 // Which types need matchingPairs
 export const NEEDS_PAIRS = ["matching", "heading-matching"];
 // Which types need a per-question image URL
