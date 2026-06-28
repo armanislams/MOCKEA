@@ -166,21 +166,43 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
 
     const groups = [];
     let currentGridGroup = null;
+    let currentGroupId = null;
+    let currentOptionsKey = null;
 
     for (const item of mapped) {
         if (item.q && item.q.type === 'matching-grid') {
-            if (currentGridGroup) {
+            let groupId = 'no-group';
+            if (currentSectionData && currentSectionData.questionGroups) {
+                const globalQNum = item.qIdx + 1;
+                const matchingGroup = currentSectionData.questionGroups.find(qg => {
+                    const fromQ = Number(qg.fromQuestion);
+                    const toQ = Number(qg.toQuestion);
+                    return globalQNum >= fromQ && globalQNum <= toQ;
+                });
+                if (matchingGroup) {
+                    groupId = `${matchingGroup.fromQuestion}-${matchingGroup.toQuestion}`;
+                }
+            }
+
+            const cleanOptions = (item.q.options || []).filter(o => o && o.trim() !== "");
+            const optionsKey = cleanOptions.join('|');
+
+            if (currentGridGroup && currentGroupId === groupId && currentOptionsKey === optionsKey) {
                 currentGridGroup.items.push(item);
             } else {
                 currentGridGroup = {
                     type: 'matching-grid-group',
-                    options: (item.q.options || []).filter(o => o && o.trim() !== ""),
+                    options: cleanOptions,
                     items: [item]
                 };
+                currentGroupId = groupId;
+                currentOptionsKey = optionsKey;
                 groups.push(currentGridGroup);
             }
         } else {
             currentGridGroup = null;
+            currentGroupId = null;
+            currentOptionsKey = null;
             groups.push({
                 type: 'single',
                 item

@@ -233,24 +233,49 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
     );
 };
 
-const groupQuestions = (questions) => {
+const groupQuestions = (questions, questionGroups, offset = 0, allQuestions = []) => {
     const groups = [];
     let currentGridGroup = null;
+    let currentGroupId = null;
+    let currentOptionsKey = null;
 
     for (const q of questions) {
         if (q.type === 'matching-grid') {
-            if (currentGridGroup) {
+            let groupId = 'no-group';
+            if (questionGroups && allQuestions && allQuestions.length > 0) {
+                const qIdx = allQuestions.findIndex(item => item.id === q.id);
+                if (qIdx !== -1) {
+                    const localQNum = qIdx + 1;
+                    const matchingGroup = questionGroups.find(qg => {
+                        const fromQ = Number(qg.fromQuestion);
+                        const toQ = Number(qg.toQuestion);
+                        return localQNum >= fromQ && localQNum <= toQ;
+                    });
+                    if (matchingGroup) {
+                        groupId = `${matchingGroup.fromQuestion}-${matchingGroup.toQuestion}`;
+                    }
+                }
+            }
+
+            const cleanOptions = (q.options || []).filter(o => o && o.trim() !== "");
+            const optionsKey = cleanOptions.join('|');
+
+            if (currentGridGroup && currentGroupId === groupId && currentOptionsKey === optionsKey) {
                 currentGridGroup.questions.push(q);
             } else {
                 currentGridGroup = {
                     type: 'matching-grid-group',
-                    options: (q.options || []).filter(o => o && o.trim() !== ""),
+                    options: cleanOptions,
                     questions: [q]
                 };
+                currentGroupId = groupId;
+                currentOptionsKey = optionsKey;
                 groups.push(currentGridGroup);
             }
         } else {
             currentGridGroup = null;
+            currentGroupId = null;
+            currentOptionsKey = null;
             groups.push({
                 type: 'single',
                 question: q
@@ -683,7 +708,7 @@ const Reading = () => {
  
   const groupedItems = useMemo(() => {
       if (!activeSet) return [];
-      const groups = groupQuestions(activeSet.questions || []);
+      const groups = groupQuestions(activeSet.questions || [], activeSet.questionGroups, 0, activeSet.questions || []);
       return groupVisualsByQuestionGroups(groups, activeSet.questionGroups, 0, activeSet.questions || []);
   }, [activeSet]);
  

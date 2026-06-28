@@ -938,24 +938,49 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
     );
 };
 
-const groupQuestions = (questions) => {
+const groupQuestions = (questions, questionGroups, offset = 0, allQuestions = []) => {
     const groups = [];
     let currentGridGroup = null;
+    let currentGroupId = null;
+    let currentOptionsKey = null;
 
     for (const q of questions) {
         if (q.type === 'matching-grid') {
-            if (currentGridGroup) {
+            let groupId = 'no-group';
+            if (questionGroups && allQuestions && allQuestions.length > 0) {
+                const qIdx = allQuestions.findIndex(item => item.id === q.id);
+                if (qIdx !== -1) {
+                    const localQNum = qIdx + 1;
+                    const matchingGroup = questionGroups.find(qg => {
+                        const fromQ = Number(qg.fromQuestion);
+                        const toQ = Number(qg.toQuestion);
+                        return localQNum >= fromQ && localQNum <= toQ;
+                    });
+                    if (matchingGroup) {
+                        groupId = `${matchingGroup.fromQuestion}-${matchingGroup.toQuestion}`;
+                    }
+                }
+            }
+
+            const cleanOptions = (q.options || []).filter(o => o && o.trim() !== "");
+            const optionsKey = cleanOptions.join('|');
+
+            if (currentGridGroup && currentGroupId === groupId && currentOptionsKey === optionsKey) {
                 currentGridGroup.questions.push(q);
             } else {
                 currentGridGroup = {
                     type: 'matching-grid-group',
-                    options: (q.options || []).filter(o => o && o.trim() !== ""),
+                    options: cleanOptions,
                     questions: [q]
                 };
+                currentGroupId = groupId;
+                currentOptionsKey = optionsKey;
                 groups.push(currentGridGroup);
             }
         } else {
             currentGridGroup = null;
+            currentGroupId = null;
+            currentOptionsKey = null;
             groups.push({
                 type: 'single',
                 question: q
@@ -1133,9 +1158,9 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
             const vg = visualGroups[i];
             const firstQ = vg.type === 'matching-grid-group' ? vg.questions[0] : vg.question;
             const firstQIdx = questions.findIndex(item => item.id === firstQ.id);
-            const globalQNum = offset + firstQIdx + 1;
+            const localQNum = firstQIdx + 1;
 
-            if (globalQNum >= fromQ && globalQNum <= toQ) {
+            if (localQNum >= fromQ && localQNum <= toQ) {
                 groupVisuals.push(vg);
                 assignedVisuals.add(i);
             }
@@ -1475,7 +1500,7 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
 
                 {/* ── Questions ───────────────────────────────────────── */}
                 {remainingQuestions.length > 0 && (() => {
-                    const groups = groupQuestions(remainingQuestions);
+                    const groups = groupQuestions(remainingQuestions, activeSet.questionGroups, offset, activeSet.questions);
                     const groupedItems = groupVisualsByQuestionGroups(groups, activeSet.questionGroups, offset, activeSet.questions);
                     return (
                         <GroupedQuestionsRenderer
