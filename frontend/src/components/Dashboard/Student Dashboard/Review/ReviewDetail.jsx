@@ -168,9 +168,14 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
     let currentGridGroup = null;
     let currentGroupId = null;
     let currentOptionsKey = null;
+    let currentSelectionGroup = null;
+    let currentSelectionQuestionText = null;
 
     for (const item of mapped) {
         if (item.q && item.q.type === 'matching-grid') {
+            currentSelectionGroup = null;
+            currentSelectionQuestionText = null;
+
             let groupId = 'no-group';
             if (currentSectionData && currentSectionData.questionGroups) {
                 const globalQNum = item.qIdx + 1;
@@ -199,10 +204,33 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
                 currentOptionsKey = optionsKey;
                 groups.push(currentGridGroup);
             }
+        } else if (item.q && item.q.type === 'multiple-selection') {
+            currentGridGroup = null;
+            currentGroupId = null;
+            currentOptionsKey = null;
+
+            const cleanOptions = (item.q.options || []).filter(o => o && o.trim() !== "");
+            const optionsKey = cleanOptions.join('|');
+            const qText = item.q.question ? item.q.question.trim().toLowerCase() : "";
+
+            if (currentSelectionGroup && currentSelectionQuestionText === qText && currentSelectionGroup.optionsKey === optionsKey) {
+                currentSelectionGroup.items.push(item);
+            } else {
+                currentSelectionGroup = {
+                    type: 'multiple-selection-group',
+                    options: cleanOptions,
+                    optionsKey: optionsKey,
+                    items: [item]
+                };
+                currentSelectionQuestionText = qText;
+                groups.push(currentSelectionGroup);
+            }
         } else {
             currentGridGroup = null;
             currentGroupId = null;
             currentOptionsKey = null;
+            currentSelectionGroup = null;
+            currentSelectionQuestionText = null;
             groups.push({
                 type: 'single',
                 item
@@ -210,6 +238,64 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
         }
     }
     return groups;
+};
+
+const ReviewMultipleSelection = ({ items, options, offset }) => {
+    const firstItem = items[0];
+    const questionNumbers = items.map(item => offset + item.qIdx + 1);
+
+    return (
+        <div className="space-y-4 p-4 rounded-3xl border border-base-200 bg-white shadow-xs">
+            <div className="flex items-center gap-3">
+                <div className="flex gap-1.5 flex-wrap">
+                    {questionNumbers.map(num => (
+                        <div key={num} className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs">
+                            {num}
+                        </div>
+                    ))}
+                </div>
+                <p className="text-sm font-bold text-slate-800">
+                    {firstItem.q.question}
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 pl-2">
+                {items.map((item, idx) => {
+                    const displayNum = offset + item.qIdx + 1;
+                    const ans = item.ans;
+                    return (
+                        <div key={item.q.id} className={`flex items-start justify-between gap-4 p-3.5 rounded-2xl border transition-all ${
+                            ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
+                        }`}>
+                            <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-6 h-6 rounded-lg bg-white border border-base-300 flex items-center justify-center font-black text-xs shadow-xs">
+                                        {displayNum}
+                                    </span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-base-content/30">Selection Analysis</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-0.5">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
+                                        <p className={`font-black text-sm ${ans.isCorrect ? "text-success" : "text-error"}`}>
+                                            {ans.userAnswer || "No Answer"}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-base-content/40">Correct Answer</p>
+                                        <p className="font-black text-sm text-success">{ans.correctAnswer}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="text-2xl flex-shrink-0 pt-1">
+                                {ans.isCorrect ? <PiCheckCircleFill className="text-success" /> : <PiXCircleFill className="text-error" />}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
 };
 
 const groupVisualsByQuestionGroups = (visualGroups, questionGroups) => {
@@ -225,8 +311,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups) => {
         for (let i = 0; i < visualGroups.length; i++) {
             if (assignedVisuals.has(i)) continue;
 
-            const vg = visualGroups[i];
-            const firstItem = vg.type === 'matching-grid-group' ? vg.items[0] : vg.item;
+            const firstItem = (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') ? vg.items[0] : vg.item;
             const localQNum = firstItem.qIdx + 1;
 
             if (localQNum >= fromQ && localQNum <= toQ) {
@@ -377,6 +462,16 @@ const GroupedReviewQuestionsRenderer = ({
                             />
                         );
                     }
+                    if (vg.type === 'multiple-selection-group') {
+                        return (
+                            <ReviewMultipleSelection
+                                key={`selection-${geIdx}-${vgIdx}`}
+                                items={vg.items}
+                                options={vg.options}
+                                offset={offset}
+                            />
+                        );
+                    }
 
                     const { ans, originalIdx, q } = vg.item;
                     if (q && renderedInlineIds.has(q.id)) {
@@ -418,14 +513,26 @@ const GroupedReviewQuestionsRenderer = ({
 
                 if (isGroup) {
                     const header = groupEntry.header;
-                    const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                    const hasInlineInstructions = header?.instructions && 
-                                                  /___([\w-]+)___/.test(header.instructions) && 
-                                                  !/^\|.+\|$/m.test(header.instructions);
-
                     const hasTable = header?.rightSideQuestion || (header?.instructions && 
                                      /___([\w-]+)___/.test(header.instructions) && 
                                      /^\|.+\|$/m.test(header.instructions));
+                    const instructionHasBlanks = header?.instructions && 
+                                                 /___([\w-]+)___/.test(header.instructions) && 
+                                                 !hasTable;
+                    const groupQIds = [];
+                    groupEntry.visuals.forEach(vg => {
+                        if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
+                            if (vg.items) {
+                                vg.items.forEach(it => {
+                                    if (it.q) groupQIds.push(it.q.id);
+                                });
+                            }
+                        } else if (vg.item && vg.item.q) {
+                            groupQIds.push(vg.item.q.id);
+                        }
+                    });
+                    const anyGroupQInline = groupQIds.some(id => renderedInlineIds.has(id));
+                    const hasInlineInstructions = instructionHasBlanks && anyGroupQInline;
 
                     if (activeTab === 'reading') {
                         if (isMatchingGrid || hasInlineInstructions || hasTable) {
