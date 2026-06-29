@@ -55,6 +55,7 @@ const FreeResourcesPage = lazy(() => import("../components/FreeResources/FreeRes
 const CoursesPage = lazy(() => import("../components/Home/CoursesPage"));
 const StudentCourses = lazy(() => import("../components/Dashboard/Student Dashboard/StudentCourses"));
 const AboutPage = lazy(() => import("../components/AboutPage/AboutPage"));
+const PteHome = lazy(() => import("../components/Home/Pte/PteHome"));
 
 const router = createBrowserRouter([
   {
@@ -93,6 +94,10 @@ const router = createBrowserRouter([
           {
             path: "/courses",
             element: withSuspense(CoursesPage),
+          },
+          {
+            path: "/pte",
+            element: withSuspense(PteHome),
           },
         ],
       },

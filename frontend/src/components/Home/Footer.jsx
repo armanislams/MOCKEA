@@ -1,15 +1,25 @@
 import { FaFacebookF, FaLinkedinIn, FaTwitter } from "react-icons/fa";
-// import { Logo } from "./Logo";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 const Footer = () => {
+  const location = useLocation();
+  const isPte = location.pathname.startsWith("/pte");
+
+  const brandText = isPte
+    ? "Your real PTE Academic experience. Practice smarter with guided modules, instant feedback, and enabling skill metrics."
+    : "Your real IELTS experience. Practice smarter with guided modules, instant feedback, and expert support.";
+
+  const newsletterText = isPte
+    ? "Get updates, study tips, and new PTE resources delivered to your inbox."
+    : "Get updates, study tips, and new IELTS resources delivered to your inbox.";
+
   return (
     <footer className="bg-[#001f7a] text-white mt-15">
       <div className="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="space-y-4">
             <Link
-              to="/"
+              to={isPte ? "/pte" : "/"}
               className=" cursor-pointer select-none group focus:outline-none"
             >
               <img
@@ -19,8 +29,7 @@ const Footer = () => {
               />
             </Link>
             <p className="text-gray-200 max-w-md">
-              Your real IELTS experience. Practice smarter with guided modules,
-              instant feedback, and expert support.
+              {brandText}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-8">
@@ -84,8 +93,7 @@ const Footer = () => {
               Newsletter
             </h3>
             <p className="text-gray-200">
-              Get updates, study tips, and new IELTS resources delivered to your
-              inbox.
+              {newsletterText}
             </p>
             <form
               onSubmit={(e) => {
@@ -111,7 +119,9 @@ const Footer = () => {
               />
               <button
                 type="submit"
-                className="rounded-full bg-cta-btn px-6 py-3 font-semibold text-white transition hover:bg-red-600"
+                className={`rounded-full px-6 py-3 font-semibold text-white transition ${
+                  isPte ? "bg-blue-600 hover:bg-blue-700" : "bg-cta-btn hover:bg-red-600"
+                }`}
               >
                 Subscribe
               </button>
