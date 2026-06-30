@@ -311,6 +311,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups) => {
         for (let i = 0; i < visualGroups.length; i++) {
             if (assignedVisuals.has(i)) continue;
 
+            const vg = visualGroups[i];
             const firstItem = (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') ? vg.items[0] : vg.item;
             const localQNum = firstItem.qIdx + 1;
 
@@ -513,6 +514,7 @@ const GroupedReviewQuestionsRenderer = ({
 
                 if (isGroup) {
                     const header = groupEntry.header;
+                    const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
                     const hasTable = header?.rightSideQuestion || (header?.instructions && 
                                      /___([\w-]+)___/.test(header.instructions) && 
                                      /^\|.+\|$/m.test(header.instructions));

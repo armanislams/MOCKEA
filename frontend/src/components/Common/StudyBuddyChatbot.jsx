@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router";
+import { useQuery } from "@tanstack/react-query";
 import { 
   PiChatCircleDotsBold, 
   PiXBold, 
@@ -18,6 +19,7 @@ import useAxiosSecure from "../../hooks/useAxiosSecure";
 import { toast } from "react-toastify";
 import { MODEL_NAME } from "../../constants";
 
+
 const StudyBuddyChatbot = () => {
   const { user } = useAuth();
   const axiosPublic = useAxios();
@@ -33,8 +35,16 @@ const StudyBuddyChatbot = () => {
   });
   const [inputText, setInputText] = useState("");
   
-  const [isActive, setIsActive] = useState(true);
-  const [welcomeMessage, setWelcomeMessage] = useState("Hello! I'm your MOCKEA IELTS Tutor & Support Assistant. How can I help you today?");
+  const { data: chatbotData } = useQuery({
+    queryKey: ['chatbot-settings'],
+    queryFn: async () => {
+      const res = await axiosPublic.get("/chatbot/settings");
+      return res.data.settings;
+    }
+  });
+
+  const isActive = chatbotData ? chatbotData.isActive : false;
+  const welcomeMessage = chatbotData ? chatbotData.welcomeMessage : "Hello! I'm your MOCKEA IELTS Tutor & Support Assistant. How can I help you today?";
   
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -56,22 +66,6 @@ const StudyBuddyChatbot = () => {
       window.speechSynthesis.cancel();
     }
   }, [isExamMode]);
-
-  // Fetch global settings (welcome message, active state) on mount
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await axiosPublic.get("/chatbot/settings");
-        if (res.data?.success) {
-          setIsActive(res.data.settings.isActive);
-          setWelcomeMessage(res.data.settings.welcomeMessage);
-        }
-      } catch (err) {
-        console.error("Failed to load chatbot settings:", err);
-      }
-    };
-    fetchSettings();
-  }, [axiosPublic]);
 
   // Set default welcome message when chatbot opens or mode changes (if history is empty)
   useEffect(() => {
