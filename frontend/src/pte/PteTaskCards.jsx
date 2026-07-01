@@ -35,10 +35,10 @@ export const PteTaskCards = forwardRef((props, ref) => {
             key={card.title}
             height="260px"
             duration="0.7s"
-            frontClass="bg-white border border-slate-200 flex flex-col items-center justify-center gap-5 p-8"
+            frontClass="bg-white border border-slate-200 flex flex-col items-center justify-center gap-5 p-8 rounded-[2rem]"
             front={
               <>
-                <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-inner">
+                <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-[#E30613] shadow-inner">
                   <Icon size={28} />
                 </div>
                 <h3 className="text-xl font-extrabold text-slate-800 tracking-tight text-center">
@@ -46,7 +46,7 @@ export const PteTaskCards = forwardRef((props, ref) => {
                 </h3>
               </>
             }
-            backClass="bg-blue-600 text-white flex flex-col items-center justify-center text-center p-8"
+            backClass="bg-emerald-600 text-white flex flex-col items-center justify-center text-center p-8 rounded-[2rem]"
             back={
               <>
                 <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center mb-4 backdrop-blur-md">
@@ -68,3 +68,4 @@ export const PteTaskCards = forwardRef((props, ref) => {
 });
 
 PteTaskCards.displayName = "PteTaskCards";
+export default PteTaskCards;

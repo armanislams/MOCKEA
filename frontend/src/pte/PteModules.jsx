@@ -1,13 +1,14 @@
 import { motion } from "framer-motion";
 import { PiBookOpenFill, PiHeadphonesFill, PiCheckCircleFill } from "react-icons/pi";
 import { RiMicFill } from "react-icons/ri";
+
 const modules = [
   {
     icon: RiMicFill,
     title: "Speaking & Writing",
     duration: "54 - 67 minutes",
-    color: "from-blue-600 to-indigo-600",
-    lightColor: "bg-blue-50 text-blue-600 border-blue-100",
+    color: "from-red-500 to-[#E30613]",
+    lightColor: "bg-red-50 text-[#E30613] border-red-100",
     tasks: [
       "Read Aloud & Repeat Sentence",
       "Describe Image & Retell Lecture",
@@ -19,8 +20,8 @@ const modules = [
     icon: PiBookOpenFill,
     title: "Reading",
     duration: "29 - 30 minutes",
-    color: "from-teal-500 to-emerald-600",
-    lightColor: "bg-teal-50 text-teal-600 border-teal-100",
+    color: "from-emerald-500 to-teal-600",
+    lightColor: "bg-emerald-50 text-emerald-600 border-emerald-100",
     tasks: [
       "Reading & Writing Fill in the Blanks",
       "Multiple Choice, Multiple Answers",
@@ -32,8 +33,8 @@ const modules = [
     icon: PiHeadphonesFill,
     title: "Listening",
     duration: "30 - 43 minutes",
-    color: "from-violet-600 to-purple-600",
-    lightColor: "bg-violet-50 text-violet-600 border-violet-100",
+    color: "from-amber-500 to-orange-600",
+    lightColor: "bg-amber-50 text-amber-600 border-amber-100",
     tasks: [
       "Summarize Spoken Text",
       "Fill in the Blanks & Write From Dictation",
@@ -45,8 +46,9 @@ const modules = [
 
 export default function PteModules() {
   return (
-    <section className="py-20 bg-slate-50 relative overflow-hidden">
-      <div className="absolute top-1/2 right-0 w-96 h-96 bg-blue-100/30 rounded-full filter blur-3xl -z-10" />
+    <section className="py-20 bg-[#FAF9F6] relative overflow-hidden">
+      <div className="absolute top-1/2 right-0 w-96 h-96 bg-red-100/20 rounded-full filter blur-3xl -z-10" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-100/10 rounded-full filter blur-3xl -z-10" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -54,7 +56,7 @@ export default function PteModules() {
             initial={{ opacity: 0, y: -10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-100 rounded-full mb-4"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#E30613] bg-red-50 border border-red-100 rounded-full mb-4"
           >
             PTE Exam Structure
           </motion.span>
@@ -76,7 +78,7 @@ export default function PteModules() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="bg-white rounded-[2.5rem] p-8 border border-slate-200/60 shadow-xs flex flex-col justify-between hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
+                className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/60 shadow-lg flex flex-col justify-between hover:shadow-2xl transition-all duration-300 relative overflow-hidden group"
               >
                 <div>
                   <div className="flex justify-between items-center mb-8">
@@ -88,7 +90,7 @@ export default function PteModules() {
                     </span>
                   </div>
                   
-                  <h3 className="text-2xl font-black text-[#000f38] mb-6 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-2xl font-black text-[#000f38] mb-6 group-hover:text-[#E30613] transition-colors">
                     {mod.title}
                   </h3>
                   
@@ -103,7 +105,7 @@ export default function PteModules() {
                 </div>
                 
                 <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end">
-                  <span className="text-xs font-black text-blue-600 uppercase tracking-widest group-hover:translate-x-1.5 transition-transform cursor-pointer">
+                  <span className="text-xs font-black text-[#E30613] uppercase tracking-widest group-hover:translate-x-1.5 transition-transform cursor-pointer">
                     Explore Mock Tests &rarr;
                   </span>
                 </div>

@@ -1,143 +1,200 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiArrowRight, FiCheckCircle, FiPlay } from 'react-icons/fi';
-import heroStudent from '../assets/hero-student.png';
-import heroAbstract from '../assets/hero-abstract.png';
-import heroGroup from '../assets/hero-group.png';
+import { FiArrowRight, FiPlay, FiMic, FiCheckCircle, FiVolume2, FiCpu } from 'react-icons/fi';
 import { Link } from 'react-router';
 
 const PteHero = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [recordingState, setRecordingState] = useState('idle'); // idle, recording, analyzing, completed
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (recordingState === 'recording') {
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            setRecordingState('analyzing');
+            return 100;
+          }
+          return prev + 5;
+        });
+      }, 150);
+    } else if (recordingState === 'analyzing') {
+      let timeout = setTimeout(() => {
+        setRecordingState('completed');
+      }, 2000);
+      return () => clearTimeout(timeout);
+    } else if (recordingState === 'idle') {
+      setProgress(0);
+    }
+    return () => clearInterval(interval);
+  }, [recordingState]);
+
+  const handleStartSim = () => {
+    setRecordingState('recording');
+    setProgress(0);
+  };
+
+  const handleResetSim = () => {
+    setRecordingState('idle');
+    setProgress(0);
+  };
+
   return (
-    <div className="relative min-h-[60vh] lg:h-screen flex items-center bg-white font-sans text-gray-900 py-5 md:py-10 lg:py-0">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+    <div className="relative min-h-[90vh] flex flex-col items-center justify-center bg-white font-sans text-gray-900 py-16 overflow-hidden">
+      {/* Background visual details */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#E30613]/5 rounded-full filter blur-3xl -z-10" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-green-500/5 rounded-full filter blur-3xl -z-10" />
+
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center space-y-8">
         
-        {/* Left Column: Text Content */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 md:space-y-8">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeInOut' }}
-            className="inline-flex items-center gap-2 md:px-4 md:py-2 px-2 py-1 rounded-full bg-blue-50 border border-blue-100"
-          >
-            <span className="flex w-2 h-2 rounded-full animate-bounce bg-blue-500 shrink-0"></span>
-            <span className="text-sm font-medium text-blue-600 tracking-wide">PTE Academic Preparation Portal</span>
-          </motion.div>
+        {/* Top Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 border border-gray-200"
+        >
+          <span className="flex w-2.5 h-2.5 rounded-full animate-bounce bg-green-500 shrink-0"></span>
+          <span className="text-sm font-semibold text-gray-600 tracking-wide">PTE Academic Preparation</span>
+        </motion.div>
 
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[100%] tracking-normal text-gray-900"
-          >
-            YOUR REAL PTE EXPERIENCE <br className="hidden lg:block"/>
-            <span className="text-blue-600">STARTS HERE .</span>
-          </motion.h1>
+        {/* Heading */}
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-[110%] tracking-tight text-gray-900 max-w-4xl"
+        >
+          Master PTE Academic With <br className="hidden md:block"/>
+          Real-Time <span className="text-cta-btn">AI Scoring .</span>
+        </motion.h1>
 
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-lg leading-relaxed"
-          >
-            Welcome to <span className="text-blue-600 font-bold text-3xl">MOCKEA</span>. Experience interactive online PTE Academic practice tests. Master Describe Image, Write Essay, and Retell Lecture with instant AI feedback.
-          </motion.p>
+        {/* Paragraph */}
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-lg sm:text-xl text-gray-600 max-w-2xl leading-relaxed"
+        >
+          Mockea perfectly mimics the official Pearson computer-based test environment. Practice Describe Image, Retell Lecture, and Read Aloud with instant diagnostic scores.
+        </motion.p>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 w-full max-w-md sm:max-w-none sm:w-auto"
-          >
-            <Link to={'/dashboard'} className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl overflow-hidden transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-blue-200">
-              <span className="relative z-10">Start PTE Practice</span>
-              <FiArrowRight className="relative animate-ping z-10 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <button className="px-8 py-4 bg-gray-100 border border-gray-200 text-gray-800 font-bold rounded-xl transition-all hover:bg-gray-200 flex items-center justify-center gap-2">
-              <FiPlay /> Watch Demo
-            </button>
-          </motion.div>
+        {/* CTA Buttons */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center"
+        >
+          <Link to={'/dashboard'} className="group relative px-8 py-4 bg-cta-btn hover:opacity-90 text-white font-bold rounded-xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-red-200">
+            <span className="relative z-10">Start PTE Practice</span>
+            <FiArrowRight className="relative z-10 group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <button className="px-8 py-4 bg-gray-100 border border-gray-200 text-gray-800 font-bold rounded-xl transition-all hover:bg-gray-200 flex items-center justify-center gap-2">
+            <FiPlay /> Watch System Guide
+          </button>
+        </motion.div>
 
-          {/* Social Proof */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 0.6 }}
-            className="flex items-center gap-4 pt-4"
-          >
-            <div className="flex -space-x-4">
-              <img className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover" src="https://i.pravatar.cc/100?img=11" alt="Student" />
-              <img className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover" src="https://i.pravatar.cc/100?img=12" alt="Student" />
-              <img className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover" src="https://i.pravatar.cc/100?img=13" alt="Student" />
-              <img className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover" src="https://i.pravatar.cc/100?img=14" alt="Student" />
+        {/* Interactive PTE Practice Sandbox Widget */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 80, delay: 0.4 }}
+          className="w-full max-w-3xl mt-12 bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden p-6 sm:p-8 text-left"
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 mb-6 gap-4">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#E30613] bg-red-50 border border-red-100 px-2.5 py-1 rounded-md">
+                PTE Interactive Demo
+              </span>
+              <h3 className="text-xl font-bold text-gray-900 mt-1">Read Aloud Task Type</h3>
             </div>
-            <div className="text-sm text-left">
-              <p className="text-gray-900 font-bold">5k+ PTE Students</p>
-              <p className="text-gray-500">Already practice-ready</p>
+            <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+              <FiCpu className="text-green-500" /> Powered by Mockea AI Engine
             </div>
-          </motion.div>
-        </div>
+          </div>
 
-        {/* Right Column: Dynamic Images */}
-        <div className="w-full lg:w-1/2 relative h-[300px] sm:h-[400px] lg:h-[450px] flex items-center justify-center mt-6 sm:mt-10 lg:mt-0 max-w-[280px] min-[360px]:max-w-[320px] min-[400px]:max-w-[360px] sm:max-w-[450px] md:max-w-[500px] lg:max-w-none mx-auto">
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.2 }}
-            className="absolute z-20 w-[65%] h-[75%] rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-200 shadow-md"
-          >
-            <img src={heroStudent} alt="Student taking PTE exam" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-            <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 text-white">
-              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-                <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-blue-400 animate-pulse"></span>
-                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-400">Live PTE Session</span>
+          <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 mb-6">
+            <p className="text-gray-400 text-xs font-bold mb-2 tracking-wide uppercase">Prompt Text:</p>
+            <p className="text-lg text-gray-700 leading-relaxed font-medium">
+              "The development of easy-to-use digital mapping platforms has changed the way geographic data is processed, helping organizations organize logistics and visualize spatial statistics efficiently."
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center justify-center py-6 bg-slate-50/50 rounded-2xl border border-dashed border-gray-200">
+            {recordingState === 'idle' && (
+              <div className="text-center space-y-4">
+                <p className="text-sm font-semibold text-gray-600">Click the microphone to test your speaking speed & clarity</p>
+                <button
+                  onClick={handleStartSim}
+                  className="mx-auto w-16 h-16 rounded-full bg-[#E30613] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer shadow-lg shadow-red-200"
+                >
+                  <FiMic size={24} />
+                </button>
               </div>
-              <p className="font-semibold text-xs sm:text-sm md:text-base">PTE Academic Test Prep</p>
-            </div>
-          </motion.div>
+            )}
 
-          {/* Abstract details */}
-          <motion.div
-            initial={{ opacity: 0, x: -30, y: 30 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ type: "spring", stiffness: 80, delay: 0.4 }}
-            className="absolute left-[-2%] bottom-[2%] w-[45%] h-[40%] rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-200 shadow-md z-30 bg-white p-3 sm:p-4 flex flex-col justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <FiCheckCircle className="text-blue-500 text-base sm:text-xl shrink-0" />
-              <span className="text-[10px] sm:text-xs font-bold text-gray-800">Mock Complete</span>
-            </div>
-            <div>
-              <p className="text-[10px] sm:text-xs text-gray-500 font-semibold">Overall Score</p>
-              <p className="text-xl sm:text-2xl font-black text-blue-600">79 / 90</p>
-            </div>
-          </motion.div>
+            {recordingState === 'recording' && (
+              <div className="text-center space-y-4 w-full px-12">
+                <p className="text-sm font-semibold text-red-500 animate-pulse flex items-center justify-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block"></span> Recording... Speak Now
+                </p>
+                
+                {/* Voice bars animation */}
+                <div className="flex justify-center items-end gap-1 h-8">
+                  <div className="w-1.5 bg-[#E30613] rounded-full animate-voice-bar h-6" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-1.5 bg-[#E30613] rounded-full animate-voice-bar h-8" style={{ animationDelay: '0.3s' }}></div>
+                  <div className="w-1.5 bg-[#E30613] rounded-full animate-voice-bar h-4" style={{ animationDelay: '0.5s' }}></div>
+                  <div className="w-1.5 bg-[#E30613] rounded-full animate-voice-bar h-7" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-1.5 bg-[#E30613] rounded-full animate-voice-bar h-5" style={{ animationDelay: '0.4s' }}></div>
+                </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 30, y: -30 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ type: "spring", stiffness: 80, delay: 0.3 }}
-            className="absolute right-[-2%] top-[2%] w-[45%] h-[40%] rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-200 shadow-md z-10"
-          >
-            <img src={heroAbstract} alt="Abstract stats design" className="w-full h-full object-cover" />
-          </motion.div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-[#E30613] h-2 rounded-full transition-all duration-150" style={{ width: `${progress}%` }}></div>
+                </div>
+              </div>
+            )}
 
-          {/* User badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="absolute top-1/2 left-[-15%] sm:left-[-12%] z-30 bg-white/95 backdrop-blur-md border border-gray-200/50 p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg flex items-center gap-2.5 max-w-[130px] sm:max-w-[160px] hidden min-[360px]:flex"
-          >
-            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
-              <img src={heroGroup} alt="Profile badge" className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <p className="text-[10px] sm:text-xs font-bold text-gray-800 leading-none mb-0.5">Score Analysis</p>
-              <span className="text-[8px] sm:text-[10px] text-gray-500 font-medium">99th percentile</span>
-            </div>
-          </motion.div>
-        </div>
+            {recordingState === 'analyzing' && (
+              <div className="text-center space-y-4">
+                <p className="text-sm font-semibold text-gray-600 animate-pulse">Mockea AI grading content, fluency, and pronunciation...</p>
+                <div className="w-10 h-10 border-4 border-[#E30613] border-t-transparent rounded-full animate-spin mx-auto"></div>
+              </div>
+            )}
+
+            {recordingState === 'completed' && (
+              <div className="w-full px-6 sm:px-10 text-center space-y-6">
+                <div className="flex items-center justify-center gap-2 text-green-600">
+                  <FiCheckCircle size={22} />
+                  <span className="text-sm font-bold">Speech successfully graded!</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-xs">
+                    <p className="text-xs text-gray-500 font-semibold mb-1">Content</p>
+                    <p className="text-2xl font-black text-gray-900">88 / 90</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-xs">
+                    <p className="text-xs text-gray-500 font-semibold mb-1">Fluency</p>
+                    <p className="text-2xl font-black text-gray-900">84 / 90</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-xs">
+                    <p className="text-xs text-gray-500 font-semibold mb-1">Pronunciation</p>
+                    <p className="text-2xl font-black text-[#E30613]">79 / 90</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-center gap-3">
+                  <button onClick={handleResetSim} className="text-xs font-bold text-gray-500 hover:text-gray-700 underline cursor-pointer">
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
       </div>
     </div>
