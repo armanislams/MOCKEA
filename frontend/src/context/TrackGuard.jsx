@@ -5,7 +5,7 @@ import Loader from "../components/Loader/Loader";
 import useAxiosSecure from "../hooks/useAxiosSecure";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { PiBookOpenTextBold, PiGlobeHemisphereEastBold } from "react-icons/pi";
 import { toast } from "react-toastify";
 
@@ -114,7 +114,7 @@ export default function TrackGuard({ children, expectedTrack }) {
         const isStudent = userData.role !== "admin" && userData.role !== "instructor";
         if (isStudent) {
             const preference = userData.targetExam || "IELTS";
-            if (preference !== expectedTrack) {
+            if (preference !== "BOTH" && preference !== expectedTrack) {
                 return <Navigate to={preference === "PTE" ? "/pte" : "/ielts"} replace />;
             }
         }
