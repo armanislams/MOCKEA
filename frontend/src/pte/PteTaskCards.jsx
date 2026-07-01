@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { FaChartLine, FaCommentDots, FaMedal, FaRegLightbulb } from "react-icons/fa";
-import FlipCard from "../../Common/FlipCard";
+import FlipCard from "../components/Common/FlipCard";
 
 const cards = [
   {

@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiCheckCircle, FiPlay } from 'react-icons/fi';
-import heroStudent from '../../../assets/hero-student.png';
-import heroAbstract from '../../../assets/hero-abstract.png';
-import heroGroup from '../../../assets/hero-group.png';
+import heroStudent from '../assets/hero-student.png';
+import heroAbstract from '../assets/hero-abstract.png';
+import heroGroup from '../assets/hero-group.png';
 import { Link } from 'react-router';
 
 const PteHero = () => {

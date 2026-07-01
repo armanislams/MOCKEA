@@ -12,6 +12,8 @@ import { InstructorRoutes } from "../context/Role Based Routes/InstructorRoutes"
 import FreePracticeLayout from "../Layout/FreePracticeLayout";
 import AuthLayout from "../components/Auth/AuthLayout";
 import RootLayout from "../Layout/RootLayout";
+import ExamPreferenceRedirect from "../components/Common/ExamPreferenceRedirect";
+import TrackGuard from "../context/TrackGuard";
 
 // Helper for Suspense wrapper
 const withSuspense = (Component) => (
@@ -55,7 +57,7 @@ const FreeResourcesPage = lazy(() => import("../components/FreeResources/FreeRes
 const CoursesPage = lazy(() => import("../components/Home/CoursesPage"));
 const StudentCourses = lazy(() => import("../components/Dashboard/Student Dashboard/StudentCourses"));
 const AboutPage = lazy(() => import("../components/AboutPage/AboutPage"));
-const PteHome = lazy(() => import("../components/Home/Pte/PteHome"));
+const PteHome = lazy(() => import("../pte/PteHome"));
 
 const router = createBrowserRouter([
   {
@@ -69,7 +71,23 @@ const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <Home />,
+            element: <ExamPreferenceRedirect />,
+          },
+          {
+            path: "/ielts",
+            element: (
+              <TrackGuard expectedTrack="IELTS">
+                <Home />
+              </TrackGuard>
+            ),
+          },
+          {
+            path: "/pte",
+            element: (
+              <TrackGuard expectedTrack="PTE">
+                {withSuspense(PteHome)}
+              </TrackGuard>
+            ),
           },
           {
             path: "/practice",
@@ -94,10 +112,6 @@ const router = createBrowserRouter([
           {
             path: "/courses",
             element: withSuspense(CoursesPage),
-          },
-          {
-            path: "/pte",
-            element: withSuspense(PteHome),
           },
         ],
       },

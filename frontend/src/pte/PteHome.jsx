@@ -1,5 +1,7 @@
 import PteHero from './PteHero';
 import { PteLandingStack } from './PteLandingStack';
+import PteModules from './PteModules';
+import PteScoreConverter from './PteScoreConverter';
 
 const PteHome = () => {
   return (
@@ -8,8 +10,14 @@ const PteHome = () => {
         {/* PTE Hero Section */}
         <PteHero />
 
-        {/* PTE Landing Stack */}
+        {/* PTE Modules Structure Section */}
+        <PteModules />
+
+        {/* PTE Landing Stack (How It Works, Task Cards, Pricing) */}
         <PteLandingStack />
+
+        {/* PTE to IELTS Score Conversion Reference */}
+        <PteScoreConverter />
       </main>
     </div>
   );

@@ -220,7 +220,9 @@ const Profile = () => {
                                 >
                                     <option value="IELTS">IELTS Preparation</option>
                                     <option value="PTE">PTE Academic Preparation</option>
-                                    <option value="BOTH">Both IELTS & PTE Programs</option>
+                                    {(userData?.role === "admin" || userData?.role === "instructor") && (
+                                        <option value="BOTH">Both IELTS & PTE Programs</option>
+                                    )}
                                 </select>
                             )}
                         </div>

@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
 import { FiCheck, FiArrowRight, FiZap } from 'react-icons/fi';
 import { useQuery } from '@tanstack/react-query';
-import useAxios from '../../../hooks/useAxios';
-import Loader from '../../Loader/Loader';
-import Error from '../../Common/Error';
+import useAxios from '../hooks/useAxios';
+import Loader from '../components/Loader/Loader';
+import Error from '../components/Common/Error';
 
 const PricingSkeleton = () => {
   return (

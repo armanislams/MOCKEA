@@ -19,7 +19,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="space-y-4">
             <Link
-              to={isPte ? "/pte" : "/"}
+              to={isPte ? "/pte" : "/ielts"}
               className=" cursor-pointer select-none group focus:outline-none"
             >
               <img
