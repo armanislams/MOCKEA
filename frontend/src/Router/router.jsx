@@ -74,44 +74,114 @@ const router = createBrowserRouter([
             element: <ExamPreferenceRedirect />,
           },
           {
-            path: "/ielts",
-            element: (
-              <TrackGuard expectedTrack="IELTS">
-                <Home />
-              </TrackGuard>
-            ),
+            path: "ielts",
+            children: [
+              {
+                index: true,
+                element: (
+                  <TrackGuard expectedTrack="IELTS">
+                    <Home />
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "about",
+                element: (
+                  <TrackGuard expectedTrack="IELTS">
+                    {withSuspense(AboutPage)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "pricing",
+                element: (
+                  <TrackGuard expectedTrack="IELTS">
+                    {withSuspense(PricingPage)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "free-resources",
+                element: (
+                  <TrackGuard expectedTrack="IELTS">
+                    {withSuspense(FreeResourcesPage)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "courses",
+                element: (
+                  <TrackGuard expectedTrack="IELTS">
+                    {withSuspense(CoursesPage)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "practice",
+                element: (
+                  <PrivateRoute>
+                    <TrackGuard expectedTrack="IELTS">
+                      {withSuspense(Practice)}
+                    </TrackGuard>
+                  </PrivateRoute>
+                ),
+              },
+            ]
           },
           {
-            path: "/pte",
-            element: (
-              <TrackGuard expectedTrack="PTE">
-                {withSuspense(PteHome)}
-              </TrackGuard>
-            ),
-          },
-          {
-            path: "/practice",
-            element: (
-              <PrivateRoute>
-                {withSuspense(Practice)}
-              </PrivateRoute>
-            ),
-          },
-          {
-            path: "/about",
-            element: withSuspense(AboutPage),
-          },
-          {
-            path: "/pricing",
-            element: withSuspense(PricingPage),
-          },
-          {
-            path: "/free-resources",
-            element: withSuspense(FreeResourcesPage),
-          },
-          {
-            path: "/courses",
-            element: withSuspense(CoursesPage),
+            path: "pte",
+            children: [
+              {
+                index: true,
+                element: (
+                  <TrackGuard expectedTrack="PTE">
+                    {withSuspense(PteHome)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "about",
+                element: (
+                  <TrackGuard expectedTrack="PTE">
+                    {withSuspense(AboutPage)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "pricing",
+                element: (
+                  <TrackGuard expectedTrack="PTE">
+                    {withSuspense(PricingPage)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "free-resources",
+                element: (
+                  <TrackGuard expectedTrack="PTE">
+                    {withSuspense(FreeResourcesPage)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "courses",
+                element: (
+                  <TrackGuard expectedTrack="PTE">
+                    {withSuspense(CoursesPage)}
+                  </TrackGuard>
+                ),
+              },
+              {
+                path: "practice",
+                element: (
+                  <PrivateRoute>
+                    <TrackGuard expectedTrack="PTE">
+                      {withSuspense(Practice)}
+                    </TrackGuard>
+                  </PrivateRoute>
+                ),
+              },
+            ]
           },
         ],
       },

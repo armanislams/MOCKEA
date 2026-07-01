@@ -9,9 +9,12 @@ import {
   FiBookOpen, 
   FiClock 
 } from "react-icons/fi";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 export default function AboutPage() {
+  const location = useLocation();
+  const isPte = location.pathname.startsWith("/pte");
+
   // Animation presets
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
@@ -33,8 +36,8 @@ export default function AboutPage() {
   };
 
   const stats = [
-    { number: "10K+", label: "Active Aspirants", icon: FiUsers, color: "text-blue-600 bg-blue-50" },
-    { number: "98.7%", label: "Satisfaction Rate", icon: FiAward, color: "text-red-500 bg-red-50" },
+    { number: "10K+", label: "Active Aspirants", icon: FiUsers, color: isPte ? "text-blue-600 bg-blue-50" : "text-blue-600 bg-blue-50" },
+    { number: "98.7%", label: "Satisfaction Rate", icon: FiAward, color: isPte ? "text-blue-500 bg-blue-50" : "text-red-500 bg-red-50" },
     { number: "150K+", label: "Simulated Tests", icon: FiBookOpen, color: "text-emerald-500 bg-emerald-50" },
     { number: "24/7", label: "AI Feedback Loops", icon: FiCpu, color: "text-purple-500 bg-purple-50" }
   ];
@@ -42,21 +45,25 @@ export default function AboutPage() {
   const pillars = [
     {
       title: "Real Exam Simulation",
-      description: "Replicates the official IELTS testing interface down to the minute. Complete Reading, Listening, Writing, and Speaking tasks with standard countdown timers and live response validation.",
+      description: isPte
+        ? "Replicates the official PTE Academic testing interface down to the minute. Complete Speaking & Writing, Reading, and Listening tasks with standard countdown timers."
+        : "Replicates the official IELTS testing interface down to the minute. Complete Reading, Listening, Writing, and Speaking tasks with standard countdown timers and live response validation.",
       icon: FiClock,
-      gradient: "from-blue-500 to-indigo-600"
+      gradient: isPte ? "from-blue-500 to-teal-500" : "from-blue-500 to-indigo-600"
     },
     {
-      title: "Gemini-Powered IELTS Tutor",
+      title: isPte ? "Gemini-Powered PTE Tutor" : "Gemini-Powered IELTS Tutor",
       description: "Get instant guidance from our intelligent AI Study Buddy. Toggle between a friendly tutor offering detailed tips, a strict examiner scoring your tasks, or a general system navigator.",
       icon: FiCpu,
       gradient: "from-purple-500 to-pink-600"
     },
     {
       title: "Expert Instructor Evaluations",
-      description: "Submit complex writing and speaking responses for peer and expert instructor review. Get official IELTS band scores (0-9) accompanied by qualitative, structured grading feedback.",
+      description: isPte
+        ? "Submit complex writing and speaking responses for peer and expert instructor review. Get official PTE equivalent scores (10-90) accompanied by qualitative, structured grading feedback."
+        : "Submit complex writing and speaking responses for peer and expert instructor review. Get official IELTS band scores (0-9) accompanied by qualitative, structured grading feedback.",
       icon: FiAward,
-      gradient: "from-red-500 to-orange-500"
+      gradient: isPte ? "from-blue-600 to-indigo-600" : "from-red-500 to-orange-500"
     },
     {
       title: "Exam Integrity Shields",
@@ -68,9 +75,11 @@ export default function AboutPage() {
 
   const team = [
     {
-      name: "Dr. Evelyn Cartwright",
+      name: isPte ? "Dr. Evelyn Cartwright" : "Dr. Evelyn Cartwright",
       role: "Chief Academic Officer",
-      bio: "Former British Council Head Examiner with over 18 years of experience crafting academic assessment standards.",
+      bio: isPte 
+        ? "Former Pearson Academic Assessor with over 18 years of experience crafting academic assessment standards."
+        : "Former British Council Head Examiner with over 18 years of experience crafting academic assessment standards.",
       initials: "EC",
       color: "bg-blue-600"
     },
@@ -94,17 +103,21 @@ export default function AboutPage() {
     <div className="bg-[#FAF9F6] min-h-screen py-16 px-4 sm:px-6 lg:px-8 font-sans overflow-hidden">
       <div className="max-w-7xl mx-auto relative">
         {/* Background decorative blobs */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-100/30 rounded-full filter blur-3xl -z-10 animate-pulse" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-red-100/20 rounded-full filter blur-3xl -z-10" />
+        <div className={`absolute top-0 right-1/4 w-96 h-96 rounded-full filter blur-3xl -z-10 animate-pulse ${isPte ? "bg-blue-100/20" : "bg-blue-100/30"}`} />
+        <div className={`absolute bottom-10 left-10 w-96 h-96 rounded-full filter blur-3xl -z-10 ${isPte ? "bg-teal-100/10" : "bg-red-100/20"}`} />
 
         {/* 1. Hero Header */}
         <div className="text-center max-w-4xl mx-auto mb-20">
           <motion.span
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#E30613] bg-red-50 border border-red-100 rounded-full mb-6"
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-full mb-6 border ${
+              isPte 
+                ? "text-blue-600 bg-blue-50 border-blue-100" 
+                : "text-[#E30613] bg-red-50 border-red-100"
+            }`}
           >
-            <FiTarget className="w-4 h-4 text-[#E30613] animate-spin-slow" />
+            <FiTarget className={`w-4 h-4 animate-spin-slow ${isPte ? "text-blue-600" : "text-[#E30613]"}`} />
             Our Mission & Story
           </motion.span>
           
@@ -115,7 +128,11 @@ export default function AboutPage() {
             className="text-4xl sm:text-5xl md:text-6xl font-black text-[#000f38] tracking-tight mb-6 leading-none"
           >
             Bridge the Gap Between <br />
-            <span className="bg-gradient-to-r from-blue-600 via-[#0028a2] to-red-500 bg-clip-text text-transparent">
+            <span className={`bg-gradient-to-r bg-clip-text text-transparent ${
+              isPte 
+                ? "from-blue-600 via-indigo-600 to-teal-500" 
+                : "from-blue-600 via-[#0028a2] to-red-500"
+            }`}>
               Preparation and Performance
             </span>
           </motion.h1>
@@ -126,7 +143,7 @@ export default function AboutPage() {
             transition={{ delay: 0.2 }}
             className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed"
           >
-            MOCKEA is a comprehensive, full-stack monorepo web platform engineered to recreate genuine IELTS testing conditions. We integrate next-gen LLM tutoring, browser-safe simulators, and structured human grading to help you hit your target band score.
+            MOCKEA is a comprehensive, full-stack monorepo web platform engineered to recreate genuine {isPte ? "PTE Academic" : "IELTS"} testing conditions. We integrate next-gen LLM tutoring, browser-safe simulators, and structured human grading to help you hit your target score.
           </motion.p>
         </div>
 
@@ -193,14 +210,14 @@ export default function AboutPage() {
 
         {/* 4. Detailed Philosophy & Story */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-24 max-w-6xl mx-auto bg-white rounded-3xl p-8 sm:p-12 border border-slate-100 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-blue-500 via-[#0028a2] to-red-500" />
+          <div className={`absolute top-0 right-0 w-full h-1 bg-gradient-to-r ${isPte ? "from-blue-500 via-indigo-600 to-teal-500" : "from-blue-500 via-[#0028a2] to-red-500"}`} />
           <div className="lg:col-span-7 space-y-6">
-            <span className="text-xs font-black uppercase text-blue-600 tracking-wider">How we started</span>
+            <span className={`text-xs font-black uppercase tracking-wider ${isPte ? "text-blue-600" : "text-blue-600"}`}>How we started</span>
             <h2 className="text-3xl font-black text-[#000f38] leading-tight">
               Designed to solve the hardest part of self-study: realistic feedback.
             </h2>
             <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
-              Preparing for standard language testing is notoriously difficult to self-grade. While multiple-choice reading and listening sections are straightforward, the IELTS Writing and Speaking assessments require deep human analysis. Students often spend thousands on private coaches just to get their practice essays checked.
+              Preparing for standard language testing is notoriously difficult to self-grade. While multiple-choice reading and listening sections are straightforward, the {isPte ? "PTE Writing and Speaking" : "IELTS Writing and Speaking"} assessments require deep analysis. Students often spend thousands on private coaches just to get their practice evaluations.
             </p>
             <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
               MOCKEA was created in 2025 to democratize premium language evaluation. By building highly-optimized AI grading systems using Gemini 2.5 Flash, paired with a workflow that allows native instructors to review and double-check scores, we give you accurate, fast evaluations at a fraction of the cost.
@@ -254,7 +271,7 @@ export default function AboutPage() {
                   {member.initials}
                 </div>
                 <h3 className="font-bold text-slate-800 text-lg mb-1">{member.name}</h3>
-                <span className="text-xs font-black uppercase text-blue-600 tracking-wider mb-4 block">{member.role}</span>
+                <span className={`text-xs font-black uppercase tracking-wider mb-4 block ${isPte ? "text-blue-600" : "text-blue-600"}`}>{member.role}</span>
                 <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">{member.bio}</p>
               </motion.div>
             ))}
@@ -270,10 +287,10 @@ export default function AboutPage() {
         >
           {/* Accent decoration overlay */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full filter blur-2xl -z-10" />
-          <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-red-500/10 rounded-full filter blur-2xl -z-10" />
+          <div className={`absolute -bottom-10 -left-10 w-64 h-64 rounded-full filter blur-2xl -z-10 ${isPte ? "bg-teal-500/10" : "bg-red-500/10"}`} />
           
           <h2 className="text-2xl sm:text-4xl font-black mb-4 tracking-tight leading-tight">
-            Ready to Dominate Your Next IELTS Test?
+            {isPte ? "Ready to Dominate Your Next PTE Test?" : "Ready to Dominate Your Next IELTS Test?"}
           </h2>
           <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base mb-8">
             Create a free account, complete modular practice sessions, and see how MOCKEA's real simulator boosts your performance.
@@ -282,12 +299,14 @@ export default function AboutPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
               to="/auth/register" 
-              className="px-8 py-3.5 bg-[#E30613] hover:bg-[#c20510] text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg w-full sm:w-auto"
+              className={`px-8 py-3.5 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg w-full sm:w-auto ${
+                isPte ? "bg-blue-600 hover:bg-blue-700" : "bg-[#E30613] hover:bg-[#c20510]"
+              }`}
             >
               Sign Up For Free
             </Link>
             <Link 
-              to="/pricing" 
+              to={isPte ? "/pte/pricing" : "/ielts/pricing"}
               className="px-8 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 transition-all duration-300 w-full sm:w-auto"
             >
               View Membership Pricing

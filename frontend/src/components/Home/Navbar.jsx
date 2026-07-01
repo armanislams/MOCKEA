@@ -14,22 +14,22 @@ const Navbar = () => {
         </NavLink>
       </li>
       <li>
-        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/about">
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to={isPte ? "/pte/about" : "/ielts/about"}>
           About Us
         </NavLink>
       </li>
       <li>
-        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/pricing">
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to={isPte ? "/pte/pricing" : "/ielts/pricing"}>
           Pricing
         </NavLink>
       </li>
       <li>
-        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/courses">
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to={isPte ? "/pte/courses" : "/ielts/courses"}>
           Courses
         </NavLink>
       </li>
       <li>
-        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/free-resources">
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to={isPte ? "/pte/free-resources" : "/ielts/free-resources"}>
           Free Resources
         </NavLink>
       </li>

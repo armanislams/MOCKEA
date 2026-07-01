@@ -40,7 +40,7 @@ const Footer = () => {
               <ul className="space-y-3 text-gray-200">
                 <li>
                   <Link
-                    to="/about"
+                    to={isPte ? "/pte/about" : "/ielts/about"}
                     className="hover:text-white transition-colors"
                   >
                     About
@@ -48,7 +48,7 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link
-                    to="/pricing"
+                    to={isPte ? "/pte/pricing" : "/ielts/pricing"}
                     className="hover:text-white transition-colors"
                   >
                     Pricing
@@ -56,7 +56,7 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link
-                    to="/free-resources"
+                    to={isPte ? "/pte/free-resources" : "/ielts/free-resources"}
                     className="hover:text-white transition-colors"
                   >
                     Resources
