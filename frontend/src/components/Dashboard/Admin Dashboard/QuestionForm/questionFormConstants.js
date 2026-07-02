@@ -60,11 +60,52 @@ export const QUESTION_TYPE_GROUPS = [
 ];
 
 // Which types need options array
-export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid", "drag-drop-completion", "multiple-selection"];
+export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid", "drag-drop-completion", "multiple-selection", "pte-select-missing-word"];
 // Which types need matchingPairs
 export const NEEDS_PAIRS = ["matching", "heading-matching"];
 // Which types need a per-question image URL
-export const NEEDS_IMAGE = ["map-labelling", "diagram-labelling"];
+export const NEEDS_IMAGE = ["map-labelling", "diagram-labelling", "pte-describe-image"];
+
+export const PTE_QUESTION_TYPE_GROUPS = [
+    {
+        group: "PTE Speaking",
+        icon: PiMicrophoneStage,
+        types: [
+            { value: "pte-read-aloud", label: "Read Aloud" },
+            { value: "pte-repeat-sentence", label: "Repeat Sentence" },
+            { value: "pte-describe-image", label: "Describe Image" },
+            { value: "pte-retell-lecture", label: "Re-tell Lecture" },
+            { value: "pte-answer-short-question", label: "Answer Short Question" },
+        ]
+    },
+    {
+        group: "PTE Writing",
+        icon: PiPencilLine,
+        types: [
+            { value: "pte-summarize-written-text", label: "Summarize Written Text" },
+            { value: "pte-write-essay", label: "Write Essay" },
+        ]
+    },
+    {
+        group: "PTE Reading",
+        icon: PiBookOpen,
+        types: [
+            { value: "pte-reading-writing-fill-blanks", label: "Reading & Writing: Fill in the Blanks" },
+            { value: "pte-reorder-paragraphs", label: "Re-order Paragraphs" },
+            { value: "pte-reading-fill-blanks", label: "Reading: Fill in the Blanks" },
+        ]
+    },
+    {
+        group: "PTE Listening",
+        icon: PiEar,
+        types: [
+            { value: "pte-summarize-spoken-text", label: "Summarize Spoken Text" },
+            { value: "pte-highlight-incorrect-words", label: "Highlight Incorrect Words" },
+            { value: "pte-write-from-dictation", label: "Write from Dictation" },
+            { value: "pte-select-missing-word", label: "Select Missing Word" },
+        ]
+    }
+];
 
 // IELTS Listening Part definitions
 export const LISTENING_PARTS = [
@@ -89,6 +130,10 @@ export const makeQuestion = (testType = "listening") => {
         imageUrl: "",
         passageIndex: 0,
         info: "",
+        // PTE specific fields
+        pteDropdownOptions: [["", "", "", ""]],
+        pteParagraphsOrder: [""],
+        pteAudioTranscript: "",
     };
 };
 

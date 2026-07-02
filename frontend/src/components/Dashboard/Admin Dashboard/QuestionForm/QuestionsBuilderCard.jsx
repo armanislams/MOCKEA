@@ -186,6 +186,7 @@ export default function QuestionsBuilderCard({
                                     <QuestionTypeSelect
                                         value={q.type}
                                         onChange={(val) => updateQuestionField(q.id, "type", val)}
+                                        examType={formData.examType}
                                     />
                                 </div>
                                 {/* Question text */}
@@ -230,6 +231,7 @@ export default function QuestionsBuilderCard({
                                 onRemoveOption={handleRemoveOption}
                                 onAddPair={handleAddPair}
                                 onUpdatePair={updatePair}
+                                examType={formData.examType}
                             />
 
                             {/* Correct answer */}

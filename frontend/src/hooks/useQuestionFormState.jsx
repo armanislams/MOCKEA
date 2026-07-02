@@ -96,8 +96,11 @@ export function parseQuestionToState(fetchedQuestion) {
             matchingPairs: q.matchingPairs || [{ key: "", value: "" }],
             imageUrl: q.imageUrl || "",
             passageIndex: q.passageIndex || 0,
-            info: q.info || ""
-        })) : [makeQuestion()],
+            info: q.info || "",
+            pteDropdownOptions: q.pteDropdownOptions || [["", "", "", ""]],
+            pteParagraphsOrder: q.pteParagraphsOrder || [],
+            pteAudioTranscript: q.pteAudioTranscript || ""
+        })) : [makeQuestion(testType)],
     };
 }
 

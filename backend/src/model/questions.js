@@ -32,6 +32,22 @@ const QuestionItemSchema = new mongoose.Schema(
                 // ── Visual / Map (IELTS) ─────────────────────────────
                 "map-labelling",          // Map / Plan with numbered labels
                 "diagram-labelling",      // Diagram with labelled parts
+
+                // ── PTE Academic Question Types ───────────────────────
+                "pte-read-aloud",
+                "pte-repeat-sentence",
+                "pte-describe-image",
+                "pte-retell-lecture",
+                "pte-answer-short-question",
+                "pte-summarize-written-text",
+                "pte-write-essay",
+                "pte-reading-writing-fill-blanks",
+                "pte-reorder-paragraphs",
+                "pte-reading-fill-blanks",
+                "pte-summarize-spoken-text",
+                "pte-highlight-incorrect-words",
+                "pte-write-from-dictation",
+                "pte-select-missing-word",
             ],
             default: "short-answer",
         },
@@ -66,6 +82,19 @@ const QuestionItemSchema = new mongoose.Schema(
             default: 0
         },
         info: {
+            type: String,
+            default: ""
+        },
+        // PTE specific fields
+        pteDropdownOptions: {
+            type: [[String]],
+            default: []
+        },
+        pteParagraphsOrder: {
+            type: [String],
+            default: []
+        },
+        pteAudioTranscript: {
             type: String,
             default: ""
         }

@@ -224,6 +224,34 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
                 </p>
             </header>
 
+            {/* Exam Format Tab Switcher */}
+            <div className="flex justify-center">
+                <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-2 border border-slate-200 shadow-inner">
+                    <button
+                        type="button"
+                        onClick={() => patch({ examType: "IELTS" })}
+                        className={`px-8 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
+                            formData.examType === "IELTS" || formData.examType === "BOTH"
+                                ? "bg-white text-primary shadow-md transform scale-[1.02]"
+                                : "text-slate-500 hover:text-slate-800"
+                        }`}
+                    >
+                        🎓 IELTS Format
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => patch({ examType: "PTE" })}
+                        className={`px-8 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
+                            formData.examType === "PTE"
+                                ? "bg-white text-primary shadow-md transform scale-[1.02]"
+                                : "text-slate-500 hover:text-slate-800"
+                        }`}
+                    >
+                        📘 PTE Academic Format
+                    </button>
+                </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Test Section Selector */}
                 <TestSectionPicker 

@@ -40,7 +40,15 @@ const mockTestSchema = new mongoose.Schema({
     totalDuration: {
         type: Number, // in minutes
         required: true
-    }
+    },
+    structure: [{
+        sectionName: { type: String, required: true },
+        questionSets: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Questions'
+        }],
+        duration: { type: Number } // section specific timing in minutes
+    }]
 }, { timestamps: true });
 
 const MockTest = mongoose.model('MockTest', mockTestSchema);
