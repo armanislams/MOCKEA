@@ -16,73 +16,87 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
             {/* Reading Passages Manager */}
             {testType === "reading" && (
                 <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-700 tracking-wide">Reading Passages ({formData.passages?.length || 0})</label>
-                        <button
-                            type="button"
-                            onClick={() => patch({ passages: [...(formData.passages || []), { title: "", content: "" }] })}
-                            className="btn btn-primary btn-sm rounded-xl gap-1"
-                        >
-                            <PiPlus /> Add Passage
-                        </button>
-                    </div>
-                    <div className="space-y-4">
-                        {(formData.passages || []).map((passage, pIdx) => (
-                            <div key={pIdx} className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4 relative">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-black uppercase tracking-widest text-primary">Passage {pIdx + 1}</span>
-                                    {formData.passages.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => patch({ passages: formData.passages.filter((_, idx) => idx !== pIdx) })}
-                                            className="btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg gap-1"
-                                        >
-                                            <PiTrash /> Remove Passage
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-slate-700">Passage Title</label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none"
-                                        placeholder={`e.g. Reading Passage ${pIdx + 1}: Electroreception`}
-                                        value={passage.title}
-                                        onChange={(e) => {
-                                            const updated = [...formData.passages];
-                                            updated[pIdx].title = e.target.value;
-                                            patch({ passages: updated });
-                                        }}
-                                        required
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-slate-700">Passage Content</label>
-                                    <textarea
-                                        id={`reading-passage-textarea-${pIdx}`}
-                                        className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none resize-y min-h-[150px] font-serif"
-                                        placeholder="Paste passage paragraphs here..."
-                                        value={passage.content}
-                                        onChange={(e) => {
-                                            const updated = [...formData.passages];
-                                            updated[pIdx].content = e.target.value;
-                                            patch({ passages: updated });
-                                        }}
-                                        required
-                                    />
-                                    <p className="text-[11px] text-slate-500 font-semibold mt-1">
-                                        Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>. Empty lines create paragraph breaks.
-                                    </p>
-
-                                </div>
+                    {formData.examType !== "PTE" ? (
+                        <>
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-slate-700 tracking-wide">Reading Passages ({formData.passages?.length || 0})</label>
+                                <button
+                                    type="button"
+                                    onClick={() => patch({ passages: [...(formData.passages || []), { title: "", content: "" }] })}
+                                    className="btn btn-primary btn-sm rounded-xl gap-1"
+                                >
+                                    <PiPlus /> Add Passage
+                                </button>
                             </div>
-                        ))}
-                    </div>
+                            <div className="space-y-4">
+                                {(formData.passages || []).map((passage, pIdx) => (
+                                    <div key={pIdx} className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4 relative">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black uppercase tracking-widest text-primary">Passage {pIdx + 1}</span>
+                                            {formData.passages.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => patch({ passages: formData.passages.filter((_, idx) => idx !== pIdx) })}
+                                                    className="btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg gap-1"
+                                                >
+                                                    <PiTrash /> Remove Passage
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-slate-700">Passage Title</label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none"
+                                                placeholder={`e.g. Reading Passage ${pIdx + 1}: Electroreception`}
+                                                value={passage.title}
+                                                onChange={(e) => {
+                                                    const updated = [...formData.passages];
+                                                    updated[pIdx].title = e.target.value;
+                                                    patch({ passages: updated });
+                                                }}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-slate-700">Passage Content</label>
+                                            <textarea
+                                                id={`reading-passage-textarea-${pIdx}`}
+                                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none resize-y min-h-[150px] font-serif"
+                                                placeholder="Paste passage paragraphs here..."
+                                                value={passage.content}
+                                                onChange={(e) => {
+                                                    const updated = [...formData.passages];
+                                                    updated[pIdx].content = e.target.value;
+                                                    patch({ passages: updated });
+                                                }}
+                                                required
+                                            />
+                                            <p className="text-[11px] text-slate-500 font-semibold mt-1">
+                                                Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>. Empty lines create paragraph breaks.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">PTE Reading Text / Passage</label>
+                            <textarea
+                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all outline-none resize-y min-h-[200px] font-mono text-slate-800 leading-relaxed"
+                                placeholder="Enter the reading text passage here. Use [blank-1], [blank-2], etc. for Reading Fill in the Blanks interactive dropdowns."
+                                value={formData.passage || ""}
+                                onChange={(e) => patch({ passage: e.target.value })}
+                                required
+                            />
+                        </div>
+                    )}
                 </div>
             )}
 
             {/* ── Question Groups Manager ──────────────────────────── */}
-            {(testType === "reading" || testType === "listening") && (
+            {(testType === "reading" || testType === "listening") && formData.examType !== "PTE" && (
                 <div className="space-y-4 pt-2">
                     <div className="flex items-center justify-between">
                         <div>
@@ -557,7 +571,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         <span className="text-[10px] text-slate-400 italic">Add questions below first, then click to insert gaps</span>
                                     )}
                                 </div>
-                                <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1">
+                                                                <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1">
                                     <span>💡 Click a <strong>QN</strong> button to insert a gap at your cursor position, then <strong>keep typing</strong> to add text after it.</span>
                                     <span>📊 To create a table, use vertical bars (<code>|</code>) at the start and end of rows.</span>
                                 </p>
@@ -570,152 +584,172 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
             {/* Writing */}
             {testType === "writing" && (
                 <div className="space-y-6">
-                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-200/60 space-y-6">
-                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
-                            Writing Task 1 — Academic Report
-                        </h3>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-slate-700 tracking-wide">Task 1 Prompt</label>
-                            <textarea
-                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px]"
-                                placeholder="The table below shows global plastic production…"
-                                value={formData.task1Prompt}
-                                onChange={(e) => patch({ task1Prompt: e.target.value })}
-                                required
-                            />
+                    {formData.examType !== "PTE" ? (
+                        <>
+                            <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-200/60 space-y-6">
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Writing Task 1 — Academic Report
+                                </h3>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-slate-700 tracking-wide">Task 1 Prompt</label>
+                                    <textarea
+                                        className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px]"
+                                        placeholder="The table below shows global plastic production…"
+                                        value={formData.task1Prompt}
+                                        onChange={(e) => patch({ task1Prompt: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-slate-700 tracking-wide">Task 1 Diagram Image URL (Optional)</label>
+                                    <input
+                                        type="url"
+                                        className="w-full px-4 py-3.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                                        placeholder="https://domain.com/chart.png"
+                                        value={formData.task1Image}
+                                        onChange={(e) => patch({ task1Image: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-200/60 space-y-6">
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Writing Task 2 — Opinion Essay
+                                </h3>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-slate-700 tracking-wide">Task 2 Prompt</label>
+                                    <textarea
+                                        className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px]"
+                                        placeholder="Some people argue that university education should be free…"
+                                        value={formData.task2Prompt}
+                                        onChange={(e) => patch({ task2Prompt: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="p-6 bg-purple-50 border border-purple-100 rounded-3xl text-sm text-purple-700 space-y-2">
+                            <h3 className="font-bold text-base">PTE Writing Tasks Guidance</h3>
+                            <p>No global writing prompts or templates are required for PTE Academic.</p>
+                            <p className="font-semibold text-xs">Please use the <strong>Questions Builder</strong> section below to add and configure your PTE writing questions (e.g. <em>Summarize Written Text</em>, <em>Write Essay</em>).</p>
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-slate-700 tracking-wide">Task 1 Diagram Image URL (Optional)</label>
-                            <input
-                                type="url"
-                                className="w-full px-4 py-3.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
-                                placeholder="https://domain.com/chart.png"
-                                value={formData.task1Image}
-                                onChange={(e) => patch({ task1Image: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-200/60 space-y-6">
-                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
-                            Writing Task 2 — Opinion Essay
-                        </h3>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-slate-700 tracking-wide">Task 2 Prompt</label>
-                            <textarea
-                                className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px]"
-                                placeholder="Some people argue that university education should be free…"
-                                value={formData.task2Prompt}
-                                onChange={(e) => patch({ task2Prompt: e.target.value })}
-                                required
-                            />
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
 
             {/* Speaking */}
             {testType === "speaking" && (
                 <div className="space-y-6">
-                    {/* Part 1 */}
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
-                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                            <span>Part 1: Introduction &amp; Interview Questions</span>
-                            <button
-                                type="button"
-                                onClick={() => patch({ speakingPart1Questions: [...formData.speakingPart1Questions, ""] })}
-                                className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
-                            >
-                                + Add Question
-                            </button>
-                        </h3>
-                        <div className="space-y-2">
-                            {formData.speakingPart1Questions.map((q, idx) => (
-                                <div key={idx} className="flex gap-2 items-center">
-                                    <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
-                                    <input
-                                        type="text"
-                                        className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
-                                        placeholder="e.g. Do you work or study?"
-                                        value={q}
-                                        onChange={(e) => {
-                                            const arr = [...formData.speakingPart1Questions];
-                                            arr[idx] = e.target.value;
-                                            patch({ speakingPart1Questions: arr });
-                                        }}
-                                    />
-                                    {formData.speakingPart1Questions.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => patch({ speakingPart1Questions: formData.speakingPart1Questions.filter((_, i) => i !== idx) })}
-                                            className="btn btn-ghost btn-circle btn-sm text-error animate-none"
-                                        >
-                                            ✕
-                                        </button>
-                                    )}
+                    {formData.examType !== "PTE" ? (
+                        <>
+                            {/* Part 1 */}
+                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                                    <span>Part 1: Introduction &amp; Interview Questions</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => patch({ speakingPart1Questions: [...formData.speakingPart1Questions, ""] })}
+                                        className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
+                                    >
+                                        + Add Question
+                                    </button>
+                                </h3>
+                                <div className="space-y-2">
+                                    {formData.speakingPart1Questions.map((q, idx) => (
+                                        <div key={idx} className="flex gap-2 items-center">
+                                            <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
+                                            <input
+                                                type="text"
+                                                className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
+                                                placeholder="e.g. Do you work or study?"
+                                                value={q}
+                                                onChange={(e) => {
+                                                    const arr = [...formData.speakingPart1Questions];
+                                                    arr[idx] = e.target.value;
+                                                    patch({ speakingPart1Questions: arr });
+                                                }}
+                                            />
+                                            {formData.speakingPart1Questions.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => patch({ speakingPart1Questions: formData.speakingPart1Questions.filter((_, i) => i !== idx) })}
+                                                    className="btn btn-ghost btn-circle btn-sm text-error animate-none"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
 
-                    {/* Part 2 Cue Card */}
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
-                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                            Part 2: Long Turn (Cue Card Prompt)
-                        </h3>
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text font-semibold text-xs text-slate-600">Cue Card Topic Prompt</span>
-                            </label>
-                            <textarea
-                                className="textarea textarea-bordered w-full rounded-2xl h-28 text-sm bg-white font-medium"
-                                placeholder="Describe a historical building you have visited. You should say..."
-                                value={formData.speakingPrompt}
-                                onChange={(e) => patch({ speakingPrompt: e.target.value })}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    {/* Part 3 Discussion */}
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
-                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                            <span>Part 3: Two-Way Analytical Discussion Questions</span>
-                            <button
-                                type="button"
-                                onClick={() => patch({ speakingPart3Questions: [...formData.speakingPart3Questions, ""] })}
-                                className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
-                            >
-                                + Add Question
-                            </button>
-                        </h3>
-                        <div className="space-y-2">
-                            {formData.speakingPart3Questions.map((q, idx) => (
-                                <div key={idx} className="flex gap-2 items-center">
-                                    <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
-                                    <input
-                                        type="text"
-                                        className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
-                                        placeholder="e.g. Why do people think protecting old buildings is important?"
-                                        value={q}
-                                        onChange={(e) => {
-                                            const arr = [...formData.speakingPart3Questions];
-                                            arr[idx] = e.target.value;
-                                            patch({ speakingPart3Questions: arr });
-                                        }}
+                            {/* Part 2 Cue Card */}
+                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                                    Part 2: Long Turn (Cue Card Prompt)
+                                </h3>
+                                <div className="form-control w-full">
+                                    <label className="label">
+                                        <span className="label-text font-semibold text-xs text-slate-600">Cue Card Topic Prompt</span>
+                                    </label>
+                                    <textarea
+                                        className="textarea textarea-bordered w-full rounded-2xl h-28 text-sm bg-white font-medium"
+                                        placeholder="Describe a historical building you have visited. You should say..."
+                                        value={formData.speakingPrompt}
+                                        onChange={(e) => patch({ speakingPrompt: e.target.value })}
+                                        required
                                     />
-                                    {formData.speakingPart3Questions.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => patch({ speakingPart3Questions: formData.speakingPart3Questions.filter((_, i) => i !== idx) })}
-                                            className="btn btn-ghost btn-circle btn-sm text-error animate-none"
-                                        >
-                                            ✕
-                                        </button>
-                                    )}
                                 </div>
-                            ))}
+                            </div>
+
+                            {/* Part 3 Discussion */}
+                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60 space-y-4">
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                                    <span>Part 3: Two-Way Analytical Discussion Questions</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => patch({ speakingPart3Questions: [...formData.speakingPart3Questions, ""] })}
+                                        className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
+                                    >
+                                        + Add Question
+                                    </button>
+                                </h3>
+                                <div className="space-y-2">
+                                    {formData.speakingPart3Questions.map((q, idx) => (
+                                        <div key={idx} className="flex gap-2 items-center">
+                                            <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
+                                            <input
+                                                type="text"
+                                                className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
+                                                placeholder="e.g. Why do people think protecting old buildings is important?"
+                                                value={q}
+                                                onChange={(e) => {
+                                                    const arr = [...formData.speakingPart3Questions];
+                                                    arr[idx] = e.target.value;
+                                                    patch({ speakingPart3Questions: arr });
+                                                }}
+                                            />
+                                            {formData.speakingPart3Questions.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => patch({ speakingPart3Questions: formData.speakingPart3Questions.filter((_, i) => i !== idx) })}
+                                                    className="btn btn-ghost btn-circle btn-sm text-error animate-none"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="p-6 bg-purple-50 border border-purple-100 rounded-3xl text-sm text-purple-700 space-y-2">
+                            <h3 className="font-bold text-base">PTE Speaking Tasks Guidance</h3>
+                            <p>No global speaking prompts or interview structures are required for PTE Academic.</p>
+                            <p className="font-semibold text-xs">Please use the <strong>Questions Builder</strong> section below to add and configure your PTE speaking questions (e.g. <em>Read Aloud</em>, <em>Describe Image</em>, <em>Retell Lecture</em>).</p>
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
         </div>

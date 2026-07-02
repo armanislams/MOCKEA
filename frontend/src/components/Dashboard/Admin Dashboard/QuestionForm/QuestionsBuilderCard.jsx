@@ -21,7 +21,7 @@ export default function QuestionsBuilderCard({
     handleAddPair,
     updatePair,
 }) {
-    if (testType === "writing" || testType === "speaking") return null;
+    if ((testType === "writing" || testType === "speaking") && formData.examType !== "PTE") return null;
 
     const [showGuide, setShowGuide] = useState(false);
 
@@ -58,7 +58,7 @@ export default function QuestionsBuilderCard({
                     </span>
                 </div>
                 <div className="collapse-content bg-white border-t border-slate-200/50 p-6 space-y-4">
-                    <div className="grid md:grid-cols-3 gap-6 text-xs text-slate-600 leading-relaxed font-medium">
+                    <div className="grid md:grid-cols-4 gap-6 text-xs text-slate-600 leading-relaxed font-medium">
                         {/* Drag & Drop / Inline Passage Card */}
                         <div className="space-y-2.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">
                             <h4 className="font-black text-sm text-primary uppercase tracking-wider">
@@ -121,13 +121,37 @@ export default function QuestionsBuilderCard({
                                 </li>
                             </ul>
                         </div>
+
+                        {/* PTE Academic Questions Card */}
+                        <div className="space-y-2.5 p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                            <h4 className="font-black text-sm text-purple-700 uppercase tracking-wider">
+                                PTE Academic Questions
+                            </h4>
+                            <p>
+                                Guidance on setting up specific task types for PTE preparation:
+                            </p>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li>
+                                    <strong>Reading Blanks:</strong> Set question to <em>Reading & Writing: Fill in the Blanks</em>. Type text in the passage field, replacing blanks with <code>[blank-1]</code>, <code>[blank-2]</code>, etc. Define options (first is correct).
+                                </li>
+                                <li>
+                                    <strong>Re-order Paragraphs:</strong> Define paragraph choices (A, B, C, D) and input the correct sequence order separated by commas (e.g., <code>B, D, A, C</code>).
+                                </li>
+                                <li>
+                                    <strong>Audio Tasks:</strong> For repeat sentence, retell lecture, dictation, etc., upload the Audio URL and type the exact transcript for grading.
+                                </li>
+                                <li>
+                                    <strong>Describe Image:</strong> Upload image URL under Image URL field, and define response requirements.
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {formData.questions?.map((q, index) => {
                 const questionNum = index + 1;
-                const group = (testType === "reading" || testType === "listening")
+                const group = (testType === "reading" || testType === "listening") && formData.examType !== "PTE"
                     ? (formData.questionGroups || []).find(g => Number(g.fromQuestion) === questionNum)
                     : null;
 

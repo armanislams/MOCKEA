@@ -125,38 +125,47 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
         const data = { ...formData, testType };
 
         if (testType === "reading") {
-            const activePassages = (formData.passages || []).filter(p => p.title.trim() !== "" || p.content.trim() !== "");
-            data.passages = activePassages;
-            data.passage = activePassages.map((p, idx) => `
+            if (formData.examType === "PTE") {
+                data.passage = formData.passage;
+                data.passages = [];
+            } else {
+                const activePassages = (formData.passages || []).filter(p => p.title.trim() !== "" || p.content.trim() !== "");
+                data.passages = activePassages;
+                data.passage = activePassages.map((p, idx) => `
 <section class="p-8 bg-primary/5 rounded-[2rem] border border-primary/10 mb-8">
   <h2 class="text-3xl font-black text-primary mb-4">Reading Passage ${idx + 1}: ${p.title}</h2>
   <div class="space-y-4 text-slate-600">${convertMarkdownContentToHtml(p.content)}</div>
 </section>
-            `.trim()).join('\n\n');
+                `.trim()).join('\n\n');
+            }
         } else if (testType === "writing") {
-            const task1HTML = `
+            if (formData.examType !== "PTE") {
+                const task1HTML = `
 <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200">
   <h3 class="text-xl font-bold text-slate-800 mb-2">Task 1: Academic Report (Recommended: 20 minutes, minimum 150 words)</h3>
   <p class="mb-4 text-slate-700 leading-relaxed font-medium">${formData.task1Prompt.replace(/\n/g, "<br/>")}</p>
 </div>`.trim();
-            const task2HTML = `
+                const task2HTML = `
 <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 mt-6">
   <h3 class="text-xl font-bold text-slate-800 mb-2">Task 2: Opinion Essay (Recommended: 40 minutes, minimum 250 words)</h3>
   <p class="mb-4 text-slate-700 leading-relaxed font-semibold">${formData.task2Prompt.replace(/\n/g, "<br/>")}</p>
 </div>`.trim();
-            data.passage = `<div class="space-y-6">\n  ${task1HTML}\n\n  ${task2HTML}\n</div>`;
-            data.images = formData.task1Image ? [formData.task1Image] : [];
-            data.questions = [
-                { id: "w1", type: "short-answer", question: "Task Responses:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" },
-            ];
+                data.passage = `<div class="space-y-6">\n  ${task1HTML}\n\n  ${task2HTML}\n</div>`;
+                data.images = formData.task1Image ? [formData.task1Image] : [];
+                data.questions = [
+                    { id: "w1", type: "short-answer", question: "Task Responses:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" },
+                ];
+            }
             // Clear reading-specific passages — they have a required title field in the schema
             data.passages = [];
         } else if (testType === "speaking") {
-            data.speakingPart1Questions = formData.speakingPart1Questions.filter(q => q.trim() !== "");
-            data.speakingPart3Questions = formData.speakingPart3Questions.filter(q => q.trim() !== "");
-            data.questions = [
-                { id: "s1", type: "short-answer", question: "Speaking Recording Response:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" },
-            ];
+            if (formData.examType !== "PTE") {
+                data.speakingPart1Questions = formData.speakingPart1Questions.filter(q => q.trim() !== "");
+                data.speakingPart3Questions = formData.speakingPart3Questions.filter(q => q.trim() !== "");
+                data.questions = [
+                    { id: "s1", type: "short-answer", question: "Speaking Recording Response:", correctAnswer: "[INSTRUCTOR REVIEW REQUIRED]" },
+                ];
+            }
             // Clear reading-specific passages — they have a required title field in the schema
             data.passages = [];
         } else if (
@@ -267,7 +276,7 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
                 />
 
                 {/* IELTS Listening Part Selector */}
-                {testType === "listening" && (
+                {testType === "listening" && formData.examType !== "PTE" && (
                     <ListeningPartSelector 
                         value={formData.listeningPart} 
                         onChange={(part) => patch({ listeningPart: part })} 
