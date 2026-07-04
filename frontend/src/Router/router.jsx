@@ -61,12 +61,17 @@ const CoursesPage = lazy(() => import("../components/Home/CoursesPage"));
 const StudentCourses = lazy(() => import("../components/Dashboard/Student Dashboard/StudentCourses"));
 const AboutPage = lazy(() => import("../components/AboutPage/AboutPage"));
 const PteHome = lazy(() => import("../pte/PteHome"));
+const MaintenancePage = lazy(() => import("../components/Common/MaintenancePage"));
 
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
     errorElement: <Error />,
     children: [
+      {
+        path: "/maintenance",
+        element: withSuspense(MaintenancePage),
+      },
       {
         path: "/",
         element: <HomeLayout />,

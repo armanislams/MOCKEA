@@ -1,27 +1,63 @@
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import ScrollToTop from "../hooks/ScrollToTop";
 import axios from "axios";
 import { API_BASE_URL } from "../utils/apiConfig";
+import { useRole } from "../hooks/useRole";
+import Loader from "../components/Loader/Loader";
 
 export default function RootLayout() {
   const [notice, setNotice] = useState(null);
+  const [maintenance, setMaintenance] = useState({ mode: false, message: "" });
   const [visible, setVisible] = useState(true);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { role, roleLoading } = useRole();
 
   useEffect(() => {
-    const fetchNotice = async () => {
+    const fetchConfig = async () => {
       try {
         const cleanBaseUrl = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
         const response = await axios.get(`${cleanBaseUrl}/settings/public`);
-        if (response.data?.success && response.data?.systemNotice?.active) {
-          setNotice(response.data.systemNotice);
+        
+        if (response.data?.success) {
+          setMaintenance({
+            mode: response.data.maintenanceMode || false,
+            message: response.data.maintenanceMessage || "",
+          });
+          if (response.data.systemNotice?.active) {
+            setNotice(response.data.systemNotice);
+          }
         }
       } catch (err) {
-        console.error("Failed to fetch system announcement:", err);
+        console.error("Failed to fetch system config:", err);
+      } finally {
+        setConfigLoading(false);
       }
     };
-    fetchNotice();
-  }, []);
+    fetchConfig();
+  }, [location.pathname]); // Re-fetch on navigation to ensure real-time maintenance checks
+
+  useEffect(() => {
+    if (configLoading || roleLoading) return;
+
+    const isLoginPath = location.pathname.startsWith("/auth/login");
+    const isMaintenancePath = location.pathname === "/maintenance";
+
+    if (maintenance.mode) {
+      // If maintenance mode is active, only allow superadmins to bypass
+      if (role !== "superadmin" && !isMaintenancePath && !isLoginPath) {
+        navigate("/maintenance", { replace: true });
+      }
+    } else {
+      // If maintenance mode is disabled, redirect users away from the maintenance page
+      if (isMaintenancePath) {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [maintenance.mode, role, roleLoading, configLoading, location.pathname, navigate]);
 
   const getBannerColor = (type) => {
     switch (type) {
@@ -34,6 +70,10 @@ export default function RootLayout() {
         return "bg-blue-600 text-white";
     }
   };
+
+  if (configLoading || (maintenance.mode && roleLoading)) {
+    return <Loader />;
+  }
 
   return (
     <>
@@ -51,7 +91,7 @@ export default function RootLayout() {
           </button>
         </div>
       )}
-      <Outlet />
+      <Outlet context={{ maintenanceMessage: maintenance.message }} />
     </>
   );
 }
