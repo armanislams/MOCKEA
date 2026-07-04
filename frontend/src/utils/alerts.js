@@ -55,7 +55,7 @@ export const alerts = {
       title,
       text,
       showCancelButton: true,
-      confirmButtonText,
+      confirmButtonText: confirmText,
       cancelButtonText: "Cancel",
       customClass: {
         ...BASE_SWAL_CONFIG.customClass,

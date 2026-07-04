@@ -1,6 +1,7 @@
 import User from "../model/user.js";
 import AuditLog from "../model/auditLog.js";
 import SystemConfig from "../model/systemConfig.js";
+import ErrorLog from "../model/errorLog.js";
 import admin from "../lib/firebase.config.js";
 import mongoose from "mongoose";
 
@@ -211,3 +212,115 @@ export const getPublicSystemConfig = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 7. Get Error Analytics (clusters backend errors and aggregates similar stack traces)
+export const getErrorAnalytics = async (req, res) => {
+  try {
+    const logs = await ErrorLog.find().sort({ createdAt: -1 }).limit(5000);
+
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const clusters = {};
+
+    const getStackSignature = (stack, message, path, method) => {
+      if (!stack || stack === "No stack trace provided") {
+        const cleanMsg = (message || "unknown")
+          .replace(/[0-9a-fA-F]{24}/g, "{MONGO_ID}")
+          .replace(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g, "{UUID}")
+          .replace(/\b\d+\b/g, "{NUM}");
+        return `msg:${method || ""}:${path || ""}:${cleanMsg}`;
+      }
+
+      const lines = stack.split("\n").map(line => line.trim());
+      const signatureLines = [];
+
+      if (lines[0]) {
+        signatureLines.push(
+          lines[0]
+            .replace(/[0-9a-fA-F]{24}/g, "{MONGO_ID}")
+            .replace(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g, "{UUID}")
+            .replace(/\b\d+\b/g, "{NUM}")
+        );
+      }
+
+      for (let i = 1; i < Math.min(lines.length, 4); i++) {
+        let line = lines[i];
+        if (line.startsWith("at ")) {
+          line = line.replace(/\\/g, "/");
+          line = line.replace(/.*\/MOCKEA\//i, "");
+          line = line.replace(/.*\/node_modules\//i, "node_modules/");
+          line = line.replace(/[a-zA-Z]:\/[^\s]+?\/(src|node_modules|backend|frontend)/g, "$1");
+        }
+        signatureLines.push(line);
+      }
+
+      return signatureLines.join("\n");
+    };
+
+    for (const log of logs) {
+      const sig = getStackSignature(log.stack, log.message, log.path, log.method);
+      const isLastHour = log.createdAt >= oneHourAgo;
+      const isLast24Hours = log.createdAt >= twentyFourHoursAgo;
+
+      if (!clusters[sig]) {
+        clusters[sig] = {
+          signature: sig,
+          message: log.message,
+          stack: log.stack,
+          count: 0,
+          countLastHour: 0,
+          countLast24Hours: 0,
+          paths: {},
+          methods: {},
+          statuses: {},
+          users: new Set(),
+          firstSeen: log.createdAt,
+          lastSeen: log.createdAt,
+        };
+      }
+
+      const cluster = clusters[sig];
+      cluster.count += 1;
+      if (isLastHour) cluster.countLastHour += 1;
+      if (isLast24Hours) cluster.countLast24Hours += 1;
+
+      const routeKey = `${log.method || "UNKNOWN"} ${log.path || "unknown"}`;
+      cluster.paths[routeKey] = (cluster.paths[routeKey] || 0) + 1;
+      
+      const methodKey = log.method || "UNKNOWN";
+      cluster.methods[methodKey] = (cluster.methods[methodKey] || 0) + 1;
+
+      const statusKey = log.status || 500;
+      cluster.statuses[statusKey] = (cluster.statuses[statusKey] || 0) + 1;
+
+      if (log.userEmail) {
+        cluster.users.add(log.userEmail);
+      }
+
+      if (log.createdAt < cluster.firstSeen) {
+        cluster.firstSeen = log.createdAt;
+      }
+      if (log.createdAt > cluster.lastSeen) {
+        cluster.lastSeen = log.createdAt;
+      }
+    }
+
+    const aggregated = Object.values(clusters).map(c => ({
+      ...c,
+      users: Array.from(c.users).slice(0, 10),
+      uniqueUsersCount: c.users.size,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      errorClusters: aggregated,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 8. Get Collections and Document Counts (Placeholder/removed for Commit 1)
+

@@ -4,7 +4,8 @@ import {
   updateSystemConfig,
   impersonateUser,
   getAuditLogs,
-  getSystemMetrics
+  getSystemMetrics,
+  getErrorAnalytics
 } from "../controllers/superAdmin.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import isSuperAdmin from "../middlewares/isSuperAdmin.js";
@@ -20,5 +21,6 @@ superAdminRouter.put("/config", updateSystemConfig);
 superAdminRouter.post("/impersonate", impersonateUser);
 superAdminRouter.get("/logs", getAuditLogs);
 superAdminRouter.get("/metrics", getSystemMetrics);
+superAdminRouter.get("/error-analytics", getErrorAnalytics);
 
 export default superAdminRouter;
