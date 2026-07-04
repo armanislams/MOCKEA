@@ -12,7 +12,10 @@ import {
   sendEmailBroadcast,
   getBroadcastHistory,
   getCacheStats,
-  clearCache
+  clearCache,
+  getBlacklistedIps,
+  blacklistIp,
+  removeBlacklistedIp
 } from "../controllers/superAdmin.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import isSuperAdmin from "../middlewares/isSuperAdmin.js";
@@ -38,5 +41,9 @@ superAdminRouter.get("/broadcasts", getBroadcastHistory);
 
 superAdminRouter.get("/cache/stats", getCacheStats);
 superAdminRouter.post("/cache/clear", clearCache);
+
+superAdminRouter.get("/security/blacklist", getBlacklistedIps);
+superAdminRouter.post("/security/blacklist", blacklistIp);
+superAdminRouter.delete("/security/blacklist/:ipId", removeBlacklistedIp);
 
 export default superAdminRouter;

@@ -21,6 +21,11 @@ const systemConfigSchema = new mongoose.Schema(
       message: { type: String, default: "" },
       type: { type: String, enum: ["info", "warning", "error"], default: "info" },
     },
+    rateLimits: {
+      globalLimit: { type: Number, default: 60 },
+      authLimit: { type: Number, default: 10 },
+      submitLimit: { type: Number, default: 5 },
+    },
   },
   {
     timestamps: true,

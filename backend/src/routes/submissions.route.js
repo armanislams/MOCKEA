@@ -15,7 +15,7 @@ import apiRateLimiter from '../middlewares/apiRateLimiter.js';
 const sRouter = express.Router();
 
 // Student routes
-sRouter.post('/submit', verifyUserToken, apiRateLimiter(5, 60 * 1000), submitPractice);
+sRouter.post('/submit', verifyUserToken, apiRateLimiter("submitLimit", 60 * 1000), submitPractice);
 sRouter.get('/my-submissions', verifyUserToken, getMySubmissions);
 sRouter.get('/upload-signature', verifyUserToken, getUploadSignature);
 

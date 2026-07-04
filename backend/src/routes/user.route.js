@@ -19,7 +19,7 @@ import apiRateLimiter from "../middlewares/apiRateLimiter.js";
 const userRouter = express.Router();
 
 userRouter.get("/verifyEmail/:email", verifyEmail);
-userRouter.post("/auth/register", apiRateLimiter(10, 60 * 1000), postUser);
+userRouter.post("/auth/register", apiRateLimiter("authLimit", 60 * 1000), postUser);
 
 userRouter.use(verifyUserToken);
 

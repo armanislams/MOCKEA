@@ -17,6 +17,7 @@ import apiRateLimiter from "./middlewares/apiRateLimiter.js";
 import chatbotRouter from "./routes/chatbot.route.js";
 import { sanitizeMiddleware } from "./middlewares/sanitize.js";
 import superAdminRouter from "./routes/superAdmin.route.js";
+import ipBlocker from "./middlewares/ipBlocker.js";
 
 const Port = process.env.PORT || 3000;
 
@@ -45,6 +46,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(ipBlocker);
 app.use(sanitizeMiddleware);
 // app.use(express.urlencoded({ extended: true }));
 
@@ -53,7 +55,7 @@ app.use(sanitizeMiddleware);
 // that is called once per recording (up to 11× in a speaking test).
 app.use("/api", (req, res, next) => {
   if (req.path === "/submissions/upload-signature") return next();
-  return apiRateLimiter(120, 60 * 1000)(req, res, next);
+  return apiRateLimiter("globalLimit", 60 * 1000)(req, res, next);
 });
 
 

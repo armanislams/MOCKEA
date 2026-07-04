@@ -12,6 +12,7 @@ import XLSX from "xlsx";
 import admin from "../lib/firebase.config.js";
 import mongoose from "mongoose";
 import { cache } from "../utils/cache.js";
+import BlacklistedIp from "../model/blacklistedIp.js";
 
 // Log action helper
 const logAction = async (actorEmail, actorRole, action, targetType, targetId, ipAddress, userAgent, details = {}) => {
@@ -49,7 +50,7 @@ export const getSystemConfig = async (req, res) => {
 // 2. Update System Configuration
 export const updateSystemConfig = async (req, res) => {
   try {
-    const { maintenanceMode, maintenanceMessage, featureFlags, systemNotice } = req.body;
+    const { maintenanceMode, maintenanceMessage, featureFlags, systemNotice, rateLimits } = req.body;
 
     let config = await SystemConfig.findOne();
     if (!config) {
@@ -60,6 +61,7 @@ export const updateSystemConfig = async (req, res) => {
     if (maintenanceMessage !== undefined) config.maintenanceMessage = maintenanceMessage;
     if (featureFlags !== undefined) config.featureFlags = { ...config.featureFlags, ...featureFlags };
     if (systemNotice !== undefined) config.systemNotice = { ...config.systemNotice, ...systemNotice };
+    if (rateLimits !== undefined) config.rateLimits = { ...config.rateLimits, ...rateLimits };
 
     await config.save();
 
@@ -71,7 +73,7 @@ export const updateSystemConfig = async (req, res) => {
       config._id.toString(),
       req.ip,
       req.headers["user-agent"],
-      { maintenanceMode, featureFlags, systemNotice }
+      { maintenanceMode, featureFlags, systemNotice, rateLimits }
     );
 
     return res.status(200).json({ success: true, message: "System configuration updated successfully", config });
@@ -614,6 +616,89 @@ export const clearCache = async (req, res) => {
         ? `Cache keys matching pattern '${pattern}' cleared successfully.` 
         : "Entire cache database flushed successfully."
     });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 15. Get All Blacklisted IPs
+export const getBlacklistedIps = async (req, res) => {
+  try {
+    const list = await BlacklistedIp.find().sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, list });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 16. Blacklist an IP
+export const blacklistIp = async (req, res) => {
+  try {
+    const { ip, reason } = req.body;
+    if (!ip) {
+      return res.status(400).json({ success: false, message: "IP address is required." });
+    }
+
+    const cleanIp = ip.trim();
+
+    // Check if already exists
+    const existing = await BlacklistedIp.findOne({ ip: cleanIp });
+    if (existing) {
+      return res.status(400).json({ success: false, message: `IP Address ${cleanIp} is already blacklisted.` });
+    }
+
+    const newBlock = new BlacklistedIp({
+      ip: cleanIp,
+      reason: reason || "Unspecified security reason",
+      blockedBy: req.user.email
+    });
+
+    await newBlock.save();
+
+    await logAction(
+      req.user.email,
+      req.user.role,
+      "BLACKLIST_IP",
+      "BlacklistedIp",
+      newBlock._id.toString(),
+      req.ip,
+      req.headers["user-agent"],
+      { ip: cleanIp, reason }
+    );
+
+    return res.status(200).json({ success: true, message: `IP Address ${cleanIp} blacklisted successfully.`, block: newBlock });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 17. Unban / Remove Blacklisted IP
+export const removeBlacklistedIp = async (req, res) => {
+  try {
+    const { ipId } = req.params;
+    if (!ipId) {
+      return res.status(400).json({ success: false, message: "Blacklist record ID is required." });
+    }
+
+    const blockedDoc = await BlacklistedIp.findById(ipId);
+    if (!blockedDoc) {
+      return res.status(404).json({ success: false, message: "Blacklist record not found." });
+    }
+
+    await BlacklistedIp.findByIdAndDelete(ipId);
+
+    await logAction(
+      req.user.email,
+      req.user.role,
+      "REMOVE_BLACKLIST_IP",
+      "BlacklistedIp",
+      ipId,
+      req.ip,
+      req.headers["user-agent"],
+      { ip: blockedDoc.ip }
+    );
+
+    return res.status(200).json({ success: true, message: `IP Address ${blockedDoc.ip} removed from blacklist.` });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
