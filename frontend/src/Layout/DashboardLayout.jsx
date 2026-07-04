@@ -4,6 +4,7 @@ import { PiHouse, PiSignOut, PiUser, PiCaretLeft, PiCaretRight } from "react-ico
 import useAuth from "../hooks/useAuth";
 import { useRole } from "../hooks/useRole";
 import { AdminDashboard } from "../components/RoleBasedSidebar/AdminDashboard";
+import { SuperAdminDashboard } from "../components/RoleBasedSidebar/SuperAdminDashboard";
 import { InstructorDashboard } from "../components/RoleBasedSidebar/InstructorDashboard";
 import StudentDashboard from "../components/RoleBasedSidebar/StudentDashboard";
 import Loader from "../components/Loader/Loader";
@@ -57,6 +58,8 @@ const DashboardLayout = () => {
 
   const renderSidebarLinks = () => {
     switch (role) {
+      case "superadmin":
+        return <SuperAdminDashboard isDrawerOpen={isDrawerOpen} />;
       case "admin":
         return <AdminDashboard isDrawerOpen={isDrawerOpen} />;
       case "instructor":

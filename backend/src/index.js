@@ -16,6 +16,7 @@ import trainersRouter from "./routes/trainer.route.js";
 import apiRateLimiter from "./middlewares/apiRateLimiter.js";
 import chatbotRouter from "./routes/chatbot.route.js";
 import { sanitizeMiddleware } from "./middlewares/sanitize.js";
+import superAdminRouter from "./routes/superAdmin.route.js";
 
 const Port = process.env.PORT || 3000;
 
@@ -64,11 +65,15 @@ app.use('/api/submissions', sRouter);
 app.use('/api/error-logs', errorLogRouter);
 
 app.use("/api/analytics", analyticsRouter);
+import { getPublicSystemConfig } from "./controllers/superAdmin.controller.js";
+
 app.use("/api/settings/logs", errorLogRouter);
 app.use("/api/pricing", pricingRouter);
 app.use("/api/resources", resourceRouter);
 app.use("/api/trainers", trainersRouter);
 app.use("/api/chatbot", chatbotRouter);
+app.use("/api/superadmin", superAdminRouter);
+app.get("/api/settings/public", getPublicSystemConfig);
 
 
 app.get("/", (req, res) => {

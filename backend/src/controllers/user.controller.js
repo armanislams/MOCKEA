@@ -1,13 +1,13 @@
 import User from "../model/user.js";
 
-// Helper function to check if requesting user is the owner or an admin
+// Helper function to check if requesting user is the owner or an admin/superadmin
 const isOwnerOrAdmin = async (decodedEmail, targetEmail) => {
     if (!decodedEmail || !targetEmail) return false;
     if (decodedEmail.toLowerCase().trim() === targetEmail.toLowerCase().trim()) {
         return true;
     }
     const requestor = await User.findOne({ email: decodedEmail.toLowerCase().trim() });
-    return !!(requestor && requestor.role === 'admin');
+    return !!(requestor && (requestor.role === 'admin' || requestor.role === 'superadmin'));
 };
 
 // Helper to escape special regex characters to prevent ReDoS
@@ -157,7 +157,7 @@ export const updateUserRole = async (req, res) => {
         const { id } = req.params;
         const { role } = req.body;
 
-        const allowedRoles = ["student", "admin", "instructor"];
+        const allowedRoles = ["student", "admin", "instructor", "superadmin"];
         if (!allowedRoles.includes(role)) {
             return res.status(400).json({ success: false, message: "Invalid role specified" });
         }

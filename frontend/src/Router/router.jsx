@@ -8,6 +8,7 @@ import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
 import Error from "../components/Common/Error";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
+import { SuperAdminRoutes } from "../context/Role Based Routes/SuperAdminRoutes";
 import { InstructorRoutes } from "../context/Role Based Routes/InstructorRoutes";
 import FreePracticeLayout from "../Layout/FreePracticeLayout";
 import AuthLayout from "../components/Auth/AuthLayout";
@@ -50,6 +51,7 @@ const TestEnvironment = lazy(() => import("../components/Dashboard/Student Dashb
 const TrainerLibrary = lazy(() => import("../components/Dashboard/Student Dashboard/TrainerLibrary"));
 const ManageTrainers = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageTrainers"));
 const InstructorPerformance = lazy(() => import("../components/Dashboard/Admin Dashboard/InstructorPerformance"));
+const SuperAdminConsole = lazy(() => import("../components/Dashboard/SuperAdminConsole/SuperAdminConsole"));
 const GradeSubmissions = lazy(() => import("../components/Dashboard/Instructor Dashboard/GradeSubmissions"));
 const GuestTestLibrary = lazy(() => import("../components/Guest/GuestTestLibrary"));
 const GuestTestEnvironment = lazy(() => import("../components/Guest/GuestTestEnvironment"));
@@ -386,6 +388,14 @@ const router = createBrowserRouter([
               <AdminRoutes>
                 {withSuspense(AdminSettings)}
               </AdminRoutes>
+            ),
+          },
+          {
+            path: "superadmin/console",
+            element: (
+              <SuperAdminRoutes>
+                {withSuspense(SuperAdminConsole)}
+              </SuperAdminRoutes>
             ),
           },
         ],
