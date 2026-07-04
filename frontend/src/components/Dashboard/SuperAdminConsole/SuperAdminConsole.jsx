@@ -40,6 +40,15 @@ const SuperAdminConsole = () => {
   const [loadingErrors, setLoadingErrors] = useState(false);
   const [clearingErrors, setClearingErrors] = useState(false);
 
+  // Email broadcast tab states
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [loadingBroadcasts, setLoadingBroadcasts] = useState(false);
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [selectedBroadcast, setSelectedBroadcast] = useState(null);
+  const [emailCohort, setEmailCohort] = useState("all");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailContent, setEmailContent] = useState("");
+
   const axiosSecure = useAxiosSecure();
 
   const fetchMetricsAndConfig = async () => {
@@ -122,6 +131,59 @@ const SuperAdminConsole = () => {
   }, [activeTab]);
 
 
+
+  const fetchBroadcastHistory = async () => {
+    try {
+      setLoadingBroadcasts(true);
+      const res = await axiosSecure.get("/superadmin/broadcasts");
+      setBroadcasts(res.data?.broadcasts || []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to fetch past email broadcasts.");
+    } finally {
+      setLoadingBroadcasts(false);
+    }
+  };
+
+  const handleSendBroadcast = async (e) => {
+    e.preventDefault();
+    if (!emailSubject.trim() || !emailContent.trim()) {
+      return toast.warning("Subject and content are required.");
+    }
+
+    const result = await alerts.confirmAction({
+      title: "Confirm Email Broadcast?",
+      text: `Send announcement email broadcast to the '${emailCohort.toUpperCase()}' cohort?`,
+      confirmText: "Yes, broadcast!",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      setSendingBroadcast(true);
+      const res = await axiosSecure.post("/superadmin/broadcast", {
+        subject: emailSubject,
+        content: emailContent,
+        cohort: emailCohort,
+      });
+      if (res.data?.success) {
+        toast.success(res.data.message || "Email broadcast sent successfully!");
+        setEmailSubject("");
+        setEmailContent("");
+        fetchBroadcastHistory();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to send email broadcast.");
+    } finally {
+      setSendingBroadcast(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "email") {
+      fetchBroadcastHistory();
+    }
+  }, [activeTab]);
 
   const handleToggleMaintenance = async () => {
     if (!config) return;
@@ -268,6 +330,16 @@ const SuperAdminConsole = () => {
         >
           <PiBug className="w-5 h-5" />
           System Errors
+        </button>
+
+        <button
+          onClick={() => setActiveTab("email")}
+          className={`tab gap-2 rounded-xl transition-all duration-200 ${
+            activeTab === "email" ? "tab-active bg-primary text-white" : ""
+          }`}
+        >
+          <PiEnvelopeSimple className="w-5 h-5" />
+          Email Broadcast
         </button>
       </div>
 
@@ -708,6 +780,188 @@ const SuperAdminConsole = () => {
           </div>
         )}
 
+
+        {/* Panel 7: Email Broadcast */}
+        {activeTab === "email" && (
+          <div className="card bg-base-100 border border-base-300 rounded-[2rem] shadow-sm p-6 md:p-8 space-y-6">
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <PiEnvelopeSimple className="text-primary w-6 h-6" /> Interactive Email Broadcast
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Compose styled system updates and promotional emails, verify targeting parameters, and broadcast them directly to specific cohorts of users.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Compose form */}
+              <div className="card border border-base-300 p-6 rounded-3xl bg-base-50/50 space-y-4">
+                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">Compose New Broadcast</h3>
+                <form onSubmit={handleSendBroadcast} className="space-y-4">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold">Target Cohort</span>
+                    </label>
+                    <select
+                      value={emailCohort}
+                      onChange={(e) => setEmailCohort(e.target.value)}
+                      className="select select-bordered rounded-2xl w-full"
+                    >
+                      <option value="all">All Registered Students</option>
+                      <option value="free">Free Tier Subscribers</option>
+                      <option value="standard">Standard Tier Subscribers</option>
+                      <option value="premium">Premium Tier Subscribers</option>
+                      <option value="inactive">Inactive Students (No activity in 30 days)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold">Subject / Title</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={emailSubject}
+                      onChange={(e) => setEmailSubject(e.target.value)}
+                      placeholder="e.g. Upgrade to Pro & Save 30%!"
+                      className="input input-bordered rounded-2xl w-full"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold">Email Content (Supports Markdown)</span>
+                    </label>
+                    <textarea
+                      value={emailContent}
+                      onChange={(e) => setEmailContent(e.target.value)}
+                      placeholder="Write your email body here... Use markdown for headers (#), bold (**), or bullet lists."
+                      className="textarea textarea-bordered rounded-2xl w-full h-48 focus:outline-none font-mono text-sm"
+                      required
+                    ></textarea>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={sendingBroadcast}
+                    className="btn btn-primary rounded-2xl w-full font-bold"
+                  >
+                    {sendingBroadcast ? "Sending Broadcast..." : "Broadcast Email"}
+                  </button>
+                </form>
+              </div>
+
+              {/* Preview & info */}
+              <div className="flex flex-col gap-6">
+                <div className="card border border-base-300 p-6 rounded-3xl flex-1 flex flex-col min-h-[300px]">
+                  <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mb-2">Live Template Preview</h3>
+                  <div className="flex-1 bg-white dark:bg-slate-900 border border-base-200 dark:border-slate-800 rounded-2xl p-4 overflow-y-auto max-h-[400px]">
+                    {emailSubject ? (
+                      <h4 className="text-lg font-black text-slate-800 dark:text-white border-b pb-2 mb-3">
+                        {emailSubject}
+                      </h4>
+                    ) : (
+                      <span className="text-slate-400 italic text-sm block mb-3">Enter subject to preview...</span>
+                    )}
+
+                    {emailContent ? (
+                      <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                        {/* Super simple markdown parsing for safety & visual wow */}
+                        {emailContent
+                          .replace(/^#\s+(.+)$/gm, '<h2 class="text-xl font-bold mt-4 mb-2 text-primary">$1</h2>')
+                          .replace(/^##\s+(.+)$/gm, '<h3 class="text-lg font-bold mt-3 mb-1">$1</h3>')
+                          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                          .split("\n")
+                          .map((line, idx) => {
+                            if (line.startsWith("<h") || line.startsWith("<strong>")) {
+                              return <div key={idx} dangerouslySetInnerHTML={{ __html: line }} />;
+                            }
+                            return <p key={idx} className="mb-2">{line}</p>;
+                          })
+                        }
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 italic text-sm block">Write content to preview output...</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Broadcast history list */}
+            <div className="border-t border-base-200 pt-6">
+              <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mb-4">Past Broadcast History</h3>
+              {loadingBroadcasts ? (
+                <div className="flex justify-center items-center py-6">
+                  <span className="loading loading-spinner loading-md text-primary"></span>
+                </div>
+              ) : broadcasts.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-sm">
+                  No past email broadcasts found.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="table w-full text-xs">
+                    <thead>
+                      <tr className="bg-base-200">
+                        <th>Subject</th>
+                        <th>Target Cohort</th>
+                        <th>Recipients</th>
+                        <th>Sent By</th>
+                        <th>Date Sent</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {broadcasts.map((b) => (
+                        <tr key={b._id}>
+                          <td className="font-semibold text-slate-800 dark:text-white">{b.subject}</td>
+                          <td>
+                            <span className="badge badge-sm badge-secondary capitalize">{b.cohort}</span>
+                          </td>
+                          <td className="font-mono font-bold text-primary">{b.recipientCount} users</td>
+                          <td>{b.sentBy}</td>
+                          <td>{new Date(b.createdAt).toLocaleString()}</td>
+                          <td>
+                            <button
+                              onClick={() => setSelectedBroadcast(b)}
+                              className="btn btn-xs btn-outline rounded-lg flex items-center gap-1"
+                            >
+                              <PiEye /> View Content
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal for viewing details */}
+            {selectedBroadcast && (
+              <div className="modal modal-open">
+                <div className="modal-box max-w-2xl rounded-3xl">
+                  <h3 className="font-black text-xl mb-2">{selectedBroadcast.subject}</h3>
+                  <div className="flex gap-2 mb-4 flex-wrap">
+                    <span className="badge badge-neutral">Cohort: {selectedBroadcast.cohort.toUpperCase()}</span>
+                    <span className="badge badge-primary">{selectedBroadcast.recipientCount} Recipients</span>
+                    <span className="badge badge-ghost text-xs">Sent {new Date(selectedBroadcast.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className="border border-base-300 bg-base-100 p-4 rounded-2xl max-h-[300px] overflow-y-auto whitespace-pre-wrap font-mono text-xs">
+                    {selectedBroadcast.content}
+                  </div>
+                  <div className="modal-action">
+                    <button onClick={() => setSelectedBroadcast(null)} className="btn btn-sm rounded-xl">
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

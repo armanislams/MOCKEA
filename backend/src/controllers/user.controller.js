@@ -1,4 +1,5 @@
 import User from "../model/user.js";
+import Notification from "../model/notification.js";
 
 // Helper function to check if requesting user is the owner or an admin/superadmin
 const isOwnerOrAdmin = async (decodedEmail, targetEmail) => {
@@ -270,5 +271,29 @@ export const updateUserExamPreference = async (req, res) => {
         res.status(200).json({ success: true, message: `Exam preference updated to ${targetExam}`, user: userToUpdate });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getUserNotifications = async (req, res) => {
+    try {
+        const email = req.decoded_email;
+        const user = await User.findOne({ email: email.toLowerCase().trim() });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const isUserInactive = !user.lastActive || user.lastActive <= thirtyDaysAgo;
+
+        const query = {
+            cohort: {
+                $in: ["all", user.plan, ...(isUserInactive ? ["inactive"] : [])]
+            }
+        };
+
+        const notifications = await Notification.find(query).sort({ createdAt: -1 });
+        return res.status(200).json({ success: true, notifications });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
     }
 };

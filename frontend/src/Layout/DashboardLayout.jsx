@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router";
-import { PiHouse, PiSignOut, PiUser, PiCaretLeft, PiCaretRight } from "react-icons/pi";
+import { PiHouse, PiSignOut, PiUser, PiCaretLeft, PiCaretRight, PiBell } from "react-icons/pi";
 import useAuth from "../hooks/useAuth";
 import { useRole } from "../hooks/useRole";
+import useAxiosSecure from "../hooks/useAxiosSecure";
 import { AdminDashboard } from "../components/RoleBasedSidebar/AdminDashboard";
 import { SuperAdminDashboard } from "../components/RoleBasedSidebar/SuperAdminDashboard";
 import { InstructorDashboard } from "../components/RoleBasedSidebar/InstructorDashboard";
@@ -18,6 +19,24 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const { isFullscreen } = useFullscreen();
   const [isDrawerOpen, setIsDrawerOpen] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1024);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const axiosSecure = useAxiosSecure();
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await axiosSecure.get("/user/profile/notifications");
+      setNotifications(res.data?.notifications || []);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (isError) {
@@ -175,6 +194,23 @@ const DashboardLayout = () => {
                 {isDrawerOpen && <span>My Profile</span>}
               </NavLink>
             </li>
+            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Notifications">
+              <button 
+                onClick={() => {
+                  fetchNotifications();
+                  setShowNotificationsModal(true);
+                }} 
+                className={`w-full flex items-center justify-between ${!isDrawerOpen ? "justify-center" : ""}`}
+              >
+                <div className="flex items-center gap-3">
+                  <PiBell className="w-5 h-5 shrink-0" />
+                  {isDrawerOpen && <span>Notifications</span>}
+                </div>
+                {notifications.length > 0 && (
+                  <span className="badge badge-primary badge-sm font-bold font-mono">{notifications.length}</span>
+                )}
+              </button>
+            </li>
             <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Logout">
               <button onClick={handleLogOut} className={`w-full flex items-center ${!isDrawerOpen ? "justify-center" : ""}`}>
                 <PiSignOut className="w-5 h-5 shrink-0" />
@@ -185,6 +221,37 @@ const DashboardLayout = () => {
         </div>
       )}
       <StudyBuddyChatbot />
+
+      {/* Notifications Modal */}
+      {showNotificationsModal && (
+        <div className="modal modal-open z-50">
+          <div className="modal-box rounded-3xl max-w-lg bg-base-100">
+            <h3 className="font-black text-xl mb-4 flex items-center gap-2">
+              <PiBell className="text-primary w-6 h-6" /> Your Inbox & Announcements
+            </h3>
+            {notifications.length === 0 ? (
+              <p className="text-sm text-slate-400 py-6 text-center italic">No new announcements or broadcast messages.</p>
+            ) : (
+              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
+                {notifications.map((n) => (
+                  <div key={n._id} className="border border-base-200 p-4 rounded-2xl bg-base-50/50 space-y-2 hover:border-primary transition">
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="font-bold text-sm text-slate-800 dark:text-white">{n.title}</span>
+                      <span className="text-[10px] text-slate-400 font-mono shrink-0">{new Date(n.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap leading-relaxed">
+                      {n.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="modal-action">
+              <button onClick={() => setShowNotificationsModal(false)} className="btn btn-sm rounded-xl">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

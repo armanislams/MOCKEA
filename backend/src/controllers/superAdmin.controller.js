@@ -2,6 +2,8 @@ import User from "../model/user.js";
 import AuditLog from "../model/auditLog.js";
 import SystemConfig from "../model/systemConfig.js";
 import ErrorLog from "../model/errorLog.js";
+import BroadcastEmail from "../model/broadcastEmail.js";
+import Notification from "../model/notification.js";
 import admin from "../lib/firebase.config.js";
 import mongoose from "mongoose";
 
@@ -322,5 +324,85 @@ export const getErrorAnalytics = async (req, res) => {
   }
 };
 
-// 8. Get Collections and Document Counts (Placeholder/removed for Commit 1)
 
+
+// 11. Send Cohort Email Broadcast
+export const sendEmailBroadcast = async (req, res) => {
+  try {
+    const { subject, content, cohort } = req.body;
+
+    if (!subject || !content || !cohort) {
+      return res.status(400).json({ success: false, message: "Subject, content, and cohort are required" });
+    }
+
+    // Find users based on cohort selection
+    let userFilter = { role: "student" };
+    if (cohort === "free") {
+      userFilter.plan = "free";
+    } else if (cohort === "standard") {
+      userFilter.plan = "standard";
+    } else if (cohort === "premium") {
+      userFilter.plan = "premium";
+    } else if (cohort === "inactive") {
+      // Inactive: lastActive is older than 30 days, or is null
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      userFilter.$or = [
+        { lastActive: { $lte: thirtyDaysAgo } },
+        { lastActive: { $exists: false } },
+        { lastActive: null }
+      ];
+    }
+
+    const targetUsers = await User.find(userFilter);
+    const emails = targetUsers.map((u) => u.email);
+
+    // Save Broadcast log
+    const broadcast = new BroadcastEmail({
+      subject,
+      content,
+      cohort,
+      recipientCount: emails.length,
+      recipients: emails,
+      sentBy: req.user.email,
+    });
+    await broadcast.save();
+
+    // Create Notification document so it shows up for target cohort users in their inbox
+    const notification = new Notification({
+      title: subject,
+      message: content,
+      cohort,
+      sentBy: req.user.email,
+    });
+    await notification.save();
+
+    await logAction(
+      req.user.email,
+      req.user.role,
+      "SEND_EMAIL_BROADCAST",
+      "BroadcastEmail",
+      broadcast._id.toString(),
+      req.ip,
+      req.headers["user-agent"],
+      { cohort, recipientCount: emails.length }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Broadcast successfully sent to ${emails.length} users.`,
+      recipientCount: emails.length,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 12. Get Past Broadcasts
+export const getBroadcastHistory = async (req, res) => {
+  try {
+    const broadcasts = await BroadcastEmail.find().sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, broadcasts });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

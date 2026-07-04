@@ -10,6 +10,7 @@ import {
   getUserProfile,
   verifyEmail,
   updateUserExamPreference,
+  getUserNotifications,
 } from "../controllers/user.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
@@ -23,6 +24,7 @@ userRouter.post("/auth/register", apiRateLimiter(10, 60 * 1000), postUser);
 userRouter.use(verifyUserToken);
 
 // Authenticated user routes
+userRouter.get("/profile/notifications", getUserNotifications);
 userRouter.get("/all", verifyUserRole(["admin"]), getAllUser);
 userRouter.get("/:email/role", getUserRole);
 userRouter.get("/:email", getUserProfile);
