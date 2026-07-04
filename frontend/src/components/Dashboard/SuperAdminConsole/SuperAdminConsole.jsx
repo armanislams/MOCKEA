@@ -51,8 +51,8 @@ const SuperAdminConsole = () => {
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [selectedBroadcast, setSelectedBroadcast] = useState(null);
   const [emailCohort, setEmailCohort] = useState("all");
-  const [emailSubject, setEmailSubject] = useState("");
-  const [emailContent, setEmailContent] = useState("");
+  const [emailSubject, setEmailSubject] = useState("🚀 Platform Update: Premium Features and Maintenance Schedule");
+  const [emailContent, setEmailContent] = useState(`# Important System Announcement\n\nDear Students,\n\nWe have completed a series of improvements to the IELTS evaluation systems. Here is a summary of the updates:\n- **AI IELTS Essay Scoring**: Essay evaluations are now faster and provide more detailed band descriptions.\n- **PTE Academic Integration**: The PTE exam practice modules have left Beta and are now fully available.\n\n## Scheduled Maintenance\n\nWe will be running database optimization procedures this Sunday between **02:00 AM and 04:00 AM UTC**. During this short window, you may experience brief access interruptions.\n\nThank you for preparing with MOCKEA!`);
 
   const axiosSecure = useAxiosSecure();
 

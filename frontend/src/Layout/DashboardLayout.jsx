@@ -239,9 +239,16 @@ const DashboardLayout = () => {
                       <span className="font-bold text-sm text-slate-800 dark:text-white">{n.title}</span>
                       <span className="text-[10px] text-slate-400 font-mono shrink-0">{new Date(n.createdAt).toLocaleDateString()}</span>
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap leading-relaxed">
-                      {n.message}
-                    </p>
+                    <div
+                      className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed"
+                      dangerouslySetInnerHTML={{
+                        __html: n.message
+                          .replace(/^#\s+(.+)$/gm, '<h3 class="text-sm font-black mt-3 mb-1 text-primary">$1</h3>')
+                          .replace(/^##\s+(.+)$/gm, '<h4 class="text-xs font-bold mt-2.5 mb-1 text-secondary">$1</h4>')
+                          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                          .replace(/\n/g, "<br />")
+                      }}
+                    />
                   </div>
                 ))}
               </div>
