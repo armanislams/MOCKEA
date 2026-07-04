@@ -10,7 +10,9 @@ import {
   exportCollection,
   runDatabaseSeeder,
   sendEmailBroadcast,
-  getBroadcastHistory
+  getBroadcastHistory,
+  getCacheStats,
+  clearCache
 } from "../controllers/superAdmin.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import isSuperAdmin from "../middlewares/isSuperAdmin.js";
@@ -33,5 +35,8 @@ superAdminRouter.get("/export/:collectionName", exportCollection);
 superAdminRouter.post("/seed", runDatabaseSeeder);
 superAdminRouter.post("/broadcast", sendEmailBroadcast);
 superAdminRouter.get("/broadcasts", getBroadcastHistory);
+
+superAdminRouter.get("/cache/stats", getCacheStats);
+superAdminRouter.post("/cache/clear", clearCache);
 
 export default superAdminRouter;

@@ -11,6 +11,7 @@ import { seedDatabase } from "../utils/seeder.js";
 import XLSX from "xlsx";
 import admin from "../lib/firebase.config.js";
 import mongoose from "mongoose";
+import { cache } from "../utils/cache.js";
 
 // Log action helper
 const logAction = async (actorEmail, actorRole, action, targetType, targetId, ipAddress, userAgent, details = {}) => {
@@ -570,6 +571,49 @@ export const getBroadcastHistory = async (req, res) => {
   try {
     const broadcasts = await BroadcastEmail.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, broadcasts });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 13. Get Cache Stats
+export const getCacheStats = async (req, res) => {
+  try {
+    const stats = await cache.getStats();
+    return res.status(200).json({ success: true, stats });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 14. Clear Cache (Full or Selective Pattern)
+export const clearCache = async (req, res) => {
+  try {
+    const { pattern } = req.body;
+
+    if (pattern) {
+      await cache.delPattern(pattern);
+    } else {
+      await cache.clear();
+    }
+
+    await logAction(
+      req.user.email,
+      req.user.role,
+      "CLEAR_CACHE",
+      "Cache",
+      "global",
+      req.ip,
+      req.headers["user-agent"],
+      { pattern: pattern || "ALL_KEYS" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: pattern 
+        ? `Cache keys matching pattern '${pattern}' cleared successfully.` 
+        : "Entire cache database flushed successfully."
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

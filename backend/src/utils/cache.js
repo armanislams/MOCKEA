@@ -116,5 +116,59 @@ export const cache = {
             }
         }
         localCache.clear();
+    },
+
+    getStats: async () => {
+        let keys = [];
+        let type = 'memory';
+        let connected = false;
+
+        if (isRedisConnected && redisClient) {
+            try {
+                type = 'redis';
+                connected = true;
+                keys = await redisClient.keys('*');
+            } catch (err) {
+                console.error('Error fetching Redis keys for stats:', err);
+            }
+        } else {
+            type = 'memory';
+            connected = false;
+            const now = Date.now();
+            for (const [key, entry] of localCache) {
+                if (entry.expiresAt > now) {
+                    keys.push(key);
+                }
+            }
+        }
+
+        return {
+            type,
+            connected,
+            keysCount: keys.length,
+            keys
+        };
+    },
+
+    delPattern: async (pattern) => {
+        if (isRedisConnected && redisClient) {
+            try {
+                const keys = await redisClient.keys(pattern);
+                if (keys.length > 0) {
+                    await redisClient.del(keys);
+                }
+                return;
+            } catch (err) {
+                console.error(`Error deleting pattern ${pattern} from Redis:`, err);
+            }
+        }
+        // Fallback to local in-memory cache
+        const regexStr = '^' + pattern.replace(/\*/g, '.*') + '$';
+        const regex = new RegExp(regexStr);
+        for (const key of localCache.keys()) {
+            if (regex.test(key)) {
+                localCache.delete(key);
+            }
+        }
     }
 };
