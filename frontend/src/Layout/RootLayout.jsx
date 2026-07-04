@@ -5,6 +5,9 @@ import axios from "axios";
 import { API_BASE_URL } from "../utils/apiConfig";
 import { useRole } from "../hooks/useRole";
 import Loader from "../components/Loader/Loader";
+import { signInWithCustomToken } from "firebase/auth";
+import auth from "../../firebase.config";
+import { toast } from "react-toastify";
 
 export default function RootLayout() {
   const [notice, setNotice] = useState(null);
@@ -71,6 +74,25 @@ export default function RootLayout() {
     }
   };
 
+  const isImpersonating = sessionStorage.getItem("isImpersonating") === "true";
+  const adminRestoreToken = sessionStorage.getItem("adminRestoreToken");
+
+  const handleExitImpersonation = async () => {
+    if (!adminRestoreToken) return;
+    try {
+      toast.info("Restoring Super Admin session...");
+      await signInWithCustomToken(auth, adminRestoreToken);
+      sessionStorage.removeItem("isImpersonating");
+      sessionStorage.removeItem("impersonatorEmail");
+      sessionStorage.removeItem("adminRestoreToken");
+      toast.success("Super Admin session restored!");
+      window.location.href = "/dashboard/superadmin/console";
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to restore Super Admin session. Please log in again.");
+    }
+  };
+
   if (configLoading || (maintenance.mode && roleLoading)) {
     return <Loader />;
   }
@@ -92,6 +114,22 @@ export default function RootLayout() {
         </div>
       )}
       <Outlet context={{ maintenanceMessage: maintenance.message }} />
+
+      {/* Floating Exit Impersonation Bar */}
+      {isImpersonating && adminRestoreToken && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900 border border-slate-700 text-white rounded-full px-6 py-3 shadow-2xl flex items-center gap-4 animate-bounce">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>
+            <span className="text-xs font-semibold">Currently Impersonating User</span>
+          </div>
+          <button
+            onClick={handleExitImpersonation}
+            className="btn btn-primary btn-xs rounded-full px-3 py-1 font-bold text-xs uppercase hover:scale-105 transition-transform"
+          >
+            Exit Session
+          </button>
+        </div>
+      )}
     </>
   );
 }

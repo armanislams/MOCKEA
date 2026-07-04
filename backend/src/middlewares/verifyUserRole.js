@@ -20,9 +20,9 @@ const verifyUserRole = (requiredRoles = []) => {
       // Attach user object to request
       req.user = user;
 
-      // If specific roles are required, check if user has one of them
+      // If specific roles are required, check if user has one of them (superadmin bypasses all)
       if (requiredRoles.length > 0) {
-        if (!requiredRoles.includes(user.role)) {
+        if (user.role !== "superadmin" && !requiredRoles.includes(user.role)) {
           return res.status(403).json({
             success: false,
             message: `Access denied. Required role(s): ${requiredRoles.join(", ")}`

@@ -20,18 +20,27 @@ const ImpersonationTool = () => {
       });
 
       if (response.data?.success && response.data?.customToken) {
-        toast.info(`Attempting to impersonate ${targetEmail}...`);
-        
-        // Save superadmin flag in session storage to remember we are impersonating
-        sessionStorage.setItem("isImpersonating", "true");
-        sessionStorage.setItem("impersonatorEmail", auth.currentUser?.email || "");
+        const targetToken = response.data.customToken;
+        const adminEmail = auth.currentUser?.email;
 
-        // Perform Firebase Sign-In with the custom token
-        await signInWithCustomToken(auth, response.data.customToken);
-        
-        toast.success(`Success! You are now logged in as ${targetEmail}`);
-        // Redirect to dashboard home to view as target user
-        window.location.href = "/dashboard";
+        // Fetch a custom token for the superadmin themselves before switching
+        toast.info("Generating session restore token...");
+        const selfResponse = await axiosSecure.post("/superadmin/impersonate", {
+          email: adminEmail,
+        });
+
+        if (selfResponse.data?.success && selfResponse.data?.customToken) {
+          sessionStorage.setItem("isImpersonating", "true");
+          sessionStorage.setItem("impersonatorEmail", adminEmail);
+          sessionStorage.setItem("adminRestoreToken", selfResponse.data.customToken);
+
+          toast.info(`Switching session to ${targetEmail}...`);
+          await signInWithCustomToken(auth, targetToken);
+          toast.success(`Success! You are now logged in as ${targetEmail}`);
+          window.location.href = "/dashboard";
+        } else {
+          toast.error("Failed to generate admin restore token. Aborting impersonation.");
+        }
       } else {
         toast.error("Failed to generate impersonation token.");
       }

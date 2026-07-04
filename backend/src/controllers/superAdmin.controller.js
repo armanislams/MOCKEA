@@ -2,8 +2,12 @@ import User from "../model/user.js";
 import AuditLog from "../model/auditLog.js";
 import SystemConfig from "../model/systemConfig.js";
 import ErrorLog from "../model/errorLog.js";
+import Questions from "../model/questions.js";
+import MockTest from "../model/mockTest.js";
+import PracticeSubmission from "../model/practiceSubmission.js";
 import BroadcastEmail from "../model/broadcastEmail.js";
 import Notification from "../model/notification.js";
+import { seedDatabase } from "../utils/seeder.js";
 import admin from "../lib/firebase.config.js";
 import mongoose from "mongoose";
 
@@ -324,7 +328,137 @@ export const getErrorAnalytics = async (req, res) => {
   }
 };
 
+// 8. Get Collections and Document Counts
+export const getCollectionsList = async (req, res) => {
+  try {
+    const counts = {
+      users: await User.countDocuments(),
+      mockTests: await MockTest.countDocuments(),
+      questions: await Questions.countDocuments(),
+      submissions: await PracticeSubmission.countDocuments(),
+      auditLogs: await AuditLog.countDocuments(),
+      errorLogs: await ErrorLog.countDocuments(),
+      broadcasts: await BroadcastEmail.countDocuments(),
+    };
+    return res.status(200).json({ success: true, counts });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
+// 9. Export Collection (JSON / CSV)
+export const exportCollection = async (req, res) => {
+  try {
+    const { collectionName } = req.params;
+    const { format = "json" } = req.query;
+
+    let Model;
+    let query = {};
+    let fields = [];
+
+    if (collectionName === "students-info") {
+      Model = User;
+      query = { role: "student" };
+      fields = ["email", "name", "plan", "lastActive", "targetExam", "gender", "isBanned", "createdAt"];
+    } else {
+      switch (collectionName) {
+        case "users":
+          Model = User;
+          fields = ["email", "name", "role", "plan", "lastActive", "targetExam", "isBanned", "createdAt"];
+          break;
+        case "mocktests":
+          Model = MockTest;
+          fields = ["title", "description", "planType", "examType", "isPublic", "totalDuration", "createdAt"];
+          break;
+        case "questions":
+          Model = Questions;
+          fields = ["title", "testType", "examType", "forPlanType", "isMockOnly", "isPublic", "createdAt"];
+          break;
+        case "submissions":
+          Model = PracticeSubmission;
+          fields = ["title", "testType", "userEmail", "score", "status", "createdAt"];
+          break;
+        case "auditlogs":
+          Model = AuditLog;
+          fields = ["actorEmail", "actorRole", "action", "targetType", "ipAddress", "createdAt"];
+          break;
+        case "errorlogs":
+          Model = ErrorLog;
+          fields = ["message", "method", "path", "status", "userEmail", "createdAt"];
+          break;
+        default:
+          return res.status(400).json({ success: false, message: "Invalid collection specified" });
+      }
+    }
+
+    const data = await Model.find(query).sort({ createdAt: -1 }).lean();
+
+    if (format === "csv") {
+      if (data.length === 0) {
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", `attachment; filename=${collectionName}_export.csv`);
+        return res.send(fields.join(",") + "\n");
+      }
+
+      // If fields list is empty, dynamically read keys from first object
+      const headerFields = fields.length > 0 ? fields : Object.keys(data[0]);
+      
+      const csvRows = [];
+      csvRows.push(headerFields.join(",")); // Headers
+
+      for (const item of data) {
+        const values = headerFields.map((field) => {
+          let val = item[field];
+          if (val instanceof Date) {
+            val = val.toISOString();
+          } else if (typeof val === "object" && val !== null) {
+            val = JSON.stringify(val);
+          }
+          const valStr = val !== undefined && val !== null ? String(val) : "";
+          // Escape quotes and wrap in quotes if contains commas or newlines
+          const escaped = valStr.replace(/"/g, '""');
+          return escaped.includes(",") || escaped.includes("\n") || escaped.includes('"') 
+            ? `"${escaped}"` 
+            : escaped;
+        });
+        csvRows.push(values.join(","));
+      }
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename=${collectionName}_export.csv`);
+      return res.send(csvRows.join("\n"));
+    }
+
+    // Default to JSON format
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Disposition", `attachment; filename=${collectionName}_export.json`);
+    return res.json(data);
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 10. Run Mock Test Database Seeder
+export const runDatabaseSeeder = async (req, res) => {
+  try {
+    const result = await seedDatabase();
+
+    await logAction(
+      req.user.email,
+      req.user.role,
+      "RUN_DATABASE_SEEDER",
+      "MockTest",
+      "SYSTEM",
+      req.ip,
+      req.headers["user-agent"],
+      { result }
+    );
+
+    return res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // 11. Send Cohort Email Broadcast
 export const sendEmailBroadcast = async (req, res) => {

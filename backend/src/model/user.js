@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema(
       enum: ["Male", "Female", "Other", "Prefer not to say"],
       default: null,
     },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,

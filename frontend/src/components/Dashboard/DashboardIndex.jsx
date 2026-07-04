@@ -15,7 +15,7 @@ const DashboardIndex = () => {
         return null;
     }
 
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'superadmin') {
         return <AdminDashboardHome />;
     }
 
