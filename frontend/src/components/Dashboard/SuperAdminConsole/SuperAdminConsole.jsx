@@ -154,7 +154,11 @@ const SuperAdminConsole = () => {
       const res = await axiosSecure.get(`/superadmin/export/${collection}?format=${format}`, {
         responseType: "blob",
       });
-      const blob = new Blob([res.data], { type: format === "csv" ? "text/csv" : "application/json" });
+      const mimeType = format === "xlsx" 
+        ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" 
+        : (format === "csv" ? "text/csv" : "application/json");
+
+      const blob = new Blob([res.data], { type: mimeType });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -901,18 +905,24 @@ const SuperAdminConsole = () => {
                               {collectionCounts ? collectionCounts[col.key] || 0 : "0"} docs
                             </span>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1.5">
                             <button
                               onClick={() => handleExport(col.api, "csv")}
-                              className="btn btn-xs btn-outline hover:btn-primary rounded-xl flex-1 font-bold flex items-center justify-center gap-1.5 py-1.5 h-auto min-h-0 cursor-pointer"
+                              className="btn btn-xs btn-outline hover:btn-primary rounded-xl flex-1 font-bold flex items-center justify-center gap-1 py-1.5 h-auto min-h-0 cursor-pointer text-[10px]"
                             >
-                              <PiDownloadSimple className="w-3.5 h-3.5" /> CSV
+                              <PiDownloadSimple className="w-3 h-3" /> CSV
+                            </button>
+                            <button
+                              onClick={() => handleExport(col.api, "xlsx")}
+                              className="btn btn-xs btn-outline hover:btn-primary rounded-xl flex-1 font-bold flex items-center justify-center gap-1 py-1.5 h-auto min-h-0 cursor-pointer text-[10px]"
+                            >
+                              <PiDownloadSimple className="w-3 h-3" /> Excel
                             </button>
                             <button
                               onClick={() => handleExport(col.api, "json")}
-                              className="btn btn-xs btn-outline hover:btn-primary rounded-xl flex-1 font-bold flex items-center justify-center gap-1.5 py-1.5 h-auto min-h-0 cursor-pointer"
+                              className="btn btn-xs btn-outline hover:btn-primary rounded-xl flex-1 font-bold flex items-center justify-center gap-1 py-1.5 h-auto min-h-0 cursor-pointer text-[10px]"
                             >
-                              <PiDownloadSimple className="w-3.5 h-3.5" /> JSON
+                              <PiDownloadSimple className="w-3 h-3" /> JSON
                             </button>
                           </div>
                         </div>
@@ -938,6 +948,12 @@ const SuperAdminConsole = () => {
                       className="btn btn-sm btn-primary rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer w-full"
                     >
                       <PiDownloadSimple className="w-4 h-4" /> Download Students CSV
+                    </button>
+                    <button
+                      onClick={() => handleExport("students-info", "xlsx")}
+                      className="btn btn-sm btn-outline rounded-xl font-bold flex items-center justify-center gap-2 border border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 bg-transparent hover:bg-indigo-600 hover:text-white transition duration-200 cursor-pointer w-full"
+                    >
+                      <PiDownloadSimple className="w-4 h-4" /> Download Students Excel
                     </button>
                     <button
                       onClick={() => handleExport("students-info", "json")}

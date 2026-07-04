@@ -8,6 +8,7 @@ import PracticeSubmission from "../model/practiceSubmission.js";
 import BroadcastEmail from "../model/broadcastEmail.js";
 import Notification from "../model/notification.js";
 import { seedDatabase } from "../utils/seeder.js";
+import XLSX from "xlsx";
 import admin from "../lib/firebase.config.js";
 import mongoose from "mongoose";
 
@@ -393,11 +394,44 @@ export const exportCollection = async (req, res) => {
 
     const data = await Model.find(query).sort({ createdAt: -1 }).lean();
 
+    if (format === "xlsx" || format === "excel") {
+      const headerFields = fields.length > 0 ? fields : (data.length > 0 ? Object.keys(data[0]) : []);
+
+      const formattedData = data.map((item) => {
+        const obj = {};
+        for (const field of headerFields) {
+          let val = item[field];
+          if (val instanceof Date) {
+            val = val.toISOString();
+          } else if (typeof val === "object" && val !== null) {
+            val = JSON.stringify(val);
+          }
+          obj[field] = val !== undefined && val !== null ? val : "";
+        }
+        return obj;
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Export");
+
+      const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+      const filename = `${collectionName}_export_${Date.now()}.xlsx`;
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+      return res.send(buffer);
+    }
+
     if (format === "csv") {
+      const ext = "csv";
+      const filename = `${collectionName}_export_${Date.now()}.${ext}`;
+      const bom = "\ufeff"; // UTF-8 BOM for Microsoft Excel compatibility
+
       if (data.length === 0) {
         res.setHeader("Content-Type", "text/csv");
-        res.setHeader("Content-Disposition", `attachment; filename=${collectionName}_export.csv`);
-        return res.send(fields.join(",") + "\n");
+        res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+        return res.send(bom + fields.join(",") + "\n");
       }
 
       // If fields list is empty, dynamically read keys from first object
@@ -425,8 +459,8 @@ export const exportCollection = async (req, res) => {
       }
 
       res.setHeader("Content-Type", "text/csv");
-      res.setHeader("Content-Disposition", `attachment; filename=${collectionName}_export.csv`);
-      return res.send(csvRows.join("\n"));
+      res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+      return res.send(bom + csvRows.join("\n"));
     }
 
     // Default to JSON format
