@@ -128,6 +128,24 @@ export const getMockTestById = async (req, res) => {
             await cache.set(cacheKey, test, 3600); // Cache for 1 hour
         }
 
+        // Plan tier authorization check
+        const userObj = req.user;
+        if (!userObj) {
+            return res.status(404).json({ success: false, message: 'User not found in session' });
+        }
+
+        if (userObj.role !== 'admin' && userObj.role !== 'instructor') {
+            const planHierarchy = { free: 1, standard: 2, premium: 3 };
+            const userPlan = userObj.plan || 'free';
+            const testRequiredPlan = test.planType || 'free';
+            if (planHierarchy[userPlan] < planHierarchy[testRequiredPlan]) {
+                return res.status(403).json({
+                    success: false,
+                    message: `Access Denied: This is a ${testRequiredPlan} mock test. Please upgrade your plan to access it.`
+                });
+            }
+        }
+
         res.status(200).json({ success: true, test });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -156,6 +174,22 @@ export const startTest = async (req, res) => {
             return res.status(403).json({ 
                 success: false, 
                 message: 'Free tier users cannot access mock tests. Please upgrade your plan to Standard or Premium.' 
+            });
+        }
+
+        // Fetch the test to verify tier permissions
+        const test = await MockTest.findById(testId);
+        if (!test) {
+            return res.status(404).json({ success: false, message: 'Test not found' });
+        }
+
+        const planHierarchy = { free: 1, standard: 2, premium: 3 };
+        const userPlan = userObj.plan || 'free';
+        const testRequiredPlan = test.planType || 'free';
+        if (planHierarchy[userPlan] < planHierarchy[testRequiredPlan]) {
+            return res.status(403).json({
+                success: false,
+                message: `Access Denied: This is a ${testRequiredPlan} mock test. Please upgrade your plan to access it.`
             });
         }
 

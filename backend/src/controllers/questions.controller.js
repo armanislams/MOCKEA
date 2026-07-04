@@ -248,11 +248,22 @@ export const getQuestionById = async (req, res) => {
             }
         }
 
-        if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
-            if (['writing', 'speaking'].includes(question.testType.toLowerCase())) {
+        if (userRole !== "admin" && userRole !== "instructor") {
+            // General Free tier blocks
+            if (userPlan === "free" && ['writing', 'speaking'].includes(question.testType.toLowerCase())) {
                 return res.status(403).json({ 
                     success: false, 
                     message: "Access Denied: This practice module is locked on the Free tier. Please upgrade." 
+                });
+            }
+
+            // Plan tier hierarchy check
+            const planHierarchy = { free: 1, standard: 2, premium: 3 };
+            const testRequiredPlan = question.forPlanType || 'free';
+            if (planHierarchy[userPlan] < planHierarchy[testRequiredPlan]) {
+                return res.status(403).json({
+                    success: false,
+                    message: `Access Denied: This is a ${testRequiredPlan} question set. Please upgrade your plan to access it.`
                 });
             }
         }

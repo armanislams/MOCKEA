@@ -30,7 +30,7 @@ const TestEnvironment = () => {
     // A refetch would create new object references for `test`, which propagates down
     // to ReadingSection's `data` prop, causing passageElement to recompute,
     // which replaces dangerouslySetInnerHTML content and destroys inline input focus.
-    const { data: test, isLoading } = useQuery({
+    const { data: test, isLoading, error, isError } = useQuery({
         queryKey: ["test-session", id],
         queryFn: async () => {
             const res = await axiosSecure.get(`/mock-tests/${id}`);
@@ -39,7 +39,15 @@ const TestEnvironment = () => {
         staleTime: Infinity,
         refetchOnWindowFocus: false,
         refetchOnMount: false,
+        retry: false,
     });
+
+    useEffect(() => {
+        if (isError) {
+            toast.error(error?.response?.data?.message || "Failed to load test session. You might not have the correct plan or authorization.");
+            navigate("/dashboard/full-mock-test");
+        }
+    }, [isError, error, navigate]);
 
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isStarted, setIsStarted] = useState(() => !!localStorage.getItem(`test_cache_${id}`));

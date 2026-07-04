@@ -12,7 +12,7 @@ export const InstructorRoutes = ({children})=>{
     if(isError) {
         return null;
     }
-    if(user && role === "instructor"){
+    if(user && (role === "instructor" || role === "admin")){
         return children;
     }
     return <Forbidden/>
