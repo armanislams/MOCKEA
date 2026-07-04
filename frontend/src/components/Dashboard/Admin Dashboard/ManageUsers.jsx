@@ -14,6 +14,7 @@ import {
 } from "react-icons/pi";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import useAdminQuery from "../../../hooks/useAdminQuery";
+import { useRole } from "../../../hooks/useRole";
 import TableShell from "../../Common/TableShell";
 
 // ─── Utility ───────────────────────────────────────────────────────────────────
@@ -39,23 +40,23 @@ const roleIcon = (role) => {
 
 // ─── Role Dropdown ──────────────────────────────────────────────────────────────
 
-const RoleDropdown = ({ user, onChangeRole, loading }) => {
+const RoleDropdown = ({ user, onChangeRole, loading, disabled }) => {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
       <button
         className="btn btn-ghost btn-xs gap-1 font-semibold"
         onClick={() => setOpen((v) => !v)}
-        disabled={loading}
+        disabled={loading || disabled}
       >
         <span>{roleIcon(user.role)}</span>
         <span className={`badge badge-sm ${ROLE_COLORS[user.role] ?? "badge-ghost"}`}>
           {user.role}
         </span>
-        <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        {!disabled && <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />}
       </button>
 
-      {open && (
+      {open && !disabled && (
         <div className="absolute left-0 top-full mt-1 z-30 min-w-[120px] rounded-xl border border-base-300 bg-base-100 shadow-xl overflow-hidden">
           {ROLES.filter((r) => r !== user.role).map((r) => (
             <button
@@ -73,7 +74,7 @@ const RoleDropdown = ({ user, onChangeRole, loading }) => {
   );
 };
 
-const PlanDropdown = ({ user, onChangePlan, loading }) => {
+const PlanDropdown = ({ user, onChangePlan, loading, disabled }) => {
   const [open, setOpen] = useState(false);
   const PLANS = ["free", "standard", "premium"];
 
@@ -82,15 +83,15 @@ const PlanDropdown = ({ user, onChangePlan, loading }) => {
       <button
         className="btn btn-ghost btn-xs gap-1 font-semibold"
         onClick={() => setOpen((v) => !v)}
-        disabled={loading}
+        disabled={loading || disabled}
       >
         <span className={`badge badge-sm ${PLAN_COLORS[user.plan] ?? "badge-ghost"}`}>
           {user.plan}
         </span>
-        <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        {!disabled && <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />}
       </button>
 
-      {open && (
+      {open && !disabled && (
         <div className="absolute left-0 top-full mt-1 z-30 min-w-[120px] rounded-xl border border-base-300 bg-base-100 shadow-xl overflow-hidden">
           {PLANS.filter((p) => p !== user.plan).map((p) => (
             <button
@@ -112,14 +113,15 @@ const PlanDropdown = ({ user, onChangePlan, loading }) => {
 
 // ─── User Row ───────────────────────────────────────────────────────────────────
 
-const UserRow = ({ user, onChangeRole, onChangePlan, onDelete, onToggleBan, loadingId }) => {
+const UserRow = ({ user, onChangeRole, onChangePlan, onDelete, onToggleBan, loadingId, currentUserRole }) => {
   const isLoading = loadingId === user._id;
+  const isEditingDisabled = currentUserRole !== "superadmin" && (user.role === "admin" || user.role === "superadmin");
   const joinDate = new Date(user.createdAt).toLocaleDateString("en-US", {
     month: "short", day: "numeric", year: "numeric",
   });
 
   return (
-    <tr className={`group transition-colors hover:bg-base-200/50 ${user.isBanned ? "opacity-60" : ""}`}>
+    <tr className={`group transition-colors hover:bg-base-200/50 ${user.isBanned ? "opacity-60" : ""} ${isEditingDisabled ? "bg-base-200/20" : ""}`}>
       <td className="py-3 pl-4">
         <div className="flex items-center gap-3">
           <div className="avatar placeholder">
@@ -135,7 +137,7 @@ const UserRow = ({ user, onChangeRole, onChangePlan, onDelete, onToggleBan, load
       </td>
 
       <td className="py-3">
-        <RoleDropdown user={user} onChangeRole={onChangeRole} loading={isLoading} />
+        <RoleDropdown user={user} onChangeRole={onChangeRole} loading={isLoading} disabled={isEditingDisabled} />
       </td>
 
       <td className="py-3 hidden sm:table-cell">
@@ -143,6 +145,7 @@ const UserRow = ({ user, onChangeRole, onChangePlan, onDelete, onToggleBan, load
           user={user}
           onChangePlan={onChangePlan}
           loading={isLoading}
+          disabled={isEditingDisabled}
         />
       </td>
 
@@ -163,24 +166,26 @@ const UserRow = ({ user, onChangeRole, onChangePlan, onDelete, onToggleBan, load
       </td>
 
       <td className="py-3 pr-4">
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            className={`btn btn-ghost btn-xs tooltip ${user.isBanned ? "text-success" : "text-warning"}`}
-            data-tip={user.isBanned ? "Unban" : "Ban"}
-            onClick={() => onToggleBan(user)}
-            disabled={isLoading}
-          >
-            {user.isBanned ? <PiCheckCircle className="w-4 h-4" /> : <PiProhibit className="w-4 h-4" />}
-          </button>
-          <button
-            className="btn btn-ghost btn-xs text-error tooltip"
-            data-tip="Delete"
-            onClick={() => onDelete(user)}
-            disabled={isLoading}
-          >
-            <PiTrash className="w-4 h-4" />
-          </button>
-        </div>
+        {!isEditingDisabled && (
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              className={`btn btn-ghost btn-xs tooltip ${user.isBanned ? "text-success" : "text-warning"}`}
+              data-tip={user.isBanned ? "Unban" : "Ban"}
+              onClick={() => onToggleBan(user)}
+              disabled={isLoading}
+            >
+              {user.isBanned ? <PiCheckCircle className="w-4 h-4" /> : <PiProhibit className="w-4 h-4" />}
+            </button>
+            <button
+              className="btn btn-ghost btn-xs text-error tooltip"
+              data-tip="Delete"
+              onClick={() => onDelete(user)}
+              disabled={isLoading}
+            >
+              <PiTrash className="w-4 h-4" />
+            </button>
+          </div>
+        )}
         {isLoading && <span className="loading loading-spinner loading-xs text-primary" />}
       </td>
     </tr>
@@ -222,6 +227,7 @@ const StatsBar = ({ users }) => {
 const ManageUsers = () => {
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
+  const { role: currentUserRole } = useRole();
 
   // ── Filter state ─────────────────────────────────────────────────────────────
   const [loadingId, setLoadingId] = useState(null);
@@ -336,9 +342,13 @@ const ManageUsers = () => {
     }
   });
 
+  const visibleUsers = useMemo(() => {
+    return allUsers.filter((u) => u.role !== "superadmin");
+  }, [allUsers]);
+
   // ── Client-side filtering (derived via useMemo) ───────────────────────────────
   const users = useMemo(() => {
-    let filtered = [...allUsers];
+    let filtered = [...visibleUsers];
     if (search.trim()) {
       const q = search.toLowerCase();
       filtered = filtered.filter(
@@ -350,7 +360,7 @@ const ManageUsers = () => {
     if (statusFilter === "banned") filtered = filtered.filter((u) => u.isBanned);
     if (statusFilter === "active") filtered = filtered.filter((u) => !u.isBanned);
     return filtered;
-  }, [allUsers, search, roleFilter, planFilter, statusFilter]);
+  }, [visibleUsers, search, roleFilter, planFilter, statusFilter]);
 
   // ── Action handlers (open SweetAlert, then fire mutation) ──────────────────
   const handleChangeRole = async (id, newRole) => {
@@ -475,7 +485,7 @@ const ManageUsers = () => {
         </div>
 
         {/* Stats */}
-        <StatsBar users={allUsers} />
+        <StatsBar users={visibleUsers} />
 
         {/* Filters */}
         <div className="card bg-base-100 border border-base-300 shadow-sm p-4">
@@ -559,6 +569,7 @@ const ManageUsers = () => {
                     onDelete={handleDelete}
                     onToggleBan={handleToggleBan}
                     loadingId={loadingId}
+                    currentUserRole={currentUserRole}
                   />
                 ))}
               </tbody>
@@ -570,7 +581,7 @@ const ManageUsers = () => {
             <div className="flex items-center justify-between border-t border-base-200 px-4 py-3 text-xs text-base-content/50">
               <span>
                 Showing <span className="font-medium text-base-content">{users.length}</span> of{" "}
-                <span className="font-medium text-base-content">{allUsers.length}</span> users
+                <span className="font-medium text-base-content">{visibleUsers.length}</span> users
               </span>
               <div className="flex items-center gap-1">
                 <PiShieldStar className="w-3 h-3 text-primary" />

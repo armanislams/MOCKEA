@@ -63,6 +63,17 @@ export const getAllUser = async (req, res) => {
         if (status === "banned") filter.isBanned = true;
         if (status === "active") filter.isBanned = { $ne: true };
 
+        // Hide superadmins from non-superadmin callers
+        const requester = req.user;
+        if (!requester || requester.role !== "superadmin") {
+            if (filter.role === "superadmin") {
+                return res.status(403).json({ success: false, message: "Access denied" });
+            }
+            if (!filter.role) {
+                filter.role = { $ne: "superadmin" };
+            }
+        }
+
         const total = await User.countDocuments(filter);
         res.set("X-Total-Count", total.toString());
         res.set("Access-Control-Expose-Headers", "X-Total-Count");
@@ -163,17 +174,25 @@ export const updateUserRole = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid role specified" });
         }
 
-        const user = await User.findByIdAndUpdate(
-            id,
-            { role },
-            { returnDocument: 'after' }
-        );
-
-        if (!user) {
+        const targetUser = await User.findById(id);
+        if (!targetUser) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        res.status(200).json({ success: true, message: `User role updated to ${role}`, user });
+        const requester = req.user;
+        if (requester.role !== "superadmin") {
+            if (targetUser.role === "admin" || targetUser.role === "superadmin") {
+                return res.status(403).json({ success: false, message: "Access denied. Cannot modify admin or superadmin access." });
+            }
+            if (role === "admin" || role === "superadmin") {
+                return res.status(403).json({ success: false, message: "Access denied. Cannot grant admin or superadmin role." });
+            }
+        }
+
+        targetUser.role = role;
+        await targetUser.save();
+
+        res.status(200).json({ success: true, message: `User role updated to ${role}`, user: targetUser });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
@@ -189,17 +208,22 @@ export const updateUserPlan = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid plan specified" });
         }
 
-        const user = await User.findByIdAndUpdate(
-            id,
-            { plan },
-            { returnDocument: 'after' }
-        );
-
-        if (!user) {
+        const targetUser = await User.findById(id);
+        if (!targetUser) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        res.status(200).json({ success: true, message: `User plan updated to ${plan}`, user });
+        const requester = req.user;
+        if (requester.role !== "superadmin") {
+            if (targetUser.role === "admin" || targetUser.role === "superadmin") {
+                return res.status(403).json({ success: false, message: "Access denied. Cannot modify admin or superadmin access." });
+            }
+        }
+
+        targetUser.plan = plan;
+        await targetUser.save();
+
+        res.status(200).json({ success: true, message: `User plan updated to ${plan}`, user: targetUser });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
@@ -209,11 +233,19 @@ export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const user = await User.findByIdAndDelete(id);
-
-        if (!user) {
+        const targetUser = await User.findById(id);
+        if (!targetUser) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
+
+        const requester = req.user;
+        if (requester.role !== "superadmin") {
+            if (targetUser.role === "admin" || targetUser.role === "superadmin") {
+                return res.status(403).json({ success: false, message: "Access denied. Cannot modify admin or superadmin access." });
+            }
+        }
+
+        await User.findByIdAndDelete(id);
 
         res.status(200).json({ success: true, message: "User deleted successfully" });
     } catch (error) {
@@ -225,19 +257,25 @@ export const toggleBanUser = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const user = await User.findById(id);
-
-        if (!user) {
+        const targetUser = await User.findById(id);
+        if (!targetUser) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        user.isBanned = !user.isBanned;
-        await user.save();
+        const requester = req.user;
+        if (requester.role !== "superadmin") {
+            if (targetUser.role === "admin" || targetUser.role === "superadmin") {
+                return res.status(403).json({ success: false, message: "Access denied. Cannot modify admin or superadmin access." });
+            }
+        }
+
+        targetUser.isBanned = !targetUser.isBanned;
+        await targetUser.save();
 
         res.status(200).json({
             success: true,
-            message: user.isBanned ? "User has been banned" : "User has been unbanned",
-            user,
+            message: targetUser.isBanned ? "User has been banned" : "User has been unbanned",
+            user: targetUser,
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });

@@ -12,7 +12,7 @@ export const AdminRoutes = ({children})=>{
     if(isError) {
         return null;
     }
-    if(user && role === "admin"){
+    if(user && (role === "admin" || role === "superadmin")){
         return children;
     }
     return <Forbidden/>
