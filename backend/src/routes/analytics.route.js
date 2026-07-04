@@ -1,7 +1,7 @@
 import express from "express";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
-import { getAnalyticsSummary, getAdminAnalytics, getInstructorAnalytics } from "../controllers/analytics.controller.js";
+import { getAnalyticsSummary, getAdminAnalytics, getInstructorAnalytics, getInstructorPerformance } from "../controllers/analytics.controller.js";
 
 const analyticsRouter = express.Router();
 
@@ -15,6 +15,9 @@ analyticsRouter.get("/summary", getAnalyticsSummary);
 
 // Admin can see global overview
 analyticsRouter.get("/admin", verifyUserRole(["admin"]), getAdminAnalytics);
+
+// Instructor performance (Admins only)
+analyticsRouter.get("/instructor-performance", verifyUserRole(["admin"]), getInstructorPerformance);
 
 // Instructor analytics
 analyticsRouter.get("/instructor", verifyUserRole(["instructor", "admin"]), getInstructorAnalytics);

@@ -496,6 +496,7 @@ export const gradeSection = async (req, res) => {
         section.reviewedBy = instructor._id;
         section.reviewedByEmail = req.decoded_email;
         section.reviewedByName = instructor.name || req.decoded_email.split('@')[0];
+        section.reviewedAt = new Date();
 
         // Clear locks if this was the last section to grade (optional logic, but let's clear it anyway if explicitly graded)
         result.lockedBy = null;

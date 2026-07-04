@@ -61,6 +61,12 @@ export const AdminDashboard = ({ isDrawerOpen }) => {
           {isDrawerOpen && <span>Manage Trainers</span>}
         </NavLink>
       </li>
+      <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Tutor Performance">
+        <NavLink to="/dashboard/admin/instructor-performance" className={!isDrawerOpen ? "justify-center" : ""}>
+          <PiGraduationCap className="w-5 h-5 shrink-0 text-orange-500" />
+          {isDrawerOpen && <span className="font-bold text-slate-700 dark:text-gray-300">Tutor Performance</span>}
+        </NavLink>
+      </li>
       <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Settings">
         <NavLink to="/dashboard/admin/settings" className={!isDrawerOpen ? "justify-center" : ""}>
           <PiGear className="w-5 h-5 shrink-0" />

@@ -49,6 +49,7 @@ const ManageResources = lazy(() => import("../components/Dashboard/Admin Dashboa
 const TestEnvironment = lazy(() => import("../components/Dashboard/Student Dashboard/FullMockTest/TestEnvironment"));
 const TrainerLibrary = lazy(() => import("../components/Dashboard/Student Dashboard/TrainerLibrary"));
 const ManageTrainers = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageTrainers"));
+const InstructorPerformance = lazy(() => import("../components/Dashboard/Admin Dashboard/InstructorPerformance"));
 const GradeSubmissions = lazy(() => import("../components/Dashboard/Instructor Dashboard/GradeSubmissions"));
 const GuestTestLibrary = lazy(() => import("../components/Guest/GuestTestLibrary"));
 const GuestTestEnvironment = lazy(() => import("../components/Guest/GuestTestEnvironment"));
@@ -320,6 +321,14 @@ const router = createBrowserRouter([
             element: (
               <AdminRoutes>
                 {withSuspense(ManageTrainers)}
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/instructor-performance",
+            element: (
+              <AdminRoutes>
+                {withSuspense(InstructorPerformance)}
               </AdminRoutes>
             ),
           },

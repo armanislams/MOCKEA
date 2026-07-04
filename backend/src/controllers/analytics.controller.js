@@ -340,3 +340,105 @@ export const getInstructorAnalytics = async (req, res) => {
     });
   }
 };
+
+export const getInstructorPerformance = async (req, res) => {
+  try {
+    const instructors = await User.find({ role: 'instructor' });
+    const performanceData = [];
+
+    for (const inst of instructors) {
+      // Practice submissions graded
+      const practices = await PracticeSubmission.find({
+        reviewedBy: inst._id,
+        status: 'reviewed'
+      });
+
+      // Mock test results where they graded at least one section
+      const mockResults = await MockTestResult.find({
+        'sectionResults.reviewedBy': inst._id
+      });
+
+      let practiceCount = practices.length;
+      let mockCount = 0;
+      let totalTatMs = 0;
+      let totalScoreSum = 0;
+      let scoreCount = 0;
+
+      // Practice calculations
+      practices.forEach(p => {
+        if (p.reviewedAt && p.createdAt) {
+          totalTatMs += (new Date(p.reviewedAt) - new Date(p.createdAt));
+        }
+        if (p.bandScore) {
+          const band = parseFloat(p.bandScore);
+          if (!isNaN(band)) {
+            totalScoreSum += band;
+            scoreCount++;
+          }
+        }
+      });
+
+      // Mock test calculations
+      mockResults.forEach(r => {
+        r.sectionResults.forEach(sec => {
+          if (sec.reviewedBy && sec.reviewedBy.toString() === inst._id.toString() && sec.isGraded) {
+            mockCount++;
+            
+            // Turnaround time: from student completion to tutor grading
+            const completed = sec.completedAt || r.createdAt;
+            const reviewed = sec.reviewedAt || r.updatedAt;
+            if (completed && reviewed) {
+              totalTatMs += (new Date(reviewed) - new Date(completed));
+            }
+
+            if (sec.score) {
+              const scoreVal = parseFloat(sec.score);
+              if (!isNaN(scoreVal)) {
+                totalScoreSum += scoreVal;
+                scoreCount++;
+              }
+            }
+          }
+        });
+      });
+
+      const totalReviews = practiceCount + mockCount;
+      const avgTatHours = totalReviews > 0 ? (totalTatMs / totalReviews) / (1000 * 60 * 60) : 0;
+      const avgBandScore = scoreCount > 0 ? totalScoreSum / scoreCount : 0;
+
+      // Currently locked items by this instructor
+      const lockedPractice = await PracticeSubmission.countDocuments({
+        lockedBy: inst._id,
+        lockExpiresAt: { $gt: new Date() }
+      });
+      const lockedMock = await MockTestResult.countDocuments({
+        lockedBy: inst._id,
+        lockExpiresAt: { $gt: new Date() }
+      });
+
+      performanceData.push({
+        _id: inst._id,
+        name: inst.name,
+        email: inst.email,
+        practiceCount,
+        mockCount,
+        totalReviews,
+        avgTatHours: Math.round(avgTatHours * 10) / 10, // Round to 1 decimal place
+        avgBandScore: Math.round(avgBandScore * 10) / 10,
+        lockedCount: lockedPractice + lockedMock
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: performanceData
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching instructor performance data",
+      error: error.message
+    });
+  }
+};
+

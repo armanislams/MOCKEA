@@ -44,6 +44,9 @@ const mockTestResultSchema = new mongoose.Schema({
         },
         reviewedByName: {
             type: String
+        },
+        reviewedAt: {
+            type: Date
         }
     }],
     tabSwitchCount: {
