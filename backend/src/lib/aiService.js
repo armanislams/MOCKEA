@@ -221,56 +221,98 @@ You MUST respond with a valid, clean JSON object. Ensure that there are no markd
   }
 
   /**
-   * Generates a conversational response from Gemini 2.5 Flash.
-   * 
-   * @param {Array<object>} messages - Array of { role, content }
-   * @param {string} systemInstruction - The system instruction/persona details
-   * @returns {Promise<string>} The AI's response text
+   * Generates a conversational response from Gemini or OpenAI-compatible endpoints.
    */
-  async chat(messages, systemInstruction) {
-    if (!this.apiKey) {
-      console.warn("WARNING: GEMINI_API_KEY is not defined. Falling back to a realistic simulated response.");
-      return "Hello! (Note: Simulated chat since Gemini API Key is missing). How can I support you today with your IELTS preparation?";
+  async chat(messages, systemInstruction, modelName = "gemini-2.5-flash", temperature = 0.7, apiFormat = "gemini", apiEndpoint = null, apiKeyEnvName = "GEMINI_API_KEY") {
+    const keyToUse = process.env[apiKeyEnvName] || this.apiKey;
+    if (!keyToUse) {
+      console.warn(`WARNING: API key for ${apiKeyEnvName} is not defined. Falling back to a simulated response.`);
+      return "Hello! (Note: Simulated chat since the API Key is missing). How can I support you today with your IELTS preparation?";
     }
 
     try {
-      // Convert standard { role, content } messages to Gemini format: { role: 'user'|'model', parts: [{ text: content }] }
-      const formattedContents = messages.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-      }));
+      if (apiFormat === "openai") {
+        const endpoint = apiEndpoint || "https://api.openai.com/v1/chat/completions";
+        const openaiMessages = [];
+        if (systemInstruction) {
+          openaiMessages.push({ role: "system", content: systemInstruction });
+        }
+        openaiMessages.push(...messages.map(msg => ({
+          role: msg.role === "assistant" ? "assistant" : "user",
+          content: msg.content
+        })));
 
-      const bodyPayload = {
-        contents: formattedContents
-      };
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${keyToUse}`
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: openaiMessages,
+            temperature: temperature
+          })
+        });
 
-      if (systemInstruction) {
-        bodyPayload.systemInstruction = {
-          parts: [{ text: systemInstruction }]
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`OpenAI API Error (HTTP ${response.status}): ${errorText}`);
+        }
+
+        const resJson = await response.json();
+        const aiResponse = resJson.choices?.[0]?.message?.content;
+        if (!aiResponse) {
+          throw new Error("Invalid response format received from OpenAI-compatible API.");
+        }
+        return aiResponse.trim();
+      } else {
+        // Gemini API Format
+        const modelToUse = modelName || "gemini-2.5-flash";
+        let endpoint = apiEndpoint || `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent`;
+        let url = endpoint;
+        if (endpoint.includes("generativelanguage.googleapis.com")) {
+          url = `${endpoint}?key=${keyToUse}`;
+        }
+
+        const formattedContents = messages.map(msg => ({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }]
+        }));
+
+        const bodyPayload = {
+          contents: formattedContents,
+          generationConfig: {
+            temperature: temperature
+          }
         };
+
+        if (systemInstruction) {
+          bodyPayload.systemInstruction = {
+            parts: [{ text: systemInstruction }]
+          };
+        }
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bodyPayload)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API Error (HTTP ${response.status}): ${errorText}`);
+        }
+
+        const resJson = await response.json();
+        const aiResponse = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!aiResponse) {
+          throw new Error("Invalid response format received from Gemini API.");
+        }
+        return aiResponse.trim();
       }
-
-      const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(bodyPayload)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gemini API Error (HTTP ${response.status}): ${errorText}`);
-      }
-
-      const resJson = await response.json();
-      const aiResponse = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!aiResponse) {
-        throw new Error("Invalid response format received from Gemini API.");
-      }
-
-      return aiResponse.trim();
     } catch (error) {
       console.error("AI Chatbot Error:", error);
       throw new Error(`AI Chat failed: ${error.message}`);
