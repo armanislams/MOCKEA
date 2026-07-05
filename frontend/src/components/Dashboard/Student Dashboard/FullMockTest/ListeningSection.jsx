@@ -824,13 +824,27 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
 
             {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || isDragDrop) && (
                 <div>
-                    <input 
-                        type="text" 
-                        className="input input-bordered border-slate-400 w-full rounded-xl font-bold bg-white focus:border-primary text-xs h-10 text-slate-800"
-                        placeholder="Type your answer here..."
-                        value={answers[q.id] || ""}
-                        onChange={(e) => onAnswerChange(q.id, e.target.value)}
-                    />
+                    {q.type === "pte-summarize-spoken-text" ? (
+                        <div className="relative">
+                            <textarea 
+                                className="textarea textarea-bordered border-slate-400 w-full rounded-2xl font-semibold bg-white focus:border-primary text-sm p-4 resize-y min-h-[120px] text-slate-800"
+                                placeholder="Type your answer here..."
+                                value={answers[q.id] || ""}
+                                onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                            />
+                            <div className="text-right text-xs font-bold text-slate-400 mt-1">
+                                Word count: {(answers[q.id] || "").trim() ? (answers[q.id] || "").trim().split(/\s+/).filter(w => w.length > 0).length : 0}
+                            </div>
+                        </div>
+                    ) : (
+                        <input 
+                            type="text" 
+                            className="input input-bordered border-slate-400 w-full rounded-xl font-bold bg-white focus:border-primary text-xs h-10 text-slate-800"
+                            placeholder="Type your answer here..."
+                            value={answers[q.id] || ""}
+                            onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                        />
+                    )}
                 </div>
             )}
         </div>

@@ -648,14 +648,30 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                     </div>
                                                 ) : (
                                                     <div className="space-y-3">
-                                                        <input 
-                                                            type="text"
-                                                            disabled={submitted}
-                                                            className="input input-bordered w-full h-14 rounded-2xl font-bold bg-white focus:border-primary text-lg"
-                                                            placeholder="Enter your observation..."
-                                                            value={answers[q.id] || ""}
-                                                            onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                                                        />
+                                                        {q.type === "pte-summarize-spoken-text" ? (
+                                                            <div className="relative">
+                                                                <textarea 
+                                                                    disabled={submitted}
+                                                                    rows={4}
+                                                                    className="textarea textarea-bordered w-full rounded-2xl font-semibold bg-white focus:border-primary text-lg p-4 resize-y min-h-[120px]"
+                                                                    placeholder="Enter your observation..."
+                                                                    value={answers[q.id] || ""}
+                                                                    onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                                                                />
+                                                                <div className="text-right text-xs font-bold text-slate-400 mt-1">
+                                                                    Word count: {(answers[q.id] || "").trim() ? (answers[q.id] || "").trim().split(/\s+/).filter(w => w.length > 0).length : 0}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <input 
+                                                                type="text"
+                                                                disabled={submitted}
+                                                                className="input input-bordered w-full h-14 rounded-2xl font-bold bg-white focus:border-primary text-lg"
+                                                                placeholder="Enter your observation..."
+                                                                value={answers[q.id] || ""}
+                                                                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                                                            />
+                                                        )}
                                                         {submitted && !isCorrect && (
                                                             <div className="flex items-center gap-2 p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-widest border border-emerald-500/20">
                                                                 <PiCheckCircleFill /> Correct Key: {q.correctAnswer}
