@@ -55,7 +55,7 @@ const WritingSection = ({ data, answers, onAnswerChange, examType }) => {
     const targetWords = activeTab === "task1" ? 150 : 250;
     const recommendedTime = activeTab === "task1" ? "20 Minutes" : "40 Minutes";
 
-    const isPte = examType === "PTE";
+    const isPte = examType === "PTE" || data?.examType === "PTE";
     const taskTitle = isPte 
         ? (activeTab === "task1" ? "Summarize Written Text" : "Write Essay")
         : (activeTab === "task1" ? "Academic Report Description" : "Opinion & Discussion Essay");
@@ -77,6 +77,12 @@ const WritingSection = ({ data, answers, onAnswerChange, examType }) => {
 
     const targetWordsLabel = isPte ? `${pteTargetWords} Words` : `Min ${targetWords} Words`;
     const recommendedTimeLabel = isPte ? pteRecTime : recommendedTime;
+
+    const isWordCountValid = isPte
+        ? (activeTab === "task1"
+            ? (wordCount1 >= 5 && wordCount1 <= 75)
+            : (wordCount2 >= 200 && wordCount2 <= 300))
+        : (currentWordCount >= targetWords);
 
     return (
         <div className="flex h-full overflow-hidden bg-white">
@@ -123,7 +129,14 @@ const WritingSection = ({ data, answers, onAnswerChange, examType }) => {
                             </div>
                             <div className="p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm">
                                 <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed font-medium text-sm">
-                                    {data?.passage ? (
+                                    {isPte ? (
+                                        <div dangerouslySetInnerHTML={{ 
+                                            __html: (activeTab === "task1" 
+                                                ? data?.questions?.[0]?.question 
+                                                : data?.questions?.[1]?.question
+                                            )?.replace(/\n/g, "<br />") || "" 
+                                        }} />
+                                    ) : data?.passage ? (
                                         <div dangerouslySetInnerHTML={{ __html: data.passage }} />
                                     ) : (
                                         <p className="text-slate-400 italic">No prompt material loaded.</p>
@@ -214,11 +227,11 @@ const WritingSection = ({ data, answers, onAnswerChange, examType }) => {
                         </div>
 
                         <div className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] border-2 transition-all ${
-                            currentWordCount >= targetWords 
+                            isWordCountValid 
                             ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
                             : "bg-orange-50 text-orange-600 border-orange-100"
                         }`}>
-                            Words: {currentWordCount} / {targetWords} Target
+                            Words: {currentWordCount} / {targetWordsLabel} Target
                         </div>
                     </div>
 
@@ -227,9 +240,13 @@ const WritingSection = ({ data, answers, onAnswerChange, examType }) => {
                         <textarea 
                             className="flex-1 w-full p-10 rounded-[2.5rem] border-2 border-slate-400 focus:border-primary/30 focus:ring-0 outline-none text-lg leading-relaxed font-serif resize-none shadow-sm bg-slate-50/10 placeholder:text-slate-300"
                             placeholder={
-                                activeTab === "task1" 
-                                ? "Write your Task 1 academic report here (minimum 150 words)..." 
-                                : "Write your Task 2 argumentative opinion essay here (minimum 250 words)..."
+                                isPte
+                                ? (activeTab === "task1"
+                                    ? "Write your Summarize Written Text response here (5-75 words, single sentence)..."
+                                    : "Write your PTE Essay response here (200-300 words)...")
+                                : (activeTab === "task1" 
+                                    ? "Write your Task 1 academic report here (minimum 150 words)..." 
+                                    : "Write your Task 2 argumentative opinion essay here (minimum 250 words)...")
                             }
                             value={currentText}
                             onChange={(e) => handleTextChange(activeTab, e.target.value)}

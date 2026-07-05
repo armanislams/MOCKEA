@@ -20,7 +20,14 @@ import { useNavigate } from "react-router";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import TestShell from "../../../Common/TestShell.jsx";
 
-const getTaskContent = (passage, tab) => {
+const getTaskContent = (activeSet, tab, isPte) => {
+  if (!activeSet) return "";
+  if (isPte) {
+    const qIndex = tab === "task1" ? 0 : 1;
+    const qText = activeSet.questions?.[qIndex]?.question || "";
+    return DOMPurify.sanitize(qText.replace(/\n/g, "<br />"));
+  }
+  const passage = activeSet.passage;
   if (!passage) return "";
   
   const parser = new DOMParser();
@@ -101,11 +108,28 @@ const Writing = () => {
     [writingSets, selectedSetId],
   );
 
+  const isPte = useMemo(() => activeSet?.examType === "PTE" || targetExam === "PTE", [activeSet, targetExam]);
+
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
   const wordCount1 = useMemo(() => task1Text.trim() ? task1Text.trim().split(/\s+/).filter(w => w.length > 0).length : 0, [task1Text]);
   const wordCount2 = useMemo(() => task2Text.trim() ? task2Text.trim().split(/\s+/).filter(w => w.length > 0).length : 0, [task2Text]);
   const currentWordCount = activeTab === "task1" ? wordCount1 : wordCount2;
-  const currentTargetWords = activeTab === "task1" ? 150 : 250;
+
+  const currentTargetWordsLabel = useMemo(() => {
+    if (isPte) {
+      return activeTab === "task1" ? "5-75" : "200-300";
+    }
+    return activeTab === "task1" ? "150" : "250";
+  }, [isPte, activeTab]);
+
+  const isWordCountValid = useMemo(() => {
+    if (isPte) {
+      return activeTab === "task1"
+        ? (wordCount1 >= 5 && wordCount1 <= 75)
+        : (wordCount2 >= 200 && wordCount2 <= 300);
+    }
+    return activeTab === "task1" ? wordCount1 >= 150 : wordCount2 >= 250;
+  }, [isPte, activeTab, wordCount1, wordCount2]);
 
   useEffect(() => {
     const fetchWriting = async () => {
@@ -127,14 +151,20 @@ const Writing = () => {
 
 
   const handleFirstTaskSubmit = async () => {
-    if (wordCount1 < 30) {
-      toast.warning("Your Task 1 response is too short (minimum 30 words recommended).");
+    const minWords = isPte ? 5 : 30;
+    if (wordCount1 < minWords) {
+      toast.warning(`Your response is too short (minimum ${minWords} words recommended).`);
       return;
     }
     
+    const titleText = isPte ? "Submit Summarize Written Text?" : "Submit Task 1?";
+    const textMsg = isPte 
+      ? "You are about to proceed to the Essay. Once submitted, you cannot edit your summary again."
+      : "You are about to proceed to Task 2. Once submitted, you cannot edit Task 1 again.";
+
     const result = await Swal.fire({
-      title: "Submit Task 1?",
-      text: "You are about to proceed to Task 2. Once submitted, you cannot edit Task 1 again.",
+      title: titleText,
+      text: textMsg,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Yes, proceed",
@@ -149,13 +179,14 @@ const Writing = () => {
     if (result.isConfirmed) {
       setTask1Submitted(true);
       setActiveTab("task2");
-      toast.success("Task 1 locked! Now starting Task 2.");
+      toast.success(isPte ? "Summary locked! Now starting Essay." : "Task 1 locked! Now starting Task 2.");
     }
   };
 
   const handleSubmit = async () => {
-    if (wordCount2 < 50) {
-      toast.warning("Your Task 2 response is too short (minimum 50 words recommended).");
+    const minWords = isPte ? 200 : 50;
+    if (wordCount2 < minWords) {
+      toast.warning(`Your response is too short (minimum ${minWords} words recommended).`);
       return;
     }
 
@@ -437,7 +468,7 @@ const Writing = () => {
                           onClick={handleFirstTaskSubmit} 
                           className="btn btn-primary rounded-2xl px-6 h-12 font-black shadow-xl shadow-primary/20 border-none"
                       >
-                          Submit Task 1 &amp; Continue
+                          {isPte ? "Submit SWT & Continue" : "Submit Task 1 & Continue"}
                       </button>
                     ) : (
                       <button 
@@ -477,7 +508,7 @@ const Writing = () => {
                             </h2>
                             <div 
                                 className="prose prose-slate max-w-none"
-                                dangerouslySetInnerHTML={{ __html: getTaskContent(activeSet?.passage, activeTab) }}
+                                dangerouslySetInnerHTML={{ __html: getTaskContent(activeSet, activeTab, isPte) }}
                             />
                         </div>
 
@@ -510,7 +541,7 @@ const Writing = () => {
                             <button 
                                 onClick={() => {
                                     if (task1Submitted) {
-                                        toast.warning("Task 1 has been submitted and locked.");
+                                        toast.warning(isPte ? "Summarize Written Text has been submitted and locked." : "Task 1 has been submitted and locked.");
                                         return;
                                     }
                                     setActiveTab("task1");
@@ -521,12 +552,12 @@ const Writing = () => {
                                     : "text-slate-400 hover:text-slate-600"
                                 } ${task1Submitted ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
-                                Task 1
+                                {isPte ? "Summarize Written Text" : "Task 1"}
                             </button>
                             <button 
                                 onClick={() => {
                                     if (!task1Submitted) {
-                                        toast.info("Please submit Task 1 before proceeding to Task 2.");
+                                        toast.info(isPte ? "Please submit Summarize Written Text before proceeding to Write Essay." : "Please submit Task 1 before proceeding to Task 2.");
                                         return;
                                     }
                                     setActiveTab("task2");
@@ -537,16 +568,16 @@ const Writing = () => {
                                     : "text-slate-400 hover:text-slate-600"
                                 } ${!task1Submitted ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
-                                Task 2
+                                {isPte ? "Write Essay" : "Task 2"}
                             </button>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${
-                                currentWordCount >= currentTargetWords 
+                                isWordCountValid 
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
                                 : "bg-orange-50 text-orange-600 border-orange-100"
                             }`}>
-                                Words: {currentWordCount} / {currentTargetWords} Target
+                                Words: {currentWordCount} / {currentTargetWordsLabel} Target
                             </div>
                         </div>
                     </div>
@@ -583,9 +614,13 @@ const Writing = () => {
                             <textarea 
                                 className="w-full h-full resize-none border-none focus:ring-0 text-lg leading-relaxed text-slate-700 placeholder:text-slate-300 font-medium custom-scrollbar focus:outline-none"
                                 placeholder={
-                                    activeTab === "task1" 
-                                    ? "Write your Task 1 academic report here (minimum 150 words)..." 
-                                    : "Write your Task 2 argumentative opinion essay here (minimum 250 words)..."
+                                    isPte
+                                    ? (activeTab === "task1"
+                                        ? "Write your Summarize Written Text response here (5-75 words, single sentence)..."
+                                        : "Write your PTE Essay response here (200-300 words)...")
+                                    : (activeTab === "task1" 
+                                        ? "Write your Task 1 academic report here (minimum 150 words)..." 
+                                        : "Write your Task 2 argumentative opinion essay here (minimum 250 words)...")
                                 }
                                 value={activeTab === "task1" ? task1Text : task2Text}
                                 onChange={(e) => handleTextChange(e.target.value)}
@@ -598,8 +633,8 @@ const Writing = () => {
                     <div className="px-10 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
                         <span>Status: {timerActive ? 'Active Session' : 'Standby'}</span>
                         <div className="flex items-center gap-4">
-                            <span>Task 1: {wordCount1}w</span>
-                            <span>Task 2: {wordCount2}w</span>
+                            <span>{isPte ? "Summary" : "Task 1"}: {wordCount1}w</span>
+                            <span>{isPte ? "Essay" : "Task 2"}: {wordCount2}w</span>
                         </div>
                     </div>
                 </div>
