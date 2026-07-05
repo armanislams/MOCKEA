@@ -13,13 +13,21 @@ import { useNavigate } from "react-router";
 
 const InstructionModal = ({ test, onClose }) => {
     const navigate = useNavigate();
+    const isPte = test?.examType === "PTE";
 
-    const modules = [
+    const modules = isPte ? [
+        { label: "Listening", duration: "30 minutes", details: "Dictation & Summarization tasks", icon: <PiEar /> },
+        { label: "Reading", duration: "30 minutes", details: "Blanks & Reorder tasks", icon: <PiBookOpen /> },
+        { label: "Writing", duration: "30 minutes", details: "Summarize & Essay tasks", icon: <PiPencilLine /> },
+        { label: "Speaking", duration: "30 minutes", details: "Read Aloud, Repeat & Describe tasks", icon: <PiMicrophoneStage /> },
+    ] : [
         { label: "Listening", duration: "30 minutes", details: "4 parts · 40 questions", icon: <PiEar /> },
         { label: "Reading", duration: "60 minutes", details: "3 passages · 40 questions", icon: <PiBookOpen /> },
         { label: "Writing", duration: "60 minutes", details: "2 tasks", icon: <PiPencilLine /> },
         { label: "Speaking", duration: "15 minutes", details: "3 parts", icon: <PiMicrophoneStage /> },
     ];
+
+    const totalDurationHours = test?.totalDuration ? (test.totalDuration / 60).toFixed(1) : (isPte ? "2.0" : "2.5");
 
     const handleStart = () => {
         // Clear previous caches to start fresh
@@ -50,7 +58,7 @@ const InstructionModal = ({ test, onClose }) => {
                 <div className="bg-primary p-6 text-white flex items-center justify-between">
                     <h2 className="text-2xl font-bold flex items-center gap-3">
                         <PiBookOpen className="w-8 h-8" />
-                        IELTS Full Mock Test Instructions
+                        {isPte ? "PTE Full Mock Test Instructions" : "IELTS Full Mock Test Instructions"}
                     </h2>
                     <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm text-white hover:bg-white/20">
                         <PiX className="w-6 h-6" />
@@ -79,7 +87,7 @@ const InstructionModal = ({ test, onClose }) => {
                             ))}
                             <div className="flex items-center gap-2 p-2 text-primary font-bold">
                                 <PiClock className="w-5 h-5" />
-                                <span>Total estimated time: ~2.5 hours</span>
+                                <span>Total estimated time: ~{totalDurationHours} hours</span>
                             </div>
                         </div>
                     </section>
