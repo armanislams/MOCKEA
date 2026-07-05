@@ -8,7 +8,7 @@ import {
     PiBookOpen 
 } from "react-icons/pi";
 
-const WritingSection = ({ data, answers, onAnswerChange }) => {
+const WritingSection = ({ data, answers, onAnswerChange, examType }) => {
     const [activeTab, setActiveTab] = useState("task1"); // "task1" or "task2"
 
     const rawText = answers[data?._id] || "";
@@ -55,6 +55,29 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
     const targetWords = activeTab === "task1" ? 150 : 250;
     const recommendedTime = activeTab === "task1" ? "20 Minutes" : "40 Minutes";
 
+    const isPte = examType === "PTE";
+    const taskTitle = isPte 
+        ? (activeTab === "task1" ? "Summarize Written Text" : "Write Essay")
+        : (activeTab === "task1" ? "Academic Report Description" : "Opinion & Discussion Essay");
+    const taskLabel = isPte
+        ? (activeTab === "task1" ? "PTE Writing Part 1" : "PTE Writing Part 2")
+        : (activeTab === "task1" ? "Writing Task 1" : "Writing Task 2");
+    
+    const guidelinesHeader = isPte ? "PTE Official Guidelines" : "IELTS Official Guidelines";
+    const guidelinesBody = isPte
+        ? (activeTab === "task1"
+            ? "You should spend about 10 minutes on this task. Read the passage and write a one-sentence summary of the passage of between 5 and 75 words."
+            : "You should spend about 20 minutes on this task. Write an argumentative essay of between 200 and 300 words on the given topic.")
+        : (activeTab === "task1"
+            ? "You should spend about 20 minutes on this task. Write at least 150 words summarizing the main features of the visual representation, and make comparisons where relevant."
+            : "You should spend about 40 minutes on this task. Write at least 250 words discussing both viewpoints, giving your own opinion, and supporting your arguments with relevant examples.");
+
+    const pteTargetWords = activeTab === "task1" ? "5-75" : "200-300";
+    const pteRecTime = activeTab === "task1" ? "10 Minutes" : "20 Minutes";
+
+    const targetWordsLabel = isPte ? `${pteTargetWords} Words` : `Min ${targetWords} Words`;
+    const recommendedTimeLabel = isPte ? pteRecTime : recommendedTime;
+
     return (
         <div className="flex h-full overflow-hidden bg-white">
             {/* Left Pane: Prompt & References */}
@@ -63,10 +86,10 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
                     <div className="max-w-2xl mx-auto space-y-8">
                         <header className="space-y-2">
                             <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">
-                                {activeTab === "task1" ? "Writing Task 1" : "Writing Task 2"}
+                                {taskLabel}
                             </p>
                             <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
-                                {activeTab === "task1" ? "Academic Report Description" : "Opinion & Discussion Essay"}
+                                {taskTitle}
                             </h1>
                         </header>
 
@@ -74,22 +97,20 @@ const WritingSection = ({ data, answers, onAnswerChange }) => {
                         <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm space-y-6">
                             <div className="flex items-center gap-2 text-primary font-bold">
                                 <PiWarningCircle className="w-6 h-6" />
-                                <span>IELTS Official Guidelines</span>
+                                <span>{guidelinesHeader}</span>
                             </div>
                             <p className="text-slate-600 font-medium leading-relaxed text-sm">
-                                {activeTab === "task1" 
-                                    ? "You should spend about 20 minutes on this task. Write at least 150 words summarizing the main features of the visual representation, and make comparisons where relevant."
-                                    : "You should spend about 40 minutes on this task. Write at least 250 words discussing both viewpoints, giving your own opinion, and supporting your arguments with relevant examples."}
+                                {guidelinesBody}
                             </p>
                             
                             <div className="pt-4 flex items-center gap-6 text-xs font-black uppercase tracking-wider text-slate-400 border-t border-slate-100">
                                 <div className="flex items-center gap-2 text-slate-600">
                                     <PiClock className="w-4 h-4 text-primary" /> 
-                                    <span>{recommendedTime}</span>
+                                    <span>{recommendedTimeLabel}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-slate-600">
                                     <PiTextT className="w-4 h-4 text-primary" /> 
-                                    <span>Min {targetWords} Words</span>
+                                    <span>{targetWordsLabel}</span>
                                 </div>
                             </div>
                         </div>

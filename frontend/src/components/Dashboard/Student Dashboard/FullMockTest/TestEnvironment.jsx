@@ -727,6 +727,7 @@ const TestEnvironment = () => {
                         data={test.sections.writing[0]} 
                         answers={answers.writing || {}} 
                         onAnswerChange={handleAnswerChange} 
+                        examType={test.examType}
                     />
                 )}
                 {currentModuleIdx === 3 && test?.sections?.speaking?.[0] && (
@@ -734,6 +735,7 @@ const TestEnvironment = () => {
                         data={test.sections.speaking[0]} 
                         answers={answers.speaking || {}}
                         onAnswerChange={handleAnswerChange}
+                        examType={test.examType}
                     />
                 )}
             </main>

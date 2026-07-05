@@ -19,7 +19,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 
-const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
+const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
     const axiosSecure = useAxiosSecure();
     // Timers & Active states
     const [prepTime, setPrepTime] = useState(60);
@@ -529,8 +529,8 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
             <div className="w-1/3 flex flex-col h-full bg-white border-r border-base-200 shrink-0">
                 <div className="flex-1 overflow-y-auto p-12 space-y-8">
                     <header className="space-y-2">
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">IELTS Speaking</p>
-                        <h1 className="text-3xl font-black">Practice Session</h1>
+                        <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">{examType === "PTE" ? "PTE Speaking" : "IELTS Speaking"}</p>
+                        <h1 className="text-3xl font-black">{examType === "PTE" ? "Academic Session" : "Practice Session"}</h1>
                     </header>
 
                     {/* Step wizard switcher */}
@@ -549,7 +549,9 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                             >
                                 <span>Part {part}</span>
                                 <span className={`text-[10px] px-2 py-0.5 rounded-md ${activePart === part ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}>
-                                    {part === 1 ? "Interview" : part === 2 ? "Cue Card" : "Discussion"}
+                                    {examType === "PTE" 
+                                        ? (part === 1 ? "Read Aloud" : part === 2 ? "Repeat Sentence" : "Describe Image")
+                                        : (part === 1 ? "Interview" : part === 2 ? "Cue Card" : "Discussion")}
                                 </span>
                             </button>
                         ))}
@@ -562,25 +564,53 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange }) => {
                             <span>Rules of Part {activePart}</span>
                         </div>
                         <ul className="space-y-3 text-sm text-base-content/70 leading-relaxed">
-                            {activePart === 1 && (
+                            {examType === "PTE" ? (
                                 <>
-                                    <li>• Introduction and short general questions.</li>
-                                    <li>• Answer immediately as the examiner asks them.</li>
-                                    <li>• Speak naturally for about 40 seconds per question.</li>
+                                    {activePart === 1 && (
+                                        <>
+                                            <li>• Read the text displayed on the screen aloud.</li>
+                                            <li>• Speak clearly, naturally, and at a steady pace.</li>
+                                            <li>• You have 40 seconds to complete this task.</li>
+                                        </>
+                                    )}
+                                    {activePart === 2 && (
+                                        <>
+                                            <li>• Listen to the sentence recording.</li>
+                                            <li>• Repeat the sentence exactly as you hear it.</li>
+                                            <li>• Accuracy in word order and pronunciation is key.</li>
+                                        </>
+                                    )}
+                                    {activePart === 3 && (
+                                        <>
+                                            <li>• Look at the image/diagram displayed.</li>
+                                            <li>• Describe the main details and trends shown in the image.</li>
+                                            <li>• You have 40 seconds to record your answer.</li>
+                                        </>
+                                    )}
                                 </>
-                            )}
-                            {activePart === 2 && (
+                            ) : (
                                 <>
-                                    <li>• You have 1 minute to prepare your notes.</li>
-                                    <li>• You should speak for 1 to 2 minutes.</li>
-                                    <li>• The timer will guide you through each stage.</li>
-                                </>
-                            )}
-                            {activePart === 3 && (
-                                <>
-                                    <li>• Abstract and deeper discussion questions.</li>
-                                    <li>• Answer in detail, giving opinions and examples.</li>
-                                    <li>• Speak naturally for about 50 seconds per question.</li>
+                                    {activePart === 1 && (
+                                        <>
+                                            <li>• Introduction and short general questions.</li>
+                                            <li>• Answer immediately as the examiner asks them.</li>
+                                            <li>• Speak naturally for about 40 seconds per question.</li>
+                                        </>
+                                    )}
+                                    {activePart === 2 && (
+                                        <>
+                                            <li>• You have 1 minute to prepare your notes.</li>
+                                            <li>• You should speak for 1 to 2 minutes.</li>
+                                            <li>• The timer will guide you through each stage.</li>
+                                        </>
+                                    )}
+                                    {activePart === 3 && (
+                                        <>
+                                            <li>• Abstract and deeper discussion questions.</li>
+                                            <li>• Answer in detail, giving opinions and examples.</li>
+                                            <li>• Speak naturally for about 50 seconds per question.</li>
+                                        </>
+                                    )}
                                 </>
                             )}
                         </ul>

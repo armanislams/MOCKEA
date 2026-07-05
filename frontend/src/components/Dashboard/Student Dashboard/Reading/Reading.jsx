@@ -123,6 +123,9 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
 
 const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer, clickedOption, setClickedOption }) => {
     const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
+    const isPteFillBlanks = q.type === 'pte-reading-writing-fill-blanks' || q.type === 'pte-reading-fill-blanks';
+    const isPteReorder = q.type === 'pte-reorder-paragraphs';
+
     return (
         <div className={`space-y-4 p-6 rounded-3xl transition-all ${
             submitted 
@@ -139,7 +142,157 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                 )}
             </div>
 
-            <p className="font-bold text-slate-700 leading-snug">{q.question}</p>
+            {!isPteFillBlanks && <p className="font-bold text-slate-700 leading-snug">{q.question}</p>}
+
+            {isPteFillBlanks && (() => {
+                const text = q.question || "";
+                const parts = text.split(/\[blank-\d+\]/g);
+                const matches = text.match(/\[blank-\d+\]/g) || [];
+                const currentAns = answers[q.id] || "";
+                const ansList = [];
+                const rawAnswers = currentAns.split(",").map(s => s.trim());
+                for (let i = 0; i < matches.length; i++) {
+                    ansList[i] = rawAnswers[i] || "";
+                }
+
+                const handleChange = (blankIdx, val) => {
+                    if (submitted) return;
+                    const newAnsList = [...ansList];
+                    newAnsList[blankIdx] = val;
+                    handleAnswerChange(q.id, newAnsList.join(", "));
+                };
+
+                return (
+                    <div className="space-y-4">
+                        <div className="leading-loose text-slate-700 bg-slate-50 p-6 rounded-3xl border border-slate-200 text-sm font-medium">
+                            {parts.map((part, index) => {
+                                const isLast = index === parts.length - 1;
+                                if (isLast) {
+                                    return <span key={index}>{part}</span>;
+                                }
+                                const blankIdx = index;
+                                let blankOptions = [];
+                                if (q.type === 'pte-reading-writing-fill-blanks' && q.pteDropdownOptions) {
+                                    blankOptions = q.pteDropdownOptions[blankIdx] || [];
+                                } else {
+                                    blankOptions = q.options || [];
+                                }
+                                
+                                return (
+                                    <span key={index} className="inline-flex items-center gap-1 mx-1 align-middle">
+                                        <span>{part}</span>
+                                        <select
+                                            disabled={submitted}
+                                            value={ansList[blankIdx]}
+                                            onChange={(e) => handleChange(blankIdx, e.target.value)}
+                                            className="select select-bordered select-xs font-bold bg-white text-slate-800 rounded-lg border-slate-300 focus:border-primary px-2 py-0 h-8"
+                                        >
+                                            <option value="">— select —</option>
+                                            {blankOptions.map((opt, oIdx) => (
+                                                <option key={oIdx} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    </span>
+                                );
+                            })}
+                        </div>
+                        {submitted && !isCorrect && (
+                            <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
+                                <PiCheckCircleFill /> Correct: {correctAnswer}
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
+
+            {isPteReorder && (() => {
+                const paragraphs = q.options || [];
+                const currentAns = answers[q.id] || "";
+                const orderedKeys = currentAns ? currentAns.split(",").map(s => s.trim()).filter(Boolean) : [];
+                
+                const getParaKey = (para) => {
+                    const match = para.match(/^([A-Ea-e])/);
+                    return match ? match[1].toUpperCase() : para.substring(0, 1).toUpperCase();
+                };
+
+                const handleSelectKey = (key) => {
+                    if (submitted) return;
+                    if (orderedKeys.includes(key)) {
+                        const newOrder = orderedKeys.filter(k => k !== key);
+                        handleAnswerChange(q.id, newOrder.join(", "));
+                    } else {
+                        const newOrder = [...orderedKeys, key];
+                        handleAnswerChange(q.id, newOrder.join(", "));
+                    }
+                };
+
+                return (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-xs font-sans">
+                            <div className="space-y-3">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Source Paragraphs (Click to add)</span>
+                                <div className="space-y-2">
+                                    {paragraphs.map((para, pIdx) => {
+                                        const key = getParaKey(para);
+                                        const isChosen = orderedKeys.includes(key);
+                                        return (
+                                            <button
+                                                key={pIdx}
+                                                type="button"
+                                                onClick={() => handleSelectKey(key)}
+                                                className={`w-full text-left p-4 rounded-2xl border-2 text-xs font-semibold leading-relaxed transition-all flex items-start gap-3 ${
+                                                    isChosen
+                                                    ? "bg-slate-200/50 border-slate-200 text-slate-400 pointer-events-none"
+                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 shadow-sm"
+                                                }`}
+                                            >
+                                                <span className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                                                    {key}
+                                                </span>
+                                                <span className="flex-1">{para}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 border-l border-slate-200 pl-6">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Your Order (Click to remove)</span>
+                                {orderedKeys.length === 0 ? (
+                                    <div className="h-[200px] border-2 border-dashed border-slate-300 rounded-3xl flex items-center justify-center text-slate-400 text-xs font-semibold">
+                                        Click paragraphs on the left to set order
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {orderedKeys.map((key, oIdx) => {
+                                            const paraText = paragraphs.find(p => getParaKey(p) === key) || key;
+                                            return (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    disabled={submitted}
+                                                    onClick={() => handleSelectKey(key)}
+                                                    className="w-full text-left p-4 rounded-2xl border-2 border-primary/20 bg-primary/5 hover:bg-red-50 hover:border-red-200 hover:text-red-700 text-xs font-bold leading-relaxed transition-all flex items-start gap-3 text-primary group"
+                                                >
+                                                    <span className="w-6 h-6 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                                                        {oIdx + 1}
+                                                    </span>
+                                                    <span className="flex-1">{paraText}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        {submitted && !isCorrect && (
+                            <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
+                                <PiCheckCircleFill /> Correct Sequence: {correctAnswer}
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
 
             {isDragDrop ? (
                 <div className="space-y-2">
@@ -186,7 +339,7 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                         </div>
                     )}
                 </div>
-            ) : q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
+            ) : q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 && !isPteReorder && !isPteFillBlanks ? (
                 <div className="grid gap-3">
                     {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
                         <label 
@@ -212,7 +365,7 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                         </label>
                     ))}
                 </div>
-            ) : (
+            ) : !isPteFillBlanks && !isPteReorder && (
                 <div className="space-y-2">
                     <input 
                         type="text" 
@@ -403,6 +556,7 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
         for (let i = 0; i < visualGroups.length; i++) {
             if (assignedVisuals.has(i)) continue;
 
+            const vg = visualGroups[i];
             const firstQ = (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') ? vg.questions[0] : vg.question;
             const firstQIdx = questions.findIndex(item => item.id === firstQ.id);
             const localQNum = firstQIdx + 1;
@@ -610,6 +764,13 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
 
                 if (isGroup) {
                     const header = groupEntry.header;
+                    const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
+                    const hasTable = header?.rightSideQuestion || (header?.instructions &&
+                                     /___([\w-]+)___/.test(header.instructions) &&
+                                     /^\|.+\|$/m.test(header.instructions));
+                    const instructionHasBlanks = header?.instructions &&
+                                                 /___([\w-]+)___/.test(header.instructions) &&
+                                                 !hasTable;
                     const groupQIds = [];
                     groupEntry.visuals.forEach(vg => {
                         if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
@@ -622,6 +783,10 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                     });
                     const anyGroupQInline = groupQIds.some(id => renderedInlineIds.has(id));
                     const hasInlineInstructions = instructionHasBlanks && anyGroupQInline;
+
+                    if (isMatchingGrid || hasInlineInstructions || hasTable) {
+                        return null;
+                    }
 
                     if (children.length === 0 && !hasTable) {
                         return null;
@@ -817,6 +982,7 @@ const Reading = () => {
     () => readingSets.find((set) => set._id === selectedSetId) || null,
     [readingSets, selectedSetId],
   );
+  const isPte = activeSet?.examType === "PTE";
 
   const [clickedOption, setClickedOption] = useState(null);
 
@@ -1115,7 +1281,8 @@ const Reading = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 h-[calc(100vh-140px)] min-h-0">
             {/* Passage Side */}
-            <div className="lg:col-span-3 h-full min-h-0">
+            {!isPte && (
+                <div className="lg:col-span-3 h-full min-h-0">
                 <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar">
                     <div className="prose prose-slate max-w-none">
                         <h2 className="text-3xl font-black tracking-tight mb-8 text-slate-800">{activeSet.title}</h2>
@@ -1280,10 +1447,11 @@ const Reading = () => {
                         })}
                     </div>
                 </div>
-            </div>
+                </div>
+            )}
 
             {/* Questions Side */}
-            <div className="lg:col-span-2 h-full min-h-0">
+            <div className={`${isPte ? "lg:col-span-5" : "lg:col-span-2"} h-full min-h-0`}>
                 <div className="card bg-white p-5 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar relative">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-black tracking-tight">Question Panel</h2>
