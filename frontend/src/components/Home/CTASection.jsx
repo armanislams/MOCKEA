@@ -59,7 +59,8 @@ const CTASection = forwardRef((props, ref) => {
               radius="1.5rem"
               className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               /* ── Front ── */
-              frontClass="bg-red-800 flex flex-col items-center justify-center gap-3 p-5"
+              frontClass="bg-cta-btn flex flex-col items-center justify-center gap-3 p-5"
+              //red-800 previous color
               front={
                 <>
                   <img
@@ -71,7 +72,7 @@ const CTASection = forwardRef((props, ref) => {
                 </>
               }
               /* ── Back ── */
-              backClass="bg-white flex flex-col items-center justify-center gap-2 p-5 text-center border-4 border-red-800"
+              backClass="bg-white flex flex-col items-center justify-center gap-2 p-5 text-center border-4 border-cta-btn"
               back={
                 <>
                   <span className="text-4xl font-black tracking-tight text-slate-900 uppercase">
