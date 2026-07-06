@@ -48,7 +48,7 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link
-                    to={isPte ? "/pte/pricing" : "/ielts/pricing"}
+                    to="/pricing"
                     className="hover:text-white transition-colors"
                   >
                     Pricing

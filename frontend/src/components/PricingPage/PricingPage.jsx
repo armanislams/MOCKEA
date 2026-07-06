@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiMinus, FiShield, FiRotateCcw, FiLock } from 'react-icons/fi';
 import { Pricing } from '../Home/Pricing';
-import { PtePricing } from '../../pte/PtePricing';
 import { useLocation } from 'react-router';
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState(null);
   const location = useLocation();
-  const isPte = location.pathname.startsWith("/pte");
+  const isPte = (localStorage.getItem("temp_exam") || localStorage.getItem("prefetched_exam")) === "PTE";
 
   const FAQS = [
     {
@@ -57,7 +56,7 @@ export default function PricingPage() {
 
         {/* 1. Reuse existing Pricing plans display component */}
         <div className="mb-16">
-          {isPte ? <PtePricing /> : <Pricing />}
+          <Pricing />
         </div>
 
         {/* 2. Features Comparison Matrix */}

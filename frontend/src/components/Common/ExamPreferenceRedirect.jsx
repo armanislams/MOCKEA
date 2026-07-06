@@ -222,7 +222,13 @@ export default function ExamPreferenceRedirect() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto w-full">
                     {/* IELTS Free pricing card */}
-                    <div className="group relative h-[320px] w-full rounded-[2rem] overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-500 border border-slate-200">
+                    <div 
+                        onClick={() => {
+                            localStorage.setItem("temp_exam", "IELTS");
+                            navigate("/pricing");
+                        }}
+                        className="group relative h-[320px] w-full rounded-[2rem] overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-500 border border-slate-200"
+                    >
                         {/* Front face */}
                         <div className="absolute inset-0 bg-white p-8 flex flex-col justify-between transition-transform duration-500 group-hover:-translate-y-full border-t-8 border-cta-btn">
                             <div>
@@ -263,7 +269,13 @@ export default function ExamPreferenceRedirect() {
                     </div>
 
                     {/* PTE Free pricing card */}
-                    <div className="group relative h-[320px] w-full rounded-[2rem] overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-500 border border-slate-200">
+                    <div 
+                        onClick={() => {
+                            localStorage.setItem("temp_exam", "PTE");
+                            navigate("/pricing");
+                        }}
+                        className="group relative h-[320px] w-full rounded-[2rem] overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-500 border border-slate-200"
+                    >
                         {/* Front face */}
                         <div className="absolute inset-0 bg-white p-8 flex flex-col justify-between transition-transform duration-500 group-hover:-translate-y-full border-t-8 border-cta-btn">
                             <div>

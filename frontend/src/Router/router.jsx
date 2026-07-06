@@ -101,14 +101,6 @@ const router = createBrowserRouter([
                 ),
               },
               {
-                path: "pricing",
-                element: (
-                  <TrackGuard expectedTrack="IELTS">
-                    {withSuspense(PricingPage)}
-                  </TrackGuard>
-                ),
-              },
-              {
                 path: "free-resources",
                 element: (
                   <TrackGuard expectedTrack="IELTS">
@@ -156,14 +148,6 @@ const router = createBrowserRouter([
                 ),
               },
               {
-                path: "pricing",
-                element: (
-                  <TrackGuard expectedTrack="PTE">
-                    {withSuspense(PricingPage)}
-                  </TrackGuard>
-                ),
-              },
-              {
                 path: "free-resources",
                 element: (
                   <TrackGuard expectedTrack="PTE">
@@ -190,6 +174,10 @@ const router = createBrowserRouter([
                 ),
               },
             ]
+          },
+          {
+            path: "pricing",
+            element: withSuspense(PricingPage),
           },
         ],
       },

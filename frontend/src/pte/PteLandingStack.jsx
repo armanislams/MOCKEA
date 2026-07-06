@@ -3,7 +3,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { PteHowItWorks } from "./PteHowItWorks";
 import { PteTaskCards } from "./PteTaskCards";
-import { PtePricing } from "./PtePricing";
+import { Pricing } from "../components/Home/Pricing";
 import { Testimonials } from "../components/Home/Testimonials";
 import { FreeResources } from "../components/Home/FreeResources";
 
@@ -94,7 +94,8 @@ export const PteLandingStack = () => {
                 <FreeResources ref={resourcesRef} />
             </div>
 
-            <PtePricing />
+            {/* Shared Pricing Component */}
+            <Pricing />
         </div>
     );
 };

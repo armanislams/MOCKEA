@@ -19,7 +19,7 @@ const Navbar = () => {
         </NavLink>
       </li>
       <li>
-        <NavLink className="hover:text-primary text-slate-700 font-bold" to={isPte ? "/pte/pricing" : "/ielts/pricing"}>
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/pricing">
           Pricing
         </NavLink>
       </li>

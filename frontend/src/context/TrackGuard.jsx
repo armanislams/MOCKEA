@@ -119,8 +119,24 @@ export default function TrackGuard({ children, expectedTrack }) {
             }
         }
     } else {
-        // For guest, update local storage preference to match the visited path
-        localStorage.setItem("prefetched_exam", expectedTrack);
+        // Guest user logic
+        const currentPath = window.location.pathname;
+        const isFreeResources = currentPath.includes("free-resources");
+
+        if (isFreeResources) {
+            // For free resources, don't set prefetched_exam in localStorage, but set temp_exam
+            localStorage.setItem("temp_exam", expectedTrack);
+        } else {
+            // For home, about, course, practice, etc.
+            const storedPref = localStorage.getItem("prefetched_exam");
+            if (!storedPref) {
+                // If guest comes back from pricing/free resources to home/about/course and has no stored preference, show them the root
+                return <Navigate to="/" replace />;
+            }
+            if (storedPref !== expectedTrack) {
+                return <Navigate to={storedPref === "PTE" ? "/pte" : "/ielts"} replace />;
+            }
+        }
     }
 
     return children;

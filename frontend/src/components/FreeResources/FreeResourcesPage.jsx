@@ -178,7 +178,7 @@ export default function FreeResourcesPage() {
               </p>
             </div>
             <a
-              href={isPte ? "/pte/pricing" : "/ielts/pricing"}
+              href="/pricing"
               className={`inline-flex items-center gap-2 text-white font-extrabold px-8 py-4 rounded-2xl shadow-xl transition-all whitespace-nowrap ${
                 isPte 
                   ? "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 hover:scale-[1.02] active:scale-98" 

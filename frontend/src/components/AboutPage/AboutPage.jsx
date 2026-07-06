@@ -306,7 +306,7 @@ export default function AboutPage() {
               Sign Up For Free
             </Link>
             <Link 
-              to={isPte ? "/pte/pricing" : "/ielts/pricing"}
+              to="/pricing"
               className="px-8 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 transition-all duration-300 w-full sm:w-auto"
             >
               View Membership Pricing
