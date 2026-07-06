@@ -29,7 +29,7 @@ const Navbar = () => {
         </NavLink>
       </li>
       <li>
-        <NavLink className="hover:text-primary text-slate-700 font-bold" to={isPte ? "/pte/free-resources" : "/ielts/free-resources"}>
+        <NavLink className="hover:text-primary text-slate-700 font-bold" to="/free-resources">
           Free Resources
         </NavLink>
       </li>

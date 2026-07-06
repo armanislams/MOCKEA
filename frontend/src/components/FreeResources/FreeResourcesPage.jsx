@@ -16,7 +16,7 @@ export default function FreeResourcesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const location = useLocation();
-  const isPte = location.pathname.startsWith("/pte");
+  const isPte = (localStorage.getItem("temp_exam") || localStorage.getItem("prefetched_exam")) === "PTE";
 
   // Fetch Resources from Backend API
   const { data: resources = [], isLoading, isError } = useQuery({

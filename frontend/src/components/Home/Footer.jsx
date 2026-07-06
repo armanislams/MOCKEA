@@ -56,7 +56,7 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link
-                    to={isPte ? "/pte/free-resources" : "/ielts/free-resources"}
+                    to="/free-resources"
                     className="hover:text-white transition-colors"
                   >
                     Resources
