@@ -6,13 +6,13 @@ export default function PteScoreConverter() {
 
   // Get IELTS score and level description based on PTE score
   const getEquivalent = (p) => {
-    if (p >= 86) return { ielts: "9.0", level: "Expert", color: "bg-emerald-50 text-emerald-700 border-emerald-100", desc: "Perfect command of the English language. Suitable for any high-level academic or professional placement globally." };
-    if (p >= 83) return { ielts: "8.5", level: "Very Good", color: "bg-emerald-50 text-emerald-700 border-emerald-100", desc: "Excellent capability. Ideal for complex research roles and prestigious Ivy League universities." };
-    if (p >= 79) return { ielts: "8.0", level: "Very Good", color: "bg-emerald-50 text-emerald-700 border-emerald-100", desc: "Highly fluent. Exceeds admissions requirements for almost all top-tier international universities." };
-    if (p >= 73) return { ielts: "7.5", level: "Good", color: "bg-green-50 text-green-700 border-green-100", desc: "Effective operational capability. Matches requirement for competitive postgraduate courses." };
-    if (p >= 65) return { ielts: "7.0", level: "Good", color: "bg-green-50 text-green-700 border-green-100", desc: "Generally effective command. Standard requirement for undergraduate and general professional visa entries." };
-    if (p >= 58) return { ielts: "6.5", level: "Competent", color: "bg-amber-50 text-amber-700 border-amber-100", desc: "Competent command. Fits entry requirements for most standard international programs." };
-    if (p >= 50) return { ielts: "6.0", level: "Competent", color: "bg-amber-50 text-amber-700 border-amber-100", desc: "Basic operational command. Acceptable for general study tracks and technical qualifications." };
+    if (p >= 86) return { ielts: "9.0", level: "Expert", color: "bg-red-50 text-[#E30613] border-red-100", desc: "Perfect command of the English language. Suitable for any high-level academic or professional placement globally." };
+    if (p >= 83) return { ielts: "8.5", level: "Very Good", color: "bg-red-50 text-[#E30613] border-red-100", desc: "Excellent capability. Ideal for complex research roles and prestigious Ivy League universities." };
+    if (p >= 79) return { ielts: "8.0", level: "Very Good", color: "bg-red-50 text-[#E30613] border-red-100", desc: "Highly fluent. Exceeds admissions requirements for almost all top-tier international universities." };
+    if (p >= 73) return { ielts: "7.5", level: "Good", color: "bg-blue-50 text-[#0028a2] border-blue-100", desc: "Effective operational capability. Matches requirement for competitive postgraduate courses." };
+    if (p >= 65) return { ielts: "7.0", level: "Good", color: "bg-blue-50 text-[#0028a2] border-blue-100", desc: "Generally effective command. Standard requirement for undergraduate and general professional visa entries." };
+    if (p >= 58) return { ielts: "6.5", level: "Competent", color: "bg-blue-50 text-blue-600 border-blue-100", desc: "Competent command. Fits entry requirements for most standard international programs." };
+    if (p >= 50) return { ielts: "6.0", level: "Competent", color: "bg-blue-50 text-blue-600 border-blue-100", desc: "Basic operational command. Acceptable for general study tracks and technical qualifications." };
     if (p >= 43) return { ielts: "5.5", level: "Modest", color: "bg-slate-100 text-slate-700 border-slate-200", desc: "Partial command. May require preparatory foundation programs or English courses." };
     if (p >= 36) return { ielts: "5.0", level: "Modest", color: "bg-slate-100 text-slate-700 border-slate-200", desc: "Limited proficiency. Likely requires intensive pre-sessional English courses." };
     return { ielts: "Under 5.0", level: "Beginner", color: "bg-gray-100 text-gray-500 border-gray-200", desc: "Requires significant foundation work to reach intermediate level proficiency." };

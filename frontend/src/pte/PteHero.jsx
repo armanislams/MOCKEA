@@ -45,7 +45,7 @@ const PteHero = () => {
     <div className="relative min-h-[90vh] flex flex-col items-center justify-center bg-white font-sans text-gray-900 py-16 overflow-hidden">
       {/* Background visual details */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#E30613]/5 rounded-full filter blur-3xl -z-10" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-green-500/5 rounded-full filter blur-3xl -z-10" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/5 rounded-full filter blur-3xl -z-10" />
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center space-y-8">
         
@@ -112,7 +112,7 @@ const PteHero = () => {
               <h3 className="text-xl font-bold text-gray-900 mt-1">Read Aloud Task Type</h3>
             </div>
             <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-              <FiCpu className="text-green-500" /> Powered by Mockea AI Engine
+              <FiCpu className="text-blue-600" /> Powered by Mockea AI Engine
             </div>
           </div>
 

@@ -17,16 +17,16 @@ const steps = [
     icon: FaBook,
     title: "Practice PTE Layouts",
     desc: "Focus on specific PTE question types (e.g. Write From Dictation, Fill in the Blanks) inside an exact Pearson interface clone.",
-    badgeColor: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    iconColor: "text-emerald-600"
+    badgeColor: "bg-blue-50 text-blue-600 border-blue-100",
+    iconColor: "text-blue-600"
   },
   {
     num: "03",
     icon: IoAnalytics,
     title: "AI Scoring (10-90)",
     desc: "Submit your answers and get instantaneous diagnostic score updates mapped directly to Pearson global scoring standards.",
-    badgeColor: "bg-amber-50 text-amber-600 border-amber-100",
-    iconColor: "text-amber-600"
+    badgeColor: "bg-red-50 text-[#E30613] border-red-100",
+    iconColor: "text-[#E30613]"
   }
 ];
 
@@ -34,7 +34,7 @@ export const PteHowItWorks = () => {
   return (
     <div className="rounded-[3rem] bg-white py-16 px-6 sm:px-12 border border-gray-100 shadow-md">
       <div className="text-center max-w-2xl mx-auto mb-16">
-        <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full">
+        <span className="text-[10px] uppercase font-bold tracking-widest text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full">
           Simple Stepper
         </span>
         <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -48,7 +48,7 @@ export const PteHowItWorks = () => {
       {/* Vertical Stepper Timeline */}
       <div className="relative max-w-3xl mx-auto">
         {/* Central connecting line */}
-        <div className="absolute left-8 top-4 bottom-4 w-0.5 bg-gradient-to-b from-[#E30613] via-emerald-500 to-amber-500 hidden sm:block" />
+        <div className="absolute left-8 top-4 bottom-4 w-0.5 bg-gradient-to-b from-[#E30613] via-blue-500 to-[#0028a2] hidden sm:block" />
 
         <div className="space-y-12">
           {steps.map((step, idx) => {

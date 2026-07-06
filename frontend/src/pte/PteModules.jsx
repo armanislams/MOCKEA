@@ -20,8 +20,8 @@ const modules = [
     icon: PiBookOpenFill,
     title: "Reading",
     duration: "29 - 30 minutes",
-    color: "from-emerald-500 to-teal-600",
-    lightColor: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    color: "from-blue-500 to-[#0028a2]",
+    lightColor: "bg-blue-50 text-[#0028a2] border-blue-100",
     tasks: [
       "Reading & Writing Fill in the Blanks",
       "Multiple Choice, Multiple Answers",
@@ -33,8 +33,8 @@ const modules = [
     icon: PiHeadphonesFill,
     title: "Listening",
     duration: "30 - 43 minutes",
-    color: "from-amber-500 to-orange-600",
-    lightColor: "bg-amber-50 text-amber-600 border-amber-100",
+    color: "from-blue-500 to-[#0028a2]",
+    lightColor: "bg-blue-50 text-[#0028a2] border-blue-100",
     tasks: [
       "Summarize Spoken Text",
       "Fill in the Blanks & Write From Dictation",
@@ -48,7 +48,7 @@ export default function PteModules() {
   return (
     <section className="py-20 bg-[#FAF9F6] relative overflow-hidden">
       <div className="absolute top-1/2 right-0 w-96 h-96 bg-red-100/20 rounded-full filter blur-3xl -z-10" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-100/10 rounded-full filter blur-3xl -z-10" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-100/10 rounded-full filter blur-3xl -z-10" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -97,7 +97,7 @@ export default function PteModules() {
                   <ul className="space-y-4">
                     {mod.tasks.map((task, tIdx) => (
                       <li key={tIdx} className="flex items-start gap-3">
-                        <PiCheckCircleFill className="text-emerald-500 text-lg shrink-0 mt-0.5" />
+                        <PiCheckCircleFill className="text-blue-600 text-lg shrink-0 mt-0.5" />
                         <span className="text-sm font-semibold text-slate-600">{task}</span>
                       </li>
                     ))}
