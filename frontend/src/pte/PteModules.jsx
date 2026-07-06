@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { PiBookOpenFill, PiHeadphonesFill, PiCheckCircleFill } from "react-icons/pi";
 import { RiMicFill } from "react-icons/ri";
+import { useNavigate } from "react-router";
 
 const modules = [
   {
@@ -45,6 +46,8 @@ const modules = [
 ];
 
 export default function PteModules() {
+  const navigate = useNavigate();
+
   return (
     <section className="py-20 bg-[#FAF9F6] relative overflow-hidden">
       <div className="absolute top-1/2 right-0 w-96 h-96 bg-red-100/20 rounded-full filter blur-3xl -z-10" />
@@ -78,7 +81,8 @@ export default function PteModules() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/60 shadow-lg flex flex-col justify-between hover:shadow-2xl transition-all duration-300 relative overflow-hidden group"
+                onClick={() => navigate("/dashboard")}
+                className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/60 shadow-lg flex flex-col justify-between hover:shadow-2xl transition-all duration-300 relative overflow-hidden group cursor-pointer"
               >
                 <div>
                   <div className="flex justify-between items-center mb-8">
@@ -105,7 +109,7 @@ export default function PteModules() {
                 </div>
                 
                 <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end">
-                  <span className="text-xs font-black text-[#E30613] uppercase tracking-widest group-hover:translate-x-1.5 transition-transform cursor-pointer">
+                  <span className="text-xs font-black text-[#E30613] uppercase tracking-widest group-hover:translate-x-1.5 transition-transform">
                     Explore Mock Tests &rarr;
                   </span>
                 </div>
