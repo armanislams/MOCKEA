@@ -830,7 +830,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
     );
 };
 
-const Reading = () => {
+const Reading = ({ preloadedSet = null }) => {
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -1003,7 +1003,7 @@ const Reading = () => {
       setClickedOption(null);
   }
 
-  const { timeLeft, fmtTime } = useCountdown(3600, !!selectedSetId, submitted);
+  const { timeLeft, fmtTime, resetCountdown } = useCountdown(3600, !!selectedSetId, submitted);
 
   const passageElement = useMemo(() => {
     if (!activeSet) return null;
@@ -1102,6 +1102,18 @@ const Reading = () => {
     setIsStarted(false);
     navigate("/dashboard");
   };
+
+  const handleRetake = () => {
+    setAnswers({});
+    setSubmitted(false);
+    setResult(null);
+    setClickedOption(null);
+    setActivePassageTab(0);
+    resetCountdown(3600);
+    setIsStarted(true);
+    enterFullscreen();
+  };
+
 
   if (loading) return <Loader />;
 
@@ -1240,10 +1252,10 @@ const Reading = () => {
                       <PiCheckCircleFill className="text-xl" /> Session Finalized
                     </div>
                     <button
-                      onClick={handleReturnToDashboard}
+                      onClick={!preloadedSet ? handleRetake : handleReturnToDashboard}
                       className="btn btn-primary btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest"
                     >
-                      Return to Dashboard
+                      {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
                     </button>
                   </div>
                 ) : (
@@ -1276,6 +1288,12 @@ const Reading = () => {
                         </p>
                     </div>
                 </div>
+                <button
+                    onClick={!preloadedSet ? handleRetake : handleReturnToDashboard}
+                    className="btn bg-white text-primary border-none rounded-2xl px-8 h-14 font-black shadow-xl"
+                >
+                    {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
+                </button>
             </motion.div>
         )}
 

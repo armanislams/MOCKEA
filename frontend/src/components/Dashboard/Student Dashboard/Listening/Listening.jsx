@@ -261,6 +261,31 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
         navigate("/dashboard");
     };
 
+    const handleRetake = () => {
+        setAnswers({});
+        setSubmitted(false);
+        setResult(null);
+        setTestStarted(false);
+        setElapsed(0);
+        setClickedOption(null);
+
+        if (howlRef.current) {
+            howlRef.current.stop();
+            howlRef.current.seek(0);
+        }
+        setIsPlaying(false);
+        setProgress(0);
+        setCurrentTime(0);
+
+        if (duration > 0) {
+            resetCountdown(Math.ceil(duration));
+        }
+
+        setIsStarted(true);
+        enterFullscreen();
+    };
+
+
   if (loading) return <Loader />;
 
   if (!activeSet || (!preloadedSet && !selectedSetId)) {
@@ -549,10 +574,10 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             </div>
                         </div>
                         <button
-                            onClick={handleReturnToDashboard}
+                            onClick={!preloadedSet ? handleRetake : handleReturnToDashboard}
                             className="btn bg-white text-primary border-none rounded-2xl px-8 h-14 font-black shadow-xl"
                         >
-                            Retake Test
+                            {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
                         </button>
                     </motion.div>
                 )}

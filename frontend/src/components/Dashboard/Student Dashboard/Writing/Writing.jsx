@@ -58,7 +58,7 @@ const getTaskContent = (activeSet, tab, isPte) => {
   }
 };
 
-const Writing = () => {
+const Writing = ({ preloadedSet = null }) => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -97,7 +97,7 @@ const Writing = () => {
   };
 
   const [timerActive, setTimerActive] = useState(false);
-  const { timeLeft, fmtTime: fmt } = useCountdown(3600, timerActive, submitted);
+  const { timeLeft, fmtTime: fmt, resetCountdown } = useCountdown(3600, timerActive, submitted);
 
   // Fullscreen & Gating States
   const [isStarted, setIsStarted] = useState(false);
@@ -289,6 +289,17 @@ const Writing = () => {
     navigate("/dashboard");
   };
 
+  const handleRetake = () => {
+    setSubmitted(false);
+    setSubmitting(false);
+    resetText();
+    setTimerActive(true);
+    resetCountdown(3600);
+    setIsStarted(true);
+    enterFullscreen();
+  };
+
+
   if (loading) return <Loader />;
 
   const userPlan = userData?.plan || "free";
@@ -455,10 +466,10 @@ const Writing = () => {
                       <PiCheckCircleFill className="text-xl" /> Session Finalized
                     </div>
                     <button
-                      onClick={handleReturnToDashboard}
+                      onClick={!preloadedSet ? handleRetake : handleReturnToDashboard}
                       className="btn btn-primary btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest"
                     >
-                      Return to Dashboard
+                      {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
                     </button>
                   </div>
                 ) : (
@@ -600,14 +611,14 @@ const Writing = () => {
                                     </p>
                                 </div>
                                 <button 
-                                    onClick={() => {
+                                    onClick={!preloadedSet ? handleRetake : () => {
                                         exitFullscreen();
                                         setIsStarted(false);
                                         navigate(-1);
                                     }} 
                                     className="btn btn-primary rounded-2xl px-10 font-black"
                                 >
-                                    Return to Dashboard
+                                    {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
                                 </button>
                             </motion.div>
                         ) : (

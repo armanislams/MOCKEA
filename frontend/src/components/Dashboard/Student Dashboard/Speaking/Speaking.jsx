@@ -799,6 +799,44 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     navigate("/dashboard");
   };
 
+  const handleRetake = () => {
+    setSubmitted(false);
+    setIsSaving(false);
+    setIsUploading(false);
+    setIsRecording(false);
+    setIsPrepPhase(false);
+    setPrepTime(60);
+    setRecordingTime(0);
+
+    setSpeakingStep(1);
+    setPart1Blobs([]);
+    setPart2Blob(null);
+    setPart3Blobs([]);
+    setPart1QuestionIdx(0);
+    setPart3QuestionIdx(0);
+    
+    setPteQuestionIdx(0);
+    setPteBlobs([]);
+    setIsPlayingPteAudio(false);
+
+    part1QuestionIdxRef.current = 0;
+    part3QuestionIdxRef.current = 0;
+    pteQuestionIdxRef.current = 0;
+    pteBlobsRef.current = [];
+    part1BlobsRef.current = [];
+    part2BlobRef.current = null;
+    part3BlobsRef.current = [];
+    audioBlobRef.current = null;
+
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    setIsStarted(true);
+    enterFullscreen();
+  };
+
+
   const fmt = (s) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -1052,10 +1090,10 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                   <PiCheckCircleFill className="text-xl" /> Session Finalized
                 </div>
                 <button
-                  onClick={handleReturnToDashboard}
+                  onClick={!preloadedSet ? handleRetake : handleReturnToDashboard}
                   className="btn btn-primary btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest"
                 >
-                  Return to Dashboard
+                  {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
                 </button>
               </div>
             ) : (
