@@ -104,6 +104,35 @@ export function parseQuestionToState(fetchedQuestion) {
     };
 }
 
+const syncMultipleSelectionGroup = (prevQuestions, questionGroups) => {
+    if (!questionGroups || questionGroups.length === 0) return prevQuestions;
+    
+    let questions = [...prevQuestions];
+    for (const group of questionGroups) {
+        const fromQ = Number(group.fromQuestion) || 1;
+        const toQ = Number(group.toQuestion) || 1;
+        if (fromQ < toQ) {
+            const firstQIndex = fromQ - 1;
+            const firstQ = questions[firstQIndex];
+            if (firstQ && firstQ.type === "multiple-selection") {
+                const sourceText = firstQ.question;
+                const sourceOptions = firstQ.options;
+                for (let i = fromQ; i < toQ; i++) {
+                    if (questions[i]) {
+                        questions[i] = {
+                            ...questions[i],
+                            type: "multiple-selection",
+                            question: sourceText,
+                            options: [...sourceOptions]
+                        };
+                    }
+                }
+            }
+        }
+    }
+    return questions;
+};
+
 export function useQuestionFormState(initialData = initialForm("reading")) {
     const [formData, setFormData] = useState(initialData);
 
@@ -152,11 +181,15 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                 }
             }
             
+            const updatedQuestions = prev.questions.map((q) =>
+                q.id === id ? { ...q, ...updates } : q
+            );
+            
+            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
+            
             return {
                 ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === id ? { ...q, ...updates } : q
-                ),
+                questions: finalQuestions,
             };
         });
     }, []);
@@ -171,14 +204,18 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
             const isDragDrop = targetQuestion.type === "drag-drop-completion";
             const newOptions = [...targetQuestion.options, nextValue];
 
+            const updatedQuestions = prev.questions.map((q) => {
+                if (isDragDrop && q.type === "drag-drop-completion") {
+                    return { ...q, options: newOptions };
+                }
+                return q.id === qId ? { ...q, options: newOptions } : q;
+            });
+
+            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
+
             return {
                 ...prev,
-                questions: prev.questions.map((q) => {
-                    if (isDragDrop && q.type === "drag-drop-completion") {
-                        return { ...q, options: newOptions };
-                    }
-                    return q.id === qId ? { ...q, options: newOptions } : q;
-                }),
+                questions: finalQuestions,
             };
         });
     }, []);
@@ -191,14 +228,18 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
             opts[idx] = value;
             const isDragDrop = targetQuestion.type === "drag-drop-completion";
 
+            const updatedQuestions = prev.questions.map((q) => {
+                if (isDragDrop && q.type === "drag-drop-completion") {
+                    return { ...q, options: opts };
+                }
+                return q.id === qId ? { ...q, options: opts } : q;
+            });
+
+            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
+
             return {
                 ...prev,
-                questions: prev.questions.map((q) => {
-                    if (isDragDrop && q.type === "drag-drop-completion") {
-                        return { ...q, options: opts };
-                    }
-                    return q.id === qId ? { ...q, options: opts } : q;
-                }),
+                questions: finalQuestions,
             };
         });
     }, []);
@@ -210,14 +251,18 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
             const opts = targetQuestion.options.filter((_, i) => i !== idx);
             const isDragDrop = targetQuestion.type === "drag-drop-completion";
 
+            const updatedQuestions = prev.questions.map((q) => {
+                if (isDragDrop && q.type === "drag-drop-completion") {
+                    return { ...q, options: opts };
+                }
+                return q.id === qId ? { ...q, options: opts } : q;
+            });
+
+            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
+
             return {
                 ...prev,
-                questions: prev.questions.map((q) => {
-                    if (isDragDrop && q.type === "drag-drop-completion") {
-                        return { ...q, options: opts };
-                    }
-                    return q.id === qId ? { ...q, options: opts } : q;
-                }),
+                questions: finalQuestions,
             };
         });
     }, []);

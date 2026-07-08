@@ -306,6 +306,31 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         </label>
                                     </div>
                                 </div>
+
+                                {(() => {
+                                    const fromQ = Number(group.fromQuestion) || 1;
+                                    const groupType = formData.questions?.[fromQ - 1]?.type || "";
+                                    if (groupType === "multiple-selection") {
+                                        return (
+                                            <div className="p-5 bg-blue-50 border border-blue-100 rounded-3xl text-xs text-blue-800 space-y-2.5 leading-relaxed">
+                                                <h4 className="font-bold text-sm flex items-center gap-1.5 text-blue-900">
+                                                    ℹ️ Multiple Selection Group Guide
+                                                </h4>
+                                                <p>
+                                                    To ensure these questions merge and display correctly as a single visual checkbox block on the student dashboard:
+                                                </p>
+                                                <ul className="list-disc pl-5 space-y-1">
+                                                    <li>All questions in this group (from <strong>Q{group.fromQuestion}</strong> to <strong>Q{group.toQuestion}</strong>) must have the <strong>exact same Question Text</strong>.</li>
+                                                    <li>All questions in this group must have the <strong>exact same Options list</strong> in the Questions Builder.</li>
+                                                    <li>Students will be able to select multiple options up to the number of questions in this group. Grading is order-independent.</li>
+                                                    <li>Create multiple groups to separate questions if you need different sets of multiple-selection questions.</li>
+                                                </ul>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+
                                 {/* Instructions */}
                                 <div>
                                     <label className="label"><span className="label-text font-semibold text-xs">Instructions for this group</span></label>

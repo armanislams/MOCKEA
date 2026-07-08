@@ -16,6 +16,17 @@ export default function useEvaluate() {
 
         const totalQuestions = activeSet.questions?.length || 0;
         const answeredCount = activeSet.questions?.filter(q => {
+            if (q.type === 'multiple-selection') {
+                const qText = q.question ? q.question.trim().toLowerCase() : "";
+                const groupQuestions = activeSet.questions.filter(item => 
+                    item.type === 'multiple-selection' && 
+                    (item.question ? item.question.trim().toLowerCase() : "") === qText
+                );
+                return groupQuestions.some(item => {
+                    const ans = answers[item.id];
+                    return typeof ans === 'string' ? ans.trim() !== "" : (ans !== undefined && ans !== null);
+                });
+            }
             const ans = answers[q.id];
             if (typeof ans === 'string') {
                 return ans.trim() !== "";
