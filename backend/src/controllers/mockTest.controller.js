@@ -19,19 +19,43 @@ const getLetterPrefix = (str) => {
 };
 
 const isAnswerMatching = (correct, user) => {
-    if (!correct || !user) return false;
-    const correctStr = correct.toLowerCase().trim();
-    const userStr = user.toLowerCase().trim();
-    if (correctStr === userStr) return true;
+    if (correct === undefined || correct === null || user === undefined || user === null) return false;
     
-    const correctClean = cleanAnswer(correct);
-    const userClean = cleanAnswer(user);
-    if (correctClean && userClean && correctClean === userClean) return true;
-    
-    const correctLetter = getLetterPrefix(correct);
-    const userLetter = getLetterPrefix(user);
-    if (correctLetter && correctLetter === userStr) return true;
-    if (userLetter && userLetter === correctStr) return true;
+    const correctStr = String(correct).trim();
+    const userStr = String(user).trim();
+    if (!correctStr || !userStr) return false;
+
+    const userClean = userStr.toLowerCase();
+
+    // Split correct answer by '/', ',' or ';' or ' or ' to get all possible valid options
+    const options = correctStr.split(/\s*(?:\/|,|;| or )\s*/i).map(opt => opt.trim().toLowerCase()).filter(Boolean);
+
+    for (const option of options) {
+        if (option === userClean) return true;
+
+        const optClean = cleanAnswer(option);
+        const usrClean = cleanAnswer(userClean);
+        if (optClean && usrClean && optClean === usrClean) return true;
+
+        const optLetter = getLetterPrefix(option);
+        const usrLetter = getLetterPrefix(userClean);
+        if (optLetter && optLetter === userClean) return true;
+        if (usrLetter && usrLetter === option) return true;
+
+        // Regex comparison for optional parentheses (e.g. "locker(s)", "hotel (room)")
+        try {
+            let regexPattern = option;
+            regexPattern = regexPattern.replace(/\s*\(([^)]+)\)/g, '__OPT__$1');
+            regexPattern = regexPattern.replace(/[-\/\\^$*+?.|[\]{}]/g, '\\$&');
+            regexPattern = regexPattern.replace(/__OPT__([a-zA-Z0-9]+)/g, (_, p1) => `(?:\\s*${p1})?`);
+            
+            const regex = new RegExp(`^${regexPattern}$`, 'i');
+            if (regex.test(userClean) || regex.test(usrClean)) return true;
+        } catch (e) {
+            // Fallback silent
+        }
+    }
+
     return false;
 };
 

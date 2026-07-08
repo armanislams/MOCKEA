@@ -206,6 +206,7 @@ export default function TableCompletionRenderer({
                 continue;
             }
             rows.push({ cells, isHeader });
+            isHeader = false;
         }
         
         return {

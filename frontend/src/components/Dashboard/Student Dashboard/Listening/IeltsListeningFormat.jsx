@@ -471,6 +471,7 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
                 continue;
             }
             rows.push({ cells, isHeader });
+            isHeader = false;
         }
 
         return rows;
