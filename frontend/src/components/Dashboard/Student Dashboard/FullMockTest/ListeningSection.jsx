@@ -1364,7 +1364,7 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
                                     const label = `${letter}. ${opt}`;
-                                    const isPlaced = Object.values(scopedAnswers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                    const isPlaced = false;
                                     const isSelected = clickedOption === label;
                                     return (
                                         <div

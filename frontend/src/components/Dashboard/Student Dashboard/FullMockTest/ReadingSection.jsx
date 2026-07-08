@@ -1332,7 +1332,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                 {sharedOptions.map((opt, i) => {
                                     const letter = String.fromCharCode(65 + i);
                                     const label = `${letter}. ${opt}`;
-                                    const isPlaced = Object.values(scopedAnswers).some(val => val === label || val === opt || val === `${letter}. ${opt}`);
+                                    const isPlaced = false; // Allow multiple use
                                     const isSelected = clickedOption === label;
                                     return (
                                         <div
