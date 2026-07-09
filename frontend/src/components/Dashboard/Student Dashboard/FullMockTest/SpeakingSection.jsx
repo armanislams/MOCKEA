@@ -501,6 +501,14 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
         toast.info("1-Minute Preparation Time Started");
     };
 
+    // Auto-start prep timer when student navigates to Part 2 (Cue Card)
+    useEffect(() => {
+        if (activePart === 2 && examType !== "PTE" && !part2Url && !isPrepActive && !isRecording) {
+            startPrep();
+        }
+    }, [activePart, examType, part2Url, isPrepActive, isRecording]);
+
+
     // Upload to Cloudinary helper
     const uploadToCloudinary = async (blob, _retryCount = 0) => {
         const MAX_RETRIES = 3;

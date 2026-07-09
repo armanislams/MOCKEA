@@ -479,6 +479,14 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     toast.info("1-Minute Preparation Time Started");
   };
 
+  // Auto-start prep timer when student goes to cue card (Part 2)
+  useEffect(() => {
+    if (speakingStep === 2 && activeSet?.examType !== "PTE" && !part2Blob && !isPrepPhase && !isRecording) {
+      startPrep();
+    }
+  }, [speakingStep, activeSet?.examType, part2Blob, isPrepPhase, isRecording]);
+
+
   // Preparation Timer
   useEffect(() => {
     if (!isPrepPhase) return;
