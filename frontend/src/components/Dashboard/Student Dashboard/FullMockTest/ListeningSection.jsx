@@ -730,6 +730,29 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
                 </div>
             )}
             <div className="space-y-6">
+                {header?.linkUrl && (() => {
+                    const isImg = /\.(jpeg|jpg|gif|png|webp|svg)/i.test(header.linkUrl) || header.linkUrl.includes("cloudinary") || header.linkUrl.includes("img") || header.linkUrl.includes("image");
+                    const isAud = /\.(mp3|wav|ogg|m4a|aac|mp4)/i.test(header.linkUrl) || header.linkUrl.includes("audio");
+                    if (isImg) {
+                        return (
+                            <div className="w-full overflow-hidden rounded-2xl border border-base-200 bg-white p-2">
+                                <img 
+                                    src={header.linkUrl} 
+                                    alt="Group Diagram / Map" 
+                                    className="w-full h-auto max-h-[420px] object-contain mx-auto rounded-xl" 
+                                />
+                            </div>
+                        );
+                    } else if (isAud) {
+                        return (
+                            <div className="w-full p-4 bg-white rounded-2xl border border-base-200 shadow-sm flex flex-col gap-2">
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Group Audio Reference</span>
+                                <audio src={header.linkUrl} controls className="w-full" />
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
                 {children}
             </div>
         </div>
@@ -1303,12 +1326,6 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                         {(() => {
                             if (data?.images?.[0]) {
                                 return <ReferenceMediaRenderer url={data.images[0]} />;
-                            }
-                            const groupWithImage = data?.questionGroups?.find(g => 
-                                g.linkUrl && /\.(jpeg|jpg|gif|png|webp|svg|cloudinary|img|image)/i.test(g.linkUrl)
-                            );
-                            if (groupWithImage) {
-                                return <ReferenceMediaRenderer url={groupWithImage.linkUrl} />;
                             }
                             return null;
                         })()}

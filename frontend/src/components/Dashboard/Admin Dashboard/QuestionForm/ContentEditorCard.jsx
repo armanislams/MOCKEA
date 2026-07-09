@@ -468,6 +468,25 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                 patch({ questionGroups: upd });
                                             }}
                                         />
+                                        {group.linkUrl && (() => {
+                                            const isImg = /\.(jpeg|jpg|gif|png|webp|svg)/i.test(group.linkUrl) || group.linkUrl.includes("cloudinary") || group.linkUrl.includes("img") || group.linkUrl.includes("image");
+                                            const isAud = /\.(mp3|wav|ogg|m4a|aac|mp4)/i.test(group.linkUrl) || group.linkUrl.includes("audio");
+                                            if (isImg) {
+                                                return (
+                                                    <div className="mt-2 border rounded-xl overflow-hidden max-h-40 bg-slate-50 flex items-center justify-center p-2">
+                                                        <img src={group.linkUrl} alt="Group Reference Preview" className="max-h-36 object-contain" />
+                                                    </div>
+                                                );
+                                            } else if (isAud) {
+                                                return (
+                                                    <div className="mt-2 p-2 bg-slate-50 rounded-xl border flex flex-col gap-1">
+                                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Audio Preview</span>
+                                                        <audio src={group.linkUrl} controls className="w-full h-8" />
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
                                     </div>
                                     {/* Right-side inline question */}
                                     <div className="col-span-1 flex items-center h-full pt-6">
