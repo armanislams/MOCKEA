@@ -691,6 +691,48 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 });
             });
         }
+        return ids;
+    }, [data, offset]);
+
+    const passageInlineIds = useMemo(() => {
+        const ids = new Set();
+        if (!data) return ids;
+
+        const passages = data.passages || [];
+        passages.forEach(p => {
+            if (!p.content) return;
+            const matches = p.content.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = data.questions?.find((item, idx) => {
+                    const questionNum = (offset || 0) + idx + 1;
+                    const localIndex = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        localIndex.toString() === matchKey
+                    );
+                });
+                if (q) ids.add(q.id);
+            });
+        });
+
+        if (data.passage) {
+            const matches = data.passage.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = data.questions?.find((item, idx) => {
+                    const questionNum = (offset || 0) + idx + 1;
+                    const localIndex = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        localIndex.toString() === matchKey
+                    );
+                });
+                if (q) ids.add(q.id);
+            });
+        }
 
         return ids;
     }, [data, offset]);
@@ -714,6 +756,64 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 const hasInlineInstructions = header?.instructions &&
                                              /___([\w-]+)___/.test(header.instructions) &&
                                              !hasTable;
+
+                const groupQIds = [];
+                groupEntry.visuals?.forEach(vg => {
+                    if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
+                        if (vg.questions) {
+                            vg.questions.forEach(q => groupQIds.push(q.id));
+                        }
+                    } else if (vg.question) {
+                        groupQIds.push(vg.question.id);
+                    }
+                });
+                const isPassageInlineGroup = groupQIds.some(id => passageInlineIds.has(id));
+
+                const groupDragDropQuestions = groupEntry.visuals?.flatMap(vg => {
+                    if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
+                        return vg.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [];
+                    }
+                    const q = vg.question;
+                    return q?.type === 'drag-drop-completion' || (q?.type === 'flow-chart-completion' && q.options?.length > 0) ? [q] : [];
+                }) || [];
+                const groupOptions = groupDragDropQuestions[0]?.options?.filter(Boolean) || [];
+
+                const renderDragOptions = () => {
+                    if (groupOptions.length === 0) return null;
+                    return (
+                        <div className="border-b border-slate-200/60 pb-4 mb-4 pt-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
+                                Drag or click to select an option to fill each blank
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2 pr-1">
+                                {groupOptions.map((opt, i) => {
+                                    const letter = String.fromCharCode(65 + i);
+                                    const label = `${letter}. ${opt}`;
+                                    const isSelected = clickedOption === label;
+                                    return (
+                                        <div
+                                            key={i}
+                                            draggable={true}
+                                            onDragStart={(e) => {
+                                                e.dataTransfer.setData("text/plain", label);
+                                            }}
+                                            onClick={() => {
+                                                setClickedOption(isSelected ? null : label);
+                                            }}
+                                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
+                                                isSelected
+                                                    ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
+                                            }`}
+                                        >
+                                            {label}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                };
 
                 if (isGroup) {
                     if (isMatchingGrid) {
@@ -774,7 +874,36 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                     }
 
                     if (hasInlineInstructions) {
-                        return null;
+                        if (isPassageInlineGroup) {
+                            return null;
+                        }
+                        return (
+                            <GroupedContainer 
+                                key={`group-${header?.fromQuestion || geIdx}-${header?.toQuestion || geIdx}`} 
+                                header={{
+                                    ...header,
+                                    fromQuestion: (offset || 0) + Number(header.fromQuestion),
+                                    toQuestion: (offset || 0) + Number(header.toQuestion)
+                                }}
+                                hideInstructions={true}
+                            >
+                                {renderDragOptions()}
+                                <div className="p-8 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                    <ReadingPassageRenderer
+                                        passageContent={header.instructions}
+                                        questions={data?.questions || []}
+                                        answers={answers}
+                                        onAnswerChange={onAnswerChange}
+                                        submitted={undefined}
+                                        result={null}
+                                        clickedOption={clickedOption}
+                                        setClickedOption={setClickedOption}
+                                        className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                        offset={offset}
+                                    />
+                                </div>
+                            </GroupedContainer>
+                        );
                     }
                 }
 
@@ -873,6 +1002,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                             }}
                             hideInstructions={hasTable}
                         >
+                            {renderDragOptions()}
                             {hasTable ? (
                                 <TableCompletionRenderer
                                     instructions={header.instructions}
@@ -986,15 +1116,8 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
 
     const hasRightPaneQuestions = useMemo(() => {
         if (!data) return false;
-        return currentTabGroupedItems.some(groupEntry => {
-            if (groupEntry.type !== 'group') return true;
-            const header = groupEntry.header;
-            const hasInlineInstructions = header?.instructions &&
-                                         /___([\w-]+)___/.test(header.instructions) &&
-                                         !/^\|.+\|$/m.test(header.instructions);
-            return !hasInlineInstructions;
-        });
-    }, [currentTabGroupedItems, data]);
+        return true;
+    }, [data]);
  
     const hasMultipleGroups = data?.questionGroups?.length > 1;
 
@@ -1245,45 +1368,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                             </div>
                         )}
 
-                        {/* Inline instructions renderer (e.g. gapped summaries, heading matching with paragraphs) */}
-                        {currentTabGroupedItems.filter(groupEntry => {
-                            if (groupEntry.type !== 'group') return false;
-                            const header = groupEntry.header;
-                            const hasInlineInstructions = header?.instructions &&
-                                                         /___([\w-]+)___/.test(header.instructions) &&
-                                                         !/^\|.+\|$/m.test(header.instructions);
-                            return hasInlineInstructions;
-                        }).map((groupEntry, geIdx) => {
-                            const header = groupEntry.header;
-                            return (
-                                <div key={`left-group-${geIdx}`} className="mt-12 font-sans">
-                                    <GroupedContainer 
-                                        header={{
-                                            ...header,
-                                            fromQuestion: (activeSectionOffset || 0) + Number(header.fromQuestion),
-                                            toQuestion: (activeSectionOffset || 0) + Number(header.toQuestion)
-                                        }} 
-                                        hideInstructions={true}
-                                    >
-                                        <div className="p-8 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
-                                            <ReadingPassageRenderer
-                                                passageContent={header.instructions}
-                                                questions={data.questions || []}
-                                                answers={scopedAnswers}
-                                                onAnswerChange={handleLocalAnswerChange}
-                                                submitted={undefined}
-                                                result={null}
-                                                clickedOption={clickedOption}
-                                                setClickedOption={setClickedOption}
-                                                className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
-                                                offset={activeSectionOffset}
-                                            />
-                                        </div>
-                                    </GroupedContainer>
-                                </div>
-                            );
-                        })}
-                    {/* End of Passage Container */}
+                     {/* End of Passage Container */}
                     </div>
                 </div>
             </div>
@@ -1310,45 +1395,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                 </div>
                             )}
 
-                            {/* Options Pool at the top of the questions card (scrolls with content) */}
-                            {sharedOptions.length > 0 && hasDragDropInActiveTab && (
-                                <div className="border-b border-slate-200/60 pb-4 mb-6 pt-2">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
-                                        Drag or click to select an option to fill each blank
-                                    </p>
-                                    <div className="flex flex-wrap justify-center gap-2 pr-1">
-                                        {sharedOptions.map((opt, i) => {
-                                            const letter = String.fromCharCode(65 + i);
-                                            const label = `${letter}. ${opt}`;
-                                            const isPlaced = false; // Allow multiple use
-                                            const isSelected = clickedOption === label;
-                                            return (
-                                                <div
-                                                    key={i}
-                                                    draggable={!isPlaced}
-                                                    onDragStart={(e) => {
-                                                        e.dataTransfer.setData("text/plain", label);
-                                                    }}
-                                                    onClick={() => {
-                                                        if (!isPlaced) {
-                                                            setClickedOption(isSelected ? null : label);
-                                                        }
-                                                    }}
-                                                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
-                                                        isPlaced
-                                                            ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
-                                                            : isSelected
-                                                            ? "bg-primary border-primary text-white shadow-md scale-105"
-                                                            : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
-                                                    }`}
-                                                >
-                                                    {label}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
+
 
                             <div className="space-y-8">
                                 <GroupedQuestionsRenderer

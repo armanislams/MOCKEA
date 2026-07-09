@@ -475,6 +475,41 @@ const GroupedReviewQuestionsRenderer = ({
         return ids;
     }, [currentSectionData, allQuestions, activeTab, activePassageTab, offset]);
 
+    const passageInlineIds = useMemo(() => {
+        const ids = new Set();
+        if (!currentSectionData || !allQuestions) return ids;
+
+        const checkText = (text) => {
+            if (!text) return;
+            const matches = text.match(/___([\w-]+)___/g) || [];
+            matches.forEach(m => {
+                const matchKey = m.replace(/___/g, "").trim();
+                const q = allQuestions.find((item, idx) => {
+                    const questionNum = (offset || 0) + idx + 1;
+                    const localIndex = idx + 1;
+                    return (
+                        item.id === matchKey ||
+                        questionNum.toString() === matchKey ||
+                        localIndex.toString() === matchKey
+                    );
+                });
+                if (q) ids.add(q.id);
+            });
+        };
+
+        if (activeTab === 'reading') {
+            const passages = currentSectionData.passages || [];
+            if (passages[activePassageTab]) {
+                checkText(passages[activePassageTab].content);
+            }
+            checkText(currentSectionData.passage);
+        } else if (activeTab === 'listening') {
+            checkText(currentSectionData.passage);
+        }
+
+        return ids;
+    }, [currentSectionData, allQuestions, activeTab, activePassageTab, offset]);
+
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
@@ -566,15 +601,14 @@ const GroupedReviewQuestionsRenderer = ({
                         }
                     });
                     const anyGroupQInline = groupQIds.some(id => renderedInlineIds.has(id));
+                    const isPassageInlineGroup = groupQIds.some(id => passageInlineIds.has(id));
                     const hasInlineInstructions = instructionHasBlanks && anyGroupQInline;
 
-                    if (activeTab === 'reading') {
-                        if (isMatchingGrid || hasInlineInstructions || hasTable) {
-                            return null; // hide entirely from the right pane for reading
-                        }
+                    if (children.length === 0 && !hasTable && !hasInlineInstructions) {
+                        return null;
                     }
 
-                    if (children.length === 0 && !hasTable && !hasInlineInstructions) {
+                    if (hasInlineInstructions && isPassageInlineGroup) {
                         return null;
                     }
 

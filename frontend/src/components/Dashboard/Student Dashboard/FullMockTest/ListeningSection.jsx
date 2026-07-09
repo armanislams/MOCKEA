@@ -1278,7 +1278,8 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                             <div className="flex items-center gap-4">
                                 <button 
                                     onClick={togglePlay}
-                                    className="btn btn-primary btn-circle btn-lg shadow-lg shadow-primary/20 flex-shrink-0"
+                                    disabled={isPlaying}
+                                    className="btn btn-primary btn-circle btn-lg shadow-lg shadow-primary/20 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isPlaying ? <PiPauseCircle className="w-8 h-8" /> : <PiPlayCircle className="w-8 h-8" />}
                                 </button>
@@ -1296,7 +1297,8 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                                     max={duration || 100}
                                     value={currentTime}
                                     onChange={handleProgressChange}
-                                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                    disabled={true}
+                                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-not-allowed accent-primary"
                                 />
                                 <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-500">
                                     <span>{formatAudioTime(currentTime)}</span>
