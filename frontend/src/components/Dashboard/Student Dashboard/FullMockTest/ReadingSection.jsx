@@ -653,11 +653,150 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
         return ids;
     }, [data, offset]);
 
+    const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [data?.questions]);
+    const sharedOptions = useMemo(() => {
+        const first = dragDropQuestions[0];
+        return first?.options?.filter(Boolean) || [];
+    }, [dragDropQuestions]);
+
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
                 const isGroup = groupEntry.type === 'group';
+                const header = groupEntry.header;
                 
+                const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
+                const hasTable = header?.rightSideQuestion || (header?.instructions &&
+                                 /___([\w-]+)___/.test(header.instructions) &&
+                                 /^\|.+\|$/m.test(header.instructions));
+                const hasInlineInstructions = header?.instructions &&
+                                             /___([\w-]+)___/.test(header.instructions) &&
+                                             !hasTable;
+
+                if (isGroup) {
+                    if (isMatchingGrid) {
+                        return (
+                            <GroupedContainer 
+                                key={`group-${header?.fromQuestion || geIdx}-${header?.toQuestion || geIdx}`} 
+                                header={{
+                                    ...header,
+                                    fromQuestion: (offset || 0) + Number(header.fromQuestion),
+                                    toQuestion: (offset || 0) + Number(header.toQuestion)
+                                }}
+                                hideInstructions={false}
+                            >
+                                {groupEntry.visuals.map((vg, vgIdx) => {
+                                    if (vg.type !== 'matching-grid-group') return null;
+                                    return (
+                                        <div key={`grid-right-${geIdx}-${vgIdx}`} className="p-6 bg-white border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs">
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
+                                                Matching Table
+                                            </h3>
+                                            <MatchingGridRenderer
+                                                questions={vg.questions}
+                                                options={vg.options}
+                                                answers={answers}
+                                                onAnswerChange={onAnswerChange}
+                                                offset={offset}
+                                                data={data}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </GroupedContainer>
+                        );
+                    }
+
+                    if (hasTable) {
+                        return (
+                            <GroupedContainer 
+                                key={`group-${header?.fromQuestion || geIdx}-${header?.toQuestion || geIdx}`} 
+                                header={{
+                                    ...header,
+                                    fromQuestion: (offset || 0) + Number(header.fromQuestion),
+                                    toQuestion: (offset || 0) + Number(header.toQuestion)
+                                }}
+                                hideInstructions={true}
+                            >
+                                <TableCompletionRenderer
+                                    instructions={header.instructions}
+                                    allQuestions={data?.questions || []}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                    offset={offset}
+                                />
+                            </GroupedContainer>
+                        );
+                    }
+
+                    if (hasInlineInstructions) {
+                        return (
+                            <GroupedContainer 
+                                key={`group-${header?.fromQuestion || geIdx}-${header?.toQuestion || geIdx}`} 
+                                header={{
+                                    ...header,
+                                    fromQuestion: (offset || 0) + Number(header.fromQuestion),
+                                    toQuestion: (offset || 0) + Number(header.toQuestion)
+                                }}
+                                hideInstructions={true}
+                            >
+                                <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                    {sharedOptions.length > 0 && groupEntry.visuals.some(vg => vg.question?.type === 'drag-drop-completion') && (
+                                        <div className="border-b border-slate-200/60 pb-4 mb-6 pt-2">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
+                                                Drag or click to select an option to fill each blank
+                                            </p>
+                                            <div className="flex flex-wrap justify-center gap-2 pr-1">
+                                                {sharedOptions.map((opt, i) => {
+                                                    const letter = String.fromCharCode(65 + i);
+                                                    const label = `${letter}. ${opt}`;
+                                                    const isPlaced = false;
+                                                    const isSelected = clickedOption === label;
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            draggable={!isPlaced}
+                                                            onDragStart={(e) => {
+                                                                e.dataTransfer.setData("text/plain", label);
+                                                            }}
+                                                            onClick={() => {
+                                                                if (!isPlaced) {
+                                                                    setClickedOption(isSelected ? null : label);
+                                                                }
+                                                            }}
+                                                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
+                                                                isPlaced
+                                                                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                                    : isSelected
+                                                                    ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
+                                                            }`}
+                                                        >
+                                                            {label}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    <ReadingPassageRenderer
+                                        passageContent={header.instructions}
+                                        questions={data?.questions || []}
+                                        answers={answers}
+                                        onAnswerChange={onAnswerChange}
+                                        clickedOption={clickedOption}
+                                        setClickedOption={setClickedOption}
+                                        className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                        offset={offset}
+                                    />
+                                </div>
+                            </GroupedContainer>
+                        );
+                    }
+                }
+
                 const children = groupEntry.visuals.map((vg, vgIdx) => {
                     if (vg.type === 'matching-grid-group') {
                         return null; 
@@ -719,18 +858,6 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                 }).filter(Boolean);
 
                 if (isGroup) {
-                    const header = groupEntry.header;
-                    const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                    const hasTable = header?.rightSideQuestion || (header?.instructions &&
-                                     /___([\w-]+)___/.test(header.instructions) &&
-                                     /^\|.+\|$/m.test(header.instructions));
-
-                    // hasInlineInstructions: instructions contain ___N___ AND at least one of
-                    // this group's questions is actually embedded (rendered inline) in the passage.
-                    // If blanks only appear in the instruction label list (not in passage), show questions normally.
-                    const instructionHasBlanks = header?.instructions &&
-                                                 /___([\w-]+)___/.test(header.instructions) &&
-                                                 !hasTable;
                     const groupQIds = [];
                     groupEntry.visuals.forEach(vg => {
                         if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
@@ -742,10 +869,13 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                         }
                     });
                     const anyGroupQInline = groupQIds.some(id => renderedInlineIds.has(id));
-                    const hasInlineInstructions = instructionHasBlanks && anyGroupQInline;
+                    const instructionHasBlanks = header?.instructions &&
+                                                 /___([\w-]+)___/.test(header.instructions) &&
+                                                 !hasTable;
+                    const hasInlineInstructionsRendered = instructionHasBlanks && anyGroupQInline;
 
-                    if (isMatchingGrid || hasInlineInstructions || hasTable) {
-                        return null; // hide entirely from right pane — shown in left pane
+                    if (isMatchingGrid || hasInlineInstructionsRendered || hasTable) {
+                        return null; 
                     }
 
                     if (children.length === 0 && !hasTable) {
@@ -830,6 +960,14 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
 
     const activeSectionOffset = sectionOffsets[activeSectionIdx] || 0;
 
+    const hasInlineQuestions = useMemo(() => {
+        if (!data) return false;
+        const passages = data.passages || [];
+        const hasInPassages = passages.some(p => p.content && /___([\w-]+)___/.test(p.content));
+        const hasInPassage = data.passage && /___([\w-]+)___/.test(data.passage);
+        return hasInPassages || hasInPassage;
+    }, [data]);
+
     const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [data?.questions]);
     const sharedOptions = useMemo(() => {
         const first = dragDropQuestions[0];
@@ -841,6 +979,30 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
         const groups = groupQuestions(data.questions || [], data.questionGroups, activeSectionOffset, data.questions || []);
         return groupVisualsByQuestionGroups(groups, data.questionGroups, activeSectionOffset, data.questions || []);
     }, [data, activeSectionOffset]);
+
+    const currentTabGroupedItems = useMemo(() => {
+        if (!data) return [];
+        return groupedItems.filter(groupEntry => {
+            const firstQ = groupEntry.visuals[0]?.type === 'matching-grid-group' || groupEntry.visuals[0]?.type === 'multiple-selection-group'
+                ? groupEntry.visuals[0].questions[0] 
+                : groupEntry.visuals[0]?.question;
+            if (!firstQ) return false;
+            const qIdx = data.questions.findIndex(item => item.id === firstQ.id);
+            const qPassageIndex = getQuestionPassageIndex(firstQ, data.questionGroups, qIdx);
+            return qPassageIndex === activePassageTab;
+        });
+    }, [groupedItems, activePassageTab, data]);
+
+    const hasDragDropInActiveTab = useMemo(() => {
+        return currentTabGroupedItems.some(groupEntry => 
+            groupEntry.visuals?.some(vg => {
+                if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
+                    return vg.questions?.some(q => q.type === 'drag-drop-completion');
+                }
+                return vg.question?.type === 'drag-drop-completion';
+            })
+        );
+    }, [currentTabGroupedItems]);
  
     const hasMultipleGroups = data?.questionGroups?.length > 1;
 
@@ -1025,71 +1187,71 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
     const minQuestionNum = activeSectionOffset + 1;
     const maxQuestionNum = activeSectionOffset + (data?.questions?.length || 0);
 
-        const showSectionTabs = sections.length > 1;
-        const showPassageTabs = !showSectionTabs && data?.passages && data.passages.length > 0;
+    const showSectionTabs = sections.length > 1;
+    const showPassageTabs = !showSectionTabs && data?.passages && data.passages.length > 0;
     
-        return (
-            <div className="flex h-full overflow-hidden bg-white">
-                {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
-                <div className="w-[45%] flex flex-col h-full border-r border-base-200">
-                    <div ref={leftPaneScrollRef} className="flex-1 overflow-y-auto p-12">
-                        <div className="max-w-2xl mx-auto space-y-8">
-                            <header className="space-y-2 font-sans">
-                                <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Part {activeSectionIdx + 1}</p>
-                                <h1 className="text-4xl font-extrabold tracking-tight">{data?.passageTitle || data?.title}</h1>
-                                {data?.description && (
-                                    <p className="text-base-content/60 italic leading-relaxed text-lg">
-                                        {data.description}
-                                    </p>
-                                )}
-                            </header>
+    return (
+        <div className="flex h-full overflow-hidden bg-white">
+            {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
+            <div className={`${hasInlineQuestions ? "w-full" : "w-[45%]"} flex flex-col h-full border-r border-base-200`}>
+                <div ref={leftPaneScrollRef} className="flex-1 overflow-y-auto p-12">
+                    <div className="max-w-2xl mx-auto space-y-8">
+                        <header className="space-y-2 font-sans">
+                            <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Part {activeSectionIdx + 1}</p>
+                            <h1 className="text-4xl font-extrabold tracking-tight">{data?.passageTitle || data?.title}</h1>
+                            {data?.description && (
+                                <p className="text-base-content/60 italic leading-relaxed text-lg">
+                                    {data.description}
+                                </p>
+                            )}
+                        </header>
     
-                            {showSectionTabs && (
-                                <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto select-none">
-                                    {sections.map((sec, idx) => (
-                                        <button
-                                            key={idx}
-                                            type="button"
-                                            onClick={() => {
-                                                setActiveSectionIdx(idx);
-                                            }}
-                                            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
-                                                activeSectionIdx === idx
-                                                    ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
-                                                    : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
-                                            }`}
-                                        >
-                                            Passage {idx + 1}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                        {showSectionTabs && (
+                            <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto select-none">
+                                {sections.map((sec, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                            setActiveSectionIdx(idx);
+                                        }}
+                                        className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
+                                            activeSectionIdx === idx
+                                                ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
+                                                : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                        }`}
+                                    >
+                                        Passage {idx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
     
-                            {showPassageTabs && (
-                                <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto select-none">
-                                    {data.passages.map((p, idx) => (
-                                        <button
-                                            key={idx}
-                                            type="button"
-                                            onClick={() => {
-                                                setActivePassageTab(idx);
-                                            }}
-                                            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
-                                                activePassageTab === idx
-                                                    ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
-                                                    : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
-                                            }`}
-                                        >
-                                            Passage {idx + 1}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                            {showPassageTabs && data.passages[activePassageTab] && (
-                                <h3 className="text-2xl font-black tracking-tight mb-6 text-slate-700 font-sans">
-                                    {data.passages[activePassageTab].title}
-                                </h3>
-                            )}
+                        {showPassageTabs && (
+                            <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto select-none">
+                                {data.passages.map((p, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                            setActivePassageTab(idx);
+                                        }}
+                                        className={`px-6 py-3 font-bold text-sm border-b-2 transition-all whitespace-nowrap ${
+                                            activePassageTab === idx
+                                                ? "border-primary text-primary font-black bg-primary/5 rounded-t-xl"
+                                                : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-t-xl"
+                                        }`}
+                                    >
+                                        Passage {idx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {showPassageTabs && data.passages[activePassageTab] && (
+                            <h3 className="text-2xl font-black tracking-tight mb-6 text-slate-700 font-sans">
+                                {data.passages[activePassageTab].title}
+                            </h3>
+                        )}
 
                         {data && (
                             <div 
@@ -1259,122 +1421,123 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                             );
                         })}
                     </div>
-                            </div>  </div>
-
-            <div className="w-[55%] overflow-y-auto p-12 bg-base-100 relative">
-                <div className="max-w-3xl mx-auto flex gap-8 items-start">
-                    <div className="flex-1 min-w-0 space-y-12">
-                        <header className="space-y-4">
-                            <div className="flex items-center gap-2 text-primary">
-                                <PiNotePencil className="w-6 h-6" />
-                                <h2 className="text-xl font-black uppercase tracking-widest">Questions {minQuestionNum}–{maxQuestionNum}</h2>
-                            </div>
-                        </header>
-
-                        <div className="space-y-8">
-                            <GroupedQuestionsRenderer
-                                groupedItems={groupedItems}
-                                answers={scopedAnswers}
-                                onAnswerChange={handleLocalAnswerChange}
-                                offset={activeSectionOffset}
-                                data={data}
-                                clickedOption={clickedOption}
-                                setClickedOption={setClickedOption}
-                            />
-                        </div>
-
-                        {showSectionTabs && activeSectionIdx < sections.length - 1 && (
-                            <div className="flex justify-end pt-8">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setActiveSectionIdx(activeSectionIdx + 1);
-                                    }}
-                                    className="btn btn-primary rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest shadow-md shadow-primary/10 flex items-center gap-2 hover:scale-105 transition-transform"
-                                >
-                                    Go to Passage {activeSectionIdx + 2}
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                                    </svg>
-                                </button>
-                            </div>
-                        )}
-                        {showPassageTabs && activePassageTab < data.passages.length - 1 && (
-                            <div className="flex justify-end pt-8">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setActivePassageTab(activePassageTab + 1);
-                                    }}
-                                    className="btn btn-primary rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest shadow-md shadow-primary/10 flex items-center gap-2 hover:scale-105 transition-transform"
-                                >
-                                    Go to Passage {activePassageTab + 2}
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                                    </svg>
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Options pool placed as a sticky right sidebar next to the flowchart/questions */}
-                    {sharedOptions.length > 0 && (
-                        <div className="w-56 shrink-0 sticky top-0 bg-slate-50 border border-slate-200/80 rounded-3xl p-6 space-y-4 shadow-xs">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
-                                Answers Bank
-                            </p>
-                            <p className="text-[10px] text-slate-400 font-bold leading-snug text-center">
-                                Drag or click to place.
-                            </p>
-                            <div className={`flex flex-col gap-2 pr-1 custom-scrollbar ${
-                                hasMultipleGroups ? "max-h-[300px] overflow-y-auto" : ""
-                            }`}>
-                                {sharedOptions.map((opt, i) => {
-                                    const letter = String.fromCharCode(65 + i);
-                                    const label = `${letter}. ${opt}`;
-                                    const isPlaced = false; // Allow multiple use
-                                    const isSelected = clickedOption === label;
-                                    return (
-                                        <div
-                                            key={i}
-                                            draggable={!isPlaced}
-                                            onDragStart={(e) => {
-                                                e.dataTransfer.setData("text/plain", label);
-                                            }}
-                                            onClick={() => {
-                                                if (!isPlaced) {
-                                                    setClickedOption(isSelected ? null : label);
-                                                }
-                                            }}
-                                            className={`px-4 py-3 rounded-xl text-xs font-bold border transition-all select-none text-center ${
-                                                isPlaced
-                                                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
-                                                    : isSelected
-                                                    ? "bg-primary border-primary text-white shadow-md scale-105"
-                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
-                                            }`}
-                                        >
-                                            {label}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
                 </div>
-                {showJumpToPassage && (
-                    <button
-                        type="button"
-                        onClick={scrollToPassage}
-                        className="sticky bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-2.5 bg-slate-900/90 text-white text-xs font-black uppercase tracking-widest rounded-full shadow-2xl backdrop-blur-md border border-white/10 hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
-                        </svg>
-                        Jump to Passage
-                    </button>
-                )}
             </div>
+
+            {/* Right Pane: Question Panel */}
+            {!hasInlineQuestions && (
+                <div className="w-[55%] overflow-y-auto p-12 bg-base-100 relative">
+                    <div className="max-w-3xl mx-auto flex gap-8 items-start">
+                        <div className="flex-1 min-w-0 space-y-12">
+                            <header className="space-y-4">
+                                <div className="flex items-center gap-2 text-primary">
+                                    <PiNotePencil className="w-6 h-6" />
+                                    <h2 className="text-xl font-black uppercase tracking-widest">Questions {minQuestionNum}–{maxQuestionNum}</h2>
+                                </div>
+                            </header>
+
+                            {/* Options Pool at the top of the questions card (scrolls with content) */}
+                            {sharedOptions.length > 0 && hasDragDropInActiveTab && (
+                                <div className="border-b border-slate-200/60 pb-4 mb-6 pt-2">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
+                                        Drag or click to select an option to fill each blank
+                                    </p>
+                                    <div className="flex flex-wrap justify-center gap-2 pr-1">
+                                        {sharedOptions.map((opt, i) => {
+                                            const letter = String.fromCharCode(65 + i);
+                                            const label = `${letter}. ${opt}`;
+                                            const isPlaced = false; // Allow multiple use
+                                            const isSelected = clickedOption === label;
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    draggable={!isPlaced}
+                                                    onDragStart={(e) => {
+                                                        e.dataTransfer.setData("text/plain", label);
+                                                    }}
+                                                    onClick={() => {
+                                                        if (!isPlaced) {
+                                                            setClickedOption(isSelected ? null : label);
+                                                        }
+                                                    }}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
+                                                        isPlaced
+                                                            ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
+                                                            : isSelected
+                                                            ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                            : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
+                                                    }`}
+                                                >
+                                                    {label}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-8">
+                                <GroupedQuestionsRenderer
+                                    groupedItems={currentTabGroupedItems}
+                                    answers={scopedAnswers}
+                                    onAnswerChange={handleLocalAnswerChange}
+                                    offset={activeSectionOffset}
+                                    data={data}
+                                    clickedOption={clickedOption}
+                                    setClickedOption={setClickedOption}
+                                />
+                            </div>
+
+                            {showSectionTabs && activeSectionIdx < sections.length - 1 && (
+                                <div className="flex justify-end pt-8">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setActiveSectionIdx(activeSectionIdx + 1);
+                                        }}
+                                        className="btn btn-primary rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest shadow-md shadow-primary/10 flex items-center gap-2 hover:scale-105 transition-transform"
+                                    >
+                                        Go to Passage {activeSectionIdx + 2}
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            )}
+                            {showPassageTabs && activePassageTab < data.passages.length - 1 && (
+                                <div className="flex justify-end pt-8">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setActivePassageTab(activePassageTab + 1);
+                                        }}
+                                        className="btn btn-primary rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest shadow-md shadow-primary/10 flex items-center gap-2 hover:scale-105 transition-transform"
+                                    >
+                                        Go to Passage {activePassageTab + 2}
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {showJumpToPassage && (
+                <button
+                    type="button"
+                    onClick={scrollToPassage}
+                    className="sticky bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-2.5 bg-slate-900/90 text-white text-xs font-black uppercase tracking-widest rounded-full shadow-2xl backdrop-blur-md border border-white/10 hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                    </svg>
+                    Jump to Passage
+                </button>
+            )}
+
             {/* Floating Highlight Action Toolbar */}
             {toolbar.show && (
                 <div 
