@@ -10,7 +10,8 @@ import {
     PiInfo,
     PiSquaresFour,
     PiList,
-    PiFunnel
+    PiFunnel,
+    PiMagnifyingGlass
 } from "react-icons/pi";
 import { Link, useNavigate } from "react-router";
 import useAdminQuery from "../../../hooks/useAdminQuery";
@@ -28,6 +29,7 @@ const ManageQuestions = () => {
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
     const [filterType, setFilterType] = useState("all");
+    const [searchQuery, setSearchQuery] = useState("");
 
     const { data: questions = [], isLoading, isError, refetch } = useAdminQuery(
         ["admin-questions"],
@@ -41,9 +43,12 @@ const ManageQuestions = () => {
     }, [questions]);
 
     const filteredQuestions = useMemo(() => {
-        if (filterType === "all") return questions;
-        return questions.filter((q) => q.testType === filterType);
-    }, [questions, filterType]);
+        return questions.filter((q) => {
+            const matchesType = filterType === "all" || q.testType === filterType;
+            const matchesSearch = !searchQuery || q.title?.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesType && matchesSearch;
+        });
+    }, [questions, filterType, searchQuery]);
 
     const deleteMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/questions/${id}`),
@@ -89,6 +94,16 @@ const ManageQuestions = () => {
                 subtitle="Manage all IELTS questions across different sections."
                 action={
                     <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search questions..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-slate-700 hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm w-40 sm:w-56"
+                            />
+                            <PiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                        </div>
                         <div className="relative">
                             <select
                                 value={filterType}

@@ -1222,6 +1222,23 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
     return grouped;
 };
 
+const GroupImageRenderer = ({ url }) => {
+    const [isImage, setIsImage] = useState(true);
+    if (!url) return null;
+    const isPotentiallyImage = /\.(jpeg|jpg|gif|png|webp|svg)/i.test(url) || url.includes("cloudinary") || url.includes("img") || url.includes("image");
+    if (!isImage || !isPotentiallyImage) return null;
+    return (
+        <div className="w-full overflow-hidden rounded-2xl border border-base-200 bg-white p-2 mb-4">
+            <img 
+                src={url} 
+                alt="Group Diagram / Map" 
+                className="w-full h-auto max-h-[420px] object-contain mx-auto rounded-xl" 
+                onError={() => setIsImage(false)}
+            />
+        </div>
+    );
+};
+
 const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
         <div className="card p-5 rounded-[2rem] border border-slate-200 bg-slate-50/20 space-y-5 shadow-xs w-full">
@@ -1587,9 +1604,18 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
                 </div>
 
                 {/* ── Reference Media ─────────────────────────────────── */}
-                {activeSet.images?.[0] && (
-                    <ReferenceMediaRenderer url={activeSet.images[0]} />
-                )}
+                {(() => {
+                    if (activeSet.images?.[0]) {
+                        return <ReferenceMediaRenderer url={activeSet.images[0]} />;
+                    }
+                    const groupWithImage = activeSet.questionGroups?.find(g => 
+                        g.linkUrl && /\.(jpeg|jpg|gif|png|webp|svg|cloudinary|img|image)/i.test(g.linkUrl)
+                    );
+                    if (groupWithImage) {
+                        return <ReferenceMediaRenderer url={groupWithImage.linkUrl} />;
+                    }
+                    return null;
+                })()}
 
                 {/* ── Passage (auto-detect table vs inline) ────────── */}
                 {activeSet.passage && activeSet.passage.trim() !== "" && (() => {

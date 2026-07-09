@@ -677,6 +677,23 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
     return grouped;
 };
 
+const GroupImageRenderer = ({ url }) => {
+    const [isImage, setIsImage] = useState(true);
+    if (!url) return null;
+    const isPotentiallyImage = /\.(jpeg|jpg|gif|png|webp|svg)/i.test(url) || url.includes("cloudinary") || url.includes("img") || url.includes("image");
+    if (!isImage || !isPotentiallyImage) return null;
+    return (
+        <div className="w-full overflow-hidden rounded-2xl border border-base-200 bg-white p-2 mb-4">
+            <img 
+                src={url} 
+                alt="Group Diagram / Map" 
+                className="w-full h-auto max-h-[420px] object-contain mx-auto rounded-xl" 
+                onError={() => setIsImage(false)}
+            />
+        </div>
+    );
+};
+
 const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
         <div className="card p-5 rounded-[2rem] border border-slate-200 bg-slate-50/20 space-y-5 shadow-xs w-full">
@@ -1275,12 +1292,26 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                         </div>
 
                         {/* Instructions */}
-                        <div className="p-6 rounded-2xl bg-white border border-base-200 shadow-sm">
+                        <div className="p-6 rounded-2xl bg-white border border-base-200 shadow-sm mb-6">
                             <h3 className="font-bold mb-2">Instructions:</h3>
                             <p className="text-sm text-base-content/60 leading-relaxed">
                                 Listen to the audio and answer the questions on the right. For gap-fill questions, use NO MORE THAN TWO WORDS and/or a number.
                             </p>
                         </div>
+
+                        {/* Map Diagram / Reference Media */}
+                        {(() => {
+                            if (data?.images?.[0]) {
+                                return <ReferenceMediaRenderer url={data.images[0]} />;
+                            }
+                            const groupWithImage = data?.questionGroups?.find(g => 
+                                g.linkUrl && /\.(jpeg|jpg|gif|png|webp|svg|cloudinary|img|image)/i.test(g.linkUrl)
+                            );
+                            if (groupWithImage) {
+                                return <ReferenceMediaRenderer url={groupWithImage.linkUrl} />;
+                            }
+                            return null;
+                        })()}
                     </div>
                 </div>
 
@@ -1296,11 +1327,6 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                                 <h2 className="text-2xl font-black uppercase tracking-widest">Questions {offset + 1}–{offset + (data?.questions?.length || 10)}</h2>
                             </div>
                         </header>
-
-                        {/* ── Reference Media ─────────────────────────────── */}
-                        {data?.images?.[0] && (
-                            <ReferenceMediaRenderer url={data.images[0]} />
-                        )}
 
                         {/* ── Passage (HTML with Inline Inputs) ── */}
                         {hasPassage && (

@@ -144,6 +144,16 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
 
             {!isPteFillBlanks && <p className="font-bold text-slate-700 leading-snug">{q.question}</p>}
 
+            {q.imageUrl && (
+                <div className="w-full">
+                    <img
+                        src={q.imageUrl}
+                        alt={`Map / Diagram for Q${idx + 1}`}
+                        className="w-full max-h-64 object-contain rounded-2xl border border-base-200 bg-white"
+                    />
+                </div>
+            )}
+
             {isPteFillBlanks && (() => {
                 const text = q.question || "";
                 const parts = text.split(/\[blank-\d+\]/g);
@@ -593,6 +603,23 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
     return grouped;
 };
 
+const GroupImageRenderer = ({ url }) => {
+    const [isImage, setIsImage] = useState(true);
+    if (!url) return null;
+    const isPotentiallyImage = /\.(jpeg|jpg|gif|png|webp|svg)/i.test(url) || url.includes("cloudinary") || url.includes("img") || url.includes("image");
+    if (!isImage || !isPotentiallyImage) return null;
+    return (
+        <div className="w-full overflow-hidden rounded-2xl border border-base-200 bg-white p-2 mb-4">
+            <img 
+                src={url} 
+                alt="Group Diagram / Map" 
+                className="w-full h-auto max-h-[420px] object-contain mx-auto rounded-xl" 
+                onError={() => setIsImage(false)}
+            />
+        </div>
+    );
+};
+
 const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
         <div className="card p-5 rounded-[2rem] border border-slate-200 bg-slate-50/20 space-y-5 shadow-xs w-full mb-6">
@@ -629,6 +656,9 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
                 </div>
             )}
             <div className="space-y-6">
+                {header?.linkUrl && (
+                    <GroupImageRenderer url={header.linkUrl} />
+                )}
                 {children}
             </div>
         </div>
@@ -1515,6 +1545,16 @@ const Reading = ({ preloadedSet = null }) => {
                             <h2 className="text-2xl font-black tracking-tight">Question Panel</h2>
                             <PiBookOpenFill className="text-2xl text-primary/20" />
                         </div>
+
+                        {activeSet.images?.[0] && (
+                            <div className="mb-6">
+                                <img
+                                    src={activeSet.images[0]}
+                                    alt="Reference Map / Diagram"
+                                    className="w-full max-h-96 object-contain rounded-2xl border border-base-200 bg-white"
+                                />
+                            </div>
+                        )}
 
                         {/* Options Pool at the top of the questions card (scrolls with content) */}
                         {sharedOptions.length > 0 && hasDragDropInActiveTab && (

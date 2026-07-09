@@ -40,7 +40,6 @@ export default function QuestionSetForm({ mode = "add", questionId }) {
         if (!fetchedQuestion) {
             return <div className="text-center p-8 text-slate-500">Question set not found.</div>;
         }
-
         const parsedData = parseQuestionToState(fetchedQuestion);
         return (
             <QuestionSetFormContent 

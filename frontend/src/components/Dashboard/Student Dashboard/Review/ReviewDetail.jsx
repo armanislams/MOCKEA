@@ -347,6 +347,23 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups) => {
     return grouped;
 };
 
+const GroupImageRenderer = ({ url }) => {
+    const [isImage, setIsImage] = useState(true);
+    if (!url) return null;
+    const isPotentiallyImage = /\.(jpeg|jpg|gif|png|webp|svg)/i.test(url) || url.includes("cloudinary") || url.includes("img") || url.includes("image");
+    if (!isImage || !isPotentiallyImage) return null;
+    return (
+        <div className="w-full overflow-hidden rounded-2xl border border-base-200 bg-white p-2 mb-4">
+            <img 
+                src={url} 
+                alt="Group Diagram / Map" 
+                className="w-full h-auto max-h-[420px] object-contain mx-auto rounded-xl" 
+                onError={() => setIsImage(false)}
+            />
+        </div>
+    );
+};
+
 const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
         <div className="card p-5 rounded-[2rem] border border-slate-200 bg-slate-50/20 space-y-5 shadow-xs w-full mb-6">
@@ -383,6 +400,9 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
                 </div>
             )}
             <div className="space-y-6">
+                {header?.linkUrl && (
+                    <GroupImageRenderer url={header.linkUrl} />
+                )}
                 {children}
             </div>
         </div>

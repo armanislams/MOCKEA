@@ -241,6 +241,16 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 </p>
             </div>
 
+            {q.imageUrl && (
+                <div className="ml-14">
+                    <img
+                        src={q.imageUrl}
+                        alt={`Map / Diagram for Q${offset + idx + 1}`}
+                        className="w-full max-h-64 object-contain rounded-2xl border border-base-200 bg-white"
+                    />
+                </div>
+            )}
+
             {q.type === 'true-false' && (
                 <div className="flex flex-wrap gap-2 ml-14">
                     {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
@@ -546,6 +556,23 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
     return grouped;
 };
 
+const GroupImageRenderer = ({ url }) => {
+    const [isImage, setIsImage] = useState(true);
+    if (!url) return null;
+    const isPotentiallyImage = /\.(jpeg|jpg|gif|png|webp|svg)/i.test(url) || url.includes("cloudinary") || url.includes("img") || url.includes("image");
+    if (!isImage || !isPotentiallyImage) return null;
+    return (
+        <div className="w-full overflow-hidden rounded-2xl border border-base-200 bg-white p-2 mb-4">
+            <img 
+                src={url} 
+                alt="Group Diagram / Map" 
+                className="w-full h-auto max-h-[420px] object-contain mx-auto rounded-xl" 
+                onError={() => setIsImage(false)}
+            />
+        </div>
+    );
+};
+
 const GroupedContainer = ({ header, children, hideInstructions }) => {
     return (
         <div className="card p-5 rounded-[2rem] border border-slate-200 bg-slate-50/20 space-y-5 shadow-xs w-full mb-6">
@@ -582,6 +609,9 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
                 </div>
             )}
             <div className="space-y-6">
+                {header?.linkUrl && (
+                    <GroupImageRenderer url={header.linkUrl} />
+                )}
                 {children}
             </div>
         </div>
@@ -1435,6 +1465,16 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                     <h2 className="text-xl font-black uppercase tracking-widest">Questions {minQuestionNum}–{maxQuestionNum}</h2>
                                 </div>
                             </header>
+
+                            {data.images?.[0] && (
+                                <div className="mb-6">
+                                    <img
+                                        src={data.images[0]}
+                                        alt="Reference Map / Diagram"
+                                        className="w-full max-h-96 object-contain rounded-2xl border border-base-200 bg-white"
+                                    />
+                                </div>
+                            )}
 
                             {/* Options Pool at the top of the questions card (scrolls with content) */}
                             {sharedOptions.length > 0 && hasDragDropInActiveTab && (

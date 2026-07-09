@@ -95,6 +95,23 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                 </div>
             )}
 
+            {(testType === "reading" || testType === "listening") && (
+                <div className="flex flex-col gap-1.5 pt-2">
+                    <label className="text-xs font-bold text-slate-700 tracking-wide">Map / Reference Link or Image URL (Optional)</label>
+                    <input
+                        type="url"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                        placeholder="e.g. https://example.com/map.png (renders map image or reference link)"
+                        value={formData.images?.[0] || ""}
+                        onChange={(e) => {
+                            const newImages = [...(formData.images || [])];
+                            newImages[0] = e.target.value;
+                            patch({ images: newImages });
+                        }}
+                    />
+                </div>
+            )}
+
             {/* ── Question Groups Manager ──────────────────────────── */}
             {(testType === "reading" || testType === "listening") && formData.examType !== "PTE" && (
                 <div className="space-y-4 pt-2">
@@ -455,20 +472,6 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                         />
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-700 tracking-wide">Map / Reference Link or Image URL (Optional)</label>
-                        <input
-                            type="url"
-                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
-                            placeholder="e.g. https://example.com/map.png (renders map image or reference link)"
-                            value={formData.images?.[0] || ""}
-                            onChange={(e) => {
-                                const newImages = [...(formData.images || [])];
-                                newImages[0] = e.target.value;
-                                patch({ images: newImages });
-                            }}
-                        />
-                    </div>
 
                     {/* IELTS/BOTH: Example box + Gapped Notes */}
                     {isIeltsListening && (
