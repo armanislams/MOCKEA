@@ -88,7 +88,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
                                     }
  
                                     return (
-                                        <td key={optIdx} className="px-1.5 py-3 text-center align-middle">">
+                                        <td key={optIdx} className="px-1.5 py-3 text-center align-middle">
                                             {submitted ? (
                                                 cellContent || (
                                                     <input
@@ -1147,6 +1147,18 @@ const Reading = ({ preloadedSet = null }) => {
       })
     );
   }, [currentTabGroupedItems]);
+
+  const hasRightPaneQuestions = useMemo(() => {
+    if (!activeSet) return false;
+    return currentTabGroupedItems.some(groupEntry => {
+      if (groupEntry.type !== 'group') return true;
+      const header = groupEntry.header;
+      const hasInlineInstructions = header?.instructions &&
+                                   /___([\w-]+)___/.test(header.instructions) &&
+                                   !/^\|.+\|$/m.test(header.instructions);
+      return !hasInlineInstructions;
+    });
+  }, [currentTabGroupedItems, activeSet]);
  
   if (selectedSetId !== prevSelectedSetId) {
       setPrevSelectedSetId(selectedSetId);
@@ -1450,7 +1462,7 @@ const Reading = ({ preloadedSet = null }) => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-0">
             {/* Passage Side */}
             {!isPte && (
-                <div className={`${hasInlineQuestions ? "lg:col-span-12" : "lg:col-span-6"} h-full min-h-0`}>
+                <div className={`${!hasRightPaneQuestions ? "lg:col-span-12" : "lg:col-span-6"} h-full min-h-0`}>
                 <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar">
                     <div className="prose prose-slate max-w-none">
                         <h2 className="text-3xl font-black tracking-tight mb-8 text-slate-800">{activeSet.title}</h2>
@@ -1524,7 +1536,7 @@ const Reading = ({ preloadedSet = null }) => {
             )}
 
             {/* Questions Side */}
-            {(!hasInlineQuestions || isPte) && (
+            {(hasRightPaneQuestions || isPte) && (
                 <div className={`${isPte ? "lg:col-span-12" : "lg:col-span-6"} h-full min-h-0`}>
                     <div className="card bg-white p-5 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar relative">
                         <div className="flex items-center justify-between mb-8">

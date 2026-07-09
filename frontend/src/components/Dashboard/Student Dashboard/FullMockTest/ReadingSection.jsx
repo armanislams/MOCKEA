@@ -983,6 +983,18 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
             })
         );
     }, [currentTabGroupedItems]);
+
+    const hasRightPaneQuestions = useMemo(() => {
+        if (!data) return false;
+        return currentTabGroupedItems.some(groupEntry => {
+            if (groupEntry.type !== 'group') return true;
+            const header = groupEntry.header;
+            const hasInlineInstructions = header?.instructions &&
+                                         /___([\w-]+)___/.test(header.instructions) &&
+                                         !/^\|.+\|$/m.test(header.instructions);
+            return !hasInlineInstructions;
+        });
+    }, [currentTabGroupedItems, data]);
  
     const hasMultipleGroups = data?.questionGroups?.length > 1;
 
@@ -1152,7 +1164,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
     return (
         <div className="flex h-full overflow-hidden bg-white">
             {/* Left Pane: Passage with Sticky Question Palette at the Bottom */}
-            <div className={`${hasInlineQuestions ? "w-full" : "w-[45%]"} flex flex-col h-full border-r border-base-200`}>
+            <div className={`${!hasRightPaneQuestions ? "w-full" : "w-[45%]"} flex flex-col h-full border-r border-base-200`}>
                 <div ref={leftPaneScrollRef} className="flex-1 overflow-y-auto p-12">
                     <div className="max-w-2xl mx-auto space-y-8">
                         <header className="space-y-2 font-sans">
@@ -1277,8 +1289,8 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
             </div>
 
             {/* Right Pane: Question Panel */}
-            {!hasInlineQuestions && (
-                <div className="w-[55%] overflow-y-auto p-12 bg-base-100 relative">
+            {hasRightPaneQuestions && (
+                <div className="w-[55%] overflow-y-auto p-6 md:p-8 bg-base-100 relative">
                     <div className="max-w-3xl mx-auto flex gap-8 items-start">
                         <div className="flex-1 min-w-0 space-y-12">
                             <header className="space-y-4">
