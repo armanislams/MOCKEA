@@ -40,11 +40,11 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
                 <table className="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr className="bg-slate-100/80 text-slate-800 font-bold border-b border-slate-200">
-                        <th className="p-3 font-black text-xs uppercase tracking-widest text-slate-500">
+                        <th className="px-2 py-3 font-black text-xs uppercase tracking-widest text-slate-500">
                             Question
                         </th>
                         {options.map((opt, i) => (
-                            <th key={i} className="p-3 text-center font-black text-xs uppercase tracking-widest text-slate-600">
+                            <th key={i} className="px-1.5 py-3 text-center font-black text-xs uppercase tracking-widest text-slate-600">
                                 {opt}
                             </th>
                         ))}
@@ -59,7 +59,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
                         
                         return (
                             <tr key={q.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="p-3 font-semibold text-slate-700 flex items-center gap-3">
+                                <td className="px-2 py-3 font-semibold text-slate-700 flex items-center gap-2 text-xs">
                                     <div className="w-7 h-7 rounded-lg bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-[10px] text-slate-500 flex-shrink-0">
                                         {idx + 1}
                                     </div>
@@ -86,9 +86,9 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
                                             );
                                         }
                                     }
-
+ 
                                     return (
-                                        <td key={optIdx} className="p-3 text-center align-middle">
+                                        <td key={optIdx} className="px-1.5 py-3 text-center align-middle">">
                                             {submitted ? (
                                                 cellContent || (
                                                     <input
@@ -817,31 +817,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                     }
 
                     if (hasInlineInstructions) {
-                        return (
-                            <GroupedContainer 
-                                key={`group-${geIdx}`} 
-                                header={{
-                                    ...header,
-                                    fromQuestion: Number(header.fromQuestion),
-                                    toQuestion: Number(header.toQuestion)
-                                }}
-                                hideInstructions={true}
-                            >
-                                <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
-                                    <ReadingPassageRenderer
-                                        passageContent={header.instructions}
-                                        questions={activeSet.questions || []}
-                                        answers={answers}
-                                        onAnswerChange={handleAnswerChange}
-                                        submitted={submitted}
-                                        result={result}
-                                        clickedOption={clickedOption}
-                                        setClickedOption={setClickedOption}
-                                        className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
-                                    />
-                                </div>
-                            </GroupedContainer>
-                        );
+                        return null;
                     }
                 }
 
@@ -1471,10 +1447,10 @@ const Reading = ({ preloadedSet = null }) => {
             </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 h-[calc(100vh-140px)] min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-0">
             {/* Passage Side */}
             {!isPte && (
-                <div className={`${hasInlineQuestions ? "lg:col-span-5" : "lg:col-span-3"} h-full min-h-0`}>
+                <div className={`${hasInlineQuestions ? "lg:col-span-12" : "lg:col-span-6"} h-full min-h-0`}>
                 <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar">
                     <div className="prose prose-slate max-w-none">
                         <h2 className="text-3xl font-black tracking-tight mb-8 text-slate-800">{activeSet.title}</h2>
@@ -1504,6 +1480,44 @@ const Reading = ({ preloadedSet = null }) => {
                             </h3>
                         )}
                         {passageElement}
+
+                        {/* Inline instructions renderer (e.g. gapped summaries, heading matching with paragraphs) */}
+                        {currentTabGroupedItems.filter(groupEntry => {
+                            if (groupEntry.type !== 'group') return false;
+                            const header = groupEntry.header;
+                            const hasInlineInstructions = header?.instructions &&
+                                                         /___([\w-]+)___/.test(header.instructions) &&
+                                                         !/^\|.+\|$/m.test(header.instructions);
+                            return hasInlineInstructions;
+                        }).map((groupEntry, geIdx) => {
+                            const header = groupEntry.header;
+                            return (
+                                <div key={`left-group-${geIdx}`} className="mt-12 font-sans">
+                                    <GroupedContainer 
+                                        header={{
+                                            ...header,
+                                            fromQuestion: Number(header.fromQuestion),
+                                            toQuestion: Number(header.toQuestion)
+                                        }} 
+                                        hideInstructions={true}
+                                    >
+                                        <div className="p-8 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                            <ReadingPassageRenderer
+                                                passageContent={header.instructions}
+                                                questions={activeSet.questions || []}
+                                                answers={answers}
+                                                onAnswerChange={handleAnswerChange}
+                                                submitted={submitted}
+                                                result={result}
+                                                clickedOption={clickedOption}
+                                                setClickedOption={setClickedOption}
+                                                className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                            />
+                                        </div>
+                                    </GroupedContainer>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
                 </div>
@@ -1511,7 +1525,7 @@ const Reading = ({ preloadedSet = null }) => {
 
             {/* Questions Side */}
             {(!hasInlineQuestions || isPte) && (
-                <div className={`${isPte ? "lg:col-span-5" : "lg:col-span-2"} h-full min-h-0`}>
+                <div className={`${isPte ? "lg:col-span-12" : "lg:col-span-6"} h-full min-h-0`}>
                     <div className="card bg-white p-5 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar relative">
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-2xl font-black tracking-tight">Question Panel</h2>
