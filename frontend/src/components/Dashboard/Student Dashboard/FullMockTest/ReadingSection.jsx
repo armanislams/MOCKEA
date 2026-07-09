@@ -774,68 +774,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                     }
 
                     if (hasInlineInstructions) {
-                        return (
-                            <GroupedContainer 
-                                key={`group-${header?.fromQuestion || geIdx}-${header?.toQuestion || geIdx}`} 
-                                header={{
-                                    ...header,
-                                    fromQuestion: (offset || 0) + Number(header.fromQuestion),
-                                    toQuestion: (offset || 0) + Number(header.toQuestion)
-                                }}
-                                hideInstructions={true}
-                            >
-                                <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
-                                    {sharedOptions.length > 0 && groupEntry.visuals.some(vg => vg.question?.type === 'drag-drop-completion') && (
-                                        <div className="border-b border-slate-200/60 pb-4 mb-6 pt-2">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center mb-3">
-                                                Drag or click to select an option to fill each blank
-                                            </p>
-                                            <div className="flex flex-wrap justify-center gap-2 pr-1">
-                                                {sharedOptions.map((opt, i) => {
-                                                    const letter = String.fromCharCode(65 + i);
-                                                    const label = `${letter}. ${opt}`;
-                                                    const isPlaced = false;
-                                                    const isSelected = clickedOption === label;
-                                                    return (
-                                                        <div
-                                                            key={i}
-                                                            draggable={!isPlaced}
-                                                            onDragStart={(e) => {
-                                                                e.dataTransfer.setData("text/plain", label);
-                                                            }}
-                                                            onClick={() => {
-                                                                if (!isPlaced) {
-                                                                    setClickedOption(isSelected ? null : label);
-                                                                }
-                                                            }}
-                                                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none ${
-                                                                isPlaced
-                                                                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
-                                                                    : isSelected
-                                                                    ? "bg-primary border-primary text-white shadow-md scale-105"
-                                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105 active:scale-95 cursor-pointer"
-                                                            }`}
-                                                        >
-                                                            {label}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-                                    <ReadingPassageRenderer
-                                        passageContent={header.instructions}
-                                        questions={data?.questions || []}
-                                        answers={answers}
-                                        onAnswerChange={onAnswerChange}
-                                        clickedOption={clickedOption}
-                                        setClickedOption={setClickedOption}
-                                        className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
-                                        offset={offset}
-                                    />
-                                </div>
-                            </GroupedContainer>
-                        );
+                        return null;
                     }
                 }
 
@@ -1293,6 +1232,46 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                 />
                             </div>
                         )}
+
+                        {/* Inline instructions renderer (e.g. gapped summaries, heading matching with paragraphs) */}
+                        {currentTabGroupedItems.filter(groupEntry => {
+                            if (groupEntry.type !== 'group') return false;
+                            const header = groupEntry.header;
+                            const hasInlineInstructions = header?.instructions &&
+                                                         /___([\w-]+)___/.test(header.instructions) &&
+                                                         !/^\|.+\|$/m.test(header.instructions);
+                            return hasInlineInstructions;
+                        }).map((groupEntry, geIdx) => {
+                            const header = groupEntry.header;
+                            return (
+                                <div key={`left-group-${geIdx}`} className="mt-12 font-sans">
+                                    <GroupedContainer 
+                                        header={{
+                                            ...header,
+                                            fromQuestion: (activeSectionOffset || 0) + Number(header.fromQuestion),
+                                            toQuestion: (activeSectionOffset || 0) + Number(header.toQuestion)
+                                        }} 
+                                        hideInstructions={true}
+                                    >
+                                        <div className="p-8 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
+                                            <ReadingPassageRenderer
+                                                passageContent={header.instructions}
+                                                questions={data.questions || []}
+                                                answers={scopedAnswers}
+                                                onAnswerChange={handleLocalAnswerChange}
+                                                submitted={undefined}
+                                                result={null}
+                                                clickedOption={clickedOption}
+                                                setClickedOption={setClickedOption}
+                                                className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
+                                                offset={activeSectionOffset}
+                                            />
+                                        </div>
+                                    </GroupedContainer>
+                                </div>
+                            );
+                        })}
+                    {/* End of Passage Container */}
                     </div>
                 </div>
             </div>
