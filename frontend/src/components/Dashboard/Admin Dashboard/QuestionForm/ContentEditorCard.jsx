@@ -95,7 +95,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                 </div>
             )}
 
-            {(testType === "reading" || testType === "listening") && (
+            {testType === "reading" && (
                 <div className="flex flex-col gap-1.5 pt-2">
                     <label className="text-xs font-bold text-slate-700 tracking-wide">Map / Reference Link or Image URL (Optional)</label>
                     <input
@@ -109,6 +109,172 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                             patch({ images: newImages });
                         }}
                     />
+                </div>
+            )}
+
+            {testType === "listening" && (
+                <div className="space-y-5">
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Audio URL</label>
+                            <input
+                                type="url"
+                                className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                                placeholder="Direct link to audio file (Dropbox, S3, Cloudinary…)"
+                                value={formData.audioUrl || ""}
+                                onChange={(e) => patch({ audioUrl: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-700 tracking-wide">Map / Reference Link or Image URL (Optional)</label>
+                            <input
+                                type="url"
+                                className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                                placeholder="e.g. https://example.com/map.png (renders map image or reference link)"
+                                value={formData.images?.[0] || ""}
+                                onChange={(e) => {
+                                    const newImages = [...(formData.images || [])];
+                                    newImages[0] = e.target.value;
+                                    patch({ images: newImages });
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* IELTS/BOTH: Example box + Gapped Notes */}
+                    {isIeltsListening && (
+                        <div className="p-6 bg-indigo-50/40 border border-indigo-100 rounded-3xl space-y-5">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-primary">
+                                IELTS — Example &amp; Notes Context
+                            </h3>
+
+                            {formData.listeningPart === 1 && (
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-xs font-bold text-indigo-700 tracking-wide">
+                                            Example Question Label
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                                            placeholder="e.g. Destination:"
+                                            value={formData.exampleQuestion || ""}
+                                            onChange={(e) => patch({ exampleQuestion: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-xs font-bold text-indigo-700 tracking-wide">
+                                            Example Answer (pre-filled for student)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
+                                            placeholder="e.g. Harbour City"
+                                            value={formData.exampleAnswer || ""}
+                                            onChange={(e) => patch({ exampleAnswer: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-bold text-indigo-700 tracking-wide flex justify-between items-center">
+                                    <span>Gapped Notes / Passage Context (Optional)</span>
+                                    {(formData.listeningPart === 3 || formData.listeningPart === 4) && (
+                                        <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">
+                                            Part {formData.listeningPart} Inline Format Enabled
+                                        </span>
+                                    )}
+                                </label>
+                                <textarea
+                                    id="listening-passage-textarea"
+                                    className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px] font-mono text-slate-800 leading-relaxed"
+                                    placeholder={
+                                        formData.listeningPart === 3
+                                            ? "Novel: (21) ___21___\nProtagonists: Mary Lennox; Colin Craven\nTime period: Early in (22) ___22___..."
+                                            : formData.listeningPart === 4
+                                            ? "| Column Header 1 | Column Header 2 |\n|---|---|\n| Avoid pain | ___31___ |\n| Plan future | ___32___ |"
+                                            : "Transport from Bayswater...\nThe passenger wants to travel to ___1___ on ___2___ of this month..."
+                                    }
+                                    value={formData.passage || ""}
+                                    onChange={(e) => patch({ passage: e.target.value })}
+                                />
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Insert:</span>
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const ta = document.getElementById("listening-passage-textarea");
+                                            const arrow = "↓";
+                                            if (ta) {
+                                                const start = ta.selectionStart;
+                                                const end = ta.selectionEnd;
+                                                const text = formData.passage || "";
+                                                const newText = text.substring(0, start) + arrow + text.substring(end);
+                                                patch({ passage: newText });
+                                                setTimeout(() => {
+                                                    ta.focus();
+                                                    ta.selectionStart = ta.selectionEnd = start + arrow.length;
+                                                }, 0);
+                                            } else {
+                                                patch({ passage: (formData.passage || "") + arrow });
+                                            }
+                                        }}
+                                        className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer flex items-center gap-1"
+                                        title="Insert flowchart arrow (↓) at cursor"
+                                    >
+                                        <span>↓</span> Arrow
+                                    </button>
+
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2 select-none">Gap:</span>
+                                    {(formData.questions || []).map((q, idx) => {
+                                        const num = idx + 1;
+                                        const id = q.id || `l${num}`;
+                                        const alreadyInserted = (formData.passage || "").includes(`___${id}___`);
+                                        return (
+                                            <button
+                                                key={q.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    const ta = document.getElementById("listening-passage-textarea");
+                                                    const placeholder = `___${id}___`;
+                                                    if (ta) {
+                                                        const start = ta.selectionStart;
+                                                        const end = ta.selectionEnd;
+                                                        const text = formData.passage || "";
+                                                        const newText = text.substring(0, start) + placeholder + text.substring(end);
+                                                        patch({ passage: newText });
+                                                        setTimeout(() => {
+                                                            ta.focus();
+                                                            ta.selectionStart = ta.selectionEnd = start + placeholder.length;
+                                                        }, 0);
+                                                    } else {
+                                                        patch({ passage: (formData.passage || "") + `___${id}___` });
+                                                    }
+                                                }}
+                                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                    alreadyInserted
+                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
+                                                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
+                                                }`}
+                                                title={alreadyInserted ? `${id} already in passage` : `Insert ___${id}___ at cursor`}
+                                            >
+                                                Q{num}
+                                            </button>
+                                        );
+                                    })}
+                                    {(!formData.questions || formData.questions.length === 0) && (
+                                        <span className="text-[10px] text-slate-400 italic select-none">Add questions below first, then click to insert gaps</span>
+                                    )}
+                                </div>
+                                <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1 select-none">
+                                    <span>💡 Click a <strong>QN</strong> button to insert a gap at your cursor position, then <strong>keep typing</strong> to add text after it.</span>
+                                    <span>📊 To create a table, use vertical bars (<code>|</code>) at the start and end of rows.</span>
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -457,157 +623,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                     </div>
                 </div>
             )}
-            {/* Listening */}
-            {testType === "listening" && (
-                <div className="space-y-5">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-700 tracking-wide">Audio URL</label>
-                        <input
-                            type="url"
-                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
-                            placeholder="Direct link to audio file (Dropbox, S3, Cloudinary…)"
-                            value={formData.audioUrl}
-                            onChange={(e) => patch({ audioUrl: e.target.value })}
-                            required
-                        />
-                    </div>
 
-
-                    {/* IELTS/BOTH: Example box + Gapped Notes */}
-                    {isIeltsListening && (
-                        <div className="p-6 bg-indigo-50/40 border border-indigo-100 rounded-3xl space-y-5">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-primary">
-                                IELTS — Example &amp; Notes Context
-                            </h3>
-
-                            {formData.listeningPart === 1 && (
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-indigo-700 tracking-wide">
-                                            Example Question Label
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
-                                            placeholder="e.g. Destination:"
-                                            value={formData.exampleQuestion}
-                                            onChange={(e) => patch({ exampleQuestion: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-indigo-700 tracking-wide">
-                                            Example Answer (pre-filled for student)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
-                                            placeholder="e.g. Harbour City"
-                                            value={formData.exampleAnswer}
-                                            onChange={(e) => patch({ exampleAnswer: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-bold text-indigo-700 tracking-wide flex justify-between items-center">
-                                    <span>Gapped Notes / Passage Context (Optional)</span>
-                                    {(formData.listeningPart === 3 || formData.listeningPart === 4) && (
-                                        <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">
-                                            Part {formData.listeningPart} Inline Format Enabled
-                                        </span>
-                                    )}
-                                </label>
-                                <textarea
-                                    id="listening-passage-textarea"
-                                    className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px] font-mono text-slate-800 leading-relaxed"
-                                    placeholder={
-                                        formData.listeningPart === 3
-                                            ? "Novel: (21) ___21___\nProtagonists: Mary Lennox; Colin Craven\nTime period: Early in (22) ___22___..."
-                                            : formData.listeningPart === 4
-                                            ? "| Column Header 1 | Column Header 2 |\n|---|---|\n| Avoid pain | ___31___ |\n| Plan future | ___32___ |"
-                                            : "Transport from Bayswater...\nThe passenger wants to travel to ___1___ on ___2___ of this month..."
-                                    }
-                                    value={formData.passage}
-                                    onChange={(e) => patch({ passage: e.target.value })}
-                                />
-                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Insert:</span>
-                                    
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const ta = document.getElementById("listening-passage-textarea");
-                                            const arrow = "↓";
-                                            if (ta) {
-                                                const start = ta.selectionStart;
-                                                const end = ta.selectionEnd;
-                                                const text = formData.passage || "";
-                                                const newText = text.substring(0, start) + arrow + text.substring(end);
-                                                patch({ passage: newText });
-                                                setTimeout(() => {
-                                                    ta.focus();
-                                                    ta.selectionStart = ta.selectionEnd = start + arrow.length;
-                                                }, 0);
-                                            } else {
-                                                patch({ passage: (formData.passage || "") + arrow });
-                                            }
-                                        }}
-                                        className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer flex items-center gap-1"
-                                        title="Insert flowchart arrow (↓) at cursor"
-                                    >
-                                        <span>↓</span> Arrow
-                                    </button>
-
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2">Gap:</span>
-                                    {(formData.questions || []).map((q, idx) => {
-                                        const num = idx + 1;
-                                        const id = q.id || `l${num}`;
-                                        const alreadyInserted = (formData.passage || "").includes(`___${id}___`);
-                                        return (
-                                            <button
-                                                key={q.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    const ta = document.getElementById("listening-passage-textarea");
-                                                    const placeholder = `___${id}___`;
-                                                    if (ta) {
-                                                        const start = ta.selectionStart;
-                                                        const end = ta.selectionEnd;
-                                                        const text = formData.passage || "";
-                                                        const newText = text.substring(0, start) + placeholder + text.substring(end);
-                                                        patch({ passage: newText });
-                                                        setTimeout(() => {
-                                                            ta.focus();
-                                                            ta.selectionStart = ta.selectionEnd = start + placeholder.length;
-                                                        }, 0);
-                                                    } else {
-                                                        patch({ passage: (formData.passage || "") + `___${id}___` });
-                                                    }
-                                                }}
-                                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
-                                                    alreadyInserted
-                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
-                                                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
-                                                }`}
-                                                title={alreadyInserted ? `${id} already in passage` : `Insert ___${id}___ at cursor`}
-                                            >
-                                                Q{num}
-                                            </button>
-                                        );
-                                    })}
-                                    {(!formData.questions || formData.questions.length === 0) && (
-                                        <span className="text-[10px] text-slate-400 italic">Add questions below first, then click to insert gaps</span>
-                                    )}
-                                </div>
-                                                                <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1">
-                                    <span>💡 Click a <strong>QN</strong> button to insert a gap at your cursor position, then <strong>keep typing</strong> to add text after it.</span>
-                                    <span>📊 To create a table, use vertical bars (<code>|</code>) at the start and end of rows.</span>
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
 
             {/* Writing */}
             {testType === "writing" && (

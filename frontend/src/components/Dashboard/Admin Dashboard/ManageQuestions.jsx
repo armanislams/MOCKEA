@@ -45,7 +45,15 @@ const ManageQuestions = () => {
     const filteredQuestions = useMemo(() => {
         return questions.filter((q) => {
             const matchesType = filterType === "all" || q.testType === filterType;
-            const matchesSearch = !searchQuery || q.title?.toLowerCase().includes(searchQuery.toLowerCase());
+            let matchesSearch = true;
+            if (searchQuery) {
+                try {
+                    const regex = new RegExp(searchQuery, "i");
+                    matchesSearch = regex.test(q.title || "");
+                } catch (e) {
+                    matchesSearch = q.title?.toLowerCase().includes(searchQuery.toLowerCase());
+                }
+            }
             return matchesType && matchesSearch;
         });
     }, [questions, filterType, searchQuery]);
