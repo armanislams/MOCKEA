@@ -247,19 +247,20 @@ const TestEnvironment = () => {
     };
 
     const handleFinalSubmit = async (isTerminated = false) => {
+        const toastId = toast.loading(isTerminated ? "Saving and terminating session..." : "Submitting and grading exam... Please wait.");
         try {
             await axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated });
             localStorage.removeItem(`test_cache_${id}`);
             if (isTerminated) {
-                toast.error("Test session terminated.");
+                toast.update(toastId, { render: "Test session terminated.", type: "error", isLoading: false, autoClose: 3000 });
             } else {
-                toast.success("Test submitted successfully!");
+                toast.update(toastId, { render: "Test submitted successfully!", type: "success", isLoading: false, autoClose: 3000 });
             }
             if (document.fullscreenElement) document.exitFullscreen();
             navigate("/dashboard/full-mock-test");
         } catch (err) {
             console.error(err);
-            toast.error("Submission failed");
+            toast.update(toastId, { render: "Submission failed", type: "error", isLoading: false, autoClose: 3000 });
         }
     };
 
@@ -300,11 +301,10 @@ const TestEnvironment = () => {
             : await alerts.confirmCancelMockTest();
 
         if (result.isConfirmed) {
-            try {
-                await axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated: true });
-            } catch (err) {
+            // Cancel and Exit: Trigger API call in the background without awaiting to navigate instantly
+            axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated: true }).catch(err => {
                 console.error("Failed to terminate test session:", err);
-            }
+            });
             localStorage.removeItem(`test_cache_${id}`);
             if (document.fullscreenElement) document.exitFullscreen();
             navigate("/dashboard/full-mock-test");
@@ -314,14 +314,20 @@ const TestEnvironment = () => {
     const handleTerminateTestClick = async () => {
         const result = await alerts.confirmTerminateMockTest();
         if (result.isConfirmed) {
-            await handleSaveProgress();
+            const toastId = toast.loading("Saving progress and finalising test... Please wait.");
+            try {
+                await handleSaveProgress();
+                toast.dismiss(toastId);
+            } catch (err) {
+                console.error("Failed to save progress on terminate:", err);
+                toast.update(toastId, { render: "Failed to save progress. Submitting anyways...", type: "warning", isLoading: false, autoClose: 2000 });
+            }
             await handleFinalSubmit(true);
         } else if (result.isDenied) {
-            try {
-                await axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated: true });
-            } catch (err) {
+            // Cancel & Exit: Trigger API call in the background to navigate instantly without delay
+            axiosSecure.post("/mock-tests/finalize", { resultId, isTerminated: true }).catch(err => {
                 console.error("Failed to terminate test session:", err);
-            }
+            });
             localStorage.removeItem(`test_cache_${id}`);
             if (document.fullscreenElement) document.exitFullscreen();
             navigate("/dashboard/full-mock-test");
