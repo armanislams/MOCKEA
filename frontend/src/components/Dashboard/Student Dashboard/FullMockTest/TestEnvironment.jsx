@@ -392,6 +392,13 @@ const TestEnvironment = () => {
 
 
 
+    // 1.5 Pre-initialize timer once test details are loaded (to prevent 0:00 flicker on start)
+    useEffect(() => {
+        if (test && !localStorage.getItem(`test_cache_${id}`)) {
+            setTimeLeft((test.totalDuration || DEFAULT_MOCK_TEST_DURATION_MINUTES) * 60);
+        }
+    }, [test, id, setTimeLeft]);
+
     // 2. Initialize Test Session
     useEffect(() => {
         if (isTerminating) return;
