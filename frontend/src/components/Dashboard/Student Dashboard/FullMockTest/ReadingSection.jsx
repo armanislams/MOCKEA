@@ -968,7 +968,6 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
     const [activeNote, setActiveNote] = useState({ show: false, text: "", element: null, x: 0, y: 0 });
     const [activePassageTab, setActivePassageTab] = useState(0);
     const [clickedOption, setClickedOption] = useState(null);
-    const [showJumpToPassage, setShowJumpToPassage] = useState(false);
     const leftPaneScrollRef = useRef(null);
     const passageContainerRef = useRef(null);
 
@@ -1078,28 +1077,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
         return () => document.removeEventListener("pointerdown", handleGlobalClick);
     }, [toolbar.show, activeNote.show]);
 
-    useEffect(() => {
-        const scrollContainer = leftPaneScrollRef.current;
-        const passageEl = passageContainerRef.current;
-        if (!scrollContainer || !passageEl) return;
 
-        const checkVisibility = () => {
-            const containerRect = scrollContainer.getBoundingClientRect();
-            const passageRect = passageEl.getBoundingClientRect();
-            setShowJumpToPassage(passageRect.bottom < containerRect.top + 60);
-        };
-
-        scrollContainer.addEventListener("scroll", checkVisibility, { passive: true });
-        checkVisibility();
-        return () => scrollContainer.removeEventListener("scroll", checkVisibility);
-    }, [data, activePassageTab]);
-
-    const scrollToPassage = useCallback(() => {
-        const passageEl = passageContainerRef.current;
-        if (passageEl) {
-            passageEl.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-    }, []);
 
     // Use a ref for toolbar.show so handleTextSelection stays stable (no new
     // function reference on every toolbar state change), preventing passageElement
@@ -1294,7 +1272,6 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                 {data.passages[activePassageTab].title}
                             </h3>
                         )}
-
                         {data && (
                             <div 
                                 ref={passageContainerRef}
@@ -1316,152 +1293,6 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                                 />
                             </div>
                         )}
- 
-                        {/* Interactive Left-pane Question Groups (matching-grid, inline gap, drag-n-drop) */}
-                        {groupedItems.filter(groupEntry => {
-                            if (groupEntry.type !== 'group') return false;
-                            
-                            // Check active passage tab mapping
-                            const firstQ = groupEntry.visuals[0]?.type === 'matching-grid-group' 
-                                ? groupEntry.visuals[0].questions[0] 
-                                : groupEntry.visuals[0]?.question;
-                            if (!firstQ) return false;
-                            
-                            const qIdx = data.questions.findIndex(item => item.id === firstQ.id);
-                            const qPassageIndex = getQuestionPassageIndex(firstQ, data.questionGroups, qIdx);
-                            if (showPassageTabs && qPassageIndex !== activePassageTab) return false;
-
-                            const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                            const hasInlineInstructions = groupEntry.header?.instructions && 
-                                                          /___([\w-]+)___/.test(groupEntry.header.instructions) && 
-                                                          !/^\|.+\|$/m.test(groupEntry.header.instructions);
-                            const hasTable = groupEntry.header?.rightSideQuestion || (groupEntry.header?.instructions && 
-                                             /___([\w-]+)___/.test(groupEntry.header.instructions) && 
-                                             /^\|.+\|$/m.test(groupEntry.header.instructions));
-                            return isMatchingGrid || hasInlineInstructions || hasTable;
-                        }).map((groupEntry, geIdx) => {
-                            const header = groupEntry.header;
-                            const isMatchingGrid = groupEntry.visuals?.some(vg => vg.type === 'matching-grid-group');
-                            const hasInlineInstructions = header?.instructions && 
-                                                          /___([\w-]+)___/.test(header.instructions) && 
-                                                          !/^\|.+\|$/m.test(header.instructions);
-                            const hasTable = header?.rightSideQuestion || (header?.instructions && 
-                                             /___([\w-]+)___/.test(header.instructions) && 
-                                             /^\|.+\|$/m.test(header.instructions));
-
-                            return (
-                                <div key={`left-group-${header?.fromQuestion || geIdx}-${header?.toQuestion || geIdx}`} className="mt-8 font-sans">
-                                    <GroupedContainer 
-                                        header={{
-                                            ...header,
-                                            fromQuestion: (activeSectionOffset || 0) + Number(header.fromQuestion),
-                                            toQuestion: (activeSectionOffset || 0) + Number(header.toQuestion)
-                                        }} 
-                                        hideInstructions={hasInlineInstructions || hasTable}
-                                    >
-                                        {isMatchingGrid && groupEntry.visuals.map((vg, vgIdx) => {
-                                            if (vg.type !== 'matching-grid-group') return null;
-                                            return (
-                                                <div key={`grid-left-${vgIdx}`} className="p-6 bg-white border border-slate-200 rounded-[2.5rem] space-y-4 shadow-xs">
-                                                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
-                                                        Matching Table
-                                                    </h3>
-                                                    <MatchingGridRenderer
-                                                        questions={vg.questions}
-                                                        options={vg.options}
-                                                        answers={scopedAnswers}
-                                                        onAnswerChange={handleLocalAnswerChange}
-                                                        offset={activeSectionOffset}
-                                                        data={data}
-                                                    />
-                                                </div>
-                                            );
-                                        })}
-                                        {hasTable && (
-                                            <TableCompletionRenderer
-                                                instructions={header.instructions}
-                                                allQuestions={data.questions || []}
-                                                answers={scopedAnswers}
-                                                onAnswerChange={handleLocalAnswerChange}
-                                                submitted={undefined}
-                                                result={null}
-                                                clickedOption={clickedOption}
-                                                setClickedOption={setClickedOption}
-                                                offset={activeSectionOffset}
-                                            />
-                                        )}
-                                        {/* Inline instructions renderer — always first */}
-                                        {hasInlineInstructions && (
-                                            <div className="p-6 bg-white border border-slate-200 rounded-[2.5rem] shadow-xs">
-                                                <ReadingPassageRenderer
-                                                    passageContent={header.instructions}
-                                                    questions={data.questions || []}
-                                                    answers={scopedAnswers}
-                                                    onAnswerChange={handleLocalAnswerChange}
-                                                    submitted={undefined}
-                                                    result={null}
-                                                    clickedOption={clickedOption}
-                                                    setClickedOption={setClickedOption}
-                                                    className="prose prose-sm max-w-none font-sans text-slate-700 leading-relaxed space-y-4"
-                                                    offset={activeSectionOffset}
-                                                />
-                                            </div>
-                                        )}
-                                        {/* Leftover questions: in this group but NOT matched by any ___N___ placeholder.
-                                            Rendered below the inline instructions so they are never lost. */}
-                                        {hasInlineInstructions && (() => {
-                                            const embeddedIds = new Set();
-                                            const placeholderMatches = (header.instructions || "").match(/___([\w-]+)___/g) || [];
-                                            placeholderMatches.forEach(m => {
-                                                const matchKey = m.replace(/___/g, "").trim();
-                                                const q = data.questions?.find((item, idx) => {
-                                                    const questionNum = (activeSectionOffset || 0) + idx + 1;
-                                                    const localIndex = idx + 1;
-                                                    return (
-                                                        item.id === matchKey ||
-                                                        questionNum.toString() === matchKey ||
-                                                        localIndex.toString() === matchKey
-                                                    );
-                                                });
-                                                if (q) embeddedIds.add(q.id);
-                                            });
-
-                                            const leftoverVisuals = groupEntry.visuals.filter(
-                                                vg => vg.type !== 'matching-grid-group' && vg.question && !embeddedIds.has(vg.question.id)
-                                            );
-
-                                            if (leftoverVisuals.length === 0) return null;
-
-                                            return (
-                                                <div className="mt-4 space-y-4">
-                                                    {leftoverVisuals.map(vg => {
-                                                        const q = vg.question;
-                                                        const idx = data.questions.findIndex(item => item.id === q.id);
-                                                        return (
-                                                            <div
-                                                                key={q.id}
-                                                                id={`question-${idx}`}
-                                                                className="p-4 rounded-3xl border border-base-200 bg-white hover:border-primary/30 scroll-mt-6"
-                                                            >
-                                                                <QuestionRenderer
-                                                                    q={q}
-                                                                    idx={idx}
-                                                                    answers={scopedAnswers}
-                                                                    onAnswerChange={handleLocalAnswerChange}
-                                                                    clickedOption={clickedOption}
-                                                                    setClickedOption={setClickedOption}
-                                                                    offset={activeSectionOffset}
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            );
-                                        })()}
-                                    </GroupedContainer>
-                                </div>
-                            );
-                        })}
                     </div>
                 </div>
             </div>
@@ -1577,18 +1408,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
                 </div>
             )}
             
-            {showJumpToPassage && (
-                <button
-                    type="button"
-                    onClick={scrollToPassage}
-                    className="sticky bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-2.5 bg-slate-900/90 text-white text-xs font-black uppercase tracking-widest rounded-full shadow-2xl backdrop-blur-md border border-white/10 hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
-                    </svg>
-                    Jump to Passage
-                </button>
-            )}
+
 
             {/* Floating Highlight Action Toolbar */}
             {toolbar.show && (
