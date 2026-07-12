@@ -16,7 +16,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, dat
                     {infoText}
                 </div>
             )}
-            <div className="overflow-x-auto my-6 border border-base-200 rounded-3xl bg-white p-6 shadow-xs ml-14">
+            <div className="overflow-x-auto my-6 border border-base-200 rounded-3xl bg-white p-6 shadow-xs">
                 <table className="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr className="bg-slate-50 text-slate-800 font-bold border-b border-slate-200">
