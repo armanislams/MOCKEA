@@ -765,71 +765,109 @@ const ReviewDetail = () => {
                             const comments = parsedFeedback.comments || currentSectionResult.feedback;
                             
                             return (
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6">
-                                        <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl ${
-                                            currentSectionResult.isGraded ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-                                        }`}>
-                                            {currentSectionResult.isGraded ? <PiCheckCircleFill /> : <PiClockFill />}
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Band Score / Raw</p>
-                                            <p className="text-3xl font-black tracking-tighter">
-                                                {currentSectionResult.isGraded ? currentSectionResult.score : "Pending"}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {crit && (
-                                        <div className="card bg-white p-6 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-col justify-center">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-3 text-center">Criteria Breakdown</p>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {activeTab === 'writing' ? (
-                                                    <>
-                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
-                                                            <span className="text-sm font-black text-slate-800">{crit.ta}</span>
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Task Resp.</span>
-                                                        </div>
-                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
-                                                            <span className="text-sm font-black text-slate-800">{crit.cc}</span>
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Coherence</span>
-                                                        </div>
-                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
-                                                            <span className="text-sm font-black text-slate-800">{crit.lr}</span>
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Lexical</span>
-                                                        </div>
-                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
-                                                            <span className="text-sm font-black text-slate-800">{crit.gra}</span>
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Grammar</span>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
-                                                            <span className="text-sm font-black text-slate-800">{crit.fc}</span>
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Fluency</span>
-                                                        </div>
-                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
-                                                            <span className="text-sm font-black text-slate-800">{crit.lr}</span>
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Lexical</span>
-                                                        </div>
-                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
-                                                            <span className="text-sm font-black text-slate-800">{crit.gra}</span>
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Grammar</span>
-                                                        </div>
-                                                        <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
-                                                            <span className="text-sm font-black text-slate-800">{crit.pr}</span>
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Pronunc.</span>
-                                                        </div>
-                                                    </>
-                                                )}
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6">
+                                            <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl flex-shrink-0 ${
+                                                currentSectionResult.isGraded ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                                            }`}>
+                                                {currentSectionResult.isGraded ? <PiCheckCircleFill /> : <PiClockFill />}
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Overall Band Score</p>
+                                                <p className="text-3xl font-black tracking-tighter">
+                                                    {currentSectionResult.isGraded ? currentSectionResult.score : "Pending"}
+                                                </p>
                                             </div>
                                         </div>
-                                    )}
 
-                                    <div className={`card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6 ${
-                                        crit ? "" : "md:col-span-2"
-                                    }`}>
+                                        {parsedFeedback.isTwoTasks ? (
+                                            <div className="card bg-white p-6 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-col justify-center">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-base-content/40">Task 1 Details</span>
+                                                    <span className="badge badge-primary font-black text-[9px] uppercase px-2 py-0.5 rounded-lg">Band {parsedFeedback.task1?.bandScore || "—"}</span>
+                                                </div>
+                                                <div className="grid grid-cols-4 gap-1 mt-1 text-center">
+                                                    {Object.entries(parsedFeedback.task1?.criteria || {}).map(([key, val]) => (
+                                                        <div key={key} className="bg-slate-50 p-1.5 rounded-xl border border-slate-100 shadow-inner flex flex-col justify-between items-center">
+                                                            <span className="text-xs font-black text-slate-800">{val}</span>
+                                                            <span className="text-[6px] block font-black uppercase tracking-widest text-slate-400 mt-0.5">{key}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                {parsedFeedback.task1?.feedback && (
+                                                    <p className="text-[9px] font-bold text-slate-500 italic mt-3 line-clamp-2 leading-tight">"{parsedFeedback.task1.feedback}"</p>
+                                                )}
+                                            </div>
+                                        ) : crit ? (
+                                            <div className="card bg-white p-6 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-col justify-center">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-3 text-center">Criteria Breakdown</p>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {activeTab === 'writing' ? (
+                                                        <>
+                                                            <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                                <span className="text-sm font-black text-slate-800">{crit.ta}</span>
+                                                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Task Resp.</span>
+                                                            </div>
+                                                            <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                                <span className="text-sm font-black text-slate-800">{crit.cc}</span>
+                                                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Coherence</span>
+                                                            </div>
+                                                            <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                                <span className="text-sm font-black text-slate-800">{crit.lr}</span>
+                                                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Lexical</span>
+                                                            </div>
+                                                            <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                                <span className="text-sm font-black text-slate-800">{crit.gra}</span>
+                                                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Grammar</span>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                                <span className="text-sm font-black text-slate-800">{crit.fc}</span>
+                                                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Fluency</span>
+                                                            </div>
+                                                            <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                                <span className="text-sm font-black text-slate-800">{crit.lr}</span>
+                                                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Lexical</span>
+                                                            </div>
+                                                            <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                                <span className="text-sm font-black text-slate-800">{crit.gra}</span>
+                                                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Grammar</span>
+                                                            </div>
+                                                            <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center justify-center border border-slate-100 shadow-inner">
+                                                                <span className="text-sm font-black text-slate-800">{crit.pr}</span>
+                                                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Pronunc.</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ) : null}
+
+                                        {parsedFeedback.isTwoTasks ? (
+                                            <div className="card bg-white p-6 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-col justify-center">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-base-content/40">Task 2 Details</span>
+                                                    <span className="badge badge-primary font-black text-[9px] uppercase px-2 py-0.5 rounded-lg">Band {parsedFeedback.task2?.bandScore || "—"}</span>
+                                                </div>
+                                                <div className="grid grid-cols-4 gap-1 mt-1 text-center">
+                                                    {Object.entries(parsedFeedback.task2?.criteria || {}).map(([key, val]) => (
+                                                        <div key={key} className="bg-slate-50 p-1.5 rounded-xl border border-slate-100 shadow-inner flex flex-col justify-between items-center">
+                                                            <span className="text-xs font-black text-slate-800">{val}</span>
+                                                            <span className="text-[6px] block font-black uppercase tracking-widest text-slate-400 mt-0.5">{key}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                {parsedFeedback.task2?.feedback && (
+                                                    <p className="text-[9px] font-bold text-slate-500 italic mt-3 line-clamp-2 leading-tight">"{parsedFeedback.task2.feedback}"</p>
+                                                )}
+                                            </div>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6 w-full">
                                         <div className="w-16 h-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center text-3xl flex-shrink-0">
                                             <PiInfoFill />
                                         </div>

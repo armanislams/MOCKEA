@@ -102,7 +102,10 @@ const GradeSubmissions = () => {
     const [mockReviewData, setMockReviewData] = useState({ 
         score: "", 
         feedback: "", 
-        criteria: { ta: "", cc: "", fc: "", lr: "", gra: "", pr: "" } 
+        criteria: { ta: "", cc: "", fc: "", lr: "", gra: "", pr: "" },
+        task1: { criteria: { ta: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+        task2: { criteria: { tr: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+        comments: ""
     });
     const [loadingEvalDetail, setLoadingEvalDetail] = useState(false);
     const [isEditingMockGrade, setIsEditingMockGrade] = useState(false);
@@ -137,11 +140,25 @@ const GradeSubmissions = () => {
                     section
                 });
                 const parsed = parseFeedback(section?.feedback);
-                setMockReviewData({
-                    score: section?.score?.toString() || "",
-                    feedback: parsed.comments || "",
-                    criteria: parsed.criteria || { ta: "", cc: "", fc: "", lr: "", gra: "", pr: "" }
-                });
+                if (parsed.isTwoTasks) {
+                    setMockReviewData({
+                        score: section?.score?.toString() || "",
+                        feedback: "",
+                        comments: parsed.comments || "",
+                        criteria: { ta: "", cc: "", fc: "", lr: "", gra: "", pr: "" },
+                        task1: parsed.task1 || { criteria: { ta: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+                        task2: parsed.task2 || { criteria: { tr: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" }
+                    });
+                } else {
+                    setMockReviewData({
+                        score: section?.score?.toString() || "",
+                        feedback: parsed.comments || section?.feedback || "",
+                        comments: parsed.comments || section?.feedback || "",
+                        criteria: parsed.criteria || { ta: "", cc: "", fc: "", lr: "", gra: "", pr: "" },
+                        task1: { criteria: { ta: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+                        task2: { criteria: { tr: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" }
+                    });
+                }
                 setIsEditingMockGrade(false);
             } else {
                 toast.error("Failed to load submission details");
@@ -156,6 +173,52 @@ const GradeSubmissions = () => {
     const handleMockReviewSubmit = async (e) => {
         e.preventDefault();
         
+        if (mockEvalDetail.sectionType === 'writing') {
+            const t1c = mockReviewData.task1.criteria || {};
+            const t2c = mockReviewData.task2.criteria || {};
+            const t1List = [t1c.ta, t1c.cc, t1c.lr, t1c.gra];
+            const t2List = [t2c.tr, t2c.cc, t2c.lr, t2c.gra];
+            
+            if (t1List.some(s => s === "") || t2List.some(s => s === "")) {
+                return toast.error("Please select all criteria for both Task 1 and Task 2");
+            }
+            
+            const t1Band = calculateIeltsBand(t1List);
+            const t2Band = calculateIeltsBand(t2List);
+            const overallBand = calculateIeltsBand([t1Band, t2Band, t2Band]);
+            
+            const serializedFeedback = JSON.stringify({
+                task1: {
+                    criteria: t1c,
+                    feedback: mockReviewData.task1.feedback,
+                    bandScore: t1Band.toFixed(1)
+                },
+                task2: {
+                    criteria: t2c,
+                    feedback: mockReviewData.task2.feedback,
+                    bandScore: t2Band.toFixed(1)
+                },
+                comments: mockReviewData.comments,
+                overallBand: overallBand.toFixed(1)
+            });
+            
+            setSubmitting(true);
+            try {
+                await gradeMutation.mutateAsync({
+                    resultId: mockEvalDetail.resultId,
+                    sectionType: 'writing',
+                    score: overallBand,
+                    feedback: serializedFeedback
+                });
+                setMockEvalDetail(null);
+            } catch (err) {
+                // error already handled by mutation
+            } finally {
+                setSubmitting(false);
+            }
+            return;
+        }
+
         const criteria = mockReviewData.criteria || {};
         const scoresList = [];
         if (mockEvalDetail.sectionType === 'writing') {
@@ -181,28 +244,17 @@ const GradeSubmissions = () => {
             comments: mockReviewData.feedback
         });
 
+        setSubmitting(true);
         try {
-            setSubmitting(true);
-            const { data } = await axiosSecure.patch("/mock-tests/grade-section", {
+            await gradeMutation.mutateAsync({
                 resultId: mockEvalDetail.resultId,
                 sectionType: mockEvalDetail.sectionType,
                 score: calculatedOverallScore,
                 feedback: serializedFeedback
             });
-            if (data.success) {
-                toast.success("Section graded successfully");
-                setMockEvalDetail(null);
-                setMockReviewData({ 
-                    score: "", 
-                    feedback: "", 
-                    criteria: { ta: "", cc: "", fc: "", lr: "", gra: "", pr: "" } 
-                });
-                queryClient.invalidateQueries({ queryKey: ["all-mock-results"] });
-            } else {
-                toast.error("Failed to submit grade");
-            }
+            setMockEvalDetail(null);
         } catch (error) {
-            toast.error("Error grading section");
+            // handled
         } finally {
             setSubmitting(false);
         }
@@ -216,9 +268,50 @@ const GradeSubmissions = () => {
 
     /* --- Skill Labs State & Query --- */
     const [selectedSubmission, setSelectedSubmission] = useState(null);
-    const [reviewData, setReviewData] = useState({ score: "", bandScore: "", feedback: "" });
+    const [reviewData, setReviewData] = useState({ 
+        score: "", 
+        bandScore: "", 
+        feedback: "",
+        task1: { criteria: { ta: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+        task2: { criteria: { tr: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+        comments: ""
+    });
     const [submitting, setSubmitting] = useState(false);
     const [filter, setFilter] = useState({ status: "pending", testType: "" });
+
+    useEffect(() => {
+        if (selectedSubmission) {
+            const parsed = parseFeedback(selectedSubmission.feedback);
+            if (parsed.isTwoTasks) {
+                setReviewData({
+                    score: selectedSubmission.score?.toString() || "",
+                    bandScore: selectedSubmission.bandScore || "",
+                    feedback: "",
+                    comments: parsed.comments || "",
+                    task1: parsed.task1 || { criteria: { ta: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+                    task2: parsed.task2 || { criteria: { tr: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" }
+                });
+            } else {
+                setReviewData({
+                    score: selectedSubmission.score?.toString() || "",
+                    bandScore: selectedSubmission.bandScore || "",
+                    feedback: parsed.comments || selectedSubmission.feedback || "",
+                    comments: parsed.comments || selectedSubmission.feedback || "",
+                    task1: { criteria: { ta: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+                    task2: { criteria: { tr: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" }
+                });
+            }
+        } else {
+            setReviewData({ 
+                score: "", 
+                bandScore: "", 
+                feedback: "",
+                task1: { criteria: { ta: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+                task2: { criteria: { tr: "", cc: "", lr: "", gra: "" }, feedback: "", bandScore: "" },
+                comments: ""
+            });
+        }
+    }, [selectedSubmission]);
 
     const { 
         data: submissions = [], 
@@ -252,11 +345,49 @@ const GradeSubmissions = () => {
         e.preventDefault();
         try {
             setSubmitting(true);
-            const { data } = await axiosSecure.patch(`/submissions/review/${selectedSubmission._id}`, reviewData);
+            let payload = { ...reviewData };
+            
+            if (selectedSubmission.testType === 'writing') {
+                const t1c = reviewData.task1.criteria || {};
+                const t2c = reviewData.task2.criteria || {};
+                const t1List = [t1c.ta, t1c.cc, t1c.lr, t1c.gra];
+                const t2List = [t2c.tr, t2c.cc, t2c.lr, t2c.gra];
+                
+                if (t1List.some(s => s === "") || t2List.some(s => s === "")) {
+                    setSubmitting(false);
+                    return toast.error("Please select all criteria for both Task 1 and Task 2");
+                }
+                
+                const t1Band = calculateIeltsBand(t1List);
+                const t2Band = calculateIeltsBand(t2List);
+                const overallBand = calculateIeltsBand([t1Band, t2Band, t2Band]);
+                
+                const scorePct = Math.round((overallBand / 9.0) * 100);
+                
+                payload = {
+                    score: scorePct,
+                    bandScore: overallBand.toFixed(1),
+                    feedback: JSON.stringify({
+                        task1: {
+                            criteria: t1c,
+                            feedback: reviewData.task1.feedback,
+                            bandScore: t1Band.toFixed(1)
+                        },
+                        task2: {
+                            criteria: t2c,
+                            feedback: reviewData.task2.feedback,
+                            bandScore: t2Band.toFixed(1)
+                        },
+                        comments: reviewData.comments,
+                        overallBand: overallBand.toFixed(1)
+                    })
+                };
+            }
+            
+            const { data } = await axiosSecure.patch(`/submissions/review/${selectedSubmission._id}`, payload);
             if (data.success) {
                 toast.success("Review submitted successfully!");
                 setSelectedSubmission(null);
-                setReviewData({ score: "", bandScore: "", feedback: "" });
                 fetchSubmissions();
             }
         } catch (error) {
@@ -563,37 +694,179 @@ const GradeSubmissions = () => {
 
                                                      {filter.status === 'pending' ? (
                                                          <form onSubmit={handleReviewSubmit} className="space-y-6">
-                                                             <div className="grid grid-cols-2 gap-4">
-                                                                 <div className="space-y-2">
-                                                                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Score (0-100)</label>
-                                                                     <input 
-                                                                         type="number"
-                                                                         className="input input-sm input-bordered w-full h-12 rounded-xl font-black focus:border-primary text-sm"
-                                                                         placeholder="e.g. 85"
-                                                                         value={reviewData.score}
-                                                                         onChange={(e) => setReviewData({...reviewData, score: e.target.value})}
-                                                                     />
+                                                             {selectedSubmission.testType === 'writing' ? (
+                                                                 <div className="space-y-6">
+                                                                     {/* Task 1 */}
+                                                                     <div className="border border-slate-200 p-4 rounded-2xl bg-white space-y-4">
+                                                                         <div className="flex items-center justify-between border-b pb-2">
+                                                                             <h6 className="text-[10px] font-black uppercase tracking-widest text-primary">Task 1: Academic/General</h6>
+                                                                             {(() => {
+                                                                                 const c = reviewData.task1.criteria || {};
+                                                                                 const list = [c.ta, c.cc, c.lr, c.gra];
+                                                                                 const hasAll = list.length === 4 && list.every(s => s !== "");
+                                                                                 return (
+                                                                                     <span className="badge badge-sm font-black text-xs">
+                                                                                         Band: {hasAll ? calculateIeltsBand(list).toFixed(1) : "—"}
+                                                                                     </span>
+                                                                                 );
+                                                                             })()}
+                                                                         </div>
+                                                                         <div className="grid grid-cols-2 gap-2">
+                                                                             {["ta", "cc", "lr", "gra"].map((field) => {
+                                                                                 const label = field === "ta" ? "Task Achievement (TA)" : field === "cc" ? "Coherence (CC)" : field === "lr" ? "Lexical Resource (LR)" : "Grammar (GRA)";
+                                                                                 const ieltsScoreOptions = ["0", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0", "5.5", "6.0", "6.5", "7.0", "7.5", "8.0", "8.5", "9.0"];
+                                                                                 return (
+                                                                                     <div key={field} className="space-y-1">
+                                                                                         <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">{label}</label>
+                                                                                         <select 
+                                                                                             className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                             value={reviewData.task1.criteria?.[field] || ""}
+                                                                                             onChange={(e) => setReviewData({
+                                                                                                 ...reviewData,
+                                                                                                 task1: {
+                                                                                                     ...reviewData.task1,
+                                                                                                     criteria: { ...reviewData.task1.criteria, [field]: e.target.value }
+                                                                                                 }
+                                                                                             })}
+                                                                                         >
+                                                                                             <option value="">Score</option>
+                                                                                             {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                                         </select>
+                                                                                     </div>
+                                                                                 );
+                                                                             })}
+                                                                         </div>
+                                                                         <div className="space-y-1">
+                                                                             <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Task 1 Feedback</label>
+                                                                             <textarea 
+                                                                                 className="textarea textarea-bordered textarea-sm w-full rounded-xl focus:border-primary text-xs font-semibold"
+                                                                                 placeholder="Task 1 comments..."
+                                                                                 value={reviewData.task1.feedback || ""}
+                                                                                 onChange={(e) => setReviewData({
+                                                                                     ...reviewData,
+                                                                                     task1: { ...reviewData.task1, feedback: e.target.value }
+                                                                                 })}
+                                                                             />
+                                                                         </div>
+                                                                     </div>
+
+                                                                     {/* Task 2 */}
+                                                                     <div className="border border-slate-200 p-4 rounded-2xl bg-white space-y-4">
+                                                                         <div className="flex items-center justify-between border-b pb-2">
+                                                                             <h6 className="text-[10px] font-black uppercase tracking-widest text-primary">Task 2: Essay writing</h6>
+                                                                             {(() => {
+                                                                                 const c = reviewData.task2.criteria || {};
+                                                                                 const list = [c.tr, c.cc, c.lr, c.gra];
+                                                                                 const hasAll = list.length === 4 && list.every(s => s !== "");
+                                                                                 return (
+                                                                                     <span className="badge badge-sm font-black text-xs">
+                                                                                         Band: {hasAll ? calculateIeltsBand(list).toFixed(1) : "—"}
+                                                                                     </span>
+                                                                                 );
+                                                                             })()}
+                                                                         </div>
+                                                                         <div className="grid grid-cols-2 gap-2">
+                                                                             {["tr", "cc", "lr", "gra"].map((field) => {
+                                                                                 const label = field === "tr" ? "Task Response (TR)" : field === "cc" ? "Coherence (CC)" : field === "lr" ? "Lexical Resource (LR)" : "Grammar (GRA)";
+                                                                                 const ieltsScoreOptions = ["0", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0", "5.5", "6.0", "6.5", "7.0", "7.5", "8.0", "8.5", "9.0"];
+                                                                                 return (
+                                                                                     <div key={field} className="space-y-1">
+                                                                                         <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">{label}</label>
+                                                                                         <select 
+                                                                                             className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                             value={reviewData.task2.criteria?.[field] || ""}
+                                                                                             onChange={(e) => setReviewData({
+                                                                                                 ...reviewData,
+                                                                                                 task2: {
+                                                                                                     ...reviewData.task2,
+                                                                                                     criteria: { ...reviewData.task2.criteria, [field]: e.target.value }
+                                                                                                 }
+                                                                                             })}
+                                                                                         >
+                                                                                             <option value="">Score</option>
+                                                                                             {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                                         </select>
+                                                                                     </div>
+                                                                                 );
+                                                                             })}
+                                                                         </div>
+                                                                         <div className="space-y-1">
+                                                                             <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Task 2 Feedback</label>
+                                                                             <textarea 
+                                                                                 className="textarea textarea-bordered textarea-sm w-full rounded-xl focus:border-primary text-xs font-semibold"
+                                                                                 placeholder="Task 2 comments..."
+                                                                                 value={reviewData.task2.feedback || ""}
+                                                                                 onChange={(e) => setReviewData({
+                                                                                     ...reviewData,
+                                                                                     task2: { ...reviewData.task2, feedback: e.target.value }
+                                                                                 })}
+                                                                             />
+                                                                         </div>
+                                                                     </div>
+
+                                                                     {(() => {
+                                                                         const c1 = reviewData.task1.criteria || {};
+                                                                         const c2 = reviewData.task2.criteria || {};
+                                                                         const l1 = [c1.ta, c1.cc, c1.lr, c1.gra];
+                                                                         const l2 = [c2.tr, c2.cc, c2.lr, c2.gra];
+                                                                         const h1 = l1.every(s => s !== "");
+                                                                         const h2 = l2.every(s => s !== "");
+                                                                         const t1Band = h1 ? calculateIeltsBand(l1) : 0;
+                                                                         const t2Band = h2 ? calculateIeltsBand(l2) : 0;
+                                                                         const overallBand = (h1 && h2) ? calculateIeltsBand([t1Band, t2Band, t2Band]) : null;
+                                                                         return (
+                                                                             <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl flex items-center justify-between">
+                                                                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Calculated Overall Band:</span>
+                                                                                 <span className="text-xl font-black text-primary">{(h1 && h2) ? overallBand.toFixed(1) : "—"}</span>
+                                                                             </div>
+                                                                         );
+                                                                     })()}
+
+                                                                     <div className="space-y-2">
+                                                                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Overall Professional Comments</label>
+                                                                         <textarea 
+                                                                             className="textarea textarea-bordered w-full rounded-2xl h-32 font-medium focus:border-primary text-sm leading-relaxed"
+                                                                             placeholder="Provide overall constructive advice..."
+                                                                             value={reviewData.comments}
+                                                                             onChange={(e) => setReviewData({...reviewData, comments: e.target.value})}
+                                                                         />
+                                                                     </div>
                                                                  </div>
-                                                                 <div className="space-y-2">
-                                                                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">IELTS Band</label>
-                                                                     <input 
-                                                                         type="text"
-                                                                         className="input input-sm input-bordered w-full h-12 rounded-xl font-black focus:border-primary text-sm"
-                                                                         placeholder="e.g. 7.5"
-                                                                         value={reviewData.bandScore}
-                                                                         onChange={(e) => setReviewData({...reviewData, bandScore: e.target.value})}
-                                                                     />
-                                                                 </div>
-                                                             </div>
-                                                             <div className="space-y-2">
-                                                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Professional Feedback</label>
-                                                                 <textarea 
-                                                                     className="textarea textarea-bordered w-full rounded-2xl h-44 font-medium focus:border-primary text-sm leading-relaxed"
-                                                                     placeholder="Provide detailed constructive criticism..."
-                                                                     value={reviewData.feedback}
-                                                                     onChange={(e) => setReviewData({...reviewData, feedback: e.target.value})}
-                                                                 />
-                                                             </div>
+                                                             ) : (
+                                                                 <>
+                                                                     <div className="grid grid-cols-2 gap-4">
+                                                                         <div className="space-y-2">
+                                                                             <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Score (0-100)</label>
+                                                                             <input 
+                                                                                 type="number"
+                                                                                 className="input input-sm input-bordered w-full h-12 rounded-xl font-black focus:border-primary text-sm"
+                                                                                 placeholder="e.g. 85"
+                                                                                 value={reviewData.score}
+                                                                                 onChange={(e) => setReviewData({...reviewData, score: e.target.value})}
+                                                                             />
+                                                                         </div>
+                                                                         <div className="space-y-2">
+                                                                             <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">IELTS Band</label>
+                                                                             <input 
+                                                                                 type="text"
+                                                                                 className="input input-sm input-bordered w-full h-12 rounded-xl font-black focus:border-primary text-sm"
+                                                                                 placeholder="e.g. 7.5"
+                                                                                 value={reviewData.bandScore}
+                                                                                 onChange={(e) => setReviewData({...reviewData, bandScore: e.target.value})}
+                                                                             />
+                                                                         </div>
+                                                                     </div>
+                                                                     <div className="space-y-2">
+                                                                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Professional Feedback</label>
+                                                                         <textarea 
+                                                                             className="textarea textarea-bordered w-full rounded-2xl h-44 font-medium focus:border-primary text-sm leading-relaxed"
+                                                                             placeholder="Provide detailed constructive criticism..."
+                                                                             value={reviewData.feedback}
+                                                                             onChange={(e) => setReviewData({...reviewData, feedback: e.target.value})}
+                                                                         />
+                                                                     </div>
+                                                                 </>
+                                                             )}
                                                              <button 
                                                                  type="submit"
                                                                  disabled={submitting}
@@ -604,28 +877,84 @@ const GradeSubmissions = () => {
                                                          </form>
                                                      ) : (
                                                          <div className="space-y-6">
-                                                             <div className="grid grid-cols-2 gap-4">
-                                                                 <div className="flex flex-col items-center p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                                                                     <span className="text-2xl font-black text-emerald-600">{selectedSubmission.score}%</span>
-                                                                     <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600/60 text-center mt-1">Score</span>
-                                                                 </div>
-                                                                 <div className="flex flex-col items-center p-4 bg-primary/10 rounded-2xl border border-primary/20">
-                                                                     <span className="text-2xl font-black text-primary">{selectedSubmission.bandScore}</span>
-                                                                     <span className="text-[8px] font-black uppercase tracking-widest text-primary/60 text-center mt-1">IELTS Band</span>
-                                                                 </div>
-                                                             </div>
-                                                             <div className="space-y-2">
-                                                                 <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Instructor Feedback</h5>
-                                                                 <div className="p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl font-semibold text-slate-600 italic text-sm leading-relaxed whitespace-pre-wrap">
-                                                                     {selectedSubmission.feedback}
-                                                                 </div>
-                                                             </div>
+                                                             {(() => {
+                                                                 const parsed = parseFeedback(selectedSubmission.feedback);
+                                                                 if (parsed.isTwoTasks) {
+                                                                     return (
+                                                                         <div className="space-y-4">
+                                                                             <div className="grid grid-cols-2 gap-4">
+                                                                                 <div className="flex flex-col items-center p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                                                                     <span className="text-2xl font-black text-emerald-600">{selectedSubmission.score}%</span>
+                                                                                     <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600/60 text-center mt-1">Overall Acc.</span>
+                                                                                 </div>
+                                                                                 <div className="flex flex-col items-center p-4 bg-primary/10 rounded-2xl border border-primary/20">
+                                                                                     <span className="text-2xl font-black text-primary">{selectedSubmission.bandScore}</span>
+                                                                                     <span className="text-[8px] font-black uppercase tracking-widest text-primary/60 text-center mt-1">Average Band</span>
+                                                                                 </div>
+                                                                             </div>
+                                                                             
+                                                                             {parsed.task1 && (
+                                                                                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                                                                                     <div className="flex justify-between items-center border-b pb-1">
+                                                                                         <span className="text-[9px] font-black uppercase tracking-widest text-primary">Task 1 Details</span>
+                                                                                         <span className="badge badge-sm font-black text-[10px]">Band {parsed.task1.bandScore}</span>
+                                                                                     </div>
+                                                                                     {parsed.task1.feedback && (
+                                                                                         <p className="text-xs font-semibold text-slate-600 italic">"{parsed.task1.feedback}"</p>
+                                                                                     )}
+                                                                                 </div>
+                                                                             )}
+
+                                                                             {parsed.task2 && (
+                                                                                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                                                                                     <div className="flex justify-between items-center border-b pb-1">
+                                                                                         <span className="text-[9px] font-black uppercase tracking-widest text-primary">Task 2 Details</span>
+                                                                                         <span className="badge badge-sm font-black text-[10px]">Band {parsed.task2.bandScore}</span>
+                                                                                     </div>
+                                                                                     {parsed.task2.feedback && (
+                                                                                         <p className="text-xs font-semibold text-slate-600 italic">"{parsed.task2.feedback}"</p>
+                                                                                     )}
+                                                                                 </div>
+                                                                             )}
+
+                                                                             {parsed.comments && (
+                                                                                 <div className="space-y-2 pt-2">
+                                                                                     <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Overall Feedback</h5>
+                                                                                     <div className="p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl font-semibold text-slate-600 italic text-sm leading-relaxed whitespace-pre-wrap">
+                                                                                         {parsed.comments}
+                                                                                     </div>
+                                                                                 </div>
+                                                                             )}
+                                                                         </div>
+                                                                     );
+                                                                 }
+                                                                 return (
+                                                                     <>
+                                                                         <div className="grid grid-cols-2 gap-4">
+                                                                             <div className="flex flex-col items-center p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                                                                 <span className="text-2xl font-black text-emerald-600">{selectedSubmission.score}%</span>
+                                                                                 <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600/60 text-center mt-1">Score</span>
+                                                                             </div>
+                                                                             <div className="flex flex-col items-center p-4 bg-primary/10 rounded-2xl border border-primary/20">
+                                                                                 <span className="text-2xl font-black text-primary">{selectedSubmission.bandScore}</span>
+                                                                                 <span className="text-[8px] font-black uppercase tracking-widest text-primary/60 text-center mt-1">IELTS Band</span>
+                                                                             </div>
+                                                                         </div>
+                                                                         <div className="space-y-2">
+                                                                             <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Instructor Feedback</h5>
+                                                                             <div className="p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl font-semibold text-slate-600 italic text-sm leading-relaxed whitespace-pre-wrap">
+                                                                                 {selectedSubmission.feedback}
+                                                                             </div>
+                                                                         </div>
+                                                                     </>
+                                                                 );
+                                                             })()}
                                                          </div>
                                                      )}
                                                  </div>
                                              </div>
                                          </div>
-                                    </div>
+                                      </div>
                                 </motion.div>
                             )}
                         </div>
@@ -863,64 +1192,205 @@ const GradeSubmissions = () => {
                                                     <h6 className="text-[9px] font-black uppercase tracking-widest text-slate-400">Detailed Criteria Scores</h6>
                                                     <div className="grid grid-cols-2 gap-3">
                                                         {isWriting ? (
-                                                            <>
-                                                                <div className="space-y-1">
-                                                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Task Achievement (TA)</label>
-                                                                    <select 
-                                                                        className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
-                                                                        value={mockReviewData.criteria?.ta || ""}
-                                                                        onChange={(e) => setMockReviewData({
-                                                                            ...mockReviewData,
-                                                                            criteria: { ...mockReviewData.criteria, ta: e.target.value }
-                                                                        })}
-                                                                    >
-                                                                        <option value="">Score</option>
-                                                                        {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
-                                                                    </select>
+                                                            <div className="col-span-2 space-y-6">
+                                                                {/* Task 1 Grading */}
+                                                                <div className="border border-slate-200 p-4 rounded-2xl bg-white space-y-4">
+                                                                    <div className="flex items-center justify-between border-b pb-2">
+                                                                        <h6 className="text-[10px] font-black uppercase tracking-widest text-primary">Task 1: Academic/General</h6>
+                                                                        {(() => {
+                                                                            const c = mockReviewData.task1.criteria || {};
+                                                                            const list = [c.ta, c.cc, c.lr, c.gra];
+                                                                            const hasAll = list.length === 4 && list.every(s => s !== "");
+                                                                            return (
+                                                                                <span className="badge badge-sm font-black text-xs">
+                                                                                    Band: {hasAll ? calculateIeltsBand(list).toFixed(1) : "—"}
+                                                                                </span>
+                                                                            );
+                                                                        })()}
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Task Achievement (TA)</label>
+                                                                            <select 
+                                                                                className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                value={mockReviewData.task1.criteria?.ta || ""}
+                                                                                onChange={(e) => setMockReviewData({
+                                                                                    ...mockReviewData,
+                                                                                    task1: {
+                                                                                        ...mockReviewData.task1,
+                                                                                        criteria: { ...mockReviewData.task1.criteria, ta: e.target.value }
+                                                                                    }
+                                                                                })}
+                                                                            >
+                                                                                <option value="">Score</option>
+                                                                                {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Coherence/Cohesion (CC)</label>
+                                                                            <select 
+                                                                                className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                value={mockReviewData.task1.criteria?.cc || ""}
+                                                                                onChange={(e) => setMockReviewData({
+                                                                                    ...mockReviewData,
+                                                                                    task1: {
+                                                                                        ...mockReviewData.task1,
+                                                                                        criteria: { ...mockReviewData.task1.criteria, cc: e.target.value }
+                                                                                    }
+                                                                                })}
+                                                                            >
+                                                                                <option value="">Score</option>
+                                                                                {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Lexical Resource (LR)</label>
+                                                                            <select 
+                                                                                className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                value={mockReviewData.task1.criteria?.lr || ""}
+                                                                                onChange={(e) => setMockReviewData({
+                                                                                    ...mockReviewData,
+                                                                                    task1: {
+                                                                                        ...mockReviewData.task1,
+                                                                                        criteria: { ...mockReviewData.task1.criteria, lr: e.target.value }
+                                                                                    }
+                                                                                })}
+                                                                            >
+                                                                                <option value="">Score</option>
+                                                                                {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Grammar & Accuracy (GRA)</label>
+                                                                            <select 
+                                                                                className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                value={mockReviewData.task1.criteria?.gra || ""}
+                                                                                onChange={(e) => setMockReviewData({
+                                                                                    ...mockReviewData,
+                                                                                    task1: {
+                                                                                        ...mockReviewData.task1,
+                                                                                        criteria: { ...mockReviewData.task1.criteria, gra: e.target.value }
+                                                                                    }
+                                                                                })}
+                                                                            >
+                                                                                <option value="">Score</option>
+                                                                                {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Task 1 Feedback</label>
+                                                                        <textarea 
+                                                                            className="textarea textarea-bordered textarea-sm w-full rounded-xl focus:border-primary text-xs font-semibold"
+                                                                            placeholder="Task 1 comments..."
+                                                                            value={mockReviewData.task1.feedback || ""}
+                                                                            onChange={(e) => setMockReviewData({
+                                                                                ...mockReviewData,
+                                                                                task1: { ...mockReviewData.task1, feedback: e.target.value }
+                                                                            })}
+                                                                        />
+                                                                    </div>
                                                                 </div>
-                                                                <div className="space-y-1">
-                                                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Coherence/Cohesion (CC)</label>
-                                                                    <select 
-                                                                        className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
-                                                                        value={mockReviewData.criteria?.cc || ""}
-                                                                        onChange={(e) => setMockReviewData({
-                                                                            ...mockReviewData,
-                                                                            criteria: { ...mockReviewData.criteria, cc: e.target.value }
-                                                                        })}
-                                                                    >
-                                                                        <option value="">Score</option>
-                                                                        {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
-                                                                    </select>
+
+                                                                {/* Task 2 Grading */}
+                                                                <div className="border border-slate-200 p-4 rounded-2xl bg-white space-y-4">
+                                                                    <div className="flex items-center justify-between border-b pb-2">
+                                                                        <h6 className="text-[10px] font-black uppercase tracking-widest text-primary">Task 2: Essay writing</h6>
+                                                                        {(() => {
+                                                                            const c = mockReviewData.task2.criteria || {};
+                                                                            const list = [c.tr, c.cc, c.lr, c.gra];
+                                                                            const hasAll = list.length === 4 && list.every(s => s !== "");
+                                                                            return (
+                                                                                <span className="badge badge-sm font-black text-xs">
+                                                                                    Band: {hasAll ? calculateIeltsBand(list).toFixed(1) : "—"}
+                                                                                </span>
+                                                                            );
+                                                                        })()}
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Task Response (TR)</label>
+                                                                            <select 
+                                                                                className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                value={mockReviewData.task2.criteria?.tr || ""}
+                                                                                onChange={(e) => setMockReviewData({
+                                                                                    ...mockReviewData,
+                                                                                    task2: {
+                                                                                        ...mockReviewData.task2,
+                                                                                        criteria: { ...mockReviewData.task2.criteria, tr: e.target.value }
+                                                                                    }
+                                                                                })}
+                                                                            >
+                                                                                <option value="">Score</option>
+                                                                                {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Coherence/Cohesion (CC)</label>
+                                                                            <select 
+                                                                                className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                value={mockReviewData.task2.criteria?.cc || ""}
+                                                                                onChange={(e) => setMockReviewData({
+                                                                                    ...mockReviewData,
+                                                                                    task2: {
+                                                                                        ...mockReviewData.task2,
+                                                                                        criteria: { ...mockReviewData.task2.criteria, cc: e.target.value }
+                                                                                    }
+                                                                                })}
+                                                                            >
+                                                                                <option value="">Score</option>
+                                                                                {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Lexical Resource (LR)</label>
+                                                                            <select 
+                                                                                className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                value={mockReviewData.task2.criteria?.lr || ""}
+                                                                                onChange={(e) => setMockReviewData({
+                                                                                    ...mockReviewData,
+                                                                                    task2: {
+                                                                                        ...mockReviewData.task2,
+                                                                                        criteria: { ...mockReviewData.task2.criteria, lr: e.target.value }
+                                                                                    }
+                                                                                })}
+                                                                            >
+                                                                                <option value="">Score</option>
+                                                                                {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Grammar & Accuracy (GRA)</label>
+                                                                            <select 
+                                                                                className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
+                                                                                value={mockReviewData.task2.criteria?.gra || ""}
+                                                                                onChange={(e) => setMockReviewData({
+                                                                                    ...mockReviewData,
+                                                                                    task2: {
+                                                                                        ...mockReviewData.task2,
+                                                                                        criteria: { ...mockReviewData.task2.criteria, gra: e.target.value }
+                                                                                    }
+                                                                                })}
+                                                                            >
+                                                                                <option value="">Score</option>
+                                                                                {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Task 2 Feedback</label>
+                                                                        <textarea 
+                                                                            className="textarea textarea-bordered textarea-sm w-full rounded-xl focus:border-primary text-xs font-semibold"
+                                                                            placeholder="Task 2 comments..."
+                                                                            value={mockReviewData.task2.feedback || ""}
+                                                                            onChange={(e) => setMockReviewData({
+                                                                                ...mockReviewData,
+                                                                                task2: { ...mockReviewData.task2, feedback: e.target.value }
+                                                                            })}
+                                                                        />
+                                                                    </div>
                                                                 </div>
-                                                                <div className="space-y-1">
-                                                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Lexical Resource (LR)</label>
-                                                                    <select 
-                                                                        className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
-                                                                        value={mockReviewData.criteria?.lr || ""}
-                                                                        onChange={(e) => setMockReviewData({
-                                                                            ...mockReviewData,
-                                                                            criteria: { ...mockReviewData.criteria, lr: e.target.value }
-                                                                        })}
-                                                                    >
-                                                                        <option value="">Score</option>
-                                                                        {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
-                                                                    </select>
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-400">Grammar & Accuracy (GRA)</label>
-                                                                    <select 
-                                                                        className="select select-bordered select-sm w-full rounded-xl font-black focus:border-primary text-xs h-10"
-                                                                        value={mockReviewData.criteria?.gra || ""}
-                                                                        onChange={(e) => setMockReviewData({
-                                                                            ...mockReviewData,
-                                                                            criteria: { ...mockReviewData.criteria, gra: e.target.value }
-                                                                        })}
-                                                                    >
-                                                                        <option value="">Score</option>
-                                                                        {ieltsScoreOptions.map(val => <option key={val} value={val}>{val}</option>)}
-                                                                    </select>
-                                                                </div>
-                                                            </>
+                                                            </div>
                                                         ) : (
                                                             <>
                                                                 <div className="space-y-1">
@@ -983,21 +1453,31 @@ const GradeSubmissions = () => {
                                                         )}
                                                     </div>
                                                 </div>
-
+ 
                                                 {(() => {
+                                                    if (isWriting) {
+                                                        const c1 = mockReviewData.task1.criteria || {};
+                                                        const c2 = mockReviewData.task2.criteria || {};
+                                                        const l1 = [c1.ta, c1.cc, c1.lr, c1.gra];
+                                                        const l2 = [c2.tr, c2.cc, c2.lr, c2.gra];
+                                                        const h1 = l1.every(s => s !== "");
+                                                        const h2 = l2.every(s => s !== "");
+                                                        const t1Band = h1 ? calculateIeltsBand(l1) : 0;
+                                                        const t2Band = h2 ? calculateIeltsBand(l2) : 0;
+                                                        const overallBand = (h1 && h2) ? calculateIeltsBand([t1Band, t2Band, t2Band]) : null;
+                                                        return (
+                                                            <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl flex items-center justify-between">
+                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Calculated Overall Band:</span>
+                                                                <span className="text-xl font-black text-primary">{(h1 && h2) ? overallBand.toFixed(1) : "—"}</span>
+                                                            </div>
+                                                        );
+                                                    }
                                                     const scoresList = [];
                                                     const crit = mockReviewData.criteria || {};
-                                                    if (isWriting) {
-                                                        if (crit.ta) scoresList.push(crit.ta);
-                                                        if (crit.cc) scoresList.push(crit.cc);
-                                                        if (crit.lr) scoresList.push(crit.lr);
-                                                        if (crit.gra) scoresList.push(crit.gra);
-                                                    } else {
-                                                        if (crit.fc) scoresList.push(crit.fc);
-                                                        if (crit.lr) scoresList.push(crit.lr);
-                                                        if (crit.gra) scoresList.push(crit.gra);
-                                                        if (crit.pr) scoresList.push(crit.pr);
-                                                    }
+                                                    if (crit.fc) scoresList.push(crit.fc);
+                                                    if (crit.lr) scoresList.push(crit.lr);
+                                                    if (crit.gra) scoresList.push(crit.gra);
+                                                    if (crit.pr) scoresList.push(crit.pr);
                                                     const hasAll = scoresList.length === 4 && scoresList.every(s => s !== "");
                                                     const calcBand = hasAll ? calculateIeltsBand(scoresList) : null;
                                                     return (
@@ -1007,14 +1487,20 @@ const GradeSubmissions = () => {
                                                         </div>
                                                     );
                                                 })()}
-
+ 
                                                 <div className="space-y-2">
                                                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Professional Feedback</label>
                                                     <textarea 
                                                         className="textarea textarea-bordered w-full rounded-2xl h-44 font-medium focus:border-primary text-sm leading-relaxed"
                                                         placeholder="Provide detailed constructive criticism..."
-                                                        value={mockReviewData.feedback}
-                                                        onChange={(e) => setMockReviewData({...mockReviewData, feedback: e.target.value})}
+                                                        value={isWriting ? mockReviewData.comments : mockReviewData.feedback}
+                                                        onChange={(e) => {
+                                                            if (isWriting) {
+                                                                setMockReviewData({...mockReviewData, comments: e.target.value});
+                                                            } else {
+                                                                setMockReviewData({...mockReviewData, feedback: e.target.value});
+                                                            }
+                                                        }}
                                                     />
                                                 </div>
                                                 <div className="flex gap-3 mt-4">

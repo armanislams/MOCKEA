@@ -110,11 +110,54 @@ export const getSubmissions = async (req, res) => {
     }
 };
 
+const calculateIeltsBand = (scoresList) => {
+    if (!scoresList || scoresList.length === 0) return 0;
+    const avg = scoresList.reduce((sum, val) => sum + parseFloat(val || 0), 0) / scoresList.length;
+    const integerPart = Math.floor(avg);
+    const decimalPart = avg - integerPart;
+    if (decimalPart < 0.25) {
+        return integerPart;
+    } else if (decimalPart < 0.75) {
+        return integerPart + 0.5;
+    } else {
+        return integerPart + 1.0;
+    }
+};
+
 export const reviewSubmission = async (req, res) => {
     try {
         const { id } = req.params;
-        const { score, bandScore, feedback } = req.body;
+        let { score, bandScore, feedback } = req.body;
         
+        if (feedback && typeof feedback === 'string' && feedback.trim().startsWith('{') && feedback.trim().endsWith('}')) {
+            try {
+                const parsed = JSON.parse(feedback);
+                if (parsed.task1 && parsed.task2) {
+                    const t1c = parsed.task1.criteria || {};
+                    const t1Scores = [t1c.ta, t1c.cc, t1c.lr, t1c.gra].map(parseFloat).filter(s => !isNaN(s));
+                    
+                    const t2c = parsed.task2.criteria || {};
+                    const t2Scores = [t2c.tr, t2c.cc, t2c.lr, t2c.gra].map(parseFloat).filter(s => !isNaN(s));
+
+                    if (t1Scores.length === 4 && t2Scores.length === 4) {
+                        const t1Band = calculateIeltsBand(t1Scores);
+                        const t2Band = calculateIeltsBand(t2Scores);
+                        const overallBand = calculateIeltsBand([t1Band, t2Band, t2Band]);
+                        
+                        bandScore = overallBand.toFixed(1);
+                        score = Math.round((overallBand / 9.0) * 100);
+                        
+                        parsed.task1.bandScore = t1Band.toFixed(1);
+                        parsed.task2.bandScore = t2Band.toFixed(1);
+                        parsed.overallBand = overallBand.toFixed(1);
+                        feedback = JSON.stringify(parsed);
+                    }
+                }
+            } catch (e) {
+                console.error("Error parsing JSON feedback in practice submission:", e);
+            }
+        }
+
         const instructor = await User.findOne({ email: req.decoded_email });
         const reviewedBy = instructor?._id;
         const reviewedByEmail = req.decoded_email;
