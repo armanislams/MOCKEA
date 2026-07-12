@@ -778,17 +778,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             const part = activeSet?.listeningPart || 1;
                             const isIelts = activeSet?.examType === 'IELTS' || activeSet?.examType === 'BOTH';
                             const offset = isIelts ? (part - 1) * 10 : 0;
-                            const isAnswered = (() => {
-                                if (q.type === 'multiple-selection') {
-                                    const qText = q.question ? q.question.trim().toLowerCase() : "";
-                                    const groupQuestions = activeSet.questions.filter(item => 
-                                        item.type === 'multiple-selection' && 
-                                        (item.question ? item.question.trim().toLowerCase() : "") === qText
-                                    );
-                                    return groupQuestions.some(item => !!answers[item.id]);
-                                }
-                                return !!answers[q.id];
-                            })();
+                            const isAnswered = !!answers[q.id];
                             return (
                                 <div 
                                     key={q.id}

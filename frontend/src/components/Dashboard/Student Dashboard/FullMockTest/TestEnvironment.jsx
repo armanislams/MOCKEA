@@ -564,17 +564,7 @@ const TestEnvironment = () => {
             listeningSections.forEach(sec => {
                 const qs = sec.questions || [];
                 total += qs.length;
-                answered += qs.filter(q => {
-                    if (q.type === 'multiple-selection') {
-                        const qText = q.question ? q.question.trim().toLowerCase() : "";
-                        const groupQuestions = qs.filter(item => 
-                            item.type === 'multiple-selection' && 
-                            (item.question ? item.question.trim().toLowerCase() : "") === qText
-                        );
-                        return groupQuestions.some(item => !!(listeningAnswers[`${sec._id}_${item.id}`]));
-                    }
-                    return !!(listeningAnswers[`${sec._id}_${q.id}`]);
-                }).length;
+                answered += qs.filter(q => !!(listeningAnswers[`${sec._id}_${q.id}`])).length;
             });
             return { total, answered };
         }
@@ -586,17 +576,7 @@ const TestEnvironment = () => {
             readingSections.forEach(sec => {
                 const qs = sec.questions || [];
                 total += qs.length;
-                answered += qs.filter(q => {
-                    if (q.type === 'multiple-selection') {
-                        const qText = q.question ? q.question.trim().toLowerCase() : "";
-                        const groupQuestions = qs.filter(item => 
-                            item.type === 'multiple-selection' && 
-                            (item.question ? item.question.trim().toLowerCase() : "") === qText
-                        );
-                        return groupQuestions.some(item => !!(readingAnswers[`${sec._id}_${item.id}`]));
-                    }
-                    return !!(readingAnswers[`${sec._id}_${q.id}`]);
-                }).length;
+                answered += qs.filter(q => !!(readingAnswers[`${sec._id}_${q.id}`])).length;
             });
             return { total, answered };
         }

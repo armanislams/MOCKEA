@@ -315,27 +315,23 @@ export const finalizeTest = async (req, res) => {
                 const questionSets = result.testId.sections[section.sectionType] || [];
                 
                 // Map all answers to include their original question details first
-                const mappedAnswers = section.answers.map(ans => {
-                    let originalQ = null;
-                    const parts = ans.questionId.split('_');
-                    const firstPart = parts[0];
-                    const hasMatchingQSet = questionSets.some(qSet => qSet._id.toString() === firstPart);
-
-                    const qSetId = hasMatchingQSet ? firstPart : null;
-                    const localQId = hasMatchingQSet ? parts.slice(1).join('_') : ans.questionId;
-
-                    for (const qSet of questionSets) {
-                        if (hasMatchingQSet && qSet._id.toString() !== qSetId) {
-                            continue;
-                        }
-                        const found = qSet.questions.find(q => q.id === localQId);
-                        if (found) {
-                            originalQ = found;
-                            break;
-                        }
+                // Map all questions in the test section to include user answers (if any) in the correct order
+                const mappedAnswers = [];
+                for (const qSet of questionSets) {
+                    const qs = qSet.questions || [];
+                    for (const q of qs) {
+                        const scopedKey = `${qSet._id}_${q.id}`;
+                        const foundAns = section.answers.find(ans => ans.questionId === scopedKey);
+                        
+                        mappedAnswers.push({
+                            ans: {
+                                questionId: scopedKey,
+                                userAnswer: foundAns ? foundAns.userAnswer : ""
+                            },
+                            originalQ: q
+                        });
                     }
-                    return { ans, originalQ };
-                });
+                }
 
                 // Group consecutive multiple-selection questions that share the same question text
                 const groups = [];
