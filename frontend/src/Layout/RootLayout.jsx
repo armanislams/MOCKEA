@@ -93,7 +93,7 @@ export default function RootLayout() {
     }
   };
 
-  if (configLoading || (maintenance.mode && roleLoading)) {
+  if (maintenance.mode && roleLoading) {
     return <Loader />;
   }
 
