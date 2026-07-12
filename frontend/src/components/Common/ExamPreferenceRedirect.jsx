@@ -1,21 +1,30 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import useAuth from "../../hooks/useAuth";
 import useUserProfile from "../../hooks/useUserProfile";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
+import { useQueryClient } from "@tanstack/react-query";
 import Loader from "../Loader/Loader";
 import { motion } from "framer-motion";
 import { PiBookOpenTextFill, PiGlobeHemisphereEastFill, PiArrowRightBold } from "react-icons/pi";
 import { FiCheck } from "react-icons/fi";
 import { Testimonials } from "../Home/Testimonials";
 import { FreeResources } from "../Home/FreeResources";
+import { toast } from "react-toastify";
 
 export default function ExamPreferenceRedirect() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, loading: authLoading } = useAuth();
     const { userData, isLoading: profileLoading } = useUserProfile();
+    const axiosSecure = useAxiosSecure();
+    const queryClient = useQueryClient();
+
+    const queryParams = new URLSearchParams(location.search);
+    const forceSelect = queryParams.get("select") === "true" || queryParams.get("change") === "true";
 
     useEffect(() => {
-        if (authLoading) return;
+        if (authLoading || forceSelect) return;
 
         // If authenticated and profile loaded
         if (user) {
@@ -39,11 +48,23 @@ export default function ExamPreferenceRedirect() {
                 navigate("/ielts", { replace: true });
             }
         }
-    }, [user, authLoading, userData, profileLoading, navigate]);
+    }, [user, authLoading, userData, profileLoading, navigate, forceSelect]);
 
-    // Handle user selection as guest
-    const handleSelectTrack = (track) => {
+    // Handle user selection
+    const handleSelectTrack = async (track) => {
         localStorage.setItem("prefetched_exam", track);
+        
+        if (user && userData?._id) {
+            try {
+                await axiosSecure.patch(`/user/${userData._id}/exam-preference`, { targetExam: track });
+                queryClient.invalidateQueries({ queryKey: ["user-profile", user?.email] });
+                toast.success(`Preferred track updated to ${track}!`);
+            } catch (err) {
+                console.error("Failed to update database preference:", err);
+                toast.error("Failed to save preference to your profile");
+            }
+        }
+
         if (track === "PTE") {
             navigate("/pte");
         } else {
@@ -202,14 +223,7 @@ export default function ExamPreferenceRedirect() {
                 </div>
             </section>
 
-            {/* 3. Free Resources Section */}
-            <section className="py-16 bg-white border-t border-b border-slate-200/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <FreeResources />
-                </div>
-            </section>
-
-            {/* 4. Free Pricing Cards (Hover Cards) */}
+            {/* 3. Free Pricing Cards (Hover Cards) */}
             <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10 flex flex-col items-center">
                 <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
                     <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
@@ -314,6 +328,13 @@ export default function ExamPreferenceRedirect() {
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* 4. Free Resources Section (Moved after Pricing) */}
+            <section className="py-16 bg-white border-t border-b border-slate-200/50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <FreeResources />
                 </div>
             </section>
         </div>

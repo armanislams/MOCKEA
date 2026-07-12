@@ -115,11 +115,11 @@ export const LandingStack = () => {
           {/* testimonials */}
           <Testimonials ref={testimonialsRef} />
 
-          {/* free resources */}
-          <FreeResources ref={resourcesRef} />
-
           {/* pricing */}
           <Pricing />
+
+          {/* free resources */}
+          <FreeResources ref={resourcesRef} />
         </div>
       </section>
     );

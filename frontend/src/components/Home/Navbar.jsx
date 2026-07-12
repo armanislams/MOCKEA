@@ -33,6 +33,11 @@ const Navbar = () => {
           Free Resources
         </NavLink>
       </li>
+      <li>
+        <NavLink className="hover:text-primary text-slate-700 font-bold bg-primary/10 text-primary px-3 py-1 rounded-lg" to="/?select=true">
+          Change Exam Track ({isPte ? "PTE" : "IELTS"})
+        </NavLink>
+      </li>
     </>
   );
   return (
