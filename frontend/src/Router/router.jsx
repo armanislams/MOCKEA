@@ -1,9 +1,5 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router";
-import Home from "../components/Home/Home";
-import Login from "../components/Auth/Login";
-import Register from "../components/Auth/Register";
-import HomeLayout from "../Layout/HomeLayout";
 import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
 import Error from "../components/Common/Error";
@@ -11,9 +7,7 @@ import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 import { SuperAdminRoutes } from "../context/Role Based Routes/SuperAdminRoutes";
 import { InstructorRoutes } from "../context/Role Based Routes/InstructorRoutes";
 import FreePracticeLayout from "../Layout/FreePracticeLayout";
-import AuthLayout from "../components/Auth/AuthLayout";
 import RootLayout from "../Layout/RootLayout";
-import ExamPreferenceRedirect from "../components/Common/ExamPreferenceRedirect";
 import TrackGuard from "../context/TrackGuard";
 
 // Helper for Suspense wrapper
@@ -24,6 +18,12 @@ const withSuspense = (Component) => (
 );
 
 // Lazy Loaded Pages & Layouts
+const Home = lazy(() => import("../components/Home/Home"));
+const Login = lazy(() => import("../components/Auth/Login"));
+const Register = lazy(() => import("../components/Auth/Register"));
+const HomeLayout = lazy(() => import("../Layout/HomeLayout"));
+const AuthLayout = lazy(() => import("../components/Auth/AuthLayout"));
+const ExamPreferenceRedirect = lazy(() => import("../components/Common/ExamPreferenceRedirect"));
 const DashboardLayout = lazy(() => import("../Layout/DashboardLayout"));
 const Profile = lazy(() => import("../components/Dashboard/Profile"));
 const Review = lazy(() => import("../components/Dashboard/Student Dashboard/Review/Review"));
@@ -74,12 +74,12 @@ const router = createBrowserRouter([
       },
       {
         path: "/",
-        element: <HomeLayout />,
+        element: withSuspense(HomeLayout),
         hydrateFallbackElement: <Loader />,
         children: [
           {
             index: true,
-            element: <ExamPreferenceRedirect />,
+            element: withSuspense(ExamPreferenceRedirect),
           },
           {
             path: "ielts",
@@ -88,7 +88,7 @@ const router = createBrowserRouter([
                 index: true,
                 element: (
                   <TrackGuard expectedTrack="IELTS">
-                    <Home />
+                    {withSuspense(Home)}
                   </TrackGuard>
                 ),
               },
@@ -171,15 +171,15 @@ const router = createBrowserRouter([
       },
       {
         path: "/auth",
-        element: <AuthLayout />,
+        element: withSuspense(AuthLayout),
         children: [
           {
             path: "login",
-            element: <Login />,
+            element: withSuspense(Login),
           },
           {
             path: "register",
-            element: <Register />,
+            element: withSuspense(Register),
           },
         ],
       },

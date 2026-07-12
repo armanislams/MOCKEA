@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router";
 import useAuth from "../../hooks/useAuth";
 import useUserProfile from "../../hooks/useUserProfile";
@@ -8,9 +8,10 @@ import Loader from "../Loader/Loader";
 import { motion } from "framer-motion";
 import { PiBookOpenTextFill, PiGlobeHemisphereEastFill, PiArrowRightBold } from "react-icons/pi";
 import { FiCheck } from "react-icons/fi";
-import { Testimonials } from "../Home/Testimonials";
-import { FreeResources } from "../Home/FreeResources";
 import { toast } from "react-toastify";
+
+const Testimonials = lazy(() => import("../Home/Testimonials").then(m => ({ default: m.Testimonials })));
+const FreeResources = lazy(() => import("../Home/FreeResources").then(m => ({ default: m.FreeResources })));
 
 export default function ExamPreferenceRedirect() {
     const navigate = useNavigate();
@@ -219,7 +220,9 @@ export default function ExamPreferenceRedirect() {
             {/* 2. Testimonials Section */}
             <section className="py-16 bg-[#FAF9F6] border-t border-slate-200/50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <Testimonials />
+                    <Suspense fallback={<div className="h-40 w-full animate-pulse bg-slate-100 rounded-3xl" />}>
+                        <Testimonials />
+                    </Suspense>
                 </div>
             </section>
 
@@ -334,7 +337,9 @@ export default function ExamPreferenceRedirect() {
             {/* 4. Free Resources Section (Moved after Pricing) */}
             <section className="py-16 bg-white border-t border-b border-slate-200/50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <FreeResources />
+                    <Suspense fallback={<div className="h-40 w-full animate-pulse bg-slate-100 rounded-3xl" />}>
+                        <FreeResources />
+                    </Suspense>
                 </div>
             </section>
         </div>
