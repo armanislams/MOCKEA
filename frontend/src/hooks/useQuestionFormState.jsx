@@ -23,17 +23,21 @@ export function parseQuestionToState(fetchedQuestion) {
         task1Image = fetchedQuestion.images?.[0] || "";
     }
 
-    let exampleQuestion = "Destination:";
-    let exampleAnswer = "Harbour City";
+    let exampleQuestion = "";
+    let exampleAnswer = "";
     let cleanPassage = fetchedQuestion.passage || "";
 
     if (fetchedQuestion.testType === "listening" && fetchedQuestion.passage) {
         let tempPassage = fetchedQuestion.passage;
 
-        // Extract example label and answer if present
-        const eqMatch = tempPassage.match(/<span>([^<]+)<\/span>\s*<span[^>]*>\s*([^<]+)\s*<\/span>/s);
-        exampleQuestion = eqMatch ? eqMatch[1].trim() : "Destination:";
-        exampleAnswer = eqMatch ? eqMatch[2].trim() : "Harbour City";
+        // Extract example label and answer if example block is present
+        const exampleBlockMatch = tempPassage.match(/<div class=["']mb-6[\s\S]*?<\/div>\s*<\/div>/);
+        if (exampleBlockMatch) {
+            const exampleBlockHtml = exampleBlockMatch[0];
+            const eqMatch = exampleBlockHtml.match(/<span>([^<]+)<\/span>\s*<span[^>]*>\s*([^<]+)\s*<\/span>/s);
+            exampleQuestion = eqMatch ? eqMatch[1].trim() : "";
+            exampleAnswer = eqMatch ? eqMatch[2].trim() : "";
+        }
 
         // Strip any saved example blocks before restoring the editable notes content
         tempPassage = stripListeningExampleBlocks(tempPassage);

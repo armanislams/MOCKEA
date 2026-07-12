@@ -173,8 +173,10 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
         ) {
             if (formData.listeningPart === 1) {
                 const cleanNotes = stripListeningExampleBlocks(formData.passage);
-                // Compile example row + gapped notes into passage HTML
-                const exampleHTML = `
+                // Compile example row + gapped notes into passage HTML if example data exists
+                const hasExample = (formData.exampleQuestion || "").trim() || (formData.exampleAnswer || "").trim();
+                if (hasExample) {
+                    const exampleHTML = `
 <div class="mb-6 p-5 bg-indigo-50/50 border border-indigo-100 rounded-3xl">
   <div class="text-[9px] font-black uppercase tracking-widest text-primary mb-2">Example</div>
   <div class="flex items-center justify-between text-sm font-semibold text-slate-700">
@@ -182,9 +184,14 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
     <span class="px-3 py-1 bg-white border border-slate-200 rounded-xl font-bold text-slate-800">${formData.exampleAnswer || "Harbour City"}</span>
   </div>
 </div>`.trim();
-                data.passage = cleanNotes
-                    ? `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">\n${cleanNotes}\n</div>`
-                    : exampleHTML;
+                    data.passage = cleanNotes
+                        ? `${exampleHTML}\n\n<div class="ielts-listening-notes space-y-4">\n${cleanNotes}\n</div>`
+                        : exampleHTML;
+                } else {
+                    data.passage = cleanNotes
+                        ? `<div class="ielts-listening-notes space-y-4">\n${cleanNotes}\n</div>`
+                        : "";
+                }
             } else {
                 const cleanNotes = stripListeningExampleBlocks(formData.passage);
                 data.passage = cleanNotes
