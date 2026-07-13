@@ -26,7 +26,17 @@ const DashboardLayout = () => {
   const fetchNotifications = async () => {
     try {
       const res = await axiosSecure.get("/user/profile/notifications");
-      setNotifications(res.data?.notifications || []);
+      const fetched = res.data?.notifications || [];
+      const localLastRead = localStorage.getItem("lastNotificationsReadAt");
+      
+      const mapped = fetched.map(n => {
+        const isReadLocally = localLastRead ? new Date(n.createdAt) <= new Date(localLastRead) : false;
+        return {
+          ...n,
+          isRead: n.isRead || isReadLocally
+        };
+      });
+      setNotifications(mapped);
     } catch (err) {
       console.error("Failed to load notifications:", err);
     }
@@ -34,6 +44,8 @@ const DashboardLayout = () => {
 
   const markNotificationsAsRead = async () => {
     try {
+      const now = new Date().toISOString();
+      localStorage.setItem("lastNotificationsReadAt", now);
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       await axiosSecure.put("/user/profile/notifications/read");
       fetchNotifications();

@@ -331,8 +331,12 @@ export const getUserNotifications = async (req, res) => {
 
         const notifications = await Notification.find(query).sort({ createdAt: -1 });
         const lastRead = user.lastNotificationsReadAt ? new Date(user.lastNotificationsReadAt).getTime() : 0;
+        console.log(`[getUserNotifications] User: ${email}, lastNotificationsReadAt: ${user.lastNotificationsReadAt} (${lastRead})`);
+
         const mappedNotifications = notifications.map(n => {
-            const isRead = lastRead ? new Date(n.createdAt).getTime() <= lastRead : false;
+            const nTime = new Date(n.createdAt).getTime();
+            const isRead = lastRead ? nTime <= lastRead : false;
+            console.log(`[getUserNotifications] Notif: ${n.title}, CreatedAt: ${n.createdAt} (${nTime}), isRead: ${isRead}`);
             return {
                 ...n.toObject(),
                 isRead
@@ -348,6 +352,7 @@ export const getUserNotifications = async (req, res) => {
 export const markNotificationsAsRead = async (req, res) => {
     try {
         const email = req.decoded_email;
+        console.log(`[markNotificationsAsRead] Marking for User: ${email}`);
         const user = await User.findOneAndUpdate(
             { email: email.toLowerCase().trim() },
             { $set: { lastNotificationsReadAt: new Date() } },
@@ -356,6 +361,7 @@ export const markNotificationsAsRead = async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
+        console.log(`[markNotificationsAsRead] User ${email} updated lastNotificationsReadAt to: ${user.lastNotificationsReadAt}`);
         return res.status(200).json({ success: true, message: "Notifications marked as read" });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
