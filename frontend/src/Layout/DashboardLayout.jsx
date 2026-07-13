@@ -32,6 +32,16 @@ const DashboardLayout = () => {
     }
   };
 
+  const markNotificationsAsRead = async () => {
+    try {
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      await axiosSecure.put("/user/profile/notifications/read");
+      fetchNotifications();
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchNotifications();
@@ -194,11 +204,11 @@ const DashboardLayout = () => {
                 {isDrawerOpen && <span>My Profile</span>}
               </NavLink>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Notifications">
+             <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Notifications">
               <button 
                 onClick={() => {
-                  fetchNotifications();
                   setShowNotificationsModal(true);
+                  markNotificationsAsRead();
                 }} 
                 className={`w-full flex items-center justify-between ${!isDrawerOpen ? "justify-center" : ""}`}
               >
@@ -206,8 +216,10 @@ const DashboardLayout = () => {
                   <PiBell className="w-5 h-5 shrink-0" />
                   {isDrawerOpen && <span>Notifications</span>}
                 </div>
-                {notifications.length > 0 && (
-                  <span className="badge badge-primary badge-sm font-bold font-mono">{notifications.length}</span>
+                {notifications.filter(n => !n.isRead).length > 0 && (
+                  <span className="badge badge-primary badge-sm font-bold font-mono">
+                    {notifications.filter(n => !n.isRead).length}
+                  </span>
                 )}
               </button>
             </li>

@@ -11,6 +11,7 @@ import {
   verifyEmail,
   updateUserExamPreference,
   getUserNotifications,
+  markNotificationsAsRead,
 } from "../controllers/user.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
@@ -25,6 +26,7 @@ userRouter.use(verifyUserToken);
 
 // Authenticated user routes
 userRouter.get("/profile/notifications", getUserNotifications);
+userRouter.put("/profile/notifications/read", markNotificationsAsRead);
 userRouter.get("/all", verifyUserRole(["admin"]), getAllUser);
 userRouter.get("/:email/role", getUserRole);
 userRouter.get("/:email", getUserProfile);

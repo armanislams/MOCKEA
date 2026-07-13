@@ -330,7 +330,33 @@ export const getUserNotifications = async (req, res) => {
         };
 
         const notifications = await Notification.find(query).sort({ createdAt: -1 });
-        return res.status(200).json({ success: true, notifications });
+        const lastRead = user.lastNotificationsReadAt ? new Date(user.lastNotificationsReadAt).getTime() : 0;
+        const mappedNotifications = notifications.map(n => {
+            const isRead = lastRead ? new Date(n.createdAt).getTime() <= lastRead : false;
+            return {
+                ...n.toObject(),
+                isRead
+            };
+        });
+
+        return res.status(200).json({ success: true, notifications: mappedNotifications });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const markNotificationsAsRead = async (req, res) => {
+    try {
+        const email = req.decoded_email;
+        const user = await User.findOneAndUpdate(
+            { email: email.toLowerCase().trim() },
+            { $set: { lastNotificationsReadAt: new Date() } },
+            { new: true }
+        );
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        return res.status(200).json({ success: true, message: "Notifications marked as read" });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
