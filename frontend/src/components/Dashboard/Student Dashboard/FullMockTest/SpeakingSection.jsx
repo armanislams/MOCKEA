@@ -503,10 +503,10 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
 
     // Auto-start prep timer when student navigates to Part 2 (Cue Card)
     useEffect(() => {
-        if (activePart === 2 && examType !== "PTE" && !part2Url && !isPrepActive && !isRecording) {
+        if (activePart === 2 && examType !== "PTE" && !part2Url && !isPrepActive && !isRecording && !isSaving && !isUploading) {
             startPrep();
         }
-    }, [activePart, examType, part2Url, isPrepActive, isRecording]);
+    }, [activePart, examType, part2Url, isPrepActive, isRecording, isSaving, isUploading]);
 
 
     // Upload to Cloudinary helper

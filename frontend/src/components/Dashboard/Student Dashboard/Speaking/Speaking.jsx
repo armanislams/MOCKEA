@@ -481,10 +481,10 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // Auto-start prep timer when student goes to cue card (Part 2)
   useEffect(() => {
-    if (speakingStep === 2 && activeSet?.examType !== "PTE" && !part2Blob && !isPrepPhase && !isRecording) {
+    if (speakingStep === 2 && activeSet?.examType !== "PTE" && !part2Blob && !isPrepPhase && !isRecording && !isSaving && !isUploading) {
       startPrep();
     }
-  }, [speakingStep, activeSet?.examType, part2Blob, isPrepPhase, isRecording]);
+  }, [speakingStep, activeSet?.examType, part2Blob, isPrepPhase, isRecording, isSaving, isUploading]);
 
 
   // Preparation Timer
