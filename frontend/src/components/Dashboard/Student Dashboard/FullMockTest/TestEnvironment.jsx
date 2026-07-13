@@ -276,11 +276,13 @@ const TestEnvironment = () => {
             }
             return;
         }
-        await handleSaveProgress();
         if (currentModuleIdx < 3) {
+            // Save progress in the background to avoid blocking section transition navigation
+            handleSaveProgress().catch(err => console.error("Error saving progress:", err));
             setCurrentModuleIdx(prev => prev + 1);
             toast.success(`All questions finished! Moving to the ${['Listening', 'Reading', 'Writing', 'Speaking'][currentModuleIdx + 1]} section.`);
         } else {
+            await handleSaveProgress();
             handleFinalSubmit();
         }
     };
@@ -623,6 +625,7 @@ const TestEnvironment = () => {
                 answered: p1 + p2 + p3
             };
         }
+        return { total: 0, answered: 0 };
     // eslint-disable-next-line react-hooks/preserve-manual-memoization
     }, [test, currentModuleIdx, answers]);
 
