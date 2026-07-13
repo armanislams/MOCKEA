@@ -6,6 +6,7 @@ import Error from "../components/Common/Error";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 import { SuperAdminRoutes } from "../context/Role Based Routes/SuperAdminRoutes";
 import { InstructorRoutes } from "../context/Role Based Routes/InstructorRoutes";
+import { StudentRoutes } from "../context/Role Based Routes/StudentRoutes";
 import FreePracticeLayout from "../Layout/FreePracticeLayout";
 import RootLayout from "../Layout/RootLayout";
 import TrackGuard from "../context/TrackGuard";
@@ -187,7 +188,9 @@ const router = createBrowserRouter([
         path: "/test/:id",
         element: (
           <PrivateRoute>
-            {withSuspense(TestEnvironment)}
+            <StudentRoutes>
+              {withSuspense(TestEnvironment)}
+            </StudentRoutes>
           </PrivateRoute>
         ),
       },
@@ -205,23 +208,43 @@ const router = createBrowserRouter([
           },
           {
             path: "practice",
-            element: withSuspense(TakeTest),
+            element: (
+              <StudentRoutes>
+                {withSuspense(TakeTest)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "full-mock-test",
-            element: withSuspense(FullMockTestLibrary),
+            element: (
+              <StudentRoutes>
+                {withSuspense(FullMockTestLibrary)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "review",
-            element: withSuspense(Review),
+            element: (
+              <StudentRoutes>
+                {withSuspense(Review)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "review/:id",
-            element: withSuspense(ReviewDetail),
+            element: (
+              <StudentRoutes>
+                {withSuspense(ReviewDetail)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "analytics",
-            element: withSuspense(Analytics),
+            element: (
+              <StudentRoutes>
+                {withSuspense(Analytics)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "profile",
@@ -229,27 +252,51 @@ const router = createBrowserRouter([
           },
           {
             path: "trainer",
-            element: withSuspense(TrainerLibrary),
+            element: (
+              <StudentRoutes>
+                {withSuspense(TrainerLibrary)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "reading",
-            element: withSuspense(Reading),
+            element: (
+              <StudentRoutes>
+                {withSuspense(Reading)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "listening",
-            element: withSuspense(Listening),
+            element: (
+              <StudentRoutes>
+                {withSuspense(Listening)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "writing",
-            element: withSuspense(Writing),
+            element: (
+              <StudentRoutes>
+                {withSuspense(Writing)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "speaking",
-            element: withSuspense(Speaking),
+            element: (
+              <StudentRoutes>
+                {withSuspense(Speaking)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "courses",
-            element: withSuspense(StudentCourses),
+            element: (
+              <StudentRoutes>
+                {withSuspense(StudentCourses)}
+              </StudentRoutes>
+            ),
           },
           {
             path: "admin/manage-users",
