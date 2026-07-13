@@ -21,9 +21,9 @@ export default function QuestionsBuilderCard({
     handleAddPair,
     updatePair,
 }) {
-    if ((testType === "writing" || testType === "speaking") && formData.examType !== "PTE") return null;
-
     const [showGuide, setShowGuide] = useState(false);
+
+    if ((testType === "writing" || testType === "speaking") && formData.examType !== "PTE") return null;
 
     return (
         <div className="space-y-4">

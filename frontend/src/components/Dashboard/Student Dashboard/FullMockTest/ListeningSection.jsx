@@ -1109,6 +1109,8 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [clickedOption, setClickedOption] = useState(null);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
 
     const handleLocalAnswerChange = useCallback((qId, val) => {
         if (!data?._id) {
@@ -1204,8 +1206,7 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
         return questions?.filter(q => !renderedInlineIds.has(q.id)) || [];
     }, [questions, renderedInlineIds]);
 
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
+
 
     const handleTimeUpdate = () => {
         if (audioRef.current) {

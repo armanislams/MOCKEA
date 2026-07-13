@@ -20,15 +20,17 @@ import QuestionsBuilderCard from "./QuestionsBuilderCard";
 export default function QuestionSetForm({ mode = "add", questionId }) {
     const axiosSecure = useAxiosSecure();
 
-    if (mode === "edit") {
-        const { data: fetchedQuestion, isLoading } = useQuery({
-            queryKey: ["admin-question", questionId],
-            queryFn: async () => {
-                const res = await axiosSecure.get(`/questions/${questionId}`);
-                return res.data.question;
-            }
-        });
+    const isEdit = mode === "edit";
+    const { data: fetchedQuestion, isLoading } = useQuery({
+        queryKey: ["admin-question", questionId],
+        queryFn: async () => {
+            const res = await axiosSecure.get(`/questions/${questionId}`);
+            return res.data.question;
+        },
+        enabled: isEdit && !!questionId
+    });
 
+    if (isEdit) {
         if (isLoading) {
             return (
                 <div className="flex items-center justify-center min-h-[400px]">

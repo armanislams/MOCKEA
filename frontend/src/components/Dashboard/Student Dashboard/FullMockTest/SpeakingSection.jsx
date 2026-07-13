@@ -478,7 +478,7 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
         }
     };
 
-    const stopRecording = () => {
+    function stopRecording() {
         if (mediaRecorderRef.current && isRecording && mediaRecorderRef.current.state !== "inactive") {
             try {
                 setIsSaving(true);
@@ -490,7 +490,7 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
                 setIsRecording(false);
             }
         }
-    };
+    }
 
     const startPrep = () => {
         if (activePart === 2) {
