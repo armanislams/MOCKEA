@@ -665,6 +665,89 @@ const GroupedReviewQuestionsRenderer = ({
 };
 
 
+const ReviewDetailSkeleton = () => {
+    return (
+        <div className="min-h-screen bg-base-200 pb-20 animate-pulse">
+            {/* Sticky Header Skeleton */}
+            <div className="bg-white border-b border-base-300 sticky top-0 z-50">
+                <div className="w-full px-8 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <div className="w-10 h-10 bg-slate-200 rounded-full" />
+                        <div className="space-y-2">
+                            <div className="h-6 w-48 bg-slate-200 rounded-lg" />
+                            <div className="h-3 w-32 bg-slate-200 rounded-lg" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="h-8 w-20 bg-slate-200 rounded-xl" />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <main className="w-full px-8 pt-10">
+                <div className="space-y-8">
+                    {/* Summary Bar Skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="card bg-white p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-row items-center gap-6 h-32">
+                                <div className="w-16 h-16 rounded-3xl bg-slate-200 flex-shrink-0" />
+                                <div className="space-y-2 flex-1">
+                                    <div className="h-3 w-20 bg-slate-200 rounded-md" />
+                                    <div className="h-8 w-16 bg-slate-200 rounded-lg" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Main Content Layout Skeleton (Two-column style) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                        {/* Left column skeleton */}
+                        <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm space-y-6 h-[600px]">
+                            <div className="h-8 w-2/3 bg-slate-200 rounded-lg" />
+                            <div className="space-y-3">
+                                <div className="h-4 w-full bg-slate-200 rounded-md" />
+                                <div className="h-4 w-full bg-slate-200 rounded-md" />
+                                <div className="h-4 w-5/6 bg-slate-200 rounded-md" />
+                                <div className="h-4 w-full bg-slate-200 rounded-md" />
+                                <div className="h-4 w-4/5 bg-slate-200 rounded-md" />
+                            </div>
+                            <div className="space-y-3 pt-4">
+                                <div className="h-4 w-full bg-slate-200 rounded-md" />
+                                <div className="h-4 w-full bg-slate-200 rounded-md" />
+                                <div className="h-4 w-3/4 bg-slate-200 rounded-md" />
+                            </div>
+                        </div>
+
+                        {/* Right column skeleton */}
+                        <div className="space-y-6">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="card p-6 rounded-[2rem] border border-base-300 bg-white shadow-sm space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-slate-200 flex-shrink-0" />
+                                        <div className="h-4 w-1/3 bg-slate-200 rounded-md" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <div className="h-3 w-16 bg-slate-200 rounded-md" />
+                                            <div className="h-5 w-24 bg-slate-200 rounded-md" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="h-3 w-16 bg-slate-200 rounded-md" />
+                                            <div className="h-5 w-24 bg-slate-200 rounded-md" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+};
+
 const ReviewDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -711,7 +794,7 @@ const ReviewDetail = () => {
         return groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups);
     }, [currentSectionResult, currentSectionData, activeTab, activePassageTab, sectionsList]);
 
-    if (isLoading) return <div className="flex items-center justify-center h-screen"><span className="loading loading-spinner loading-lg text-primary" /></div>;
+    if (isLoading) return <ReviewDetailSkeleton />;
     if (!result) return <div className="p-10 text-center">Result not found.</div>;
 
     return (

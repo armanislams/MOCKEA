@@ -23,6 +23,7 @@ import useAuth from "../../../../hooks/useAuth";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import useUserProfile from "../../../../hooks/useUserProfile";
 import Loader from "../../../Loader/Loader";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity";
 import TestShell from "../../../Common/TestShell";
@@ -43,10 +44,21 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const { userData } = useUserProfile();
   const targetExam = userData?.targetExam || "IELTS";
 
-  /* --- Data State --- */
-  const [listeningSets, setListeningSets] = useState([]);
+  const queryClient = useQueryClient();
+  const { data: fetchedListeningSets = [], isLoading: queryLoading } = useQuery({
+    queryKey: ["listening-sets"],
+    queryFn: async () => {
+      const response = await axiosSecure.get("/questions?type=listening");
+      return response?.data?.questions || [];
+    },
+    enabled: !!user?.email && !preloadedSet,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const listeningSets = preloadedSet ? [preloadedSet] : fetchedListeningSets;
+  const loading = preloadedSet ? false : queryLoading;
+
   const [selectedSetId, setSelectedSetId] = useState("");
-  const [loading, setLoading] = useState(!preloadedSet); // skip loader if data already provided
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
   const { answers, setAnswers, handleAnswerChange } = useAnswers({});
   const [clickedOption, setClickedOption] = useState(null);
@@ -85,24 +97,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
     const { timeLeft, fmtTime: fmtCountdown, resetCountdown } = useCountdown(0, !!activeSet && duration > 0, submitted);
 
-  /* --- Fetch Data --- */
-  useEffect(() => {
-    if (preloadedSet) return; // guest: data already provided, loading already false via useState(!preloadedSet)
-    const fetchListening = async () => {
-      try {
-        setLoading(true);
-        const response = await axiosSecure.get("/questions?type=listening");
-        const fetched = response?.data?.questions || [];
-        setListeningSets(fetched);
-        setLoading(false);
-      // eslint-disable-next-line no-unused-vars
-      } catch (error) {
-        toast.error("Failed to load listening materials");
-        setLoading(false);
-      }
-    };
-    if (user?.email) fetchListening();
-  }, [axiosSecure, user?.email, preloadedSet]);
+  // Listening data fetched via useQuery above
 
   /* --- Audio Logic --- */
   useEffect(() => {
@@ -215,6 +210,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
           });
           if (response.data.success) {
             toast.success("Practice test auto-submitted successfully!");
+            queryClient.invalidateQueries({ queryKey: ["user-lab-results"] });
           }
         } catch (error) {
           console.error("Auto submit failed:", error);

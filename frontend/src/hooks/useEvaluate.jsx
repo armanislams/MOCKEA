@@ -2,10 +2,12 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import useAxiosSecure from "./useAxiosSecure";
 import useAuth from "./useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function useEvaluate() {
     const axiosSecure = useAxiosSecure();
     const { user } = useAuth();
+    const queryClient = useQueryClient();
     
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -45,6 +47,7 @@ export default function useEvaluate() {
                 setResult(response.data);
                 setSubmitted(true);
                 toast.success("Assessment completed!");
+                queryClient.invalidateQueries({ queryKey: ["user-lab-results"] });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return true;
             }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import useCountdown from "../../../../hooks/useCountdown";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
@@ -60,14 +61,26 @@ const getTaskContent = (activeSet, tab, isPte) => {
 
 const Writing = ({ preloadedSet = null }) => {
   const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { userData } = useUserProfile();
   const targetExam = userData?.targetExam || "IELTS";
 
-  const [writingSets, setWritingSets] = useState([]);
+  const { data: fetchedWritingSets = [], isLoading: queryLoading } = useQuery({
+    queryKey: ["writing-sets"],
+    queryFn: async () => {
+      const response = await axiosSecure.get("/questions?type=writing");
+      return response?.data?.questions || [];
+    },
+    enabled: !!user?.email && !preloadedSet,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const writingSets = preloadedSet ? [preloadedSet] : fetchedWritingSets;
+  const loading = preloadedSet ? false : queryLoading;
+
   const [selectedSetId, setSelectedSetId] = useState("");
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -131,22 +144,7 @@ const Writing = ({ preloadedSet = null }) => {
     return activeTab === "task1" ? wordCount1 >= 150 : wordCount2 >= 250;
   }, [isPte, activeTab, wordCount1, wordCount2]);
 
-  useEffect(() => {
-    const fetchWriting = async () => {
-      try {
-        setLoading(true);
-        const response = await axiosSecure.get("/questions?type=writing");
-        const fetched = response?.data?.questions || [];
-        setWritingSets(fetched);
-        // Auto-selection removed
-        setLoading(false);
-      } catch {
-        toast.error("Failed to load writing prompts");
-        setLoading(false);
-      }
-    };
-    if (user?.email) fetchWriting();
-  }, [axiosSecure, user?.email]);
+  // Writing data fetched via useQuery above
 
 
 
@@ -209,6 +207,7 @@ const Writing = ({ preloadedSet = null }) => {
         setSubmitted(true);
         setTimerActive(false);
         toast.success("Response submitted for instructor evaluation!");
+        queryClient.invalidateQueries({ queryKey: ["user-lab-results"] });
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to submit response");
@@ -251,6 +250,7 @@ const Writing = ({ preloadedSet = null }) => {
             userEmail: user?.email
           });
           toast.success("Practice test auto-submitted successfully!");
+          queryClient.invalidateQueries({ queryKey: ["user-lab-results"] });
       } catch {
           console.error("Auto submit failed:");
           toast.error("Auto-submit failed");

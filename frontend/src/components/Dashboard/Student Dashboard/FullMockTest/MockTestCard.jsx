@@ -13,7 +13,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { DEFAULT_MOCK_TEST_DURATION_MINUTES } from "../../../../constants";
 
-const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", isStandardLimitReached = false, onStart }) => {
+const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", isStandardLimitReached = false, onStart, onMouseEnter }) => {
     const isAdminOrInstructor = userRole === "admin" || userRole === "instructor";
     const planHierarchy = { free: 0, standard: 1, premium: 2 };
     const isTierLocked = !isAdminOrInstructor && (planHierarchy[userPlan] < planHierarchy[test.planType || "free"]);
@@ -45,6 +45,7 @@ const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", is
     return (
         <motion.div 
             whileHover={{ y: -8 }}
+            onMouseEnter={onMouseEnter}
             className="group relative flex flex-col rounded-[3rem] bg-white border border-base-300 p-10 shadow-sm transition-all hover:shadow-2xl hover:border-primary/30"
         >
             {/* Status Badge */}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import axios from "axios";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
@@ -40,14 +41,26 @@ const defaultPart3Questions = [
 
 const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { userData } = useUserProfile();
   const targetExam = userData?.targetExam || "IELTS";
 
-  const [speakingSets, setSpeakingSets] = useState([]);
+  const { data: fetchedSpeakingSets = [], isLoading: queryLoading } = useQuery({
+    queryKey: ["speaking-sets"],
+    queryFn: async () => {
+      const response = await axiosSecure.get("/questions?type=speaking");
+      return response?.data?.questions || [];
+    },
+    enabled: !!user?.email && !preloadedSet,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const speakingSets = preloadedSet ? [preloadedSet] : fetchedSpeakingSets;
+  const loading = preloadedSet ? false : queryLoading;
+
   const [selectedSetId, setSelectedSetId] = useState("");
-  const [loading, setLoading] = useState(!preloadedSet); // skip loader if data already provided
   const [isRecording, setIsRecording] = useState(false);
   const [prepTime, setPrepTime] = useState(60); // 1 min prep
   const [recordingTime, setRecordingTime] = useState(0);
@@ -328,23 +341,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     return () => clearTimeout(timer);
   }, [speakingStep, part1QuestionIdx, part3QuestionIdx, pteQuestionIdx]);
 
-  useEffect(() => {
-    if (preloadedSet) return; // guest: data already provided, loading already false via useState(!preloadedSet)
-    const fetchSpeaking = async () => {
-      try {
-        setLoading(true);
-        const response = await axiosSecure.get("/questions?type=speaking");
-        const fetched = response?.data?.questions || [];
-        setSpeakingSets(fetched);
-        setLoading(false);
-      // eslint-disable-next-line no-unused-vars
-      } catch (error) {
-        toast.error("Failed to load speaking prompts");
-        setLoading(false);
-      }
-    };
-    if (user?.email) fetchSpeaking();
-  }, [axiosSecure, user?.email, preloadedSet]);
+  // Speaking data fetched via useQuery above
 
 
   useEffect(() => {
@@ -721,6 +718,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
       if (lastErr) throw lastErr;
 
       toast.success("Speaking practice test submitted successfully!");
+      queryClient.invalidateQueries({ queryKey: ["user-lab-results"] });
       setSubmitted(true);
       exitFullscreen();
       setIsStarted(false);

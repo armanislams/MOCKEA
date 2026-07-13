@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import useAnswers from "../../../../hooks/useAnswers";
 import useCountdown from "../../../../hooks/useCountdown";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../../../hooks/useAuth.jsx";
 import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
@@ -1074,16 +1075,28 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
 
 const Reading = ({ preloadedSet = null }) => {
   const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { userData } = useUserProfile();
   const targetExam = userData?.targetExam || "IELTS";
 
-  const [readingSets, setReadingSets] = useState([]);
+  const { data: fetchedReadingSets = [], isLoading: queryLoading } = useQuery({
+    queryKey: ["reading-sets"],
+    queryFn: async () => {
+      const response = await axiosSecure.get("/questions?type=reading");
+      return response?.data?.questions || [];
+    },
+    enabled: !!user?.email && !preloadedSet,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const readingSets = preloadedSet ? [preloadedSet] : fetchedReadingSets;
+  const loading = preloadedSet ? false : queryLoading;
+
   const [selectedSetId, setSelectedSetId] = useState("");
   const [prevSelectedSetId, setPrevSelectedSetId] = useState("");
   const { answers, setAnswers, handleAnswerChange } = useAnswers({});
-  const [loading, setLoading] = useState(true);
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
   const [activePassageTab, setActivePassageTab] = useState(0);
 
@@ -1198,27 +1211,7 @@ const Reading = ({ preloadedSet = null }) => {
   const [isStarted, setIsStarted] = useState(false);
   const { isFullscreen, showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
 
-  // Fetch reading data
-  useEffect(() => {
-    const fetchReading = async () => {
-      try {
-        setLoading(true);
-        const response = await axiosSecure.get("/questions?type=reading");
-        const fetchedSets = response?.data?.questions || [];
-        setReadingSets(fetchedSets);
-        // Removed auto-selection of the first set
-        setLoading(false);
-      // eslint-disable-next-line no-unused-vars
-      } catch (error) {
-        toast.error("Failed to load reading materials");
-        setLoading(false);
-      }
-    };
-
-    if (user?.email) {
-      fetchReading();
-    }
-  }, [axiosSecure, user?.email]);
+  // Reading data fetched via useQuery above
 
   const activeSet = useMemo(
     () => readingSets.find((set) => set._id === selectedSetId) || null,
@@ -1346,6 +1339,7 @@ const Reading = ({ preloadedSet = null }) => {
           });
           if (response.data.success) {
             toast.success("Practice test auto-submitted successfully!");
+            queryClient.invalidateQueries({ queryKey: ["user-lab-results"] });
           }
         } catch (error) {
           console.error("Auto submit failed:", error);

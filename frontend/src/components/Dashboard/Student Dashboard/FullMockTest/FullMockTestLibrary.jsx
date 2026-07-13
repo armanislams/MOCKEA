@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
     PiBookOpenFill, 
     PiEarFill, 
@@ -20,7 +20,19 @@ import Loader from "../../../Loader/Loader";
 
 const FullMockTestLibrary = () => {
     const axiosSecure = useAxiosSecure();
+    const queryClient = useQueryClient();
     const [selectedTest, setSelectedTest] = useState(null);
+
+    const handlePrefetch = (id) => {
+        queryClient.prefetchQuery({
+            queryKey: ["test-session", id],
+            queryFn: async () => {
+                const res = await axiosSecure.get(`/mock-tests/${id}`);
+                return res.data.test;
+            },
+            staleTime: 5 * 60 * 1000,
+        });
+    };
 
     const { userData, isLoading: profileLoading } = useUserProfile();
     const userPlan = userData?.plan || "free";
@@ -234,6 +246,7 @@ const FullMockTestLibrary = () => {
                             userRole={userRole}
                             isStandardLimitReached={todayMockTestTaken && userPlan === 'standard' && userRole !== 'admin' && userRole !== 'instructor'}
                             onStart={() => setSelectedTest(test)} 
+                            onMouseEnter={() => handlePrefetch(test._id)}
                         />
                     ))}
                 </div>
@@ -263,6 +276,7 @@ const FullMockTestLibrary = () => {
                                 userRole={userRole}
                                 isStandardLimitReached={todayMockTestTaken && userPlan === 'standard' && userRole !== 'admin' && userRole !== 'instructor'}
                                 onStart={() => setSelectedTest(test)} 
+                                onMouseEnter={() => handlePrefetch(test._id)}
                             />
                         ))}
                     </div>

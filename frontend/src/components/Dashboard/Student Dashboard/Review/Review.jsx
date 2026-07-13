@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { useState } from "react";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
@@ -24,7 +24,19 @@ import { parseFeedback } from "../../../../utils/parseFeedback";
 
 const Review = () => {
     const axiosSecure = useAxiosSecure();
+    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState("mock-tests");
+
+    const handlePrefetch = (id) => {
+        queryClient.prefetchQuery({
+            queryKey: ["mock-result-detail", id],
+            queryFn: async () => {
+                const res = await axiosSecure.get(`/mock-tests/results/${id}`);
+                return res.data.result;
+            },
+            staleTime: 5 * 60 * 1000,
+        });
+    };
 
     // Full Mock Tests Query
     const { data: mockResults = [], isLoading: loadingMock } = useQuery({
@@ -120,7 +132,11 @@ const Review = () => {
                             [1, 2].map(i => <div key={i} className="h-48 bg-base-300 animate-pulse rounded-[2.5rem]" />)
                         ) : mockResults.length > 0 ? (
                             mockResults.map((result) => (
-                                <div key={result._id} className="group card bg-white border border-base-300 shadow-sm hover:shadow-xl transition-all duration-300 rounded-[2.5rem] overflow-hidden">
+                                <div 
+                                    key={result._id} 
+                                    onMouseEnter={() => handlePrefetch(result._id)}
+                                    className="group card bg-white border border-base-300 shadow-sm hover:shadow-xl transition-all duration-300 rounded-[2.5rem] overflow-hidden"
+                                >
                                     <div className="p-8 space-y-6">
                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                                             <div className="flex-1 space-y-2">
