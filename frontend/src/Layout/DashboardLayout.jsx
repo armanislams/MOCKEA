@@ -97,6 +97,15 @@ const DashboardLayout = () => {
       .catch((err) => console.error(err));
   };
 
+  const handleSidebarClick = (e) => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      const closestLink = e.target.closest("a, button");
+      if (closestLink) {
+        setIsDrawerOpen(false);
+      }
+    }
+  };
+
   const renderSidebarLinks = () => {
     switch (role) {
       case "superadmin":
@@ -150,9 +159,12 @@ const DashboardLayout = () => {
       {!isFullscreen && (
         <div className={`drawer-side z-50 transition-all duration-300 ${isDrawerOpen ? "" : "lg:w-20 lg:overflow-visible"}`}>
           <label htmlFor="dashboard-drawer" className="drawer-overlay"></label>
-          <ul className={`menu p-4 min-h-full bg-base-100 text-base-content border-r border-base-200 transition-all duration-300 overflow-y-auto ${
-            isDrawerOpen ? "w-80" : "w-80 lg:w-20 lg:overflow-visible"
-          }`}>
+          <ul 
+            onClick={handleSidebarClick}
+            className={`menu p-4 min-h-full bg-base-100 text-base-content border-r border-base-200 transition-all duration-300 overflow-y-auto ${
+              isDrawerOpen ? "w-80" : "w-80 lg:w-20 lg:overflow-visible"
+            }`}
+          >
             {/* Sidebar content here */}
             {isDrawerOpen ? (
               <div className="flex items-center justify-between mb-8 px-4">

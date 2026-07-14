@@ -310,6 +310,10 @@ export const finalizeTest = async (req, res) => {
 
         if (!result) return res.status(404).json({ success: false, message: 'Result session not found' });
 
+        if (result.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
         for (let section of result.sectionResults) {
             if (['reading', 'listening'].includes(section.sectionType)) {
                 const questionSets = result.testId.sections[section.sectionType] || [];

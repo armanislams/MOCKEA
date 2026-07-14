@@ -167,7 +167,7 @@ const UserRow = ({ user, onChangeRole, onChangePlan, onDelete, onToggleBan, load
 
       <td className="py-3 pr-4">
         {!isEditingDisabled && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1">
             <button
               className={`btn btn-ghost btn-xs tooltip ${user.isBanned ? "text-success" : "text-warning"}`}
               data-tip={user.isBanned ? "Unban" : "Ban"}
