@@ -208,7 +208,7 @@ export const lockSubmission = async (req, res) => {
                 $or: [
                     { lockedBy: { $exists: false } },
                     { lockedBy: null },
-                    { lockedExpiresAt: { $lte: new Date() } },
+                    { lockExpiresAt: { $lte: new Date() } },
                     { lockedBy: instructor._id }
                 ]
             },
