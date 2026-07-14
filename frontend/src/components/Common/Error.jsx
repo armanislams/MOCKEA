@@ -16,6 +16,16 @@ const Error = () => {
       method: 'CLIENT_ROUTE_ERROR',
       status: 500
     });
+
+    // Automatically reload the page if a chunk failed to load
+    const errorMessage = error?.message || String(error || '');
+    if (
+      errorMessage.includes('Failed to fetch dynamically imported module') ||
+      errorMessage.includes('Loading chunk') ||
+      errorMessage.includes('dynamic import')
+    ) {
+      window.location.reload();
+    }
   }, [error]);
 
   return (

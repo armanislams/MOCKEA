@@ -20,6 +20,16 @@ class ErrorBoundary extends React.Component {
       status: 500,
       componentStack: errorInfo.componentStack
     });
+
+    // Automatically reload the page if a chunk failed to load
+    const errorMessage = error?.message || String(error || '');
+    if (
+      errorMessage.includes('Failed to fetch dynamically imported module') ||
+      errorMessage.includes('Loading chunk') ||
+      errorMessage.includes('dynamic import')
+    ) {
+      window.location.reload();
+    }
   }
 
   handleReload = () => {
