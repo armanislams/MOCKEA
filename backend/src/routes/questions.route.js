@@ -5,7 +5,8 @@ import {
     postQuestion,
     updateQuestion,
     deleteQuestion,
-    evaluateQuestions 
+    evaluateQuestions,
+    bulkUpdateQuestions
 } from '../controllers/questions.controller.js'
 import verifyUserToken from '../middlewares/verifyUserToken.js';
 import verifyUserRole from '../middlewares/verifyUserRole.js';
@@ -22,6 +23,7 @@ qRouter.post('/evaluate', evaluateQuestions);
 
 // Modifying the question bank is restricted to admins
 qRouter.post('/add', verifyUserRole(['admin']), postQuestion);
+qRouter.post('/bulk-update', verifyUserRole(['admin']), bulkUpdateQuestions);
 qRouter.put('/:id', verifyUserRole(['admin']), updateQuestion);
 qRouter.delete('/:id', verifyUserRole(['admin']), deleteQuestion);
 

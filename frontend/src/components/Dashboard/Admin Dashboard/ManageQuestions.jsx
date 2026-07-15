@@ -32,6 +32,7 @@ const ManageQuestions = () => {
     const [filterPlan, setFilterPlan] = useState("all");
     const [filterStatus, setFilterStatus] = useState("all");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
 
     const { data: questions = [], isLoading, isError, refetch } = useAdminQuery(
@@ -97,6 +98,43 @@ const ManageQuestions = () => {
         if (result.isConfirmed) {
             deleteMutation.mutate(id);
         }
+    };
+
+    const handleSelectRow = (id) => {
+        setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+        );
+    };
+
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            const allVisibleIds = filteredQuestions.map((q) => q._id);
+            setSelectedIds(allVisibleIds);
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const bulkMutation = useMutation({
+        mutationFn: (payload) => axiosSecure.post("/questions/bulk-update", payload),
+        onSuccess: (res) => {
+            alerts.success("Success", res.data.message || "Bulk operation completed.");
+            setSelectedIds([]);
+            queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-questions-for-bundle"] });
+            refetch();
+        },
+        onError: (err) => {
+            alerts.error("Bulk Operation Failed", err.response?.data?.message || "Failed to execute bulk update.");
+        }
+    });
+
+    const handleBulkAction = async (action, value) => {
+        if (action === "delete") {
+            const result = await alerts.confirmDelete("selected question sets");
+            if (!result.isConfirmed) return;
+        }
+        bulkMutation.mutate({ ids: selectedIds, action, value });
     };
 
     const getIcon = (type) => {
@@ -249,7 +287,15 @@ const ManageQuestions = () => {
                         <table className="table table-md w-full">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-base-200 text-slate-500 text-xs font-black uppercase tracking-wider">
-                                    <th className="py-4 pl-6 rounded-l-2xl">Question Set</th>
+                                    <th className="py-4 pl-6 rounded-l-2xl w-12">
+                                        <input
+                                            type="checkbox"
+                                            className="checkbox checkbox-xs checkbox-primary cursor-pointer"
+                                            checked={filteredQuestions.length > 0 && selectedIds.length === filteredQuestions.length}
+                                            onChange={(e) => handleSelectAll(e.target.checked)}
+                                        />
+                                    </th>
+                                    <th className="py-4">Question Set</th>
                                     <th className="py-4">Section</th>
                                     <th className="py-4">Exam</th>
                                     <th className="py-4">Questions</th>
@@ -264,7 +310,15 @@ const ManageQuestions = () => {
                             <tbody className="divide-y divide-base-100">
                                 {filteredQuestions.map((q) => (
                                     <tr key={q._id} className="hover:bg-slate-50/80 transition-colors group">
-                                        <td className="py-4 pl-6 font-bold text-slate-800">
+                                        <td className="py-4 pl-6 w-12">
+                                            <input
+                                                type="checkbox"
+                                                className="checkbox checkbox-xs checkbox-primary cursor-pointer"
+                                                checked={selectedIds.includes(q._id)}
+                                                onChange={() => handleSelectRow(q._id)}
+                                            />
+                                        </td>
+                                        <td className="py-4 font-bold text-slate-800">
                                             <div className="flex items-center gap-3">
                                                 <div className="p-2 rounded-xl bg-base-100 text-lg">
                                                     {getIcon(q.testType)}
@@ -342,6 +396,12 @@ const ManageQuestions = () => {
                             <div key={q._id} className="card bg-white border border-base-300 shadow-sm p-6 hover:shadow-md transition-shadow group relative">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            className="checkbox checkbox-xs checkbox-primary cursor-pointer mr-1"
+                                            checked={selectedIds.includes(q._id)}
+                                            onChange={() => handleSelectRow(q._id)}
+                                        />
                                         <div className="p-3 rounded-2xl bg-base-100 text-2xl">
                                             {getIcon(q.testType)}
                                         </div>
@@ -649,6 +709,90 @@ const ManageQuestions = () => {
                     </div>
                 )}
             </AdminModal>
+
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 z-50 animate-bounce-short">
+                    <span className="text-xs font-bold whitespace-nowrap">
+                        {selectedIds.length} item{selectedIds.length > 1 ? "s" : ""} selected
+                    </span>
+                    <div className="flex items-center gap-2 border-l border-slate-700 pl-6">
+                        <button
+                            type="button"
+                            onClick={() => handleBulkAction("update-status", true)}
+                            disabled={bulkMutation.isPending}
+                            className="btn btn-xs btn-success rounded-lg font-bold text-white px-3 h-7 min-h-0"
+                        >
+                            Activate
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleBulkAction("update-status", false)}
+                            disabled={bulkMutation.isPending}
+                            className="btn btn-xs btn-warning rounded-lg font-bold text-slate-900 px-3 h-7 min-h-0"
+                        >
+                            Disable
+                        </button>
+                        <div className="dropdown dropdown-top dropdown-end">
+                            <button
+                                tabIndex={0}
+                                role="button"
+                                disabled={bulkMutation.isPending}
+                                className="btn btn-xs btn-outline border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-bold px-3 h-7 min-h-0"
+                            >
+                                Change Plan
+                            </button>
+                            <ul
+                                tabIndex={0}
+                                className="dropdown-content menu p-2 shadow-xl bg-slate-800 border border-slate-700 text-white rounded-xl w-36 mb-2 space-y-1"
+                            >
+                                <li>
+                                    <button 
+                                        type="button"
+                                        onClick={() => handleBulkAction("update-plan", "free")}
+                                        className="btn btn-xs btn-ghost text-left text-xs text-white justify-start"
+                                    >
+                                        Free
+                                    </button>
+                                </li>
+                                <li>
+                                    <button 
+                                        type="button"
+                                        onClick={() => handleBulkAction("update-plan", "standard")}
+                                        className="btn btn-xs btn-ghost text-left text-xs text-white justify-start"
+                                    >
+                                        Standard
+                                    </button>
+                                </li>
+                                <li>
+                                    <button 
+                                        type="button"
+                                        onClick={() => handleBulkAction("update-plan", "premium")}
+                                        className="btn btn-xs btn-ghost text-left text-xs text-white justify-start"
+                                    >
+                                        Premium
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => handleBulkAction("delete")}
+                            disabled={bulkMutation.isPending}
+                            className="btn btn-xs btn-error rounded-lg font-bold text-white px-3 h-7 min-h-0"
+                        >
+                            Delete
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSelectedIds([])}
+                            disabled={bulkMutation.isPending}
+                            className="btn btn-xs btn-ghost text-slate-400 hover:text-white rounded-lg font-bold px-2 ml-2 h-7 min-h-0"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

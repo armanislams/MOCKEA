@@ -523,3 +523,59 @@ export const evaluateQuestions = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const bulkUpdateQuestions = async (req, res) => {
+    try {
+        const { ids, action, value } = req.body;
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, message: "Invalid or empty IDs array" });
+        }
+
+        if (!["delete", "update-plan", "update-status"].includes(action)) {
+            return res.status(400).json({ success: false, message: "Invalid bulk action" });
+        }
+
+        if (action === "delete") {
+            const questionsToDelete = await Questions.find({ _id: { $in: ids } });
+            for (const question of questionsToDelete) {
+                if (question.audioUrl && question.audioUrl.includes("res.cloudinary.com")) {
+                    const publicId = getCloudinaryPublicId(question.audioUrl);
+                    if (publicId) {
+                        try {
+                            await cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
+                        } catch (cloudinaryErr) {
+                            console.error(`Failed to delete Cloudinary asset for ${question._id}:`, cloudinaryErr.message);
+                        }
+                    }
+                }
+                await cache.del(`question:${question._id}`);
+                await clearMockTestCacheForQuestion(question._id);
+            }
+            await Questions.deleteMany({ _id: { $in: ids } });
+            return res.status(200).json({ success: true, message: `Successfully deleted ${ids.length} question sets` });
+        }
+
+        if (action === "update-plan") {
+            await Questions.updateMany({ _id: { $in: ids } }, { $set: { forPlanType: value } });
+            for (const id of ids) {
+                await cache.del(`question:${id}`);
+                await clearMockTestCacheForQuestion(id);
+            }
+            return res.status(200).json({ success: true, message: `Successfully updated plan to '${value}' for ${ids.length} question sets` });
+        }
+
+        if (action === "update-status") {
+            const activeBool = value === true || value === "true";
+            await Questions.updateMany({ _id: { $in: ids } }, { $set: { isActive: activeBool } });
+            for (const id of ids) {
+                await cache.del(`question:${id}`);
+                await clearMockTestCacheForQuestion(id);
+            }
+            return res.status(200).json({ success: true, message: `Successfully updated status to ${activeBool ? 'Active' : 'Disabled'} for ${ids.length} question sets` });
+        }
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
