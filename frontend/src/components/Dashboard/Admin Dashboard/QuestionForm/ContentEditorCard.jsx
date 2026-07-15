@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { 
     PiPlus, 
     PiTrash, 
@@ -7,6 +8,8 @@ import {
 import { makeQuestion } from "./questionFormConstants";
 
 export default function ContentEditorCard({ testType, isIeltsListening, formData, patch }) {
+    const [focusedSelectId, setFocusedSelectId] = useState(null);
+    const [selectRevisions, setSelectRevisions] = useState({});
     return (
         <div className="card bg-white border border-base-300 shadow-sm p-6 space-y-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -357,19 +360,35 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         <div className="col-span-1 min-w-0">
                                             <label className="label"><span className="label-text font-semibold text-xs">Target Passage</span></label>
                                             <select
+                                                key={`group-${gIdx}-${selectRevisions[`group-${gIdx}`] || 0}`}
                                                 className="select select-bordered w-full rounded-2xl text-sm font-semibold bg-white truncate"
                                                 value={group.passageIndex || 0}
                                                 onChange={(e) => {
                                                     const upd = [...(formData.questionGroups || [])];
                                                     upd[gIdx] = { ...upd[gIdx], passageIndex: parseInt(e.target.value) };
                                                     patch({ questionGroups: upd });
+                                                    setFocusedSelectId(null);
+                                                    setSelectRevisions(prev => ({ ...prev, [`group-${gIdx}`]: (prev[`group-${gIdx}`] || 0) + 1 }));
+                                                }}
+                                                onFocus={() => setFocusedSelectId(`group-${gIdx}`)}
+                                                onBlur={() => {
+                                                    setFocusedSelectId(null);
+                                                    setSelectRevisions(prev => ({ ...prev, [`group-${gIdx}`]: (prev[`group-${gIdx}`] || 0) + 1 }));
                                                 }}
                                             >
-                                                {(formData.passages || []).map((p, pIdx) => (
-                                                    <option key={pIdx} value={pIdx}>
-                                                        Passage {pIdx + 1}: {p.title || "(Untitled)"}
-                                                    </option>
-                                                ))}
+                                                {(formData.passages || []).map((p, pIdx) => {
+                                                    const isSelected = pIdx === (group.passageIndex || 0);
+                                                    const isFocused = focusedSelectId === `group-${gIdx}`;
+                                                    const fullTitle = `Passage ${pIdx + 1}: ${p.title || "(Untitled)"}`;
+                                                    const truncatedTitle = (p.title && p.title.length > 20)
+                                                        ? `Passage ${pIdx + 1}: ${p.title.substring(0, 20)}...`
+                                                        : fullTitle;
+                                                    return (
+                                                        <option key={pIdx} value={pIdx} title={fullTitle}>
+                                                            {(isSelected && !isFocused) ? truncatedTitle : fullTitle}
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
                                         </div>
                                     )}

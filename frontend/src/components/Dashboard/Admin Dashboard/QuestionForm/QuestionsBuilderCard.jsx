@@ -22,6 +22,8 @@ export default function QuestionsBuilderCard({
     updatePair,
 }) {
     const [showGuide, setShowGuide] = useState(false);
+    const [focusedSelectId, setFocusedSelectId] = useState(null);
+    const [selectRevisions, setSelectRevisions] = useState({});
 
     if ((testType === "writing" || testType === "speaking") && formData.examType !== "PTE") return null;
 
@@ -232,15 +234,33 @@ export default function QuestionsBuilderCard({
                                             <span className="label-text font-semibold text-xs">Target Passage</span>
                                         </label>
                                         <select
+                                            key={`${q.id}-${selectRevisions[q.id] || 0}`}
                                             className="select select-bordered w-full rounded-2xl text-sm font-semibold bg-white truncate"
                                             value={q.passageIndex || 0}
-                                            onChange={(e) => updateQuestionField(q.id, "passageIndex", parseInt(e.target.value))}
+                                            onChange={(e) => {
+                                                updateQuestionField(q.id, "passageIndex", parseInt(e.target.value));
+                                                setFocusedSelectId(null);
+                                                setSelectRevisions(prev => ({ ...prev, [q.id]: (prev[q.id] || 0) + 1 }));
+                                            }}
+                                            onFocus={() => setFocusedSelectId(q.id)}
+                                            onBlur={() => {
+                                                setFocusedSelectId(null);
+                                                setSelectRevisions(prev => ({ ...prev, [q.id]: (prev[q.id] || 0) + 1 }));
+                                            }}
                                         >
-                                            {(formData.passages || []).map((p, pIdx) => (
-                                                <option key={pIdx} value={pIdx}>
-                                                    Passage {pIdx + 1}: {p.title || "(Untitled)"}
-                                                </option>
-                                            ))}
+                                            {(formData.passages || []).map((p, pIdx) => {
+                                                const isSelected = pIdx === (q.passageIndex || 0);
+                                                const isFocused = focusedSelectId === q.id;
+                                                const fullTitle = `Passage ${pIdx + 1}: ${p.title || "(Untitled)"}`;
+                                                const truncatedTitle = (p.title && p.title.length > 20)
+                                                    ? `Passage ${pIdx + 1}: ${p.title.substring(0, 20)}...`
+                                                    : fullTitle;
+                                                return (
+                                                    <option key={pIdx} value={pIdx} title={fullTitle}>
+                                                        {(isSelected && !isFocused) ? truncatedTitle : fullTitle}
+                                                    </option>
+                                                );
+                                            })}
                                         </select>
                                     </div>
                                 )}
