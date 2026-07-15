@@ -89,6 +89,7 @@ export function parseQuestionToState(fetchedQuestion) {
         examType: fetchedQuestion.examType || "IELTS",
         listeningPart: fetchedQuestion.listeningPart || 1,
         forPlanType: fetchedQuestion.forPlanType || "free",
+        isActive: fetchedQuestion.isActive !== false,
         isPublic: fetchedQuestion.isPublic || false,
         isMockOnly: fetchedQuestion.isMockOnly || false,
         questions: fetchedQuestion.questions?.length ? fetchedQuestion.questions.map((q, idx) => ({

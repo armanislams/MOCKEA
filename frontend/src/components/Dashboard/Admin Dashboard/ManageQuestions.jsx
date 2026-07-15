@@ -29,6 +29,9 @@ const ManageQuestions = () => {
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
     const [filterType, setFilterType] = useState("all");
+    const [filterPlan, setFilterPlan] = useState("all");
+    const [filterStatus, setFilterStatus] = useState("all");
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
     const { data: questions = [], isLoading, isError, refetch } = useAdminQuery(
@@ -45,6 +48,9 @@ const ManageQuestions = () => {
     const filteredQuestions = useMemo(() => {
         return questions.filter((q) => {
             const matchesType = filterType === "all" || q.testType === filterType;
+            const matchesPlan = filterPlan === "all" || q.forPlanType === filterPlan;
+            const matchesStatus = filterStatus === "all" ||
+                (filterStatus === "active" ? q.isActive !== false : q.isActive === false);
             let matchesSearch = true;
             if (searchQuery) {
                 try {
@@ -54,9 +60,26 @@ const ManageQuestions = () => {
                     matchesSearch = q.title?.toLowerCase().includes(searchQuery.toLowerCase());
                 }
             }
-            return matchesType && matchesSearch;
+            return matchesType && matchesPlan && matchesStatus && matchesSearch;
         });
-    }, [questions, filterType, searchQuery]);
+    }, [questions, filterType, filterPlan, filterStatus, searchQuery]);
+
+    const toggleStatusMutation = useMutation({
+        mutationFn: ({ id, isActive }) => axiosSecure.put(`/questions/${id}`, { isActive }),
+        onSuccess: () => {
+            alerts.success("Status Updated", "The question set status has been updated.");
+            queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-questions-for-bundle"] });
+            refetch();
+        },
+        onError: (err) => {
+            alerts.error("Error", err.response?.data?.message || "Failed to update status.");
+        }
+    });
+
+    const handleToggleStatus = (id, currentStatus) => {
+        toggleStatusMutation.mutate({ id, isActive: !currentStatus });
+    };
 
     const deleteMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/questions/${id}`),
@@ -113,18 +136,82 @@ const ManageQuestions = () => {
                             <PiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
                         </div>
                         <div className="relative">
-                            <select
-                                value={filterType}
-                                onChange={(e) => setFilterType(e.target.value)}
-                                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-xs font-bold capitalize text-slate-700 cursor-pointer hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm"
+                            <button
+                                type="button"
+                                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                                className="btn btn-outline border-slate-200 hover:bg-slate-50 hover:text-slate-800 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 shadow-sm flex items-center gap-2 bg-white h-auto min-h-0"
                             >
-                                {uniqueTypes.map((type) => (
-                                    <option key={type} value={type}>
-                                        {type === "all" ? "All Types" : type}
-                                    </option>
-                                ))}
-                            </select>
-                            <PiFunnel className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                                <PiFunnel className="text-sm" />
+                                <span>Filter</span>
+                                {(filterType !== "all" || filterPlan !== "all" || filterStatus !== "all") && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                )}
+                            </button>
+                            {isFilterOpen && (
+                                <>
+                                    {/* Backdrop to capture outside clicks and close the panel */}
+                                    <div 
+                                        className="fixed inset-0 z-10" 
+                                        onClick={() => setIsFilterOpen(false)} 
+                                    />
+                                    <div
+                                        className="absolute right-0 z-20 p-4 shadow-xl bg-white border border-slate-100 rounded-2xl w-60 mt-2 space-y-3.5"
+                                    >
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Module Type</label>
+                                            <select
+                                                value={filterType}
+                                                onChange={(e) => setFilterType(e.target.value)}
+                                                className="select select-bordered select-sm rounded-xl w-full text-xs font-bold text-slate-700 bg-white"
+                                            >
+                                                {uniqueTypes.map((type) => (
+                                                    <option key={type} value={type}>
+                                                        {type === "all" ? "All Types" : type}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Plan Tier</label>
+                                            <select
+                                                value={filterPlan}
+                                                onChange={(e) => setFilterPlan(e.target.value)}
+                                                className="select select-bordered select-sm rounded-xl w-full text-xs font-bold text-slate-700 bg-white"
+                                            >
+                                                <option value="all">All Plans</option>
+                                                <option value="free">Free</option>
+                                                <option value="standard">Standard</option>
+                                                <option value="premium">Premium</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Active Status</label>
+                                            <select
+                                                value={filterStatus}
+                                                onChange={(e) => setFilterStatus(e.target.value)}
+                                                className="select select-bordered select-sm rounded-xl w-full text-xs font-bold text-slate-700 bg-white"
+                                            >
+                                                <option value="all">All Status</option>
+                                                <option value="active">Active Only</option>
+                                                <option value="disabled">Disabled Only</option>
+                                            </select>
+                                        </div>
+                                        {(filterType !== "all" || filterPlan !== "all" || filterStatus !== "all") && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFilterType("all");
+                                                    setFilterPlan("all");
+                                                    setFilterStatus("all");
+                                                }}
+                                                className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 rounded-lg w-full font-bold mt-1"
+                                            >
+                                                Clear Filters
+                                            </button>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <div className="join bg-base-100 border border-base-300 rounded-2xl p-0.5 shadow-sm">
                             <button 
@@ -167,6 +254,7 @@ const ManageQuestions = () => {
                                     <th className="py-4">Exam</th>
                                     <th className="py-4">Questions</th>
                                     <th className="py-4">Plan Type</th>
+                                    <th className="py-4">Status</th>
                                     <th className="py-4">Guest Access</th>
                                     <th className="py-4">Version</th>
                                     <th className="py-4">Created Date</th>
@@ -206,6 +294,22 @@ const ManageQuestions = () => {
                                             <span className={`badge badge-sm font-black border-none uppercase text-[9px] px-2.5 ${
                                                 q.forPlanType === 'premium' ? 'bg-accent/15 text-accent-content' : 'bg-base-200 text-base-content/60'
                                             }`}>{q.forPlanType}</span>
+                                        </td>
+                                        <td className="py-4">
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    className="toggle toggle-xs toggle-primary animate-none cursor-pointer"
+                                                    checked={q.isActive !== false}
+                                                    onChange={() => handleToggleStatus(q._id, q.isActive !== false)}
+                                                    title="Toggle Active Status"
+                                                />
+                                                <span className={`badge badge-xs font-bold border-none ${
+                                                    q.isActive !== false ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                                }`}>
+                                                    {q.isActive !== false ? 'Active' : 'Disabled'}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="py-4">
                                             <span className={`badge badge-sm font-semibold border-none text-xs ${
@@ -263,6 +367,15 @@ const ManageQuestions = () => {
                                         <div className="flex items-center gap-1.5">
                                             <span className="badge badge-outline badge-xs px-2 font-semibold">{q.questions?.length || 0} Qs</span>
                                             <span className={`badge badge-xs px-2 font-bold ${q.forPlanType === 'premium' ? 'badge-accent' : 'badge-ghost'}`}>{q.forPlanType}</span>
+                                            <span 
+                                                onClick={() => handleToggleStatus(q._id, q.isActive !== false)}
+                                                className={`badge badge-xs font-bold cursor-pointer select-none transition-all hover:scale-105 active:scale-95 ${
+                                                    q.isActive !== false ? 'badge-success text-white' : 'bg-red-50 text-red-700 border-none'
+                                                }`}
+                                                title="Click to toggle status"
+                                            >
+                                                {q.isActive !== false ? 'Active' : 'Disabled'}
+                                            </span>
                                         </div>
                                         <span className="text-[9px] text-base-content/40">Created {new Date(q.createdAt).toLocaleDateString()}</span>
                                     </div>

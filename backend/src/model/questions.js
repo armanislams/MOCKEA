@@ -210,6 +210,11 @@ const QuestionsSchema = new mongoose.Schema(
             ref: 'Questions',
             default: null
         },
+        isActive: {
+            type: Boolean,
+            default: true,
+            required: true
+        },
     },
     { timestamps: true },
 );

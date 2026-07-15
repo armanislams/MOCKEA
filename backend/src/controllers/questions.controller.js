@@ -146,6 +146,7 @@ export const getQuestions = async (req, res) => {
         // Admins and Instructors see ALL questions regardless of plan & examType
         // Students see only questions matching their exam preference & tier limits
         if (userRole !== "admin" && userRole !== "instructor") {
+            filter.isActive = { $ne: false };
             filter.isMockOnly = { $ne: true };
             
             const andConditions = [];

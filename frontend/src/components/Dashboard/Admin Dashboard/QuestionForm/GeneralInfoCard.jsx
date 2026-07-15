@@ -48,6 +48,17 @@ export default function GeneralInfoCard({ formData, patch }) {
                     <input
                         type="checkbox"
                         className="toggle toggle-primary animate-none"
+                        checked={formData.isActive !== false}
+                        onChange={(e) => patch({ isActive: e.target.checked })}
+                    />
+                    <span className="text-xs font-bold text-slate-700 tracking-wide">
+                        Active Status (Enable/Disable question set)
+                    </span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        className="toggle toggle-primary animate-none"
                         checked={formData.isPublic}
                         onChange={(e) => patch({ isPublic: e.target.checked })}
                     />

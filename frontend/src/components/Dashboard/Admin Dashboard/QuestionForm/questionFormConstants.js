@@ -157,6 +157,7 @@ export const initialForm = (testType = "reading") => ({
     examType: "IELTS",
     listeningPart: 1,
     forPlanType: "free",
+    isActive: true,
     isPublic: false,
     isMockOnly: false,
     questions: [makeQuestion(testType)],
