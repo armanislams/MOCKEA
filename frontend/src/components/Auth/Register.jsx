@@ -172,7 +172,6 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
           >
             <option value="IELTS">IELTS Preparation</option>
             <option value="PTE">PTE Academic Preparation</option>
-            <option value="BOTH">Both IELTS & PTE Programs</option>
           </select>
           {errors.targetExam && (
             <span className="text-red-500 text-xs mt-2 block font-semibold">
