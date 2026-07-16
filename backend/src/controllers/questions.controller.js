@@ -113,6 +113,59 @@ const clearMockTestCacheForQuestion = async (questionId) => {
     }
 };
 
+export const getFreeTierDailyQuestions = async (email, type, questions) => {
+    if (!email || !type) {
+        return questions.slice(0, 2);
+    }
+    const normalizedType = type.toLowerCase();
+    const dailyCacheKey = `user-daily-questions:${email}:${normalizedType}`;
+    const seenCacheKey = `user-seen-questions:${email}:${normalizedType}`;
+
+    // 1. Try to get cached daily questions
+    const cachedDailyIds = await cache.get(dailyCacheKey);
+    if (Array.isArray(cachedDailyIds) && cachedDailyIds.length > 0) {
+        const dailyQuestions = questions.filter(q => cachedDailyIds.includes(q._id.toString()));
+        if (dailyQuestions.length >= Math.min(2, questions.length)) {
+            return dailyQuestions;
+        }
+    }
+
+    // 2. Fetch already served question IDs from cache
+    let seenIds = await cache.get(seenCacheKey) || [];
+
+    // Filter to find unseen questions
+    let unseenQuestions = questions.filter(q => !seenIds.includes(q._id.toString()));
+
+    let selected = [];
+    // 3. If unseen pool has at least 2 questions
+    if (unseenQuestions.length >= 2) {
+        // Shuffle and pick 2
+        for (let i = unseenQuestions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [unseenQuestions[i], unseenQuestions[j]] = [unseenQuestions[j], unseenQuestions[i]];
+        }
+        selected = unseenQuestions.slice(0, 2);
+        seenIds = [...new Set([...seenIds, ...selected.map(q => q._id.toString())])];
+    } else {
+        // 4. Force Reset: If unseen pool has fewer than 2 questions, reset the seen questions list
+        let pool = [...questions];
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        selected = pool.slice(0, 2);
+        seenIds = selected.map(q => q._id.toString());
+    }
+
+    // Cache the daily selected questions with a 1-day (24h) TTL = 86400
+    await cache.set(dailyCacheKey, selected.map(q => q._id.toString()), 86400);
+
+    // Cache the updated seen questions list with a 30-day TTL = 2592000
+    await cache.set(seenCacheKey, seenIds, 2592000);
+
+    return selected;
+};
+
 export const getQuestions = async (req, res) => {
     try {
         const { type } = req.query;
@@ -204,12 +257,7 @@ export const getQuestions = async (req, res) => {
         let questions = await Questions.find(filter);
 
         if (userRole !== "admin" && userRole !== "instructor" && userPlan === "free") {
-            // Fisher-Yates shuffle for uniform distribution
-            for (let i = questions.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [questions[i], questions[j]] = [questions[j], questions[i]];
-            }
-            questions = questions.slice(0, 2);
+            questions = await getFreeTierDailyQuestions(email, type || "all", questions);
         }
 
         return res.status(200).json({

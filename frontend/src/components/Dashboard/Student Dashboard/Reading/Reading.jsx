@@ -1082,7 +1082,7 @@ const Reading = ({ preloadedSet = null }) => {
   const targetExam = userData?.targetExam || "IELTS";
 
   const { data: fetchedReadingSets = [], isLoading: queryLoading } = useQuery({
-    queryKey: ["reading-sets"],
+    queryKey: ["reading-sets", user?.email],
     queryFn: async () => {
       const response = await axiosSecure.get("/questions?type=reading");
       return response?.data?.questions || [];
@@ -1405,6 +1405,18 @@ const Reading = ({ preloadedSet = null }) => {
                 <h2 className="text-5xl font-black tracking-tighter text-slate-800">Select a <span className="text-primary italic">Reading Lab</span></h2>
                 <p className="text-slate-400 font-medium text-lg">Choose a comprehensive passage to sharpen your analytical skills.</p>
             </div>
+
+            {userData?.plan === "free" && userData?.role !== "admin" && userData?.role !== "instructor" && (
+                <div className="max-w-3xl mx-auto mb-10 p-5 bg-amber-50/60 border border-amber-200/60 rounded-3xl flex items-start gap-4 shadow-xs text-left">
+                    <span className="text-2xl mt-0.5">💡</span>
+                    <div>
+                        <h4 className="font-black text-amber-800 text-sm uppercase tracking-wider">Free Tier Plan</h4>
+                        <p className="text-amber-700/90 text-xs font-semibold mt-1 leading-relaxed">
+                            You can access <strong>2 random questions per day</strong>. Your questions will reset tomorrow! Upgrade your plan for unlimited access to all modules.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {readingSets.length === 0 ? (
                 <motion.div

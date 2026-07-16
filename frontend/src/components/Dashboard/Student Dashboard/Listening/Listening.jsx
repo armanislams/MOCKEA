@@ -46,7 +46,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   const queryClient = useQueryClient();
   const { data: fetchedListeningSets = [], isLoading: queryLoading } = useQuery({
-    queryKey: ["listening-sets"],
+    queryKey: ["listening-sets", user?.email],
     queryFn: async () => {
       const response = await axiosSecure.get("/questions?type=listening");
       return response?.data?.questions || [];
@@ -298,6 +298,18 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 <h2 className="text-5xl font-black tracking-tighter text-slate-800">Choose a <span className="text-primary italic">Listening Module</span></h2>
                 <p className="text-slate-400 font-medium text-lg">Select a standardized unit to begin your immersive training.</p>
             </div>
+
+            {userData?.plan === "free" && userData?.role !== "admin" && userData?.role !== "instructor" && (
+                <div className="max-w-3xl mx-auto mb-10 p-5 bg-amber-50/60 border border-amber-200/60 rounded-3xl flex items-start gap-4 shadow-xs text-left">
+                    <span className="text-2xl mt-0.5">💡</span>
+                    <div>
+                        <h4 className="font-black text-amber-800 text-sm uppercase tracking-wider">Free Tier Plan</h4>
+                        <p className="text-amber-700/90 text-xs font-semibold mt-1 leading-relaxed">
+                            You can access <strong>2 random questions per day</strong>. Your questions will reset tomorrow! Upgrade your plan for unlimited access to all modules.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {listeningSets.length === 0 ? (
                 <motion.div
