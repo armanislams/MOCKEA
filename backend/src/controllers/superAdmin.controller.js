@@ -703,3 +703,39 @@ export const removeBlacklistedIp = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 18. Reset Daily Questions Cycle
+export const resetDailyQuestionsCycle = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (email) {
+      const cleanEmail = email.toLowerCase().trim();
+      await cache.delPattern(`user-daily-questions:${cleanEmail}:*`);
+      await cache.delPattern(`user-seen-questions:${cleanEmail}:*`);
+    } else {
+      await cache.delPattern("user-daily-questions:*");
+      await cache.delPattern("user-seen-questions:*");
+    }
+
+    await logAction(
+      req.user.email,
+      req.user.role,
+      "RESET_DAILY_QUESTIONS_CYCLE",
+      "Questions",
+      email || "ALL_USERS",
+      req.ip,
+      req.headers["user-agent"],
+      { targetEmail: email || "ALL_USERS" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: email 
+        ? `Daily questions cycle for user '${email}' has been reset.`
+        : "Daily questions cycle for all users has been reset."
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+

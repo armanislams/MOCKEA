@@ -15,7 +15,8 @@ import {
   clearCache,
   getBlacklistedIps,
   blacklistIp,
-  removeBlacklistedIp
+  removeBlacklistedIp,
+  resetDailyQuestionsCycle
 } from "../controllers/superAdmin.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import isSuperAdmin from "../middlewares/isSuperAdmin.js";
@@ -41,6 +42,7 @@ superAdminRouter.get("/broadcasts", getBroadcastHistory);
 
 superAdminRouter.get("/cache/stats", getCacheStats);
 superAdminRouter.post("/cache/clear", clearCache);
+superAdminRouter.post("/questions/reset-daily-cycle", resetDailyQuestionsCycle);
 
 superAdminRouter.get("/security/blacklist", getBlacklistedIps);
 superAdminRouter.post("/security/blacklist", blacklistIp);

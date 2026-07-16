@@ -64,6 +64,8 @@ const SuperAdminConsole = () => {
   const [loadingCache, setLoadingCache] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
   const [cacheKeySearch, setCacheKeySearch] = useState("");
+  const [resetCycleEmail, setResetCycleEmail] = useState("");
+  const [resettingCycle, setResettingCycle] = useState(false);
 
   // AI Tutor Configurator tab states
   const [chatbotSettings, setChatbotSettings] = useState(null);
@@ -307,6 +309,36 @@ const SuperAdminConsole = () => {
       toast.error(error.response?.data?.message || "Failed to clear cache.");
     } finally {
       setClearingCache(false);
+    }
+  };
+
+  const handleResetDailyQuestionsCycle = async (email = null) => {
+    const isGlobal = !email;
+    const actionText = isGlobal 
+      ? "reset the daily questions cycle for ALL users"
+      : `reset the daily questions cycle for user '${email}'`;
+      
+    const result = await alerts.confirmAction({
+      title: "Confirm Daily Cycle Reset",
+      text: `Are you sure you want to ${actionText}?`,
+      confirmText: "Yes, reset!",
+      danger: isGlobal,
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      setResettingCycle(true);
+      const res = await axiosSecure.post("/superadmin/questions/reset-daily-cycle", { email: email ? email.trim() : null });
+      toast.success(res.data?.message || "Daily questions cycle reset successfully.");
+      if (!isGlobal) {
+        setResetCycleEmail("");
+      }
+      fetchCacheStats();
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to reset daily questions cycle.");
+    } finally {
+      setResettingCycle(false);
     }
   };
 
@@ -1473,6 +1505,40 @@ const SuperAdminConsole = () => {
                   className="btn btn-sm btn-secondary rounded-xl font-bold"
                 >
                   Clear Practice Labs Cache (`question:*`)
+                </button>
+              </div>
+            </div>
+
+            {/* Daily Questions Cycle Manager */}
+            <div className="border border-base-200 bg-base-200/30 rounded-2xl p-6 space-y-4">
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Free Tier Daily Questions Cycle Manager</h3>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Force reset the daily selected questions and seen questions history for a student or reset the cycle globally for all free tier users.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 items-end">
+                <div className="flex-1 w-full space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Target Student Email</label>
+                  <input
+                    type="email"
+                    placeholder="student@example.com"
+                    className="input input-bordered rounded-xl w-full h-10 text-xs font-semibold bg-white"
+                    value={resetCycleEmail}
+                    onChange={(e) => setResetCycleEmail(e.target.value)}
+                  />
+                </div>
+                <button
+                  onClick={() => handleResetDailyQuestionsCycle(resetCycleEmail)}
+                  disabled={resettingCycle || !resetCycleEmail}
+                  className="btn btn-sm btn-primary rounded-xl font-bold h-10"
+                >
+                  Reset User Daily Questions Cycle
+                </button>
+                <button
+                  onClick={() => handleResetDailyQuestionsCycle(null)}
+                  disabled={resettingCycle}
+                  className="btn btn-sm btn-error text-white rounded-xl font-bold h-10"
+                >
+                  Reset Cycle Globally (All Users)
                 </button>
               </div>
             </div>
