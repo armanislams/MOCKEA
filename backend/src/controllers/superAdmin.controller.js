@@ -497,8 +497,8 @@ export const runDatabaseSeeder = async (req, res) => {
   }
 };
 
-// 11. Send Cohort Email Broadcast
-export const sendEmailBroadcast = async (req, res) => {
+// 11. Send Cohort Notification Broadcast
+export const sendNotificationBroadcast = async (req, res) => {
   try {
     const { subject, content, cohort } = req.body;
 
@@ -544,13 +544,14 @@ export const sendEmailBroadcast = async (req, res) => {
       message: content,
       cohort,
       sentBy: req.user.email,
+      broadcastId: broadcast._id,
     });
     await notification.save();
 
     await logAction(
       req.user.email,
       req.user.role,
-      "SEND_EMAIL_BROADCAST",
+      "SEND_NOTIFICATION_BROADCAST",
       "BroadcastEmail",
       broadcast._id.toString(),
       req.ip,
@@ -569,10 +570,136 @@ export const sendEmailBroadcast = async (req, res) => {
 };
 
 // 12. Get Past Broadcasts
-export const getBroadcastHistory = async (req, res) => {
+export const getNotificationBroadcastHistory = async (req, res) => {
   try {
     const broadcasts = await BroadcastEmail.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, broadcasts });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 12a. Update Notification Broadcast
+export const updateNotificationBroadcast = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { subject, content, cohort } = req.body;
+
+    if (!subject || !content || !cohort) {
+      return res.status(400).json({ success: false, message: "Subject, content, and cohort are required" });
+    }
+
+    const broadcast = await BroadcastEmail.findById(id);
+    if (!broadcast) {
+      return res.status(404).json({ success: false, message: "Broadcast not found" });
+    }
+
+    // Find users based on cohort selection
+    let userFilter = { role: "student" };
+    if (cohort === "free") {
+      userFilter.plan = "free";
+    } else if (cohort === "standard") {
+      userFilter.plan = "standard";
+    } else if (cohort === "premium") {
+      userFilter.plan = "premium";
+    } else if (cohort === "inactive") {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      userFilter.$or = [
+        { lastActive: { $lte: thirtyDaysAgo } },
+        { lastActive: { $exists: false } },
+        { lastActive: null }
+      ];
+    }
+
+    const targetUsers = await User.find(userFilter);
+    const emails = targetUsers.map((u) => u.email);
+
+    const oldSubject = broadcast.subject;
+    const oldCohort = broadcast.cohort;
+
+    broadcast.subject = subject;
+    broadcast.content = content;
+    broadcast.cohort = cohort;
+    broadcast.recipientCount = emails.length;
+    broadcast.recipients = emails;
+    await broadcast.save();
+
+    // Find and update associated Notification
+    let notification = await Notification.findOne({ broadcastId: broadcast._id });
+    if (!notification) {
+      notification = await Notification.findOne({ title: oldSubject, cohort: oldCohort });
+    }
+
+    if (notification) {
+      notification.title = subject;
+      notification.message = content;
+      notification.cohort = cohort;
+      if (!notification.broadcastId) {
+        notification.broadcastId = broadcast._id;
+      }
+      await notification.save();
+    }
+
+    await logAction(
+      req.user.email,
+      req.user.role,
+      "UPDATE_NOTIFICATION_BROADCAST",
+      "BroadcastEmail",
+      broadcast._id.toString(),
+      req.ip,
+      req.headers["user-agent"],
+      { cohort, recipientCount: emails.length }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Broadcast successfully updated.",
+      broadcast,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 12b. Delete Notification Broadcast
+export const deleteNotificationBroadcast = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const broadcast = await BroadcastEmail.findById(id);
+    if (!broadcast) {
+      return res.status(404).json({ success: false, message: "Broadcast not found" });
+    }
+
+    const oldSubject = broadcast.subject;
+    const oldCohort = broadcast.cohort;
+
+    await BroadcastEmail.findByIdAndDelete(id);
+
+    // Find and delete associated Notification
+    let notification = await Notification.findOne({ broadcastId: id });
+    if (!notification) {
+      notification = await Notification.findOne({ title: oldSubject, cohort: oldCohort });
+    }
+
+    if (notification) {
+      await Notification.findByIdAndDelete(notification._id);
+    }
+
+    await logAction(
+      req.user.email,
+      req.user.role,
+      "DELETE_NOTIFICATION_BROADCAST",
+      "BroadcastEmail",
+      id,
+      req.ip,
+      req.headers["user-agent"]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Broadcast successfully deleted.",
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

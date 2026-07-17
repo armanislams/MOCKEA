@@ -19,6 +19,7 @@ import {
   PiDownloadSimple,
   PiPlay,
   PiEye,
+  PiPencilSimple,
   PiNotebook,
   PiQuestion,
   PiFileText,
@@ -58,6 +59,11 @@ const SuperAdminConsole = () => {
   const [emailCohort, setEmailCohort] = useState("all");
   const [emailSubject, setEmailSubject] = useState("🚀 Platform Update: Premium Features and Maintenance Schedule");
   const [emailContent, setEmailContent] = useState(`# Important System Announcement\n\nDear Students,\n\nWe have completed a series of improvements to the IELTS evaluation systems. Here is a summary of the updates:\n- **AI IELTS Essay Scoring**: Essay evaluations are now faster and provide more detailed band descriptions.\n- **PTE Academic Integration**: The PTE exam practice modules have left Beta and are now fully available.\n\n## Scheduled Maintenance\n\nWe will be running database optimization procedures this Sunday between **02:00 AM and 04:00 AM UTC**. During this short window, you may experience brief access interruptions.\n\nThank you for preparing with MOCKEA!`);
+  const [editingBroadcast, setEditingBroadcast] = useState(null);
+  const [editSubject, setEditSubject] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editCohort, setEditCohort] = useState("all");
+  const [isUpdatingBroadcast, setIsUpdatingBroadcast] = useState(false);
 
   // Cache manager tab states
   const [cacheStats, setCacheStats] = useState(null);
@@ -226,11 +232,11 @@ const SuperAdminConsole = () => {
   const fetchBroadcastHistory = async () => {
     try {
       setLoadingBroadcasts(true);
-      const res = await axiosSecure.get("/superadmin/broadcasts");
+      const res = await axiosSecure.get("/superadmin/notification-broadcasts");
       setBroadcasts(res.data?.broadcasts || []);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to fetch past email broadcasts.");
+      toast.error("Failed to fetch past notification broadcasts.");
     } finally {
       setLoadingBroadcasts(false);
     }
@@ -243,21 +249,21 @@ const SuperAdminConsole = () => {
     }
 
     const result = await alerts.confirmAction({
-      title: "Confirm Email Broadcast?",
-      text: `Send announcement email broadcast to the '${emailCohort.toUpperCase()}' cohort?`,
+      title: "Confirm Notification Broadcast?",
+      text: `Send announcement notification broadcast to the '${emailCohort.toUpperCase()}' cohort?`,
       confirmText: "Yes, broadcast!",
     });
     if (!result.isConfirmed) return;
 
     try {
       setSendingBroadcast(true);
-      const res = await axiosSecure.post("/superadmin/broadcast", {
+      const res = await axiosSecure.post("/superadmin/notification-broadcast", {
         subject: emailSubject,
         content: emailContent,
         cohort: emailCohort,
       });
       if (res.data?.success) {
-        toast.success(res.data.message || "Email broadcast sent successfully!");
+        toast.success(res.data.message || "Notification broadcast sent successfully!");
         setEmailSubject("");
         setEmailContent("");
         fetchBroadcastHistory();
@@ -267,9 +273,63 @@ const SuperAdminConsole = () => {
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Failed to send email broadcast.");
+      toast.error(error.response?.data?.message || "Failed to send notification broadcast.");
     } finally {
       setSendingBroadcast(false);
+    }
+  };
+
+  const handleStartEditBroadcast = (b) => {
+    setEditingBroadcast(b);
+    setEditSubject(b.subject);
+    setEditContent(b.content);
+    setEditCohort(b.cohort);
+  };
+
+  const handleUpdateBroadcast = async (e) => {
+    e.preventDefault();
+    if (!editSubject.trim() || !editContent.trim()) {
+      return toast.warning("Subject and content are required.");
+    }
+
+    try {
+      setIsUpdatingBroadcast(true);
+      const res = await axiosSecure.put(`/superadmin/notification-broadcast/${editingBroadcast._id}`, {
+        subject: editSubject,
+        content: editContent,
+        cohort: editCohort,
+      });
+      if (res.data?.success) {
+        toast.success(res.data.message || "Broadcast updated successfully!");
+        setEditingBroadcast(null);
+        fetchBroadcastHistory();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to update broadcast.");
+    } finally {
+      setIsUpdatingBroadcast(false);
+    }
+  };
+
+  const handleDeleteBroadcast = async (id) => {
+    const result = await alerts.confirmAction({
+      title: "Delete Notification Broadcast?",
+      text: "Are you sure you want to delete this broadcast? It will also remove the notification from users' inboxes.",
+      confirmText: "Yes, delete!",
+      danger: true,
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      const res = await axiosSecure.delete(`/superadmin/notification-broadcast/${id}`);
+      if (res.data?.success) {
+        toast.success(res.data.message || "Broadcast deleted successfully!");
+        fetchBroadcastHistory();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to delete broadcast.");
     }
   };
 
@@ -667,7 +727,7 @@ const SuperAdminConsole = () => {
           }`}
         >
           <PiEnvelopeSimple className="w-5 h-5" />
-          Email Broadcast
+          Notification Broadcast
         </button>
       </div>
 
@@ -1236,15 +1296,15 @@ const SuperAdminConsole = () => {
           </div>
         )}
 
-        {/* Panel 7: Email Broadcast */}
+        {/* Panel 7: Notification Broadcast */}
         {activeTab === "email" && (
           <div className="card bg-base-100 border border-base-300 rounded-[2rem] shadow-sm p-6 md:p-8 space-y-6">
             <div>
               <h2 className="text-xl font-bold flex items-center gap-2">
-                <PiEnvelopeSimple className="text-primary w-6 h-6" /> Interactive Email Broadcast
+                <PiEnvelopeSimple className="text-primary w-6 h-6" /> Interactive Notification Broadcast
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Compose styled system updates and promotional emails, verify targeting parameters, and broadcast them directly to specific cohorts of users.
+                Compose styled system updates and promotional notifications, verify targeting parameters, and broadcast them directly to specific cohorts of users.
               </p>
             </div>
 
@@ -1286,12 +1346,12 @@ const SuperAdminConsole = () => {
 
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text font-semibold">Email Content (Supports Markdown)</span>
+                      <span className="label-text font-semibold">Notification Content (Supports Markdown)</span>
                     </label>
                     <textarea
                       value={emailContent}
                       onChange={(e) => setEmailContent(e.target.value)}
-                      placeholder="Write your email body here... Use markdown for headers (#), bold (**), or bullet lists."
+                      placeholder="Write your notification message here... Use markdown for headers (#), bold (**), or bullet lists."
                       className="textarea textarea-bordered rounded-2xl w-full h-48 focus:outline-none font-mono text-sm"
                       required
                     ></textarea>
@@ -1302,7 +1362,7 @@ const SuperAdminConsole = () => {
                     disabled={sendingBroadcast}
                     className="btn btn-primary rounded-2xl w-full font-bold"
                   >
-                    {sendingBroadcast ? "Sending Broadcast..." : "Broadcast Email"}
+                    {sendingBroadcast ? "Sending Broadcast..." : "Send Notification Broadcast"}
                   </button>
                 </form>
               </div>
@@ -1353,7 +1413,7 @@ const SuperAdminConsole = () => {
                 </div>
               ) : broadcasts.length === 0 ? (
                 <div className="text-center py-6 text-slate-400 text-sm">
-                  No past email broadcasts found.
+                  No past notification broadcasts found.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -1379,12 +1439,26 @@ const SuperAdminConsole = () => {
                           <td>{b.sentBy}</td>
                           <td>{new Date(b.createdAt).toLocaleString()}</td>
                           <td>
-                            <button
-                              onClick={() => setSelectedBroadcast(b)}
-                              className="btn btn-xs btn-outline rounded-lg flex items-center gap-1"
-                            >
-                              <PiEye /> View Content
-                            </button>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => setSelectedBroadcast(b)}
+                                className="btn btn-xs btn-outline rounded-lg flex items-center gap-1"
+                              >
+                                <PiEye /> View
+                              </button>
+                              <button
+                                onClick={() => handleStartEditBroadcast(b)}
+                                className="btn btn-xs btn-outline btn-info rounded-lg flex items-center gap-1"
+                              >
+                                <PiPencilSimple /> Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBroadcast(b._id)}
+                                className="btn btn-xs btn-outline btn-error rounded-lg flex items-center gap-1"
+                              >
+                                <PiTrash /> Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1412,6 +1486,77 @@ const SuperAdminConsole = () => {
                       Close
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal for editing broadcast */}
+            {editingBroadcast && (
+              <div className="modal modal-open">
+                <div className="modal-box max-w-2xl rounded-3xl">
+                  <h3 className="font-black text-xl mb-4">Edit Notification Broadcast</h3>
+                  <form onSubmit={handleUpdateBroadcast} className="space-y-4">
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text font-semibold">Target Cohort</span>
+                      </label>
+                      <select
+                        value={editCohort}
+                        onChange={(e) => setEditCohort(e.target.value)}
+                        className="select select-bordered rounded-2xl w-full"
+                      >
+                        <option value="all">All Registered Students</option>
+                        <option value="free">Free Tier Subscribers</option>
+                        <option value="standard">Standard Tier Subscribers</option>
+                        <option value="premium">Premium Tier Subscribers</option>
+                        <option value="inactive">Inactive Students (No activity in 30 days)</option>
+                      </select>
+                    </div>
+
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text font-semibold">Subject / Title</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={editSubject}
+                        onChange={(e) => setEditSubject(e.target.value)}
+                        placeholder="e.g. Upgrade to Pro & Save 30%!"
+                        className="input input-bordered rounded-2xl w-full"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text font-semibold">Notification Content (Supports Markdown)</span>
+                      </label>
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        placeholder="Write your notification message here..."
+                        className="textarea textarea-bordered rounded-2xl w-full h-48 focus:outline-none font-mono text-sm"
+                        required
+                      ></textarea>
+                    </div>
+
+                    <div className="modal-action gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingBroadcast(null)}
+                        className="btn btn-sm btn-ghost rounded-xl"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isUpdatingBroadcast}
+                        className="btn btn-sm btn-primary rounded-xl font-bold"
+                      >
+                        {isUpdatingBroadcast ? "Saving..." : "Save Changes"}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}

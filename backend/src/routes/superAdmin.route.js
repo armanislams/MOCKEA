@@ -9,8 +9,10 @@ import {
   getCollectionsList,
   exportCollection,
   runDatabaseSeeder,
-  sendEmailBroadcast,
-  getBroadcastHistory,
+  sendNotificationBroadcast,
+  getNotificationBroadcastHistory,
+  updateNotificationBroadcast,
+  deleteNotificationBroadcast,
   getCacheStats,
   clearCache,
   getBlacklistedIps,
@@ -37,8 +39,10 @@ superAdminRouter.get("/error-analytics", getErrorAnalytics);
 superAdminRouter.get("/collections", getCollectionsList);
 superAdminRouter.get("/export/:collectionName", exportCollection);
 superAdminRouter.post("/seed", runDatabaseSeeder);
-superAdminRouter.post("/broadcast", sendEmailBroadcast);
-superAdminRouter.get("/broadcasts", getBroadcastHistory);
+superAdminRouter.post("/notification-broadcast", sendNotificationBroadcast);
+superAdminRouter.get("/notification-broadcasts", getNotificationBroadcastHistory);
+superAdminRouter.put("/notification-broadcast/:id", updateNotificationBroadcast);
+superAdminRouter.delete("/notification-broadcast/:id", deleteNotificationBroadcast);
 
 superAdminRouter.get("/cache/stats", getCacheStats);
 superAdminRouter.post("/cache/clear", clearCache);

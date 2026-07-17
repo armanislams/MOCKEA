@@ -19,6 +19,10 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    broadcastId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BroadcastEmail",
+    },
   },
   {
     timestamps: true,
