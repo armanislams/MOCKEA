@@ -21,6 +21,14 @@ import {
   PiWaveformFill,
   PiUserCircleFill,
   PiPlay,
+  PiCalendarBlankFill,
+  PiNotebookFill,
+  PiLinkBold,
+  PiTrashBold,
+  PiSpinner,
+  PiXBold,
+  PiGraduationCapFill,
+  PiPlusBold,
 } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import TestShell from "../../../Common/TestShell.jsx";
@@ -59,6 +67,79 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   const speakingSets = preloadedSet ? [preloadedSet] : fetchedSpeakingSets;
   const loading = preloadedSet ? false : queryLoading;
+
+  // Booking UI States
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedSlotId, setSelectedSlotId] = useState("");
+  const [studentNotes, setStudentNotes] = useState("");
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
+
+  // Fetch Student's Booked Sessions
+  const { data: bookingsData = {}, refetch: refetchBookings } = useQuery({
+    queryKey: ["student-bookings"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/bookings/student/bookings");
+      return res.data;
+    },
+    enabled: !!user?.email && userData?.plan !== "free",
+  });
+  const bookedSessions = bookingsData.bookings || [];
+
+  // Fetch Available Slots
+  const { data: availableSlotsData = {}, refetch: refetchAvailableSlots } = useQuery({
+    queryKey: ["available-slots"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/bookings/slots/available");
+      return res.data;
+    },
+    enabled: !!user?.email && userData?.plan !== "free",
+  });
+  const availableSlots = availableSlotsData.slots || [];
+
+  // Filter slots for selectedDate
+  const filteredSlotsForDate = useMemo(() => {
+    if (!selectedDate) return [];
+    return availableSlots.filter((slot) => {
+      const slotDateStr = new Date(slot.startTime).toISOString().split("T")[0];
+      return slotDateStr === selectedDate;
+    });
+  }, [availableSlots, selectedDate]);
+
+  // Book Slot Mutation
+  const handleConfirmBooking = async () => {
+    if (!selectedSlotId) {
+      toast.error("Please select a time slot.");
+      return;
+    }
+    setIsSubmittingBooking(true);
+    try {
+      await axiosSecure.post(`/bookings/slots/${selectedSlotId}/book`, { studentNotes });
+      toast.success("Successfully booked session with instructor!");
+      setShowBookingModal(false);
+      setSelectedSlotId("");
+      setStudentNotes("");
+      refetchBookings();
+      refetchAvailableSlots();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to book session.");
+    } finally {
+      setIsSubmittingBooking(false);
+    }
+  };
+
+  // Cancel Booking Mutation
+  const handleCancelBooking = async (bookingId) => {
+    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+    try {
+      await axiosSecure.post(`/bookings/slots/${bookingId}/cancel`);
+      toast.success("Booking cancelled successfully.");
+      refetchBookings();
+      refetchAvailableSlots();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to cancel booking.");
+    }
+  };
 
   const [selectedSetId, setSelectedSetId] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -1008,38 +1089,221 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   if (!activeSet || (!preloadedSet && !selectedSetId)) {
     return (
-      <div className="max-w-7xl mx-auto px-6 pt-2 pb-20">
-        <div className="text-center space-y-4 mb-16">
+      <div className="max-w-7xl mx-auto px-6 pt-2 pb-20 space-y-12">
+        {/* Header Section */}
+        <div className="text-center space-y-4">
           <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${
             speakingSets.length > 0
             ? "bg-primary/10 text-primary border-primary/20"
             : "bg-amber-50 text-amber-600 border-amber-200"
           }`}>
-            <PiMicrophoneStageFill /> {speakingSets.length} Sessions Available
+            <PiMicrophoneStageFill /> {speakingSets.length} Automated Practice Sets Available
           </div>
           <h2 className="text-5xl font-black tracking-tighter text-slate-800">
-            Choose a <span className="text-primary italic">Speaking Test</span>
+            IELTS <span className="text-primary italic">Speaking Practice</span>
           </h2>
           <p className="text-slate-400 font-medium text-lg">
-            Select a standardized prompt to begin your virtual interview.
+            Choose an automated practice set or schedule a live 1-on-1 mock interview with an expert.
           </p>
         </div>
 
-        <PracticeSetSelector
-          sets={speakingSets}
-          onSelect={setSelectedSetId}
-          emptyTitle="No Speaking Sessions Yet"
-          emptySuggestions={[
-            `The admin hasn't uploaded any speaking prompts for ${targetExam} yet.`,
-            `Your exam preference might not match the available content — try switching to IELTS or BOTH.`
-          ]}
-          actionText="Change Exam Preference →"
-          actionLink="/dashboard/profile"
-          trackExam={targetExam}
-          icon={<PiMicrophoneStageFill />}
-          timeLabel="15m"
-          actionLabel="Open Test"
-        />
+        {/* Live Instructor Booking & Schedule Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Booking Banner & Trigger */}
+          <div className="lg:col-span-6 bg-slate-900 text-white rounded-[2.5rem] p-8 relative overflow-hidden border border-white/10 shadow-2xl flex flex-col justify-between min-h-[250px]">
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-60 h-60 bg-primary/20 blur-[80px] rounded-full" />
+            <div className="relative z-10 space-y-4">
+              <span className="badge badge-primary px-3 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest">
+                Premium Feature
+              </span>
+              <h3 className="text-2xl font-black tracking-tight leading-tight">
+                Live 1-on-1 Interview with <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-emerald-400">
+                  Certified IELTS Examiners
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400 font-medium max-w-md">
+                Get high-quality academic feedback, slot availability reminders, and full mock test simulations.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowBookingModal(true)}
+              className="btn btn-primary rounded-2xl h-14 font-black uppercase tracking-wider relative z-10 w-fit px-8 mt-6"
+            >
+              <PiCalendarBlankFill className="text-lg" /> Book Live Mock Session
+            </button>
+          </div>
+
+          {/* Student's Scheduled Live Sessions */}
+          <div className="lg:col-span-6 bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm flex flex-col justify-between min-h-[250px]">
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                <PiCalendarBlankFill className="text-primary" /> My Scheduled Live Sessions
+              </h3>
+              {bookedSessions.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 font-semibold text-sm">
+                  No upcoming scheduled live interviews.
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[180px] overflow-y-auto pr-1">
+                  {bookedSessions.map((session) => (
+                    <div key={session._id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div>
+                        <div className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                          Instructor: {session.instructor?.name || "Expert Trainer"}
+                        </div>
+                        <div className="text-sm font-extrabold text-slate-800 mt-0.5">
+                          {new Date(session.startTime).toLocaleDateString()} &bull;{" "}
+                          {new Date(session.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {session.meetingLink && (
+                          <a
+                            href={session.meetingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-xs btn-primary rounded-lg text-[10px] font-black uppercase"
+                          >
+                            <PiLinkBold /> Start Room
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleCancelBooking(session._id)}
+                          className="btn btn-xs btn-outline btn-error rounded-lg text-[10px] font-black uppercase"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Practice Sets List */}
+        <div className="space-y-6 pt-4 border-t border-slate-100">
+          <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+            <PiMicrophoneStageFill className="text-primary" /> Automated Practice Sets
+          </h3>
+          <PracticeSetSelector
+            sets={speakingSets}
+            onSelect={setSelectedSetId}
+            emptyTitle="No Speaking Sessions Yet"
+            emptySuggestions={[
+              `The admin hasn't uploaded any speaking prompts for ${targetExam} yet.`,
+              `Your exam preference might not match the available content — try switching to IELTS or BOTH.`
+            ]}
+            actionText="Change Exam Preference →"
+            actionLink="/dashboard/profile"
+            trackExam={targetExam}
+            icon={<PiMicrophoneStageFill />}
+            timeLabel="15m"
+            actionLabel="Open Test"
+          />
+        </div>
+
+        {/* Live Booking Modal */}
+        {showBookingModal && (
+          <div className="modal modal-open">
+            <div className="modal-box rounded-[2.5rem] max-w-xl p-8 bg-white text-slate-800 border border-slate-100 shadow-2xl relative">
+              <button
+                onClick={() => {
+                  setShowBookingModal(false);
+                  setSelectedDate("");
+                  setSelectedSlotId("");
+                  setStudentNotes("");
+                }}
+                className="btn btn-sm btn-circle btn-ghost absolute right-6 top-6 text-slate-400 hover:text-slate-700"
+              >
+                <PiXBold className="w-5 h-5" />
+              </button>
+
+              <h3 className="text-2xl font-black tracking-tight mb-4 flex items-center gap-2">
+                <PiCalendarBlankFill className="text-primary" /> Book Live Mock Interview
+              </h3>
+
+              <div className="space-y-4">
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-black text-xs uppercase tracking-wider text-slate-500">1. Select Date</span>
+                  </label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={selectedDate}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value);
+                      setSelectedSlotId("");
+                    }}
+                    className="input input-bordered w-full rounded-2xl bg-slate-50 font-bold"
+                  />
+                </div>
+
+                {selectedDate && (
+                  <div className="form-control w-full">
+                    <label className="label">
+                      <span className="label-text font-black text-xs uppercase tracking-wider text-slate-500">2. Select Time Slot</span>
+                    </label>
+                    {filteredSlotsForDate.length === 0 ? (
+                      <p className="text-xs font-bold text-slate-400 p-2">
+                        No available slots on this date. Please try another date.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3 max-h-[150px] overflow-y-auto p-1">
+                        {filteredSlotsForDate.map((slot) => (
+                          <button
+                            key={slot._id}
+                            type="button"
+                            onClick={() => setSelectedSlotId(slot._id)}
+                            className={`p-3 text-xs font-extrabold rounded-xl border text-center transition-all ${
+                              selectedSlotId === slot._id
+                              ? "bg-primary border-primary text-white shadow-md shadow-primary/20"
+                              : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            <div>{slot.instructor?.name || "Expert Trainer"}</div>
+                            <div className="mt-1 text-[10px] opacity-80">
+                              {new Date(slot.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-black text-xs uppercase tracking-wider text-slate-500">3. Notes for Instructor</span>
+                  </label>
+                  <textarea
+                    placeholder="Focus areas, weaknesses, or specific topics you'd like to work on..."
+                    value={studentNotes}
+                    onChange={(e) => setStudentNotes(e.target.value)}
+                    className="textarea textarea-bordered w-full rounded-2xl bg-slate-50 font-bold h-20 placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div className="modal-action mt-6">
+                  <button
+                    onClick={handleConfirmBooking}
+                    disabled={isSubmittingBooking || !selectedSlotId}
+                    className="btn btn-primary w-full h-14 rounded-2xl font-black uppercase tracking-wider"
+                  >
+                    {isSubmittingBooking ? (
+                      <PiSpinner className="animate-spin text-lg" />
+                    ) : (
+                      "Confirm Booking"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

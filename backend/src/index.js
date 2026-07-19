@@ -18,6 +18,7 @@ import chatbotRouter from "./routes/chatbot.route.js";
 import { sanitizeMiddleware } from "./middlewares/sanitize.js";
 import superAdminRouter from "./routes/superAdmin.route.js";
 import ipBlocker from "./middlewares/ipBlocker.js";
+import bookingRouter from "./routes/booking.route.js";
 
 const Port = process.env.PORT || 3000;
 
@@ -74,6 +75,7 @@ app.use("/api/pricing", pricingRouter);
 app.use("/api/resources", resourceRouter);
 app.use("/api/trainers", trainersRouter);
 app.use("/api/chatbot", chatbotRouter);
+app.use("/api/bookings", bookingRouter);
 app.use("/api/superadmin", superAdminRouter);
 app.get("/api/settings/public", getPublicSystemConfig);
 

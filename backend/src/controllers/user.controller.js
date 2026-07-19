@@ -367,3 +367,51 @@ export const markNotificationsAsRead = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const saveFcmToken = async (req, res) => {
+    try {
+        const email = req.decoded_email;
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ success: false, message: "Token is required" });
+        }
+
+        const user = await User.findOneAndUpdate(
+            { email: email.toLowerCase().trim() },
+            { $addToSet: { fcmTokens: token } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        return res.status(200).json({ success: true, message: "FCM token saved successfully" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const removeFcmToken = async (req, res) => {
+    try {
+        const email = req.decoded_email;
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ success: false, message: "Token is required" });
+        }
+
+        const user = await User.findOneAndUpdate(
+            { email: email.toLowerCase().trim() },
+            { $pull: { fcmTokens: token } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        return res.status(200).json({ success: true, message: "FCM token removed successfully" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};

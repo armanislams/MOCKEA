@@ -12,6 +12,7 @@ import Loader from "../components/Loader/Loader";
 import { Logo } from "../components/Home/Logo";
 import useFullscreen from "../hooks/useFullscreen";
 import StudyBuddyChatbot from "../components/Common/StudyBuddyChatbot";
+import { registerPushNotifications, unregisterPushNotifications } from "../utils/fcm";
 
 const DashboardLayout = () => {
   const { user, logOut } = useAuth();
@@ -57,8 +58,9 @@ const DashboardLayout = () => {
   useEffect(() => {
     if (user) {
       fetchNotifications();
+      registerPushNotifications(axiosSecure);
     }
-  }, [user]);
+  }, [user, axiosSecure]);
 
   useEffect(() => {
     if (isError) {
@@ -90,11 +92,14 @@ const DashboardLayout = () => {
   }
 
   const handleLogOut = () => {
-    logOut()
-      .then(() => {
-        navigate('/');
-      })
-      .catch((err) => console.error(err));
+    unregisterPushNotifications(axiosSecure)
+      .finally(() => {
+        logOut()
+          .then(() => {
+            navigate('/');
+          })
+          .catch((err) => console.error(err));
+      });
   };
 
   const handleSidebarClick = (e) => {

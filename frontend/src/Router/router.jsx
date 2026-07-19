@@ -54,6 +54,7 @@ const ManageTrainers = lazy(() => import("../components/Dashboard/Admin Dashboar
 const InstructorPerformance = lazy(() => import("../components/Dashboard/Admin Dashboard/InstructorPerformance"));
 const SuperAdminConsole = lazy(() => import("../components/Dashboard/SuperAdminConsole/SuperAdminConsole"));
 const GradeSubmissions = lazy(() => import("../components/Dashboard/Instructor Dashboard/GradeSubmissions"));
+const ManageAvailability = lazy(() => import("../components/Dashboard/Instructor Dashboard/ManageAvailability"));
 const GuestTestLibrary = lazy(() => import("../components/Guest/GuestTestLibrary"));
 const GuestTestEnvironment = lazy(() => import("../components/Guest/GuestTestEnvironment"));
 const PricingPage = lazy(() => import("../components/PricingPage/PricingPage"));
@@ -407,6 +408,14 @@ const router = createBrowserRouter([
             element: (
               <InstructorRoutes>
                 {withSuspense(ManageResources)}
+              </InstructorRoutes>
+            ),
+          },
+          {
+            path: "instructor/slots",
+            element: (
+              <InstructorRoutes>
+                {withSuspense(ManageAvailability)}
               </InstructorRoutes>
             ),
           },

@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { PiChartBar, PiFiles, PiBookOpen, PiGraduationCap } from "react-icons/pi";
+import { PiChartBar, PiFiles, PiBookOpen, PiGraduationCap, PiCalendarBlank } from "react-icons/pi";
 
 export const InstructorDashboard = ({ isDrawerOpen }) => {
   return (
@@ -18,6 +18,13 @@ export const InstructorDashboard = ({ isDrawerOpen }) => {
         </NavLink>
       </li>
       
+      <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Manage Availability">
+        <NavLink to="/dashboard/instructor/slots" className={!isDrawerOpen ? "justify-center" : ""}>
+          <PiCalendarBlank className="w-5 h-5 shrink-0" />
+          {isDrawerOpen && <span>Manage Availability</span>}
+        </NavLink>
+      </li>
+
       <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Manage Resources">
         <NavLink to="/dashboard/instructor/manage-resources" className={!isDrawerOpen ? "justify-center" : ""}>
           <PiBookOpen className="w-5 h-5 shrink-0" />
@@ -31,7 +38,6 @@ export const InstructorDashboard = ({ isDrawerOpen }) => {
           {isDrawerOpen && <span>Trainers</span>}
         </NavLink>
       </li>
-      
      </>
   );
 };
