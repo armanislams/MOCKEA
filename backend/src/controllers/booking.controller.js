@@ -35,6 +35,7 @@ export const createSlots = async (req, res, next) => {
     // Overlap Check (Senior Dev Improvement)
     const overlap = await BookingSlot.findOne({
       instructor: req.user._id,
+      status: { $in: ["available", "booked"] },
       $or: [
         { startTime: { $lt: end }, endTime: { $gt: start } },
       ],
@@ -100,6 +101,7 @@ export const updateSlot = async (req, res, next) => {
       const overlap = await BookingSlot.findOne({
         _id: { $ne: id },
         instructor: req.user._id,
+        status: { $in: ["available", "booked"] },
         $or: [
           { startTime: { $lt: end }, endTime: { $gt: start } },
         ],
@@ -170,7 +172,7 @@ export const getAvailableSlots = async (req, res, next) => {
     // Only fetch upcoming available slots
     const slots = await BookingSlot.find({
       status: "available",
-      startTime: { $gt: new Date() },
+      endTime: { $gt: new Date() },
     })
       .populate("instructor", "name email specialty bio rating imageUrl")
       .sort({ startTime: 1 });
