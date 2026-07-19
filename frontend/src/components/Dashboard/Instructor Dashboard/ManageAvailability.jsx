@@ -37,7 +37,9 @@ const ManageAvailability = () => {
     },
   });
 
-  const slots = result.slots || [];
+  const allSlots = result.slots || [];
+  const slots = allSlots.filter((s) => s.status !== "completed");
+  const completedSlots = allSlots.filter((s) => s.status === "completed");
 
   // 2. Create Slot Mutation
   const createSlotMutation = useMutation({
@@ -469,6 +471,55 @@ const ManageAvailability = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Completed Sessions (Track Record) - Full Width */}
+      <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm">
+        <h3 className="text-2xl font-extrabold tracking-tight text-slate-800 mb-6 flex items-center gap-2">
+          <PiCheckCircleFill className="text-emerald-500 text-2xl" /> Session History (Track Record)
+        </h3>
+        {completedSlots.length === 0 ? (
+          <div className="text-center py-10 border border-dashed border-slate-200 rounded-[2rem] space-y-2">
+            <p className="text-xs text-slate-400 font-semibold">No completed sessions in your history yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table w-full text-slate-800">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-wider text-slate-400">
+                  <th className="py-4">Date</th>
+                  <th className="py-4">Time</th>
+                  <th className="py-4">Student</th>
+                  <th className="py-4">Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {completedSlots.map((slot) => (
+                  <tr key={slot._id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-4 font-bold text-slate-700">
+                      {new Date(slot.startTime).toLocaleDateString(undefined, {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+                    <td className="py-4 font-semibold text-slate-500">
+                      {new Date(slot.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
+                      {new Date(slot.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </td>
+                    <td className="py-4">
+                      <div className="font-bold text-slate-800">{slot.bookedBy?.name || "Student"}</div>
+                      <div className="text-[10px] text-slate-400 font-black uppercase tracking-wider">{slot.bookedBy?.email || "No email"}</div>
+                    </td>
+                    <td className="py-4 max-w-xs truncate text-xs text-slate-500 font-medium italic">
+                      {slot.studentNotes ? `"${slot.studentNotes}"` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
