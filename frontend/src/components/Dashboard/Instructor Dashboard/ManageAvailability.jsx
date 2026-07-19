@@ -98,9 +98,12 @@ const ManageAvailability = () => {
       showCancelButton: true,
       confirmButtonText: "Save",
       cancelButtonText: "Cancel",
+      background: "#ffffff",
       customClass: {
-        confirmButton: "btn btn-primary rounded-xl px-6",
-        cancelButton: "btn btn-ghost rounded-xl px-6"
+        container: "z-[99999]",
+        popup: "rounded-[2rem] shadow-2xl border border-slate-100",
+        confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-primary text-white border-none mx-2",
+        cancelButton: "rounded-xl px-8 py-3 font-bold btn btn-ghost text-slate-500 mx-2 hover:bg-slate-50"
       },
       buttonsStyling: false
     }).then((result) => {
@@ -133,9 +136,12 @@ const ManageAvailability = () => {
       showCancelButton: true,
       confirmButtonText: "Yes, Finish Session",
       cancelButtonText: "No, Keep Booked",
+      background: "#ffffff",
       customClass: {
-        confirmButton: "btn btn-success text-white rounded-xl px-6",
-        cancelButton: "btn btn-ghost rounded-xl px-6"
+        container: "z-[99999]",
+        popup: "rounded-[2rem] shadow-2xl border border-slate-100",
+        confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-success text-white border-none mx-2",
+        cancelButton: "rounded-xl px-8 py-3 font-bold btn btn-ghost text-slate-500 mx-2 hover:bg-slate-50"
       },
       buttonsStyling: false
     }).then((result) => {
@@ -433,9 +439,12 @@ const ManageAvailability = () => {
                               showCancelButton: true,
                               confirmButtonText: "Yes, Cancel & Delete",
                               cancelButtonText: "No",
+                              background: "#ffffff",
                               customClass: {
-                                confirmButton: "btn btn-error text-white rounded-xl px-6",
-                                cancelButton: "btn btn-ghost rounded-xl px-6"
+                                container: "z-[99999]",
+                                popup: "rounded-[2rem] shadow-2xl border border-slate-100",
+                                confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-error text-white border-none mx-2",
+                                cancelButton: "rounded-xl px-8 py-3 font-bold btn btn-ghost text-slate-500 mx-2 hover:bg-slate-50"
                               },
                               buttonsStyling: false
                             }).then((result) => {
