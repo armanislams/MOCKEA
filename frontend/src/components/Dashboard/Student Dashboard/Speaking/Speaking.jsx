@@ -100,8 +100,11 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   // Filter slots for selectedDate
   const filteredSlotsForDate = useMemo(() => {
     if (!selectedDate) return [];
+    const now = new Date();
     return availableSlots.filter((slot) => {
       const dateObj = new Date(slot.startTime);
+      // Filter out slots that have already started/expired
+      if (dateObj <= now) return false;
       const year = dateObj.getFullYear();
       const month = String(dateObj.getMonth() + 1).padStart(2, "0");
       const day = String(dateObj.getDate()).padStart(2, "0");
