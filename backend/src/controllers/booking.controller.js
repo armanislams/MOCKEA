@@ -168,10 +168,10 @@ export const deleteSlot = async (req, res, next) => {
 export const getAvailableSlots = async (req, res, next) => {
   try {
     await runSelfHealingCleanup();
-    // Only fetch upcoming available slots
+    // Only fetch upcoming available slots (with a 1-minute buffer to prevent clock skews)
     const slots = await BookingSlot.find({
       status: "available",
-      startTime: { $gt: new Date() },
+      startTime: { $gt: new Date(Date.now() + 60 * 1000) },
     })
       .populate("instructor", "name email specialty bio rating imageUrl")
       .sort({ startTime: 1 });
