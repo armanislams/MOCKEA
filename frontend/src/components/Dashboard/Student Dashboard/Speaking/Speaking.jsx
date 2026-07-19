@@ -84,7 +84,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
     },
     enabled: !!user?.email && userData?.plan !== "free",
   });
-  const bookedSessions = bookingsData.bookings || [];
+  const bookedSessions = (bookingsData.bookings || []).filter(session => session.status === "booked");
 
   // Fetch Available Slots
   const { data: availableSlotsData = {}, refetch: refetchAvailableSlots } = useQuery({
