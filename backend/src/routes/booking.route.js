@@ -8,7 +8,8 @@ import {
   bookSlot,
   getStudentBookings,
   cancelBooking,
-  completeBooking
+  completeBooking,
+  getAdminBookingAnalytics
 } from "../controllers/booking.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
@@ -17,6 +18,9 @@ const bookingRouter = express.Router();
 
 // Require authenticated token for all endpoints
 bookingRouter.use(verifyUserToken);
+
+// Admin Analytics Endpoint
+bookingRouter.get("/admin/analytics", verifyUserRole(["admin"]), getAdminBookingAnalytics);
 
 // Student & Public endpoints
 bookingRouter.get("/slots/available", getAvailableSlots);

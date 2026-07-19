@@ -55,6 +55,7 @@ const InstructorPerformance = lazy(() => import("../components/Dashboard/Admin D
 const SuperAdminConsole = lazy(() => import("../components/Dashboard/SuperAdminConsole/SuperAdminConsole"));
 const GradeSubmissions = lazy(() => import("../components/Dashboard/Instructor Dashboard/GradeSubmissions"));
 const ManageAvailability = lazy(() => import("../components/Dashboard/Instructor Dashboard/ManageAvailability"));
+const BookingAnalytics = lazy(() => import("../components/Dashboard/Admin Dashboard/BookingAnalytics"));
 const GuestTestLibrary = lazy(() => import("../components/Guest/GuestTestLibrary"));
 const GuestTestEnvironment = lazy(() => import("../components/Guest/GuestTestEnvironment"));
 const PricingPage = lazy(() => import("../components/PricingPage/PricingPage"));
@@ -360,6 +361,14 @@ const router = createBrowserRouter([
             element: (
               <AdminRoutes>
                 {withSuspense(InstructorPerformance)}
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/booking-analytics",
+            element: (
+              <AdminRoutes>
+                {withSuspense(BookingAnalytics)}
               </AdminRoutes>
             ),
           },

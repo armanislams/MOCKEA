@@ -2,6 +2,18 @@ import BookingSlot from "../model/bookingSlot.js";
 import User from "../model/user.js";
 import { sendPushNotification } from "../utils/push.js";
 
+const runSelfHealingCleanup = async () => {
+  try {
+    const now = new Date();
+    // 1. Delete unbooked available slots that are in the past
+    await BookingSlot.deleteMany({ status: "available", endTime: { $lt: now } });
+    // 2. Auto-complete booked slots that are in the past
+    await BookingSlot.updateMany({ status: "booked", endTime: { $lt: now } }, { $set: { status: "completed" } });
+  } catch (error) {
+    console.error("[Self Healing Cleanup] Error:", error);
+  }
+};
+
 // @desc    Create new availability slots (Instructor Only)
 // @route   POST /api/bookings/slots
 export const createSlots = async (req, res, next) => {
@@ -49,6 +61,7 @@ export const createSlots = async (req, res, next) => {
 // @route   GET /api/bookings/instructor/slots
 export const getInstructorSlots = async (req, res, next) => {
   try {
+    await runSelfHealingCleanup();
     const slots = await BookingSlot.find({ instructor: req.user._id })
       .populate("bookedBy", "name email plan")
       .sort({ startTime: 1 });
@@ -153,6 +166,7 @@ export const deleteSlot = async (req, res, next) => {
 // @route   GET /api/bookings/slots/available
 export const getAvailableSlots = async (req, res, next) => {
   try {
+    await runSelfHealingCleanup();
     // Only fetch upcoming available slots
     const slots = await BookingSlot.find({
       status: "available",
@@ -220,6 +234,7 @@ export const bookSlot = async (req, res, next) => {
 // @route   GET /api/bookings/student/bookings
 export const getStudentBookings = async (req, res, next) => {
   try {
+    await runSelfHealingCleanup();
     const bookings = await BookingSlot.find({ bookedBy: req.user._id })
       .populate("instructor", "name email specialty imageUrl")
       .sort({ startTime: 1 });
@@ -314,6 +329,55 @@ export const completeBooking = async (req, res, next) => {
     }
 
     res.status(200).json({ success: true, message: "Session marked as completed successfully.", slot });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get Booking Analytics for Admin
+// @route   GET /api/bookings/admin/analytics
+export const getAdminBookingAnalytics = async (req, res, next) => {
+  try {
+    await runSelfHealingCleanup();
+
+    // 1. Available Instructors (instructors with upcoming available slots)
+    const availableSlots = await BookingSlot.find({ status: "available", startTime: { $gt: new Date() } })
+      .populate("instructor", "name email specialty");
+    const availableInstructorsMap = new Map();
+    availableSlots.forEach(s => {
+      if (s.instructor) {
+        availableInstructorsMap.set(String(s.instructor._id), s.instructor);
+      }
+    });
+    const availableInstructors = Array.from(availableInstructorsMap.values());
+
+    // 2. Instructor Session Metrics (completed session counts)
+    const completedSessionCounts = await BookingSlot.aggregate([
+      { $match: { status: "completed" } },
+      { $group: { _id: "$instructor", sessionCount: { $sum: 1 } } }
+    ]);
+
+    // Populate instructor details for the metrics
+    const instructorMetrics = await Promise.all(completedSessionCounts.map(async (metric) => {
+      const instructorInfo = await User.findById(metric._id, "name email specialty imageUrl");
+      return {
+        instructor: instructorInfo,
+        sessionCount: metric.sessionCount
+      };
+    }));
+
+    // 3. Meeting Logs (all booked and completed meetings)
+    const meetingLogs = await BookingSlot.find({ status: { $in: ["booked", "completed"] } })
+      .populate("instructor", "name email specialty")
+      .populate("bookedBy", "name email plan")
+      .sort({ startTime: -1 });
+
+    res.status(200).json({
+      success: true,
+      availableInstructors,
+      instructorMetrics,
+      meetingLogs
+    });
   } catch (error) {
     next(error);
   }

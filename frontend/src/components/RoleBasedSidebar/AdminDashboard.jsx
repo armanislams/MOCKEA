@@ -67,6 +67,12 @@ export const AdminDashboard = ({ isDrawerOpen }) => {
           {isDrawerOpen && <span className="font-bold text-slate-700 dark:text-gray-300">Tutor Performance</span>}
         </NavLink>
       </li>
+      <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Booking Analytics">
+        <NavLink to="/dashboard/admin/booking-analytics" className={!isDrawerOpen ? "justify-center" : ""}>
+          <PiBookOpen className="w-5 h-5 shrink-0 text-emerald-500" />
+          {isDrawerOpen && <span className="font-bold text-slate-700">Booking Analytics</span>}
+        </NavLink>
+      </li>
       <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Settings">
         <NavLink to="/dashboard/admin/settings" className={!isDrawerOpen ? "justify-center" : ""}>
           <PiGear className="w-5 h-5 shrink-0" />
