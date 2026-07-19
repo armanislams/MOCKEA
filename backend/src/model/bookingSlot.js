@@ -17,7 +17,7 @@ const bookingSlotSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["available", "booked"],
+      enum: ["available", "booked", "completed"],
       default: "available",
     },
     bookedBy: {

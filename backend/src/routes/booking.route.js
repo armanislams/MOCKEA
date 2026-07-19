@@ -7,7 +7,8 @@ import {
   getAvailableSlots,
   bookSlot,
   getStudentBookings,
-  cancelBooking
+  cancelBooking,
+  completeBooking
 } from "../controllers/booking.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
@@ -27,6 +28,7 @@ bookingRouter.post("/slots", verifyUserRole(["instructor", "admin"]), createSlot
 bookingRouter.get("/instructor/slots", verifyUserRole(["instructor", "admin"]), getInstructorSlots);
 bookingRouter.put("/slots/:id", verifyUserRole(["instructor", "admin"]), updateSlot);
 bookingRouter.delete("/slots/:id", verifyUserRole(["instructor", "admin"]), deleteSlot);
+bookingRouter.post("/slots/:id/complete", verifyUserRole(["instructor", "admin"]), completeBooking);
 
 // Cancellation shared route (either student or instructor)
 bookingRouter.post("/slots/:id/cancel", verifyUserRole(["student", "instructor", "admin"]), cancelBooking);

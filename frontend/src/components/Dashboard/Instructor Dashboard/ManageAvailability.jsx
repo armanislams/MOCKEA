@@ -15,6 +15,7 @@ import {
   PiPencilBold
 } from "react-icons/pi";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const ManageAvailability = () => {
@@ -88,10 +89,60 @@ const ManageAvailability = () => {
   });
 
   const handleEditLink = (slotId, currentLink) => {
-    const newLink = window.prompt("Enter new Zoom/Google Meet link for this session:", currentLink || "");
-    if (newLink !== null) {
-      updateSlotMutation.mutate({ id: slotId, meetingLink: newLink });
-    }
+    Swal.fire({
+      title: "Update Meeting Link",
+      input: "url",
+      inputLabel: "Zoom/Google Meet Link",
+      inputValue: currentLink || "",
+      inputPlaceholder: "https://zoom.us/j/...",
+      showCancelButton: true,
+      confirmButtonText: "Save",
+      cancelButtonText: "Cancel",
+      customClass: {
+        confirmButton: "btn btn-primary rounded-xl px-6",
+        cancelButton: "btn btn-ghost rounded-xl px-6"
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        updateSlotMutation.mutate({ id: slotId, meetingLink: result.value });
+      }
+    });
+  };
+
+  // 5. Complete Slot Mutation
+  const completeSlotMutation = useMutation({
+    mutationFn: async (slotId) => {
+      const res = await axiosSecure.post(`/bookings/slots/${slotId}/complete`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["instructor-slots"] });
+      toast.success("Mock session completed successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to complete mock session.");
+    },
+  });
+
+  const handleCompleteSlot = (slotId) => {
+    Swal.fire({
+      title: "Finish Mock Session?",
+      text: "This will mark the session as completed and allow you to open new availability slots.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Finish Session",
+      cancelButtonText: "No, Keep Booked",
+      customClass: {
+        confirmButton: "btn btn-success text-white rounded-xl px-6",
+        cancelButton: "btn btn-ghost rounded-xl px-6"
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        completeSlotMutation.mutate(slotId);
+      }
+    });
   };
 
   const handleSubmit = (e) => {
@@ -363,15 +414,38 @@ const ManageAvailability = () => {
                           <PiLinkBold className="w-5 h-5" />
                         </a>
                       )}
+                      {slot.status === "booked" && (
+                        <button
+                          onClick={() => handleCompleteSlot(slot._id)}
+                          className="btn btn-xs btn-success text-white rounded-lg px-3 py-1.5 font-bold uppercase tracking-wider"
+                          title="Finish Session Early"
+                        >
+                          Finish Early
+                        </button>
+                      )}
                       <button
                         onClick={() => {
-                          if (
-                            slot.status === "booked" &&
-                            !window.confirm("This slot is already booked by a student. Are you sure you want to cancel the booking and delete it?")
-                          ) {
-                            return;
+                          if (slot.status === "booked") {
+                            Swal.fire({
+                              title: "Cancel Booking and Delete?",
+                              text: "This slot is booked. Deleting it will cancel the student's booking.",
+                              icon: "warning",
+                              showCancelButton: true,
+                              confirmButtonText: "Yes, Cancel & Delete",
+                              cancelButtonText: "No",
+                              customClass: {
+                                confirmButton: "btn btn-error text-white rounded-xl px-6",
+                                cancelButton: "btn btn-ghost rounded-xl px-6"
+                              },
+                              buttonsStyling: false
+                            }).then((result) => {
+                              if (result.isConfirmed) {
+                                deleteSlotMutation.mutate(slot._id);
+                              }
+                            });
+                          } else {
+                            deleteSlotMutation.mutate(slot._id);
                           }
-                          deleteSlotMutation.mutate(slot._id);
                         }}
                         disabled={deleteSlotMutation.isPending}
                         className="btn btn-ghost hover:bg-red-50 btn-circle text-red-500"

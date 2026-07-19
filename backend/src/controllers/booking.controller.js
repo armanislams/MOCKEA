@@ -283,3 +283,38 @@ export const cancelBooking = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Mark a booked slot as completed (Instructor Only)
+// @route   POST /api/bookings/slots/:id/complete
+export const completeBooking = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const instructorId = req.user._id;
+
+    const slot = await BookingSlot.findOne({ _id: id, instructor: instructorId });
+
+    if (!slot) {
+      return res.status(404).json({ success: false, message: "Slot not found or unauthorized." });
+    }
+
+    if (slot.status !== "booked") {
+      return res.status(400).json({ success: false, message: "Only booked sessions can be marked as completed." });
+    }
+
+    slot.status = "completed";
+    await slot.save();
+
+    // Trigger push notification to student
+    if (slot.bookedBy) {
+      await sendPushNotification(
+        slot.bookedBy,
+        "Mock Interview Completed",
+        `Your IELTS speaking mock session with ${req.user.name} has been marked completed.`
+      );
+    }
+
+    res.status(200).json({ success: true, message: "Session marked as completed successfully.", slot });
+  } catch (error) {
+    next(error);
+  }
+};
