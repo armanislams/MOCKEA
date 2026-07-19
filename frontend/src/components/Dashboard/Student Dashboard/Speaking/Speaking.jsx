@@ -1136,7 +1136,7 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
               </span>
               <h3 className="text-2xl font-black tracking-tight leading-tight">
                 Live 1-on-1 Interview with <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-emerald-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0028a2] to-[#E30613]">
                   Certified IELTS Examiners
                 </span>
               </h3>

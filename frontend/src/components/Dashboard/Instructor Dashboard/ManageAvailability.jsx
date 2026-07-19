@@ -192,7 +192,7 @@ const ManageAvailability = () => {
             <PiCalendarBlankBold className="text-primary" /> Schedule & Mentorship
           </div>
           <h1 className="text-4xl lg:text-6xl font-black tracking-tighter leading-none">
-            Manage <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-emerald-400">Availability</span>
+            Manage <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0028a2] to-[#E30613]">Availability</span>
           </h1>
           <p className="text-base text-slate-400 font-medium">
             Setup available dates, hours, and virtual rooms for student IELTS mock speaking sessions.
