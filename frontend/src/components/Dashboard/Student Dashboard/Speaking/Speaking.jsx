@@ -130,15 +130,30 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // Cancel Booking Mutation
   const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
-    try {
-      await axiosSecure.post(`/bookings/slots/${bookingId}/cancel`);
-      toast.success("Booking cancelled successfully.");
-      refetchBookings();
-      refetchAvailableSlots();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to cancel booking.");
-    }
+    Swal.fire({
+      title: "Cancel Booking?",
+      text: "Are you sure you want to cancel this mock speaking session booking?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Cancel Booking",
+      cancelButtonText: "No, Keep Booked",
+      customClass: {
+        confirmButton: "btn btn-error text-white rounded-xl px-6",
+        cancelButton: "btn btn-ghost rounded-xl px-6"
+      },
+      buttonsStyling: false
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axiosSecure.post(`/bookings/slots/${bookingId}/cancel`);
+          toast.success("Booking cancelled successfully.");
+          refetchBookings();
+          refetchAvailableSlots();
+        } catch (err) {
+          toast.error(err.response?.data?.message || "Failed to cancel booking.");
+        }
+      }
+    });
   };
 
   const [selectedSetId, setSelectedSetId] = useState("");
@@ -1146,52 +1161,53 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[180px] overflow-y-auto pr-1">
-                  {bookedSessions.map((session) => (
-                    <div key={session._id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-xs font-black uppercase text-slate-400 tracking-wider">
-                            Instructor: {session.instructor?.name || "Expert Trainer"}
+                  {bookedSessions.map((session) => {
+                    const now = new Date();
+                    const start = new Date(session.startTime);
+                    const end = new Date(session.endTime);
+                    const isOngoing = now >= start && now <= end;
+
+                    return (
+                      <div key={session._id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                              Instructor: {session.instructor?.name || "Expert Trainer"}
+                            </div>
+                            {isOngoing && (
+                              <span className="badge badge-primary animate-pulse text-[8px] py-1 px-1.5 rounded font-black uppercase tracking-wider text-white">
+                                Ongoing
+                              </span>
+                            )}
                           </div>
-                          {(() => {
-                            const now = new Date();
-                            const start = new Date(session.startTime);
-                            const end = new Date(session.endTime);
-                            if (now >= start && now <= end) {
-                              return (
-                                <span className="badge badge-primary animate-pulse text-[8px] py-1 px-1.5 rounded font-black uppercase tracking-wider text-white">
-                                  Ongoing
-                                </span>
-                              );
-                            }
-                            return null;
-                          })()}
+                          <div className="text-sm font-extrabold text-slate-800 mt-0.5">
+                            {new Date(session.startTime).toLocaleDateString()} &bull;{" "}
+                            {new Date(session.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </div>
                         </div>
-                        <div className="text-sm font-extrabold text-slate-800 mt-0.5">
-                          {new Date(session.startTime).toLocaleDateString()} &bull;{" "}
-                          {new Date(session.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        <div className="flex items-center gap-2">
+                          {session.meetingLink && (
+                            <a
+                              href={session.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-xs btn-primary rounded-lg text-[10px] font-black uppercase"
+                            >
+                              <PiLinkBold /> Start Room
+                            </a>
+                          )}
+                          {!isOngoing && (
+                            <button
+                              onClick={() => handleCancelBooking(session._id)}
+                              className="btn btn-xs btn-outline btn-error rounded-lg text-[10px] font-black uppercase"
+                            >
+                              Cancel
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {session.meetingLink && (
-                          <a
-                            href={session.meetingLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-xs btn-primary rounded-lg text-[10px] font-black uppercase"
-                          >
-                            <PiLinkBold /> Start Room
-                          </a>
-                        )}
-                        <button
-                          onClick={() => handleCancelBooking(session._id)}
-                          className="btn btn-xs btn-outline btn-error rounded-lg text-[10px] font-black uppercase"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
