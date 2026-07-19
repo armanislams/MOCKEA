@@ -391,11 +391,18 @@ const ManageAvailability = () => {
                             </p>
                           )}
                         </div>
-                      ) : (
-                        <span className="badge badge-ghost text-[9px] font-black uppercase tracking-widest text-slate-400 py-2 px-2.5 w-fit">
-                          Available
-                        </span>
-                      )}
+                      ) : (() => {
+                        const isExpired = new Date(slot.startTime) < new Date();
+                        return isExpired ? (
+                          <span className="badge badge-error text-[9px] font-black uppercase tracking-widest text-white py-2 px-2.5 w-fit">
+                            Expired
+                          </span>
+                        ) : (
+                          <span className="badge badge-ghost text-[9px] font-black uppercase tracking-widest text-slate-400 py-2 px-2.5 w-fit">
+                            Available
+                          </span>
+                        );
+                      })()}
 
                       <div className="text-xs text-slate-400 flex items-center gap-2 font-semibold">
                         <PiLinkBold className="text-primary/50" />
