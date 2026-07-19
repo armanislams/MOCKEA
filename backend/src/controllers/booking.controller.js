@@ -5,8 +5,7 @@ import { sendPushNotification } from "../utils/push.js";
 const runSelfHealingCleanup = async () => {
   try {
     const now = new Date();
-    // 1. Delete unbooked available slots that are in the past
-    await BookingSlot.deleteMany({ status: "available", endTime: { $lt: now } });
+    // 1. Keep unbooked available slots in the past so instructors can view/delete them. (Removed deleteMany)
     // 2. Auto-complete booked slots that are in the past
     await BookingSlot.updateMany({ status: "booked", endTime: { $lt: now } }, { $set: { status: "completed" } });
   } catch (error) {
@@ -172,7 +171,7 @@ export const getAvailableSlots = async (req, res, next) => {
     // Only fetch upcoming available slots
     const slots = await BookingSlot.find({
       status: "available",
-      endTime: { $gt: new Date() },
+      startTime: { $gt: new Date() },
     })
       .populate("instructor", "name email specialty bio rating imageUrl")
       .sort({ startTime: 1 });
