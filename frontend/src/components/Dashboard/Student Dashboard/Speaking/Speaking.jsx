@@ -101,7 +101,11 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const filteredSlotsForDate = useMemo(() => {
     if (!selectedDate) return [];
     return availableSlots.filter((slot) => {
-      const slotDateStr = new Date(slot.startTime).toISOString().split("T")[0];
+      const dateObj = new Date(slot.startTime);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getDate()).padStart(2, "0");
+      const slotDateStr = `${year}-${month}-${day}`;
       return slotDateStr === selectedDate;
     });
   }, [availableSlots, selectedDate]);
