@@ -71,8 +71,8 @@ export const updateSlot = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Slot not found or unauthorized." });
     }
 
-    if (slot.status === "booked") {
-      return res.status(400).json({ success: false, message: "Cannot edit a slot that has already been booked." });
+    if (slot.status === "booked" && (startTime || endTime)) {
+      return res.status(400).json({ success: false, message: "Cannot edit slot timings once a student has booked it." });
     }
 
     if (startTime && endTime) {
@@ -100,11 +100,22 @@ export const updateSlot = async (req, res, next) => {
       slot.endTime = end;
     }
 
-    if (meetingLink !== undefined) {
+    let meetingLinkUpdated = false;
+    if (meetingLink !== undefined && meetingLink !== slot.meetingLink) {
       slot.meetingLink = meetingLink;
+      meetingLinkUpdated = true;
     }
 
     await slot.save();
+
+    if (meetingLinkUpdated && slot.status === "booked" && slot.bookedBy) {
+      await sendPushNotification(
+        slot.bookedBy,
+        "Meeting Link Updated",
+        `The instructor has updated the meeting link for your speaking session scheduled on ${new Date(slot.startTime).toLocaleDateString()}.`
+      );
+    }
+
     res.status(200).json({ success: true, slot });
   } catch (error) {
     next(error);

@@ -11,7 +11,8 @@ import {
   PiNotebookBold,
   PiSpinner,
   PiCheckCircleFill,
-  PiWarningBold
+  PiWarningBold,
+  PiPencilBold
 } from "react-icons/pi";
 import { toast } from "react-toastify";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
@@ -70,6 +71,28 @@ const ManageAvailability = () => {
       toast.error(error.response?.data?.message || "Failed to delete slot.");
     },
   });
+
+  // 4. Update Slot Mutation
+  const updateSlotMutation = useMutation({
+    mutationFn: async ({ id, meetingLink }) => {
+      const res = await axiosSecure.put(`/bookings/slots/${id}`, { meetingLink });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["instructor-slots"] });
+      toast.success("Meeting link updated successfully.");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update meeting link.");
+    },
+  });
+
+  const handleEditLink = (slotId, currentLink) => {
+    const newLink = window.prompt("Enter new Zoom/Google Meet link for this session:", currentLink || "");
+    if (newLink !== null) {
+      updateSlotMutation.mutate({ id: slotId, meetingLink: newLink });
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -287,9 +310,21 @@ const ManageAvailability = () => {
                       {/* Status / Student Notes */}
                       {slot.status === "booked" ? (
                         <div className="space-y-1">
-                          <span className="badge badge-success text-[9px] font-black uppercase tracking-widest text-white py-2 px-2.5 flex items-center gap-1.5 w-fit">
-                            <PiCheckCircleFill className="text-sm" /> Booked by {slot.bookedBy?.name}
-                          </span>
+                          {(() => {
+                            const now = new Date();
+                            const start = new Date(slot.startTime);
+                            const end = new Date(slot.endTime);
+                            const isOngoing = now >= start && now <= end;
+                            return isOngoing ? (
+                              <span className="badge badge-primary animate-pulse text-[9px] font-black uppercase tracking-widest text-white py-2 px-2.5 flex items-center gap-1.5 w-fit">
+                                <PiCheckCircleFill className="text-sm" /> Ongoing Session
+                              </span>
+                            ) : (
+                              <span className="badge badge-success text-[9px] font-black uppercase tracking-widest text-white py-2 px-2.5 flex items-center gap-1.5 w-fit">
+                                <PiCheckCircleFill className="text-sm" /> Booked by {slot.bookedBy?.name}
+                              </span>
+                            );
+                          })()}
                           {slot.studentNotes && (
                             <p className="text-xs text-slate-500 font-medium italic flex items-start gap-1">
                               <PiNotebookBold className="text-slate-400 shrink-0 mt-0.5" />
@@ -303,12 +338,17 @@ const ManageAvailability = () => {
                         </span>
                       )}
 
-                      {slot.meetingLink && (
-                        <div className="text-xs text-slate-400 flex items-center gap-1 truncate font-semibold">
-                          <PiLinkBold className="text-primary/50" />
-                          <span className="truncate max-w-[250px]">{slot.meetingLink}</span>
-                        </div>
-                      )}
+                      <div className="text-xs text-slate-400 flex items-center gap-2 font-semibold">
+                        <PiLinkBold className="text-primary/50" />
+                        <span className="truncate max-w-[200px]">{slot.meetingLink || "No link added"}</span>
+                        <button
+                          onClick={() => handleEditLink(slot._id, slot.meetingLink)}
+                          className="btn btn-ghost btn-xs btn-circle hover:bg-slate-200 text-slate-500"
+                          title="Edit Link"
+                        >
+                          <PiPencilBold className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 justify-end">
