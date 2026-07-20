@@ -552,7 +552,7 @@ export const gradeSection = async (req, res) => {
             }
         }
 
-        const instructor = await User.findOne({ email: req.decoded_email });
+        const instructor = req.user;
 
         section.score = score;
         if (feedback !== undefined) {
@@ -579,7 +579,7 @@ export const gradeSection = async (req, res) => {
 export const lockMockResult = async (req, res) => {
     try {
         const { id } = req.params;
-        const instructor = await User.findOne({ email: req.decoded_email });
+        const instructor = req.user;
         
         const result = await MockTestResult.findById(id);
         if (!result) {
