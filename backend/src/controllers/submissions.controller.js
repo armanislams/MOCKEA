@@ -198,7 +198,7 @@ export const reviewSubmission = async (req, res) => {
 export const lockSubmission = async (req, res) => {
     try {
         const { id } = req.params;
-        const instructor = await User.findOne({ email: req.decoded_email });
+        const instructor = req.user;
         
         // Atomic lock acquisition: only lock if not already locked by someone else
         const lockExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
