@@ -261,6 +261,9 @@ export const deleteSubmission = async (req, res) => {
 
 export const getUploadSignature = async (req, res) => {
     try {
+        if (!process.env.CLOUDINARY_API_SECRET) {
+            return res.status(500).json({ success: false, message: 'Cloudinary API Secret is not configured on the server.' });
+        }
         const timestamp = Math.round(new Date().getTime() / 1000);
         const folder = 'mockea_speaking_submissions';
 
