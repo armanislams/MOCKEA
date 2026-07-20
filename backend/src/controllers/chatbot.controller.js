@@ -190,7 +190,15 @@ export const chatWithAI = async (req, res, next) => {
     }
 
     // 4. Input Sanitization
-    const lastUserMessage = messages[messages.length - 1].content;
+    const lastMessageObj = messages[messages.length - 1];
+    if (!lastMessageObj || typeof lastMessageObj.content !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user message format."
+      });
+    }
+
+    const lastUserMessage = lastMessageObj.content;
     const sanitization = sanitizeChatInput(lastUserMessage);
     if (!sanitization.isSafe) {
       return res.status(400).json({
