@@ -248,12 +248,6 @@ CRITICAL INSTRUCTIONS:
     );
 
     // 7. Save Usage Count (atomic increment to prevent race conditions)
-    const usageQuery = usageRecord
-      ? { _id: usageRecord._id }
-      : activeUser
-        ? { userId: activeUser._id, lastUsedDate: todayStr }
-        : { ipAddress: ipAddress, lastUsedDate: todayStr };
-
     if (usageRecord) {
       await UserChatbotUsage.findOneAndUpdate(
         { _id: usageRecord._id },
