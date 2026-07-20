@@ -53,7 +53,7 @@ const useAxiosSecure = () => {
         });
       }
 
-      if (status === 401 || status === 403) {
+      if (status === 401) {
         try {
           await logOut();
         } catch (logoutError) {
