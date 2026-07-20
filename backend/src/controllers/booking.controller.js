@@ -264,8 +264,8 @@ export const cancelBooking = async (req, res, next) => {
     }
 
     // Verify authorized user (must be student who booked, or the instructor)
-    const isStudent = String(slot.bookedBy._id) === String(userId);
-    const isInstructor = String(slot.instructor._id) === String(userId);
+    const isStudent = slot.bookedBy && String(slot.bookedBy._id) === String(userId);
+    const isInstructor = slot.instructor && String(slot.instructor._id) === String(userId);
 
     if (!isStudent && !isInstructor) {
       return res.status(403).json({ success: false, message: "Unauthorized to cancel this booking." });
@@ -284,13 +284,13 @@ export const cancelBooking = async (req, res, next) => {
       await sendPushNotification(
         slot.instructor._id,
         "Student Cancelled Booking",
-        `${slot.bookedBy.name} cancelled the session scheduled for ${originalStartTime.toLocaleDateString()}.`
+        `${slot.bookedBy ? slot.bookedBy.name : "A student"} cancelled the session scheduled for ${originalStartTime.toLocaleDateString()}.`
       );
-    } else {
+    } else if (slot.bookedBy) {
       await sendPushNotification(
         slot.bookedBy._id,
         "Instructor Cancelled Booking",
-        `${slot.instructor.name} has cancelled the session scheduled for ${originalStartTime.toLocaleDateString()}.`
+        `${slot.instructor ? slot.instructor.name : "The instructor"} has cancelled the session scheduled for ${originalStartTime.toLocaleDateString()}.`
       );
     }
 
