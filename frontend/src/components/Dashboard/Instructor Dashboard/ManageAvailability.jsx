@@ -161,10 +161,17 @@ const ManageAvailability = () => {
     }
 
     const startDateTime = new Date(`${date}T${startTime}`);
-    const endDateTime = new Date(`${date}T${endTime}`);
+    let endDateTime = new Date(`${date}T${endTime}`);
 
-    if (startDateTime >= endDateTime) {
-      toast.error("End time must be after start time.");
+    // If end time is less than or equal to start time, assume the slot spans past midnight to the next day
+    if (endDateTime <= startDateTime) {
+      endDateTime.setDate(endDateTime.getDate() + 1);
+    }
+
+    // Safety check: slots should not exceed 12 hours (indicates potential user entry mistake)
+    const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+    if (durationHours > 12) {
+      toast.error("End time must be after start time (slots cannot exceed 12 hours).");
       return;
     }
 
@@ -272,7 +279,7 @@ const ManageAvailability = () => {
                   required
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="input input-bordered w-full rounded-2xl bg-slate-50 font-bold"
+                  className="input input-bordered w-full rounded-2xl bg-slate-50 font-semibold px-3 text-sm pr-8"
                 />
               </div>
 
@@ -285,7 +292,7 @@ const ManageAvailability = () => {
                   required
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="input input-bordered w-full rounded-2xl bg-slate-50 font-bold"
+                  className="input input-bordered w-full rounded-2xl bg-slate-50 font-semibold px-3 text-sm pr-8"
                 />
               </div>
             </div>
