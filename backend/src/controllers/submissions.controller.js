@@ -112,7 +112,10 @@ export const getSubmissions = async (req, res) => {
 
 const calculateIeltsBand = (scoresList) => {
     if (!scoresList || scoresList.length === 0) return 0;
-    const avg = scoresList.reduce((sum, val) => sum + parseFloat(val || 0), 0) / scoresList.length;
+    const cleanScores = scoresList.map(val => parseFloat(val)).filter(val => !isNaN(val));
+    if (cleanScores.length === 0) return 0;
+    
+    const avg = cleanScores.reduce((sum, val) => sum + val, 0) / cleanScores.length;
     const integerPart = Math.floor(avg);
     const decimalPart = avg - integerPart;
     if (decimalPart < 0.25) {
