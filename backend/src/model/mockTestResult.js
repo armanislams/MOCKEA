@@ -80,6 +80,7 @@ const mockTestResultSchema = new mongoose.Schema({
 mockTestResultSchema.index({ userId: 1 });
 mockTestResultSchema.index({ testId: 1 });
 mockTestResultSchema.index({ status: 1 });
+mockTestResultSchema.index({ userId: 1, createdAt: -1 });
 
 const MockTestResult = mongoose.model('MockTestResult', mockTestResultSchema);
 export default MockTestResult;
