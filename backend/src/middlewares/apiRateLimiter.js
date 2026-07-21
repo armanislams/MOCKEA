@@ -70,8 +70,9 @@ const apiRateLimiter = (limitParam = "globalLimit", windowMs = 60 * 1000) => {
         if (token && token !== "undefined" && token !== "null") {
           // Decode payload portion of JWT (no verification needed — just extracting id for bucketing)
           const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
-          if (payload.user_id) {
-            key = `${ip}:${payload.user_id}`;
+          const userId = payload.uid || payload.user_id || payload.sub;
+          if (userId) {
+            key = `${ip}:${userId}`;
           }
         }
       }
