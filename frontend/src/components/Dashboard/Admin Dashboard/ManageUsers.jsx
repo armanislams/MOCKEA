@@ -16,6 +16,7 @@ import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import useAdminQuery from "../../../hooks/useAdminQuery";
 import { useRole } from "../../../hooks/useRole";
 import TableShell from "../../Common/TableShell";
+import PlanTimeframeModal from "./PlanTimeframeModal";
 
 // ─── Utility ───────────────────────────────────────────────────────────────────
 
@@ -78,27 +79,43 @@ const PlanDropdown = ({ user, onChangePlan, loading, disabled }) => {
   const [open, setOpen] = useState(false);
   const PLANS = ["free", "standard", "premium"];
 
+  const formatExpiryText = () => {
+    if (user.plan === "free") return null;
+    if (!user.planExpiresAt) return "Lifetime Access";
+    const exp = new Date(user.planExpiresAt);
+    return `Exp: ${exp.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+  };
+
+  const expiryBadge = formatExpiryText();
+
   return (
     <div className="relative">
-      <button
-        className="btn btn-ghost btn-xs gap-1 font-semibold"
-        onClick={() => setOpen((v) => !v)}
-        disabled={loading || disabled}
-      >
-        <span className={`badge badge-sm ${PLAN_COLORS[user.plan] ?? "badge-ghost"}`}>
-          {user.plan}
-        </span>
-        {!disabled && <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />}
-      </button>
+      <div className="flex flex-col items-start gap-0.5">
+        <button
+          className="btn btn-ghost btn-xs gap-1 font-semibold"
+          onClick={() => setOpen((v) => !v)}
+          disabled={loading || disabled}
+        >
+          <span className={`badge badge-sm ${PLAN_COLORS[user.plan] ?? "badge-ghost"}`}>
+            {user.plan}
+          </span>
+          {!disabled && <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />}
+        </button>
+        {expiryBadge && (
+          <span className="text-[10px] font-medium text-base-content/50 pl-1">
+            {expiryBadge}
+          </span>
+        )}
+      </div>
 
       {open && !disabled && (
-        <div className="absolute left-0 top-full mt-1 z-30 min-w-[120px] rounded-xl border border-base-300 bg-base-100 shadow-xl overflow-hidden">
+        <div className="absolute left-0 top-full mt-1 z-30 min-w-[130px] rounded-xl border border-base-300 bg-base-100 shadow-xl overflow-hidden">
           {PLANS.filter((p) => p !== user.plan).map((p) => (
             <button
               key={p}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200 transition-colors"
               onClick={() => {
-                onChangePlan(user._id, p);
+                onChangePlan(user, p);
                 setOpen(false);
               }}
             >
@@ -236,6 +253,13 @@ const ManageUsers = () => {
   const [planFilter, setPlanFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // ── Timeframe Modal state ──────────────────────────────────────────────────
+  const [timeframeModal, setTimeframeModal] = useState({
+    open: false,
+    user: null,
+    targetPlan: null,
+  });
+
   // ── useQuery: fetch all users (cached, auto-refetch on mount) ────────────────
   const {
     data: allUsers = [],
@@ -300,11 +324,12 @@ const ManageUsers = () => {
 
   // ── useMutation: change plan ──────────────────────────────────────────────────
   const planMutation = useMutation({
-    mutationFn: ({ id, plan }) => axiosSecure.patch(`/user/${id}/plan`, { plan }),
+    mutationFn: (payload) => axiosSecure.patch(`/user/${payload.id}/plan`, payload),
     onSuccess: (_, { plan }) => {
+        setTimeframeModal({ open: false, user: null, targetPlan: null });
         Swal.fire({
-            title: "Updated!",
-            text: `User plan has been changed to ${plan}.`,
+            title: "Plan Updated!",
+            text: `User plan has been successfully updated to ${plan.toUpperCase()}.`,
             icon: "success",
             timer: 2000,
             showConfirmButton: false,
@@ -362,7 +387,7 @@ const ManageUsers = () => {
     return filtered;
   }, [visibleUsers, search, roleFilter, planFilter, statusFilter]);
 
-  // ── Action handlers (open SweetAlert, then fire mutation) ──────────────────
+  // ── Action handlers (open SweetAlert or Timeframe modal, then fire mutation) ──
   const handleChangeRole = async (id, newRole) => {
     const result = await Swal.fire({
         title: "Change User Role?",
@@ -386,27 +411,33 @@ const ManageUsers = () => {
     }
   };
 
-  const handleChangePlan = async (id, newPlan) => {
-    const result = await Swal.fire({
-        title: "Change User Plan?",
-        text: `Are you sure you want to update this user to the ${newPlan} plan?`,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#10B981",
-        cancelButtonColor: "#6B7280",
-        confirmButtonText: "Yes, Update Plan",
-        background: "#ffffff",
-        customClass: {
-            popup: "rounded-[2rem]",
-            confirmButton: "rounded-xl px-6 py-2.5 font-bold",
-            cancelButton: "rounded-xl px-6 py-2.5 font-bold"
-        }
-    });
+  const handleChangePlan = async (user, newPlan) => {
+    if (newPlan === "free") {
+      const result = await Swal.fire({
+          title: "Downgrade to Free Plan?",
+          text: `Are you sure you want to revert "${user.name}" to the Free plan? Active plan expiration will be cleared.`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#EF4444",
+          cancelButtonColor: "#6B7280",
+          confirmButtonText: "Yes, Downgrade to Free",
+          background: "#ffffff",
+          customClass: {
+              popup: "rounded-[2rem]",
+              confirmButton: "rounded-xl px-6 py-2.5 font-bold",
+              cancelButton: "rounded-xl px-6 py-2.5 font-bold"
+          }
+      });
 
-    if (result.isConfirmed) {
-        setLoadingId(id);
-        planMutation.mutate({ id, plan: newPlan });
+      if (result.isConfirmed) {
+          setLoadingId(user._id);
+          planMutation.mutate({ id: user._id, plan: "free" });
+      }
+      return;
     }
+
+    // Launch timeframe modal for standard/premium plan assignment
+    setTimeframeModal({ open: true, user, targetPlan: newPlan });
   };
 
   const handleToggleBan = async (user) => {
@@ -590,6 +621,25 @@ const ManageUsers = () => {
             </div>
           )}
         </TableShell>
+
+        {/* Timeframe Selection Modal */}
+        <PlanTimeframeModal
+          isOpen={timeframeModal.open}
+          onClose={() => setTimeframeModal({ open: false, user: null, targetPlan: null })}
+          user={timeframeModal.user}
+          targetPlan={timeframeModal.targetPlan}
+          loading={planMutation.isPending}
+          onConfirm={({ userId, plan, timeframeType, monthsCount, customEndDate }) => {
+            setLoadingId(userId);
+            planMutation.mutate({
+              id: userId,
+              plan,
+              timeframeType,
+              monthsCount,
+              customEndDate,
+            });
+          }}
+        />
       </div>
   );
 };
