@@ -48,11 +48,35 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    planExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    planDurationType: {
+      type: String,
+      enum: ["months", "custom", "infinite", null],
+      default: null,
+    },
+    planAssignedAt: {
+      type: Date,
+      default: null,
+    },
+    planSource: {
+      type: String,
+      enum: ["admin_manual", "payment_gateway", "system_default"],
+      default: "system_default",
+    },
+    lastTransactionId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
   },
 );
 
+userSchema.index({ plan: 1, planExpiresAt: 1 });
+
 const User = mongoose.model("User", userSchema);
-export default User
+export default User;

@@ -1,5 +1,6 @@
 import User from "../model/user.js";
 import Notification from "../model/notification.js";
+import { activateUserPlan, checkAndAutoExpirePlan } from "../utils/subscriptionService.js";
 
 // Helper function to check if requesting user is the owner or an admin/superadmin
 const isOwnerOrAdmin = async (decodedEmail, targetEmail) => {
@@ -8,6 +9,8 @@ const isOwnerOrAdmin = async (decodedEmail, targetEmail) => {
         return true;
     }
     const requestor = await User.findOne({ email: decodedEmail.toLowerCase().trim() });
+    return !!(requestor && (requestor.role === 'admin' || requestor.role === 'superadmin'));
+};
     return !!(requestor && (requestor.role === 'admin' || requestor.role === 'superadmin'));
 };
 
@@ -140,10 +143,14 @@ export const getUserProfile = async (req, res) => {
             return res.status(403).json({ success: false, message: "Access denied: cannot access another user's profile" });
         }
 
-        const user = await User.findOne({ email: cleanEmail });
+        let user = await User.findOne({ email: cleanEmail });
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
+
+        // Lazy-evaluate plan expiration
+        user = await checkAndAutoExpirePlan(user);
+
         res.status(200).json({ success: true, message: "User profile fetched successfully", user });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -201,7 +208,7 @@ export const updateUserRole = async (req, res) => {
 export const updateUserPlan = async (req, res) => {
     try {
         const { id } = req.params;
-        const { plan } = req.body;
+        const { plan, timeframeType, monthsCount, customEndDate } = req.body;
 
         const allowedPlans = ["free", "standard", "premium"];
         if (!allowedPlans.includes(plan)) {
@@ -220,10 +227,19 @@ export const updateUserPlan = async (req, res) => {
             }
         }
 
-        targetUser.plan = plan;
-        await targetUser.save();
+        const updatedUser = await activateUserPlan({
+            userId: id,
+            plan,
+            timeframeType: timeframeType || "infinite",
+            monthsCount: monthsCount || 1,
+            customEndDate: customEndDate || null,
+            source: "admin_manual",
+            actorEmail: requester.email,
+            ipAddress: req.ip,
+            userAgent: req.headers["user-agent"],
+        });
 
-        res.status(200).json({ success: true, message: `User plan updated to ${plan}`, user: targetUser });
+        res.status(200).json({ success: true, message: `User plan updated to ${plan}`, user: updatedUser });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }

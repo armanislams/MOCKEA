@@ -508,12 +508,15 @@ export const sendNotificationBroadcast = async (req, res) => {
 
     // Find users based on cohort selection
     let userFilter = { role: "student" };
+    const now = new Date();
     if (cohort === "free") {
       userFilter.plan = "free";
     } else if (cohort === "standard") {
       userFilter.plan = "standard";
+      userFilter.$or = [{ planExpiresAt: null }, { planExpiresAt: { $gt: now } }];
     } else if (cohort === "premium") {
       userFilter.plan = "premium";
+      userFilter.$or = [{ planExpiresAt: null }, { planExpiresAt: { $gt: now } }];
     } else if (cohort === "inactive") {
       // Inactive: lastActive is older than 30 days, or is null
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -596,12 +599,15 @@ export const updateNotificationBroadcast = async (req, res) => {
 
     // Find users based on cohort selection
     let userFilter = { role: "student" };
+    const now = new Date();
     if (cohort === "free") {
       userFilter.plan = "free";
     } else if (cohort === "standard") {
       userFilter.plan = "standard";
+      userFilter.$or = [{ planExpiresAt: null }, { planExpiresAt: { $gt: now } }];
     } else if (cohort === "premium") {
       userFilter.plan = "premium";
+      userFilter.$or = [{ planExpiresAt: null }, { planExpiresAt: { $gt: now } }];
     } else if (cohort === "inactive") {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       userFilter.$or = [
