@@ -122,3 +122,12 @@ body,
 .tooltip.z-50::after {
   z-index: 99999 !important;
 }
+
+/* Ensure options inside all select elements have a solid, opaque background color */
+select option,
+select optgroup,
+.select option,
+.select optgroup {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}

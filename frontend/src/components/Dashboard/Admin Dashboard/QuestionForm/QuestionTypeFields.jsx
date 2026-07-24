@@ -11,14 +11,14 @@ export const QuestionTypeSelect = ({ value, onChange, examType }) => {
     const groups = examType === "PTE" ? PTE_QUESTION_TYPE_GROUPS : QUESTION_TYPE_GROUPS;
     return (
         <select
-            className="select select-bordered w-full rounded-2xl text-sm"
+            className="select select-bordered w-full rounded-2xl text-sm bg-white text-slate-800 font-semibold"
             value={value}
             onChange={(e) => onChange(e.target.value)}
         >
             {groups.map((g) => (
-                <optgroup key={g.group} label={`── ${g.group} ──`}>
+                <optgroup key={g.group} label={`── ${g.group} ──`} className="bg-white text-slate-800 font-bold">
                     {g.types.map((t) => (
-                        <option key={t.value} value={t.value}>
+                        <option key={t.value} value={t.value} className="bg-white text-slate-800 font-medium">
                             {t.label}
                         </option>
                     ))}

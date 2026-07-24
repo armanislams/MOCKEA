@@ -283,12 +283,12 @@ export default function QuestionsBuilderCard({
                                 <label className="label"><span className="label-text font-semibold">Correct Answer</span></label>
                                 {NEEDS_OPTIONS.includes(q.type) ? (
                                     <select
-                                        className="select select-bordered w-full rounded-2xl border-success/30 bg-success/5 text-sm font-semibold"
+                                        className="select select-bordered w-full rounded-2xl border-success/40 bg-white text-slate-800 text-sm font-semibold shadow-xs focus:border-success focus:ring-4 focus:ring-success/10"
                                         value={q.correctAnswer}
                                         onChange={(e) => updateQuestionField(q.id, "correctAnswer", e.target.value)}
                                         required
                                     >
-                                        <option value="">— Select Correct Answer —</option>
+                                        <option value="" className="bg-white text-slate-800 font-medium">— Select Correct Answer —</option>
                                         {(q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0
                                             ? q.options.filter(opt => opt && opt.trim() !== "")
                                             : q.type === "true-false"
@@ -297,7 +297,7 @@ export default function QuestionsBuilderCard({
                                                     ? ["Yes", "No", "Not Given"]
                                                     : []
                                         ).map((opt, optIdx) => (
-                                            <option key={optIdx} value={opt}>
+                                            <option key={optIdx} value={opt} className="bg-white text-slate-800 font-medium">
                                                 {opt}
                                             </option>
                                         ))}
