@@ -11,8 +11,6 @@ const isOwnerOrAdmin = async (decodedEmail, targetEmail) => {
     const requestor = await User.findOne({ email: decodedEmail.toLowerCase().trim() });
     return !!(requestor && (requestor.role === 'admin' || requestor.role === 'superadmin'));
 };
-    return !!(requestor && (requestor.role === 'admin' || requestor.role === 'superadmin'));
-};
 
 // Helper to escape special regex characters to prevent ReDoS
 const escapeRegex = (str) => {
